@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>연결고리 동기화 점검</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: one narrow column of stacked panels — this device, shared memo, check-in log */
+  :root {
+    --bg: #f3f5f4;
+    --panel: #ffffff;
+    --fg: #17201e;
+    --muted: #5d6b67;
+    --line: #d8dfdc;
+    --accent: #0f6e66;
+    --accent-ink: #ffffff;
+    --ok: #1d7a3e;
+    --warn: #9a5b00;
+    --chip: #e4efec;
+    --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+    --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #111614; --panel: #19201e; --fg: #e6ecea; --muted: #97a6a1; --line: #2c3633;
+      --accent: #4fb8ad; --accent-ink: #0b1210; --ok: #5cc884; --warn: #e0a64a; --chip: #213230;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #111614; --panel: #19201e; --fg: #e6ecea; --muted: #97a6a1; --line: #2c3633;
+    --accent: #4fb8ad; --accent-ink: #0b1210; --ok: #5cc884; --warn: #e0a64a; --chip: #213230;
+    color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.6; }
+  .wrap { max-width: 640px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 48px; display: grid; gap: 18px; }
+  header { display: grid; gap: 4px; }
+  .eyebrow { font-family: var(--font-data); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  h1 { margin: 0; font-size: 1.75rem; line-height: 1.25; text-wrap: balance; }
+  h2 { margin: 0; font-size: 1rem; }
+  p { margin: 0; }
+  .lede { color: var(--muted); max-width: 60ch; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 12px; min-width: 0; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+  dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; }
+  dt { color: var(--muted); font-size: 13px; }
+  dd { margin: 0; font-family: var(--font-data); font-size: 13px; font-variant-numeric: tabular-nums; min-width: 0; overflow-wrap: anywhere; }
+  .status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 3px 10px; border-radius: 999px; background: var(--chip); color: var(--muted); }
+  .status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .status.on { color: var(--ok); }
+  .status.off { color: var(--warn); }
+  label { font-size: 13px; color: var(--muted); }
+  input, textarea { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; width: 100%; box-sizing: border-box; }
+  textarea { min-height: 90px; resize: vertical; }
+  input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .field { display: grid; gap: 6px; }
+  button { font: inherit; font-weight: 500; border: 0; border-radius: 8px; padding: 9px 16px; background: var(--accent); color: var(--accent-ink); cursor: pointer; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .hint { font-size: 13px; color: var(--muted); }
+  .meta { font-family: var(--font-data); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  ol { list-style: none; margin: 0; padding: 0; display: grid; }
+  li { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding-block: 10px; border-top: 1px solid var(--line); }
+  li:first-child { border-top: 0; }
+  li .who { font-weight: 500; min-width: 0; overflow-wrap: anywhere; }
+  li .kind { font-size: 12px; color: var(--accent); font-family: var(--font-data); }
+  li .detail { grid-column: 1 / -1; font-size: 12px; color: var(--muted); font-family: var(--font-data); overflow-wrap: anywhere; }
+  .empty { color: var(--muted); font-size: 14px; padding-block: 8px; }
+  .notice { font-size: 13px; color: var(--warn); }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Connect-link · Sync check</span>
+    <h1>연결고리 동기화 점검</h1>
+    <p class="lede">PC와 휴대폰에서 이 페이지를 각각 열고 체크인해 보세요. 다른 기기에서 남긴 기록과 메모가 여기 그대로 보이면 공유가 되는 겁니다.</p>
+  </header>
+
+  <section aria-labelledby="dev-h">
+    <div class="row">
+      <h2 id="dev-h">지금 이 기기</h2>
+      <span id="conn" class="status">연결 확인 중</span>
+    </div>
+    <dl>
+      <dt>기기 종류</dt><dd id="d-kind">-</dd>
+      <dt>운영체제 · 브라우저</dt><dd id="d-os">-</dd>
+      <dt>화면 크기</dt><dd id="d-screen">-</dd>
+      <dt>연 시각</dt><dd id="d-time">-</dd>
+    </dl>
+    <div class="field">
+      <label for="label">이 기기 이름</label>
+      <input id="label" maxlength="30" placeholder="예: 회사 PC, 집 노트북, 내 폰">
+    </div>
+    <div class="row">
+      <span class="hint" id="ci-hint">체크인하면 모든 기기의 기록 목록에 추가됩니다.</span>
+      <button id="checkin" type="button" disabled>이 기기에서 체크인</button>
+    </div>
+  </section>
+
+  <section aria-labelledby="memo-h">
+    <div class="row">
+      <h2 id="memo-h">공유 메모</h2>
+      <span class="meta" id="memo-meta"></span>
+    </div>
+    <div class="field">
+      <label for="memo">한 기기에서 쓰고 저장하면, 다른 기기에서 새로고침 없이 바뀝니다.</label>
+      <textarea id="memo" maxlength="2000" placeholder="아무 문장이나 적어 보세요."></textarea>
+    </div>
+    <div class="row">
+      <span class="hint" id="memo-hint"></span>
+      <button id="save-memo" type="button" disabled>메모 저장</button>
+    </div>
+  </section>
+
+  <section aria-labelledby="log-h">
+    <div class="row">
+      <h2 id="log-h">체크인 기록</h2>
+      <span class="meta" id="log-count"></span>
+    </div>
+    <ol id="log"><li class="empty" style="display:block">아직 체크인한 기기가 없습니다. 위의 버튼으로 첫 기록을 남겨 보세요.</li></ol>
+  </section>
+
+  <p class="notice" id="fallback" hidden>이 주소에서는 기록 공유가 꺼져 있어요. 기기 간 공유는 Claude 아티팩트 링크로 열었을 때 동작합니다. 기기 정보와 페이지 자체가 같은지는 여기서도 확인할 수 있습니다.</p>
+</div>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const ua = navigator.userAgent;
+  const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(ua));
+  const os = /Windows/.test(ua) ? "Windows" : /Android/.test(ua) ? "Android" : /iPhone|iPad|iPod/.test(ua) ? "iOS" : /Mac/.test(ua) ? (isMobile ? "iPadOS" : "macOS") : /Linux/.test(ua) ? "Linux" : "기타";
+  const br = /Edg\//.test(ua) ? "Edge" : /SamsungBrowser/.test(ua) ? "삼성 인터넷" : /Whale/.test(ua) ? "Whale" : /Chrome\//.test(ua) ? "Chrome" : /Firefox\//.test(ua) ? "Firefox" : /Safari\//.test(ua) ? "Safari" : "기타";
+  const kind = isMobile ? "모바일" : "PC";
+  const fmt = (t) => new Date(t).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+  $("d-kind").textContent = kind;
+  $("d-os").textContent = os + " · " + br;
+  $("d-screen").textContent = screen.width + " × " + screen.height + " (창 " + innerWidth + " × " + innerHeight + ")";
+  $("d-time").textContent = fmt(Date.now());
+
+  try { const saved = localStorage.getItem("cl-label"); if (saved) $("label").value = saved; } catch (e) {}
+  $("label").addEventListener("change", () => { try { localStorage.setItem("cl-label", $("label").value.trim()); } catch (e) {} });
+
+  function setConn(on, text) {
+    const c = $("conn");
+    c.className = "status " + (on ? "on" : "off");
+    c.textContent = text;
+  }
+
+  function renderLog(docs) {
+    const log = $("log");
+    log.textContent = "";
+    $("log-count").textContent = docs.length ? docs.length + "건" : "";
+    if (!docs.length) {
+      const li = document.createElement("li");
+      li.className = "empty"; li.style.display = "block";
+      li.textContent = "아직 체크인한 기기가 없습니다. 위의 버튼으로 첫 기록을 남겨 보세요.";
+      log.appendChild(li);
+      return;
+    }
+    for (const d of docs) {
+      const v = d.data() || {};
+      const li = document.createElement("li");
+      const who = document.createElement("span"); who.className = "who"; who.textContent = String(v.label || "이름 없는 기기");
+      const k = document.createElement("span"); k.className = "kind"; k.textContent = String(v.kind || "");
+      const det = document.createElement("span"); det.className = "detail";
+      det.textContent = String(v.os || "") + " · " + String(v.browser || "") + " · " + String(v.screen || "") + " · " + (v.at ? fmt(v.at) : "");
+      li.append(who, k, det);
+      log.appendChild(li);
+    }
+  }
+
+  function fallback() {
+    setConn(false, "공유 꺼짐");
+    $("fallback").hidden = false;
+    $("ci-hint").textContent = "이 주소에서는 체크인을 저장할 수 없어요.";
+    $("memo-hint").textContent = "이 주소에서는 메모를 저장할 수 없어요.";
+  }
+
+  if (!window.claude || typeof window.claude.use !== "function") { fallback(); return; }
+
+  window.claude.use("db").then((db) => {
+    if (!db) { fallback(); return; }
+    setConn(true, "공유 연결됨");
+
+    const checkins = db.collection("checkins");
+    checkins.orderBy("at", "desc").limit(50).onSnapshot((snap) => renderLog(snap.docs), () => setConn(false, "연결 끊김"));
+
+    const memoRef = db.doc("shared/memo");
+    let dirty = false;
+    $("memo").addEventListener("input", () => { dirty = true; $("memo-hint").textContent = "저장하지 않은 변경이 있어요."; });
+    memoRef.onSnapshot((snap) => {
+      const v = snap.exists ? (snap.data() || {}) : {};
+      if (!dirty) $("memo").value = String(v.text || "");
+      $("memo-meta").textContent = v.at ? "마지막 저장 " + fmt(v.at) + (v.from ? " · " + String(v.from) : "") : "";
+    });
+
+    $("checkin").disabled = false;
+    $("save-memo").disabled = false;
+
+    $("checkin").addEventListener("click", async () => {
+      const btn = $("checkin"); btn.disabled = true;
+      try {
+        await checkins.add({
+          label: $("label").value.trim().slice(0, 30) || (kind + " (" + os + ")"),
+          kind, os, browser: br, screen: screen.width + "×" + screen.height, at: Date.now()
+        });
+        $("ci-hint").textContent = "체크인했어요. 다른 기기에서도 이 기록이 보이는지 확인해 보세요.";
+      } catch (e) {
+        $("ci-hint").textContent = e && e.code === "invalid_argument" ? "이 계정은 기록을 남길 권한이 없어요." : "저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.";
+      } finally { btn.disabled = false; }
+    });
+
+    $("save-memo").addEventListener("click", async () => {
+      const btn = $("save-memo"); btn.disabled = true;
+      try {
+        await memoRef.set({ text: $("memo").value.slice(0, 2000), at: Date.now(), from: $("label").value.trim().slice(0, 30) || (kind + " (" + os + ")") });
+        dirty = false;
+        $("memo-hint").textContent = "저장했어요.";
+      } catch (e) {
+        $("memo-hint").textContent = e && e.code === "invalid_argument" ? "이 계정은 메모를 저장할 권한이 없어요." : "저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.";
+      } finally { btn.disabled = false; }
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
