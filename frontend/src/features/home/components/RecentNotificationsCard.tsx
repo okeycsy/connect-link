@@ -1,6 +1,6 @@
 import {
+  Anchor,
   Badge,
-  Button,
   Box,
   Card,
   Group,
@@ -9,7 +9,6 @@ import {
   Text,
   UnstyledButton,
 } from '@mantine/core';
-import { IconChevronRight } from '@tabler/icons-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import { DEFAULT_BUSINESS_SLUG } from '../../../app/navigation';
@@ -27,7 +26,7 @@ const SIZE = 4;
 
 /**
  * 홈 왼쪽 큰 칸: 최근 알림. 알림 센터(/api/v1/notifications)와 같은 내용을 시안 B 의 "최근 소식" 모양으로 보인다.
- * 최근 4건만 보이고 아래 더보기는 알림 센터로 간다.
+ * 최근 4건만 보이고 카드 높이는 내용만큼이다. 오른쪽 아래 작은 "더보기" 글자 링크가 알림 센터로 간다.
  * 한 줄 = 둥근 사각 아바타(알림 종류 첫 글자) + 종류·업무·시각 + 제목·본문. 누르면 읽음 처리하고 연결된 화면으로 간다.
  */
 export function RecentNotificationsCard() {
@@ -45,7 +44,7 @@ export function RecentNotificationsCard() {
   };
 
   return (
-    <Card className={classes.card} h="100%" data-testid="home-recent-notifications">
+    <Card className={classes.card} data-testid="home-recent-notifications">
       <Group align="center" mb="xs" px={16} wrap="nowrap">
         <Group gap="xs">
           <Text fw={700} size="xl">
@@ -116,16 +115,10 @@ export function RecentNotificationsCard() {
         </Text>
       )}
 
-      <Group justify="center" mt="sm">
-        <Button
-          component={Link}
-          to={centerPath}
-          variant="light"
-          size="sm"
-          rightSection={<IconChevronRight size={16} />}
-        >
+      <Group justify="flex-end" mt={4} px={16}>
+        <Anchor component={Link} to={centerPath} size="xs" c="dimmed">
           더보기
-        </Button>
+        </Anchor>
       </Group>
     </Card>
   );
