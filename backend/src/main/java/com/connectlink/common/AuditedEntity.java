@@ -31,6 +31,14 @@ public abstract class AuditedEntity {
   @Column(name = "updated_by", nullable = false, length = 100)
   private String updatedBy;
 
+  /**
+   * 자식 컬렉션만 바뀌어 엔티티 자체는 변경이 없을 때 수정으로 기록되게 한다. 값을 바꿔 더티 상태로 만들면 UPDATE 가 나가고, 그때 감사 리스너가 수정자·수정 일시를
+   * 다시 채운다.
+   */
+  protected void touch() {
+    this.updatedAt = LocalDateTime.now();
+  }
+
   public LocalDateTime getCreatedAt() {
     return createdAt;
   }

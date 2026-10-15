@@ -61,6 +61,7 @@
 | 이용기관 | `USE_ORGANIZATION` (기관 구분), `UseOrganization` | 금융회사가 아닌 일반 회사(주로 결제원의 고객). 이용기관 담당자의 권한과 기능은 명세에 정해지기 전까지 구현하지 않는다 |
 | 계정 | `UserAccount` | 로그인 주체 |
 | 담당자 연락처 | `Contact` | 계정이 없는 담당자(후임자 등)도 존재 가능 |
+| 기관 업무 참여 | `OrganizationBusiness` | 기관이 참여하는 업무 영역 한 건. 레일별 조회 범위의 기준. 테이블 `organization_business` |
 | 업무 | `Business` | `ACCOUNT_INFO`(계좌통합관리), `AUTO_TRANSFER`(자동이체통합관리), `LOAN_TRANSFER`(대출이동), `CMS` |
 | 세부업무 | `subBusiness` | 자유 텍스트 |
 | 직무 | `JobRole` | `BUSINESS`(현업), `IT`(전산) |
@@ -118,7 +119,7 @@ connect-link/
 │       ├── features/
 │       │   ├── account/ contact/ opinion/ testplan/ suspension/ notification/
 │       │   │   └── (각각) pages/, components/, hooks.ts(Query 훅), *.test.tsx
-│       ├── shared/            # 공통 컴포넌트, 포맷터(날짜, 전화번호)
+│       ├── shared/            # 공통 컴포넌트, 포맷터(날짜, 전화번호), list/(목록 패턴: 머리·필터 칩·상세 패널)
 │       └── main.tsx
 ├── e2e/                      # Playwright 시나리오
 ├── docs/

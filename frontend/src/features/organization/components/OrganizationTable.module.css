@@ -1,0 +1,17 @@
+.row {
+  cursor: pointer;
+
+  &[data-selected] {
+    background: var(--mantine-color-navy-0);
+    box-shadow: inset 3px 0 0 var(--mantine-color-navy-9);
+  }
+
+  &[data-inactive] {
+    color: var(--mantine-color-dimmed);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mantine-color-navy-9);
+    outline-offset: -2px;
+  }
+}
