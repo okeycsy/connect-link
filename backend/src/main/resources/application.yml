@@ -43,6 +43,13 @@ springdoc:
     operations-sorter: alpha
     tags-sorter: alpha
 
+app:
+  network:
+    # 운영: 내부 IP 대역을 적는다(예: 10.0.0.0/8). 대역 밖과 헤더는 인터넷망.
+    internal-cidrs: []
+    header-override: false
+    default-zone: EXTERNAL
+
 logging:
   level:
     com.connectlink: INFO

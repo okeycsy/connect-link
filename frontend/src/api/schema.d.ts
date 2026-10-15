@@ -192,7 +192,7 @@ export interface paths {
     };
     /**
      * 내 정보 조회
-     * @description 로그인 사용자의 이름, 소속 기관, 관리자 여부를 돌려준다.
+     * @description 로그인 사용자의 이름, 소속 기관, 관리자 여부와 지금 접속한 망(내부망/인터넷망)을 돌려준다.
      */
     get: operations['me'];
     put?: never;
@@ -427,6 +427,9 @@ export interface components {
       organizationType: 'KFTC' | 'FINANCE_ORGANIZATION' | 'USE_ORGANIZATION';
       organizationTypeLabel: string;
       admin: boolean;
+      /** @enum {string} */
+      networkZone: 'INTERNAL' | 'EXTERNAL';
+      networkZoneLabel: string;
     };
     HomeCard: {
       /** @enum {string} */
