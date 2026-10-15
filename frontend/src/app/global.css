@@ -1,0 +1,15 @@
+/* Mantine 테마로 표현할 수 없는 전역 기본값만 둔다. 색과 간격은 app/theme.ts 가 기준이다. */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  word-break: keep-all;
+  background: var(--mantine-color-navy-9);
+}
+
+[data-mantine-color-scheme='dark'] body {
+  background: var(--mantine-color-navy-9);
+}

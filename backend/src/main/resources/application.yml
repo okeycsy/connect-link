@@ -1,0 +1,48 @@
+spring:
+  profiles:
+    # app.jar 를 그냥 실행하면 내부망 시연용 demo 프로필로 뜬다.
+    default: demo
+  application:
+    name: connect-link
+  datasource:
+    url: jdbc:h2:mem:connectlink;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: Asia/Seoul
+  flyway:
+    locations: classpath:db/migration
+  jackson:
+    time-zone: Asia/Seoul
+  mvc:
+    format:
+      date: iso
+      date-time: iso
+
+server:
+  # Render 같은 호스팅은 PORT 환경변수로 포트를 준다.
+  port: ${PORT:8080}
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: lax
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+
+logging:
+  level:
+    com.connectlink: INFO

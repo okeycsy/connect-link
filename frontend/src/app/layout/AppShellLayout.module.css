@@ -1,0 +1,125 @@
+/* 레이어드 네이비의 네 겹 중 Mantine 컴포넌트 속성만으로 안 되는 부분(크롬 그라데이션, 프로스트, 시트). */
+
+.shell {
+  --chrome-gradient: linear-gradient(180deg, #1b2f58, #0f1e3c 55%, #0b1730);
+  --chrome-glow: radial-gradient(
+    120% 80% at 0% 0%,
+    rgba(90, 125, 205, 0.42) 0%,
+    rgba(90, 125, 205, 0) 55%
+  );
+}
+
+/* 0층 크롬: 상단 바, 레일, 본문 바깥 */
+.chrome {
+  background-color: #0f1e3c;
+  background-image: var(--chrome-glow), var(--chrome-gradient);
+  background-attachment: fixed;
+}
+
+.navbar {
+  flex-direction: row;
+  background: transparent;
+}
+
+.rail {
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.06);
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.18)), var(--chrome-glow),
+    var(--chrome-gradient);
+}
+
+.railToken {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: rgba(255, 255, 255, 0.06);
+  transition:
+    background 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    color 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+  }
+
+  &[data-active] {
+    background: #fff;
+    color: #0f1e3c;
+  }
+}
+
+/* 1층 프로스트: 보조 메뉴 */
+.subMenu {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(12px);
+  border-top-left-radius: 14px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  height: calc(100% - 16px);
+  padding-bottom: 8px;
+}
+
+.subMenuItem {
+  margin: 2px 8px;
+  width: calc(100% - 16px);
+  border-radius: 8px;
+  font-size: 13px;
+
+  &[data-active] {
+    background: var(--mantine-color-navy-0);
+    color: var(--mantine-color-navy-9);
+    font-weight: 600;
+  }
+}
+
+/* 1층 시트: 본문이 radius 14 시트처럼 크롬 안에 끼워진다 */
+.sheet {
+  min-height: calc(100vh - 56px - 16px);
+  margin: 8px 8px 8px 0;
+  border-radius: 14px;
+  background: #f2f4f8;
+}
+
+[data-mantine-color-scheme='dark'] .sheet {
+  background: #0b1120;
+}
+
+[data-mantine-color-scheme='dark'] .subMenu {
+  background: rgba(19, 28, 51, 0.88);
+}
+
+.logo {
+  width: 36px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.search {
+  width: 360px;
+  max-width: 40vw;
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.16);
+  }
+}

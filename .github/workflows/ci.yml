@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: 빌드 · 테스트 · app.jar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            e2e/package-lock.json
+
+      - name: Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: 서버 포맷 검사
+        run: ./gradlew :backend:spotlessCheck
+
+      - name: 전체 빌드 (서버 테스트, 프론트 린트·테스트, app.jar)
+        run: ./gradlew build
+
+      - name: API 타입 생성물이 최신인지 확인
+        run: |
+          npm --prefix frontend run gen:api
+          git diff --exit-code -- frontend/src/api/schema.d.ts || {
+            echo "::error::frontend/src/api/schema.d.ts 가 서버 OpenAPI 와 다릅니다. 'npm --prefix frontend run gen:api' 를 실행해 커밋하세요."
+            exit 1
+          }
+
+      - name: 빌드 결과에 외부 URL 이 없는지 확인
+        run: |
+          set -e
+          if grep -En '(src|href)="https?://' frontend/dist/index.html; then
+            echo "::error::index.html 이 외부 자원을 불러옵니다."; exit 1
+          fi
+          if grep -rEn "url\(['\"]?https?://" frontend/dist/assets/*.css; then
+            echo "::error::CSS 가 외부 자원을 불러옵니다."; exit 1
+          fi
+          echo "외부 자원 없음"
+
+      - name: E2E (app.jar demo 프로필)
+        run: |
+          npm --prefix e2e ci
+          npx --prefix e2e playwright install --with-deps chromium
+          npm --prefix e2e test
+        env:
+          CI: 'true'
+
+      - name: 화면 캡처 업로드
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: e2e/screenshots
+          if-no-files-found: ignore
+
+      - name: app.jar 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: app.jar
+          path: backend/build/libs/app.jar
+          if-no-files-found: error
