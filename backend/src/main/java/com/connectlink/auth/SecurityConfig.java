@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.OffsetDateTime;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -15,24 +16,32 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 /**
  * 보안 기본값. 세션(쿠키) 인증, CSRF 쿠키 토큰, 화면·공개 기준정보·API 문서만 열어 두고 나머지 API는 로그인 필수. 로그인 API 자체는 account 모듈과
- * 함께 다음 단계에서 붙는다.
+ * 함께 마지막 단계에서 붙고, 그때까지 local·demo 프로필은 {@link DemoAuthenticationFilter} 가 데모 관리자로 인증한다.
  */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
   private final ObjectMapper objectMapper;
+  private final ObjectProvider<DemoAuthenticationFilter> demoAuthenticationFilter;
 
-  public SecurityConfig(ObjectMapper objectMapper) {
+  public SecurityConfig(
+      ObjectMapper objectMapper,
+      ObjectProvider<DemoAuthenticationFilter> demoAuthenticationFilter) {
     this.objectMapper = objectMapper;
+    this.demoAuthenticationFilter = demoAuthenticationFilter;
   }
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    // local·demo 프로필에서만 빈이 있다. 로그인 없이 들어온 요청을 데모 관리자로 인증한다.
+    demoAuthenticationFilter.ifAvailable(
+        filter -> http.addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class));
     http.csrf(
             csrf ->
                 csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())

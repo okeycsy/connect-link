@@ -4,6 +4,43 @@
  */
 
 export interface paths {
+  '/api/v1/notifications/{id}/read': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 알림 읽음 처리
+     * @description 본인 알림이 아니면 403.
+     */
+    post: operations['markRead'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/notifications/read-all': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** 모든 알림 읽음 처리 */
+    post: operations['markAllRead'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/organizations': {
     parameters: {
       query?: never;
@@ -16,6 +53,83 @@ export interface paths {
      * @description 사용 중인 기관을 구분·이름순으로 돌려준다.
      */
     get: operations['listOrganizations'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/notifications': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 내 알림 목록 조회
+     * @description 최신순. unreadOnly=true 면 읽지 않은 알림만 돌려준다.
+     */
+    get: operations['list'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/notifications/unread-count': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** 읽지 않은 알림 수 조회 */
+    get: operations['unreadCount'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/notification-outbox': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 발송함 조회
+     * @description 최신순. 관리자만 볼 수 있다.
+     */
+    get: operations['list_1'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/me': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 내 정보 조회
+     * @description 로그인 사용자의 이름, 소속 기관, 관리자 여부를 돌려준다.
+     */
+    get: operations['me'];
     put?: never;
     post?: never;
     delete?: never;
@@ -65,6 +179,34 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    NotificationResponse: {
+      /** Format: int64 */
+      id: number;
+      /** @enum {string} */
+      type:
+        | 'SIGNUP_REQUESTED'
+        | 'SIGNUP_APPROVED'
+        | 'CONTACT_CHANGE_REQUESTED'
+        | 'CONTACT_RECONFIRM_DUE'
+        | 'OPINION_REQUEST_OPENED'
+        | 'OPINION_REPLY_DUE'
+        | 'TEST_PLAN_OPENED'
+        | 'SUSPENSION_CHANGED'
+        | 'SYSTEM';
+      typeLabel: string;
+      /** @enum {string|null} */
+      business?: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS' | null;
+      businessSlug?: string | null;
+      businessLabel?: string | null;
+      title: string;
+      body?: string | null;
+      link?: string | null;
+      read: boolean;
+      /** Format: date-time */
+      readAt?: string | null;
+      /** Format: date-time */
+      createdAt: string;
+    };
     OrganizationResponse: {
       /** Format: int64 */
       id: number;
@@ -73,6 +215,63 @@ export interface components {
       /** @enum {string} */
       type: 'KFTC' | 'FINANCE_ORGANIZATION' | 'USE_ORGANIZATION';
       typeLabel: string;
+    };
+    PageResponseNotificationResponse: {
+      content: components['schemas']['NotificationResponse'][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+      last: boolean;
+    };
+    UnreadCountResponse: {
+      /** Format: int64 */
+      count: number;
+    };
+    NotificationOutboxResponse: {
+      /** Format: int64 */
+      id: number;
+      /** Format: int64 */
+      notificationId?: number | null;
+      /** @enum {string} */
+      channel: 'EMAIL' | 'MATTERMOST';
+      channelLabel: string;
+      recipient: string;
+      subject?: string | null;
+      body?: string | null;
+      /** @enum {string} */
+      status: 'PENDING' | 'SENT' | 'FAILED';
+      statusLabel: string;
+      /** Format: date-time */
+      sentAt?: string | null;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    PageResponseNotificationOutboxResponse: {
+      content: components['schemas']['NotificationOutboxResponse'][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+      last: boolean;
+    };
+    CurrentUserResponse: {
+      email: string;
+      name: string;
+      organizationCode: string;
+      organizationName: string;
+      /** @enum {string} */
+      organizationType: 'KFTC' | 'FINANCE_ORGANIZATION' | 'USE_ORGANIZATION';
+      organizationTypeLabel: string;
+      admin: boolean;
     };
     HealthResponse: {
       status: string;
@@ -96,6 +295,46 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  markRead: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['NotificationResponse'];
+        };
+      };
+    };
+  };
+  markAllRead: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   listOrganizations: {
     parameters: {
       query?: never;
@@ -112,6 +351,95 @@ export interface operations {
         };
         content: {
           '*/*': components['schemas']['OrganizationResponse'][];
+        };
+      };
+    };
+  };
+  list: {
+    parameters: {
+      query?: {
+        /** @description 0부터 시작 */
+        page?: number;
+        size?: number;
+        unreadOnly?: boolean;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['PageResponseNotificationResponse'];
+        };
+      };
+    };
+  };
+  unreadCount: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['UnreadCountResponse'];
+        };
+      };
+    };
+  };
+  list_1: {
+    parameters: {
+      query?: {
+        /** @description 0부터 시작 */
+        page?: number;
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['PageResponseNotificationOutboxResponse'];
+        };
+      };
+    };
+  };
+  me: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['CurrentUserResponse'];
         };
       };
     };
