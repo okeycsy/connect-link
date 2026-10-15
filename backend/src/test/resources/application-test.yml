@@ -1,0 +1,4 @@
+# 테스트는 샘플 데이터까지 넣고 돈다. 권한·마스킹 테스트가 샘플 조합에 기대기 때문이다.
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/seed

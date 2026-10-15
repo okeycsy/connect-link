@@ -1,0 +1,4 @@
+# 내부망 시연용 기본 프로필. 샘플 데이터를 넣고 화면과 API를 한 포트에서 제공한다.
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/seed

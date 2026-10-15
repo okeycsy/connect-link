@@ -1,0 +1,24 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Node
+node_modules/
+frontend/dist/
+e2e/test-results/
+e2e/playwright-report/
+e2e/screenshots/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 로컬 실행 중 생기는 것
+backend/uploads/
+*.log
