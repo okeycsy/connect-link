@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -55,11 +56,11 @@ public class SecurityConfig {
                     .permitAll()
                     .regexMatchers("/(?!api/)[^.]*")
                     .permitAll()
-                    // 공개 API: 상태, 가입 화면이 쓰는 기준정보, API 문서
+                    // 공개 API: 상태, 가입 화면이 쓰는 기준정보(조회만), API 문서
+                    .antMatchers(HttpMethod.GET, "/api/v1/businesses", "/api/v1/organizations")
+                    .permitAll()
                     .antMatchers(
                         "/api/v1/health",
-                        "/api/v1/businesses",
-                        "/api/v1/organizations",
                         "/v3/api-docs/**",
                         "/swagger-ui/**",
                         "/swagger-ui.html",

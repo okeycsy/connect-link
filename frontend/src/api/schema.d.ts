@@ -4,6 +4,51 @@
  */
 
 export interface paths {
+  '/api/v1/organizations/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** 기관 기준정보 상세 조회 (관리자) */
+    get: operations['get'];
+    /**
+     * 기관 수정 (관리자)
+     * @description 이름, 이메일 도메인, 사용 여부, 참여 업무를 통째로 바꾼다.
+     */
+    put: operations['update'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/organizations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 기관 목록 조회
+     * @description 사용 중인 기관을 구분·이름순으로 돌려준다. 로그인 없이 쓸 수 있다.
+     */
+    get: operations['listOrganizations'];
+    put?: never;
+    /**
+     * 기관 등록 (관리자)
+     * @description 같은 코드가 이미 있으면 409.
+     */
+    post: operations['create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/notifications/{id}/read': {
     parameters: {
       query?: never;
@@ -41,7 +86,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/v1/organizations': {
+  '/api/v1/organizations/search': {
     parameters: {
       query?: never;
       header?: never;
@@ -49,10 +94,10 @@ export interface paths {
       cookie?: never;
     };
     /**
-     * 기관 목록 조회
-     * @description 사용 중인 기관을 구분·이름순으로 돌려준다.
+     * 기관 기준정보 검색 (관리자)
+     * @description 이름·코드 검색어, 구분, 참여 업무(slug), 사용 여부로 거른다. 구분 순(결제원 → 참가기관 → 이용기관) 뒤 이름순.
      */
-    get: operations['listOrganizations'];
+    get: operations['search'];
     put?: never;
     post?: never;
     delete?: never;
@@ -199,6 +244,45 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    OrganizationUpdateRequest: {
+      name: string;
+      emailDomain?: string | null;
+      active: boolean;
+      businesses: ('ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS')[];
+    };
+    BusinessResponse: {
+      /** @enum {string} */
+      code: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
+      slug: string;
+      label: string;
+      shortLabel: string;
+    };
+    OrganizationDetailResponse: {
+      /** Format: int64 */
+      id: number;
+      code: string;
+      name: string;
+      /** @enum {string} */
+      type: 'KFTC' | 'FINANCE_ORGANIZATION' | 'USE_ORGANIZATION';
+      typeLabel: string;
+      emailDomain?: string | null;
+      active: boolean;
+      businesses: components['schemas']['BusinessResponse'][];
+      /** Format: date-time */
+      createdAt: string;
+      createdBy: string;
+      /** Format: date-time */
+      updatedAt: string;
+      updatedBy: string;
+    };
+    OrganizationCreateRequest: {
+      code: string;
+      name: string;
+      /** @enum {string} */
+      type: 'KFTC' | 'FINANCE_ORGANIZATION' | 'USE_ORGANIZATION';
+      emailDomain?: string | null;
+      businesses: ('ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS')[];
+    };
     NotificationResponse: {
       /** Format: int64 */
       id: number;
@@ -235,6 +319,18 @@ export interface components {
       /** @enum {string} */
       type: 'KFTC' | 'FINANCE_ORGANIZATION' | 'USE_ORGANIZATION';
       typeLabel: string;
+    };
+    PageResponseOrganizationDetailResponse: {
+      content: components['schemas']['OrganizationDetailResponse'][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+      last: boolean;
     };
     PageResponseNotificationResponse: {
       content: components['schemas']['NotificationResponse'][];
@@ -356,13 +452,6 @@ export interface components {
       /** Format: date-time */
       serverTime: string;
     };
-    BusinessResponse: {
-      /** @enum {string} */
-      code: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
-      slug: string;
-      label: string;
-      shortLabel: string;
-    };
   };
   responses: never;
   parameters: never;
@@ -372,6 +461,98 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['OrganizationDetailResponse'];
+        };
+      };
+    };
+  };
+  update: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['OrganizationUpdateRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['OrganizationDetailResponse'];
+        };
+      };
+    };
+  };
+  listOrganizations: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['OrganizationResponse'][];
+        };
+      };
+    };
+  };
+  create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['OrganizationCreateRequest'];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['OrganizationDetailResponse'];
+        };
+      };
+    };
+  };
   markRead: {
     parameters: {
       query?: never;
@@ -412,9 +593,18 @@ export interface operations {
       };
     };
   };
-  listOrganizations: {
+  search: {
     parameters: {
-      query?: never;
+      query?: {
+        keyword?: string;
+        type?: 'KFTC' | 'FINANCE_ORGANIZATION' | 'USE_ORGANIZATION';
+        /** @description 업무 영역 slug (예: account-info) */
+        business?: string;
+        active?: boolean;
+        /** @description 0부터 시작 */
+        page?: number;
+        size?: number;
+      };
       header?: never;
       path?: never;
       cookie?: never;
@@ -427,7 +617,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          '*/*': components['schemas']['OrganizationResponse'][];
+          '*/*': components['schemas']['PageResponseOrganizationDetailResponse'];
         };
       };
     };
