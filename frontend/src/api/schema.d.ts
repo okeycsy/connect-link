@@ -138,6 +138,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/home': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 홈 대시보드 조회
+     * @description 레일에서 고른 업무 영역의 KPI 와 할 일 카드를 돌려준다.
+     */
+    get: operations['home'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/health': {
     parameters: {
       query?: never;
@@ -272,6 +292,63 @@ export interface components {
       organizationType: 'KFTC' | 'FINANCE_ORGANIZATION' | 'USE_ORGANIZATION';
       organizationTypeLabel: string;
       admin: boolean;
+    };
+    HomeCard: {
+      /** @enum {string} */
+      key:
+        | 'CONTACT_CONFIRM'
+        | 'UPDATE_CAMPAIGN'
+        | 'OPINION_REPLIES'
+        | 'TEST_PROGRESS'
+        | 'SUSPENSIONS'
+        | 'SIGNUP_APPROVAL';
+      title: string;
+      /** @enum {string} */
+      source: 'REAL' | 'SAMPLE' | 'UNAVAILABLE';
+      /** @enum {string} */
+      urgency: 'NONE' | 'SOON' | 'OVERDUE';
+      summary?: string | null;
+      metrics: components['schemas']['HomeCardMetric'][];
+      progress: components['schemas']['HomeCardProgress'];
+      items: components['schemas']['HomeCardItem'][];
+      link?: string | null;
+    };
+    HomeCardItem: {
+      title: string;
+      subtitle?: string | null;
+      /** Format: date */
+      dueAt?: string | null;
+      /** @enum {string} */
+      urgency: 'NONE' | 'SOON' | 'OVERDUE';
+      link?: string | null;
+    };
+    HomeCardKpi: {
+      label: string;
+      /** Format: int64 */
+      value: number;
+      unit: string;
+      urgent: boolean;
+    };
+    HomeCardMetric: {
+      label: string;
+      /** Format: int64 */
+      value: number;
+      unit: string;
+    };
+    HomeCardProgress: {
+      /** Format: int64 */
+      done: number;
+      /** Format: int64 */
+      total: number;
+      label: string;
+    } | null;
+    HomeResponse: {
+      /** @enum {string} */
+      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
+      businessLabel: string;
+      userName: string;
+      kpis: components['schemas']['HomeCardKpi'][];
+      cards: components['schemas']['HomeCard'][];
     };
     HealthResponse: {
       status: string;
@@ -440,6 +517,29 @@ export interface operations {
         };
         content: {
           '*/*': components['schemas']['CurrentUserResponse'];
+        };
+      };
+    };
+  };
+  home: {
+    parameters: {
+      query: {
+        /** @description 업무 영역 slug (예: account-info) */
+        business: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['HomeResponse'];
         };
       };
     };

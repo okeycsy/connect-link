@@ -14,9 +14,11 @@ test.describe('앱 셸', () => {
     await expect(rail.getByRole('link', { name: '대출이동' })).toBeVisible();
     await expect(rail.getByRole('link', { name: 'CMS' })).toBeVisible();
 
-    const card = page.getByTestId('organization-card');
-    await expect(card.getByText('가나은행')).toBeVisible();
-    await expect(card.getByText('옛날은행')).toHaveCount(0);
+    const cards = page.getByTestId('home-cards');
+    await expect(cards.getByText('확인이 필요한 담당자')).toBeVisible();
+    await expect(
+      page.getByText('안녕하세요, 데모 관리자 님. 지금 할 일을 모았습니다.'),
+    ).toBeVisible();
 
     await page.screenshot({ path: 'screenshots/home.png', fullPage: true });
   });

@@ -26,15 +26,12 @@
   font-variant-numeric: tabular-nums;
 }
 
-.monogram {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--mantine-color-navy-0);
-  color: var(--mantine-color-navy-9);
-  font-size: 12px;
-  font-weight: 700;
+/* 급한 KPI 는 빨간 점 하나로만 표시한다. 타일 자체는 같은 글래스. */
+.kpiDot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--mantine-color-red-5);
+  box-shadow: 0 0 0 3px rgba(255, 138, 128, 0.25);
 }
