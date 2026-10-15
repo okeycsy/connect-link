@@ -1,7 +1,9 @@
 package com.connectlink.organization;
 
+import com.connectlink.common.Labeled;
+
 /** 업무 영역. 화면 왼쪽 레일의 항목이자 조회·수정 범위의 단위다. 세부업무는 자유 텍스트({@code subBusiness})로 따로 받는다. */
-public enum Business {
+public enum Business implements Labeled {
   ACCOUNT_INFO("account-info", "계좌통합관리", "계통"),
   AUTO_TRANSFER("auto-transfer", "자동이체통합관리", "자통"),
   LOAN_TRANSFER("loan-transfer", "대출이동", "대출"),

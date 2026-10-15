@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatDate, formatDateTime, formatPhone } from './format';
+import { formatDate, formatDateTime, formatPhone, formatBytes } from './format';
 
 describe('format', () => {
   it('날짜와 일시를 정해진 형식으로 보여 준다', () => {
@@ -16,5 +16,14 @@ describe('format', () => {
     expect(formatPhone('01012345678')).toBe('010-1234-5678');
     expect(formatPhone('010-****-5678')).toBe('010-****-5678');
     expect(formatPhone('')).toBe('');
+  });
+});
+
+describe('formatBytes', () => {
+  it('1,024 단위로 올리고 10 미만만 소수 한 자리다', () => {
+    expect(formatBytes(0)).toBe('0 B');
+    expect(formatBytes(2048)).toBe('2.0 KB');
+    expect(formatBytes(15 * 1024 * 1024)).toBe('15 MB');
+    expect(formatBytes(null)).toBe('');
   });
 });

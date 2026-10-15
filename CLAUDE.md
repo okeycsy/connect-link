@@ -80,6 +80,8 @@
 | 발송함 | `NotificationOutbox` | 프로토타입에서 실제 발송 대신 기록. 상태 `OutboxStatus` = `PENDING`(발송 대기), `SENT`, `FAILED` |
 | 로그인 사용자 | `CurrentUser` | Service 권한 판단에 넘기는 값. 데모 관리자는 `DemoUsers.ADMIN` |
 | 내부망/인터넷망 | `NetworkZone` | `INTERNAL`, `EXTERNAL`. 판단은 `NetworkZoneResolver`(헤더 `X-Network-Zone` 은 local·demo 만, 운영은 `app.network.internal-cidrs`). 내부망 전용 위반은 403 `INTERNAL_ONLY` |
+| 첨부파일 | `Attachment` | 대상은 `AttachmentOwnerType`(`OPINION_REQUEST`, `OPINION_REPLY`, `SUSPENSION`, `DEMO`) + `ownerId`. 파일 저장소 `FileStorage` |
+| 변경 이력 | `ChangeHistory` | 대상은 `HistoryTargetType`(`ORGANIZATION`, `CONTACT`, `OPINION_REQUEST`, `OPINION_REPLY`, `TEST_PLAN`, `SUSPENSION`) + `targetId`. 종류 `ChangeAction` = `CREATED`/`UPDATED`/`DELETED`, 항목 `FieldChange`(field, label, before, after) |
 | 전역 검색 묶음 | `SearchCategory` | `ORGANIZATION`, `CONTACT`, `OPINION_REQUEST`, `TEST_PLAN`, `SUSPENSION`. 기능 모듈은 `SearchProvider` 빈 하나로 자기 묶음을 채운다 |
 
 용어집에 없는 개념이 필요하면 이름을 정해 이 표에 추가하는 것까지 같은 작업에 포함한다.
@@ -120,7 +122,7 @@ connect-link/
 │       ├── api/               # schema.d.ts(생성물), client.ts
 │       ├── app/               # 라우터, 레이아웃(AppShell), 테마, 인증 상태
 │       ├── features/
-│       │   ├── account/ contact/ opinion/ testplan/ suspension/ notification/
+│       │   ├── account/ contact/ opinion/ testplan/ suspension/ notification/ attachment/ history/
 │       │   │   └── (각각) pages/, components/, hooks.ts(Query 훅), *.test.tsx
 │       ├── shared/            # 공통 컴포넌트(PageHeader, BrandMark, OrgMonogram), 포맷터(날짜, 전화번호), list/(목록 패턴), state/(빈·오류·권한 없음·내부망 전용 안내)
 │       └── main.tsx
@@ -142,7 +144,8 @@ connect-link/
 - **인증**: Spring Security 세션(쿠키) 방식, CSRF 켬(쿠키 토큰). 비밀번호는 BCrypt.
 - **가입 흐름**: 가입 → 회사 이메일 인증 코드 발송(발송함에 기록) → 코드 확인 → 해당 업무 결제원 담당자 승인 → 승인 메일(발송함). 승인 전 계정은 로그인할 수 없다.
 - **알림**: `NotificationSender` 인터페이스를 통해서만 보낸다. 프로토타입 구현은 `OutboxNotificationSender`(DB 발송함에 기록)다. 업무 코드에서 메일이나 웹훅을 직접 호출하지 않는다.
-- **파일 첨부**: `FileStorage` 인터페이스를 통해서만 저장한다. 프로토타입 구현은 임시 디렉터리 저장이다.
+- **파일 첨부**: `attachment` 모듈의 `AttachmentService` 를 쓴다. 파일 내용은 `FileStorage` 인터페이스를 통해서만 저장한다(프로토타입 구현은 임시 디렉터리 `TempDirFileStorage`). 기능 모듈은 자기 `AttachmentOwnerType` 에 대한 `AttachmentOwnerAccess` 빈 하나로 보기·올리기 권한을 알려 준다. 빈이 없는 대상은 아무도 쓸 수 없다.
+- **변경 이력**: 변경 전·후를 남겨야 하는 수정은 같은 트랜잭션 안에서 `history` 모듈의 `ChangeHistoryService.record` 를 부른다. 항목 비교는 `FieldChanges.compare()` 로 만들고, 바뀐 항목이 없는 수정은 남지 않는다. 기능 모듈은 자기 `HistoryTargetType` 에 대한 `HistoryTargetAccess` 빈 하나로 조회 권한과 마스킹(`redact`)을 정한다.
 - **예약 작업**: 6개월 미확인 알림, 전 영업일 일시중단 취합 같은 정기 작업은 `@Scheduled`로 만들고, `demo` 프로필에서는 시연용 즉시 실행 API를 함께 둔다.
 - **API 규약**
   - 경로 `/api/v1/{복수형-kebab-case}` (예: `/api/v1/opinion-requests/{id}/replies`).

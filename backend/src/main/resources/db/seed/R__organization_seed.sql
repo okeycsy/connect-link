@@ -1,5 +1,6 @@
 -- 샘플 기관. 전부 가상 데이터다. local, demo 프로필에서만 읽는다.
 -- Flyway 반복 마이그레이션(R__)이라 내용이 바뀌면 다시 실행된다. 메모리 DB라 매번 새로 넣는다.
+DELETE FROM change_history;
 DELETE FROM organization_business;
 DELETE FROM organization;
 
@@ -35,3 +36,18 @@ FROM (VALUES
   ('OLD',   'ACCOUNT_INFO')
 ) AS p (code, business)
 JOIN organization o ON o.code = p.code;
+
+-- 기관 변경 이력 샘플. 기관 시드와 같은 파일에 두어 실행 순서(기관 → 이력)를 보장한다.
+INSERT INTO change_history (target_type, target_id, business, action, summary, actor_name, changes, created_at, created_by, updated_at, updated_by)
+SELECT 'ORGANIZATION', o.id, NULL, h.action, h.summary, h.actor_name, h.changes, h.changed_at, h.changed_by, h.changed_at, h.changed_by
+FROM (VALUES
+  ('DARA', 'CREATED', '다라은행 등록', '데모 관리자', 'admin@kftc.example.com', TIMESTAMP '2026-03-02 09:30:00',
+   '[{"field":"code","label":"기관 코드","before":null,"after":"DARA"},{"field":"name","label":"기관명","before":null,"after":"다라은행"},{"field":"type","label":"기관 구분","before":null,"after":"참가기관"},{"field":"emailDomain","label":"이메일 도메인","before":null,"after":"dara.example.com"},{"field":"businesses","label":"참여 업무","before":null,"after":"계좌통합관리, 자동이체통합관리"}]'),
+  ('DARA', 'UPDATED', '다라은행 수정', '데모 관리자', 'admin@kftc.example.com', TIMESTAMP '2026-07-14 14:05:00',
+   '[{"field":"businesses","label":"참여 업무","before":"계좌통합관리, 자동이체통합관리","after":"계좌통합관리, 자동이체통합관리, CMS"}]'),
+  ('OLD',  'UPDATED', '옛날은행 수정', '데모 관리자', 'admin@kftc.example.com', TIMESTAMP '2026-09-01 10:00:00',
+   '[{"field":"active","label":"사용 여부","before":"예","after":"아니요"}]'),
+  ('NADA', 'UPDATED', '나다상호금융 수정', '데모 관리자', 'admin@kftc.example.com', TIMESTAMP '2026-10-02 16:40:00',
+   '[{"field":"name","label":"기관명","before":"나다신용협동조합","after":"나다상호금융"},{"field":"emailDomain","label":"이메일 도메인","before":"nada-cu.example.com","after":"nada.example.com"}]')
+) AS h (code, action, summary, actor_name, changed_by, changed_at, changes)
+JOIN organization o ON o.code = h.code;

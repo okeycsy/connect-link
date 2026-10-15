@@ -3,6 +3,10 @@ package com.connectlink.organization;
 import com.connectlink.auth.CurrentUser;
 import com.connectlink.common.BusinessException;
 import com.connectlink.common.PageResponse;
+import com.connectlink.history.ChangeHistoryCommand;
+import com.connectlink.history.ChangeHistoryService;
+import com.connectlink.history.FieldChanges;
+import com.connectlink.history.HistoryTargetType;
 import com.connectlink.organization.dto.BusinessResponse;
 import com.connectlink.organization.dto.OrganizationCreateRequest;
 import com.connectlink.organization.dto.OrganizationDetailResponse;
@@ -27,11 +31,15 @@ public class OrganizationService {
 
   private final OrganizationRepository organizationRepository;
   private final OrganizationAccessPolicy accessPolicy;
+  private final ChangeHistoryService changeHistoryService;
 
   public OrganizationService(
-      OrganizationRepository organizationRepository, OrganizationAccessPolicy accessPolicy) {
+      OrganizationRepository organizationRepository,
+      OrganizationAccessPolicy accessPolicy,
+      ChangeHistoryService changeHistoryService) {
     this.organizationRepository = organizationRepository;
     this.accessPolicy = accessPolicy;
+    this.changeHistoryService = changeHistoryService;
   }
 
   public List<OrganizationResponse> listActive() {
@@ -84,7 +92,22 @@ public class OrganizationService {
             normalizeDomain(request.emailDomain()));
     organization.replaceBusinesses(orEmpty(request.businesses()));
     // 감사 컬럼(등록자·등록 일시)이 응답에 실리도록 바로 flush 한다.
-    return OrganizationDetailResponse.from(organizationRepository.saveAndFlush(organization));
+    Organization saved = organizationRepository.saveAndFlush(organization);
+    changeHistoryService.record(
+        user,
+        ChangeHistoryCommand.created(
+            HistoryTargetType.ORGANIZATION,
+            saved.getId(),
+            null,
+            saved.getName() + " 등록",
+            FieldChanges.compare()
+                .value("code", "기관 코드", null, saved.getCode())
+                .value("name", "기관명", null, saved.getName())
+                .value("type", "기관 구분", null, saved.getType())
+                .value("emailDomain", "이메일 도메인", null, saved.getEmailDomain())
+                .value("businesses", "참여 업무", null, FieldChanges.join(saved.getBusinesses()))
+                .toList()));
+    return OrganizationDetailResponse.from(saved);
   }
 
   @Transactional
@@ -92,11 +115,35 @@ public class OrganizationService {
       CurrentUser user, Long id, OrganizationUpdateRequest request) {
     accessPolicy.ensureCanManage(user);
     Organization organization = load(id);
+    FieldChanges changes =
+        FieldChanges.compare()
+            .field("name", "기관명", organization.getName(), request.name().trim())
+            .field(
+                "emailDomain",
+                "이메일 도메인",
+                organization.getEmailDomain(),
+                normalizeDomain(request.emailDomain()))
+            .field("active", "사용 여부", organization.isActive(), request.active())
+            .field(
+                "businesses",
+                "참여 업무",
+                FieldChanges.join(organization.getBusinesses()),
+                FieldChanges.join(orEmpty(request.businesses())));
     organization.update(
         request.name().trim(), normalizeDomain(request.emailDomain()), request.active());
     organization.replaceBusinesses(orEmpty(request.businesses()));
     // 수정자·수정 일시가 응답에 실리도록 바로 flush 한다.
-    return OrganizationDetailResponse.from(organizationRepository.saveAndFlush(organization));
+    Organization saved = organizationRepository.saveAndFlush(organization);
+    // 바뀐 항목이 없으면 이력을 남기지 않는다.
+    changeHistoryService.record(
+        user,
+        ChangeHistoryCommand.updated(
+            HistoryTargetType.ORGANIZATION,
+            saved.getId(),
+            null,
+            saved.getName() + " 수정",
+            changes.toList()));
+    return OrganizationDetailResponse.from(saved);
   }
 
   private Organization load(Long id) {

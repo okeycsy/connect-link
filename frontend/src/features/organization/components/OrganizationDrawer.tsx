@@ -1,5 +1,7 @@
-import { Alert, Badge, Group, Skeleton, Stack } from '@mantine/core';
+import { Alert, Badge, Group, Skeleton, Stack, Tabs } from '@mantine/core';
+import { IconHistory, IconInfoCircle } from '@tabler/icons-react';
 
+import { ChangeHistoryList } from '../../history/components/ChangeHistoryList';
 import { DetailDrawer } from '../../../shared/list/DetailDrawer';
 import { OrgMonogram } from '../../../shared/OrgMonogram';
 import { useOrganization, type BusinessCode, type OrganizationDetail } from '../hooks';
@@ -67,13 +69,28 @@ export function OrganizationDrawer({
           <Skeleton h={72} />
         </Stack>
       ) : (
-        // 다른 기관을 고르거나 저장돼 값이 바뀌면 폼을 새로 만든다.
-        <OrganizationForm
-          key={`${data.id}-${data.updatedAt}`}
-          organization={data}
-          onSaved={onSaved}
-          onCancel={onClose}
-        />
+        <Tabs defaultValue="info" keepMounted={false}>
+          <Tabs.List mb="md">
+            <Tabs.Tab value="info" leftSection={<IconInfoCircle size={14} />}>
+              정보
+            </Tabs.Tab>
+            <Tabs.Tab value="history" leftSection={<IconHistory size={14} />}>
+              변경 이력
+            </Tabs.Tab>
+          </Tabs.List>
+          <Tabs.Panel value="info">
+            {/* 다른 기관을 고르거나 저장돼 값이 바뀌면 폼을 새로 만든다. */}
+            <OrganizationForm
+              key={`${data.id}-${data.updatedAt}`}
+              organization={data}
+              onSaved={onSaved}
+              onCancel={onClose}
+            />
+          </Tabs.Panel>
+          <Tabs.Panel value="history">
+            <ChangeHistoryList targetType="ORGANIZATION" targetId={data.id} />
+          </Tabs.Panel>
+        </Tabs>
       )}
     </DetailDrawer>
   );
