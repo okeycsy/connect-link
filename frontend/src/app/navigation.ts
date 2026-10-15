@@ -15,7 +15,7 @@ export interface FeatureMenuItem {
   label: string;
   description: string;
   icon: Icon;
-  /** 관리 그룹은 권한자에게만 보인다. 권한은 account 모듈이 붙은 뒤 서버 응답으로 정한다. */
+  /** 관리 그룹은 관리자에게만 보인다(/api/v1/me 의 admin). 주소로 들어와도 AdminGuard 가 막는다. */
   adminOnly?: boolean;
 }
 
@@ -59,7 +59,7 @@ export const FEATURE_MENU: FeatureMenuItem[] = [
   },
 ];
 
-/** 로그인 직후 보여 줄 업무 영역. 사용자 소속 업무로 바꾸는 것은 account 모듈이 붙은 뒤다. */
+/** 관리자의 기본 업무 영역. 그 밖의 사용자는 담당 업무 중 첫 번째로 들어간다(features/account/hooks 의 homeBusinessSlugOf). */
 export const DEFAULT_BUSINESS_SLUG = 'account-info';
 
 /** 관리 그룹의 항목. 메뉴 자리는 공통이 정하고, 화면은 담당 프로젝트가 만든다(가입 승인과 기준정보는 공통). */

@@ -1,5 +1,6 @@
 package com.connectlink.search;
 
+import com.connectlink.auth.BusinessAccessPolicy;
 import com.connectlink.auth.CurrentUser;
 import com.connectlink.organization.Business;
 import com.connectlink.search.dto.SearchGroup;
@@ -20,7 +21,11 @@ public class SearchService {
 
   private final Map<SearchCategory, SearchProvider> providers = new EnumMap<>(SearchCategory.class);
 
-  public SearchService(List<SearchProvider> providerBeans) {
+  private final BusinessAccessPolicy businessAccessPolicy;
+
+  public SearchService(
+      List<SearchProvider> providerBeans, BusinessAccessPolicy businessAccessPolicy) {
+    this.businessAccessPolicy = businessAccessPolicy;
     for (SearchProvider provider : providerBeans) {
       SearchProvider previous = providers.putIfAbsent(provider.category(), provider);
       if (previous != null) {
@@ -35,7 +40,9 @@ public class SearchService {
     }
   }
 
+  /** 담당 업무가 아닌 업무 영역이면 403 이다(관리자는 전 업무). */
   public SearchResponse search(CurrentUser user, Business business, String query) {
+    businessAccessPolicy.ensureCanView(user, business);
     String trimmed = query == null ? "" : query.trim();
     List<SearchGroup> groups = new ArrayList<>();
     if (trimmed.isEmpty()) {

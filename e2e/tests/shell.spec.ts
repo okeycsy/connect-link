@@ -36,11 +36,9 @@ test.describe('앱 셸', () => {
     await expect(page).toHaveURL(/\/account-info\/home$/);
   });
 
-  test('로그인 화면이 뜬다', async ({ page }) => {
+  test('로그인한 상태로 로그인 주소에 오면 홈으로 보낸다', async ({ page }) => {
     await page.goto('/login');
-    await expect(page.getByRole('heading', { name: '로그인' })).toBeVisible();
-    await expect(page.getByLabel('회사 이메일')).toBeVisible();
-    await page.screenshot({ path: 'screenshots/login.png', fullPage: true });
+    await expect(page).toHaveURL(/\/account-info\/home$/);
   });
 
   test('API 문서와 상태 API 가 열려 있다', async ({ request }) => {
@@ -51,7 +49,7 @@ test.describe('앱 셸', () => {
     const docs = await request.get('/v3/api-docs');
     expect(docs.ok()).toBeTruthy();
 
-    // demo 프로필은 로그인 없는 요청을 데모 관리자로 인증한다(운영 프로필은 401).
+    // 시나리오 공통 세션(auth.setup.ts)은 데모 관리자다. 로그인 없는 요청의 401 은 login.spec.ts 가 본다.
     const me = await request.get('/api/v1/me');
     expect(me.ok()).toBeTruthy();
     expect((await me.json()).email).toBe('admin@kftc.example.com');

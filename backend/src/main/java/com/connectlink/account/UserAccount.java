@@ -1,0 +1,161 @@
+package com.connectlink.account;
+
+import com.connectlink.common.AuditedEntity;
+import com.connectlink.organization.Business;
+import com.connectlink.organization.ItRole;
+import com.connectlink.organization.JobRole;
+import com.connectlink.organization.Organization;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import org.hibernate.annotations.BatchSize;
+
+/**
+ * 계정. 로그인 주체이며 가입 때 받은 소속·업무·직무·연락처 정보를 함께 가진다. 연락처 정보는 승인 뒤 연락처 모듈이 넘겨받는다(docs/decisions.md). 식별
+ * 키는 소문자로 맞춘 회사 이메일이다.
+ */
+@Entity
+@Table(name = "user_account")
+public class UserAccount extends AuditedEntity {
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  @Column(name = "email", nullable = false, unique = true, length = 200)
+  private String email;
+
+  /** BCrypt 해시. 원문은 어디에도 남기지 않는다. */
+  @Column(name = "password_hash", nullable = false, length = 100)
+  private String passwordHash;
+
+  @Column(name = "name", nullable = false, length = 50)
+  private String name;
+
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "organization_id", nullable = false)
+  private Organization organization;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "status", nullable = false, length = 30)
+  private AccountStatus status;
+
+  /** 포털 관리자. 기준정보 관리 같은 관리 기능을 쓴다. 가입으로는 생기지 않는다. */
+  @Column(name = "admin", nullable = false)
+  private boolean admin;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "job_role", nullable = false, length = 20)
+  private JobRole jobRole;
+
+  @Column(name = "department", nullable = false, length = 100)
+  private String department;
+
+  @Column(name = "team", nullable = false, length = 100)
+  private String team;
+
+  /** 직급. */
+  @Column(name = "job_title", nullable = false, length = 50)
+  private String jobTitle;
+
+  /** 내선번호(필수). */
+  @Column(name = "extension_phone", nullable = false, length = 30)
+  private String extensionPhone;
+
+  /** 휴대폰번호(선택). */
+  @Column(name = "mobile_phone", length = 30)
+  private String mobilePhone;
+
+  @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
+  @BatchSize(size = 50)
+  private List<UserAccountBusiness> businesses = new ArrayList<>();
+
+  @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
+  @BatchSize(size = 50)
+  private List<UserAccountItRole> itRoles = new ArrayList<>();
+
+  protected UserAccount() {}
+
+  public Long getId() {
+    return id;
+  }
+
+  public String getEmail() {
+    return email;
+  }
+
+  public String getPasswordHash() {
+    return passwordHash;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public Organization getOrganization() {
+    return organization;
+  }
+
+  public AccountStatus getStatus() {
+    return status;
+  }
+
+  public boolean isAdmin() {
+    return admin;
+  }
+
+  public JobRole getJobRole() {
+    return jobRole;
+  }
+
+  public String getDepartment() {
+    return department;
+  }
+
+  public String getTeam() {
+    return team;
+  }
+
+  public String getJobTitle() {
+    return jobTitle;
+  }
+
+  public String getExtensionPhone() {
+    return extensionPhone;
+  }
+
+  public String getMobilePhone() {
+    return mobilePhone;
+  }
+
+  /** 담당 업무. 업무 영역 순서(enum 순)다. */
+  public Set<Business> getBusinesses() {
+    EnumSet<Business> result = EnumSet.noneOf(Business.class);
+    businesses.forEach(b -> result.add(b.getBusiness()));
+    return result;
+  }
+
+  public List<UserAccountBusiness> getBusinessDetails() {
+    return List.copyOf(businesses);
+  }
+
+  public Set<ItRole> getItRoles() {
+    EnumSet<ItRole> result = EnumSet.noneOf(ItRole.class);
+    itRoles.forEach(r -> result.add(r.getItRole()));
+    return result;
+  }
+}

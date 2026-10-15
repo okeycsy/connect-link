@@ -15,7 +15,7 @@ test.describe('알림 센터와 발송함', () => {
     await expect(page).toHaveURL(/\/account-info\/notifications$/);
     await expect(page.getByRole('heading', { name: '알림 센터' })).toBeVisible();
     const list = page.getByTestId('notification-list');
-    await expect(list.getByText('가나은행 김가나 님이 가입을 신청했습니다')).toBeVisible();
+    await expect(list.getByText('마바저축은행 정마바 님이 가입을 신청했습니다')).toBeVisible();
     await page.screenshot({
       path: 'screenshots/notification-center.png',
       fullPage: true,
@@ -24,7 +24,9 @@ test.describe('알림 센터와 발송함', () => {
 
   test('알림을 누르면 읽음이 되고 연결된 화면으로 간다', async ({ page }) => {
     await page.goto('/account-info/notifications');
-    const before = await page.getByText(/읽지 않은 알림 (\d+)건/).textContent();
+    const header = page.getByText(/읽지 않은 알림 (\d+)건/);
+    await expect(header).toBeVisible();
+    const before = await header.textContent();
     const countBefore = Number(before?.match(/(\d+)건/)?.[1]);
     expect(countBefore).toBeGreaterThan(0);
 
@@ -53,7 +55,7 @@ test.describe('알림 센터와 발송함', () => {
     });
   });
 
-  test('알림 API 는 본인 것만 다루고 데모 프로필은 관리자로 들어간다', async ({ request }) => {
+  test('알림 API 는 본인 것만 다룬다 (데모 관리자 세션)', async ({ request }) => {
     const me = await request.get('/api/v1/me');
     expect(me.ok()).toBeTruthy();
     expect((await me.json()).admin).toBe(true);

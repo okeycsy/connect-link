@@ -1,0 +1,30 @@
+.row {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--mantine-radius-md);
+  border: 1px solid transparent;
+
+  &:hover:not(:disabled) {
+    background: var(--mantine-color-navy-0);
+    border-color: var(--mantine-color-navy-1);
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+
+  &[data-current] {
+    background: var(--mantine-color-gray-0);
+  }
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+}
+
+.chevron {
+  color: var(--mantine-color-gray-5);
+  flex: 0 0 auto;
+}

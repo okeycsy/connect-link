@@ -34,9 +34,14 @@ export function NotificationCenterPage() {
       <Group justify="space-between" align="flex-end">
         <div>
           <Title order={2}>알림 센터</Title>
-          <Text c="dimmed" size="lg">
-            읽지 않은 알림 {unread?.count ?? 0}건
-          </Text>
+          {unread ? (
+            <Text c="dimmed" size="lg">
+              읽지 않은 알림 {unread.count}건
+            </Text>
+          ) : (
+            // 세는 동안 0건으로 보이지 않게 자리만 둔다.
+            <Skeleton h={22} w={140} mt={4} />
+          )}
         </div>
         <Button
           variant="light"

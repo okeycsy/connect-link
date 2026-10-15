@@ -1,5 +1,6 @@
 package com.connectlink.home;
 
+import com.connectlink.auth.BusinessAccessPolicy;
 import com.connectlink.auth.CurrentUser;
 import com.connectlink.home.dto.HomeCard;
 import com.connectlink.home.dto.HomeResponse;
@@ -17,7 +18,11 @@ public class HomeService {
   private final Map<HomeCardKey, HomeCardContributor> contributors =
       new EnumMap<>(HomeCardKey.class);
 
-  public HomeService(List<HomeCardContributor> contributorBeans) {
+  private final BusinessAccessPolicy businessAccessPolicy;
+
+  public HomeService(
+      List<HomeCardContributor> contributorBeans, BusinessAccessPolicy businessAccessPolicy) {
+    this.businessAccessPolicy = businessAccessPolicy;
     for (HomeCardContributor contributor : contributorBeans) {
       HomeCardContributor previous = contributors.putIfAbsent(contributor.key(), contributor);
       if (previous != null) {
@@ -32,7 +37,9 @@ public class HomeService {
     }
   }
 
+  /** 담당 업무가 아닌 업무 영역이면 403 이다(관리자는 전 업무). */
   public HomeResponse summary(CurrentUser user, Business business) {
+    businessAccessPolicy.ensureCanView(user, business);
     List<HomeCard> cards = new ArrayList<>();
     List<HomeCard.HomeCardKpi> kpis = new ArrayList<>();
     for (HomeCardKey key : HomeCardKey.values()) {

@@ -59,7 +59,7 @@
 | 결제원 | `KFTC` (기관 구분) | |
 | 참가기관 | `FINANCE_ORGANIZATION` (기관 구분), `FinanceOrganization` | 은행, 증권사 등 금융회사 |
 | 이용기관 | `USE_ORGANIZATION` (기관 구분), `UseOrganization` | 금융회사가 아닌 일반 회사(주로 결제원의 고객). 이용기관 담당자의 권한과 기능은 명세에 정해지기 전까지 구현하지 않는다 |
-| 계정 | `UserAccount` | 로그인 주체 |
+| 계정 | `UserAccount` | 로그인 주체. 식별 키는 회사 이메일(소문자). 상태 `AccountStatus` = `PENDING_APPROVAL`(승인 대기), `ACTIVE`(사용 중), `REJECTED`(반려), `WITHDRAWN`(탈퇴). 담당 업무는 `UserAccountBusiness`, 전산 세부 직무는 `UserAccountItRole` |
 | 담당자 연락처 | `Contact` | 계정이 없는 담당자(후임자 등)도 존재 가능 |
 | 기관 업무 참여 | `OrganizationBusiness` | 기관이 참여하는 업무 영역 한 건. 레일별 조회 범위의 기준. 테이블 `organization_business` |
 | 업무 | `Business` | `ACCOUNT_INFO`(계좌통합관리), `AUTO_TRANSFER`(자동이체통합관리), `LOAN_TRANSFER`(대출이동), `CMS` |
@@ -78,7 +78,7 @@
 | 알림 | `Notification` | 알림 센터 항목. 종류 `NotificationType` (`SIGNUP_REQUESTED`, `SIGNUP_APPROVED`, `CONTACT_CHANGE_REQUESTED`, `CONTACT_RECONFIRM_DUE`, `OPINION_REQUEST_OPENED`, `OPINION_REPLY_DUE`, `TEST_PLAN_OPENED`, `SUSPENSION_CHANGED`, `SYSTEM`) |
 | 알림 채널 | `NotificationChannel` | `EMAIL`, `MATTERMOST` |
 | 발송함 | `NotificationOutbox` | 프로토타입에서 실제 발송 대신 기록. 상태 `OutboxStatus` = `PENDING`(발송 대기), `SENT`, `FAILED` |
-| 로그인 사용자 | `CurrentUser` | Service 권한 판단에 넘기는 값. 데모 관리자는 `DemoUsers.ADMIN` |
+| 로그인 사용자 | `CurrentUser` | Service 권한 판단에 넘기는 값. 로그인할 때 계정에서 만들어 세션에 둔다. 업무 영역(레일) 조회 범위는 `BusinessAccessPolicy`(관리자는 전 업무, 그 밖에는 담당 업무). 테스트는 `TestUsers` |
 | 내부망/인터넷망 | `NetworkZone` | `INTERNAL`, `EXTERNAL`. 판단은 `NetworkZoneResolver`(헤더 `X-Network-Zone` 은 local·demo 만, 운영은 `app.network.internal-cidrs`). 내부망 전용 위반은 403 `INTERNAL_ONLY` |
 | 첨부파일 | `Attachment` | 대상은 `AttachmentOwnerType`(`OPINION_REQUEST`, `OPINION_REPLY`, `SUSPENSION`, `DEMO`) + `ownerId`. 파일 저장소 `FileStorage` |
 | 변경 이력 | `ChangeHistory` | 대상은 `HistoryTargetType`(`ORGANIZATION`, `CONTACT`, `OPINION_REQUEST`, `OPINION_REPLY`, `TEST_PLAN`, `SUSPENSION`) + `targetId`. 종류 `ChangeAction` = `CREATED`/`UPDATED`/`DELETED`, 항목 `FieldChange`(field, label, before, after) |

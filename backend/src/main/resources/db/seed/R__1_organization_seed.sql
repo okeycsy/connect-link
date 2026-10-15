@@ -1,5 +1,9 @@
 -- 샘플 기관. 전부 가상 데이터다. local, demo 프로필에서만 읽는다.
 -- Flyway 반복 마이그레이션(R__)이라 내용이 바뀌면 다시 실행된다. 메모리 DB라 매번 새로 넣는다.
+-- 반복 마이그레이션은 설명(파일 이름) 순서로 돈다. 1 기관 → 2 계정 → 3 알림 순서이며, 계정이 기관을 참조하므로 계정부터 지운다.
+DELETE FROM user_account_it_role;
+DELETE FROM user_account_business;
+DELETE FROM user_account;
 DELETE FROM change_history;
 DELETE FROM organization_business;
 DELETE FROM organization;

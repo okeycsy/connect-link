@@ -80,4 +80,16 @@ class SearchControllerTest {
         .perform(get("/api/v1/search").param("business", "cms").param("q", "가나"))
         .andExpect(status().isUnauthorized());
   }
+
+  @Test
+  void 담당_업무가_아닌_업무_영역은_검색할_수_없다() throws Exception {
+    mockMvc
+        .perform(
+            get("/api/v1/search")
+                .param("business", "cms")
+                .param("q", "가나")
+                .with(TestUsers.ganaMember()))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
+  }
 }

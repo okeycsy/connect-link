@@ -2,16 +2,33 @@ package com.connectlink.auth;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 
+import com.connectlink.organization.Business;
+import com.connectlink.organization.ItRole;
+import com.connectlink.organization.JobRole;
 import com.connectlink.organization.OrganizationType;
+import java.util.EnumSet;
+import java.util.Set;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
-/** MockMvc 요청에 로그인 사용자를 싣는다. 권한 테스트는 허용 사용자와 거부 사용자를 하나씩 쓴다. */
+/**
+ * MockMvc 요청에 로그인 사용자를 싣는다. 권한 테스트는 허용 사용자와 거부 사용자를 하나씩 쓴다. 값은 계정 시드(R__2_account_seed.sql)와 같다.
+ */
 public final class TestUsers {
 
-  /** 결제원 데모 관리자(전 업무, 관리자). */
-  public static final CurrentUser ADMIN = DemoUsers.ADMIN;
+  /** 결제원 데모 관리자(전 업무, 전산 운영, 관리자). */
+  public static final CurrentUser ADMIN =
+      new CurrentUser(
+          "admin@kftc.example.com",
+          "데모 관리자",
+          "KFTC",
+          "금융결제원",
+          OrganizationType.KFTC,
+          true,
+          EnumSet.allOf(Business.class),
+          JobRole.IT,
+          Set.of(ItRole.OPS));
 
-  /** 가나은행 계좌통합관리 담당자(관리자 아님). 알림 시드에 이 사람 앞으로 1건이 있다. */
+  /** 가나은행 계좌통합관리 현업 담당자(관리자 아님). 알림 시드에 이 사람 앞으로 1건이 있다. */
   public static final CurrentUser GANA_MEMBER =
       new CurrentUser(
           "kim.gana@gana.example.com",
@@ -19,7 +36,10 @@ public final class TestUsers {
           "GANA",
           "가나은행",
           OrganizationType.FINANCE_ORGANIZATION,
-          false);
+          false,
+          Set.of(Business.ACCOUNT_INFO),
+          JobRole.BUSINESS,
+          Set.of());
 
   private TestUsers() {}
 
@@ -32,6 +52,6 @@ public final class TestUsers {
   }
 
   public static RequestPostProcessor as(CurrentUser user) {
-    return authentication(DemoAuthenticationFilter.authenticationFor(user));
+    return authentication(CurrentUserAuthentication.of(user));
   }
 }

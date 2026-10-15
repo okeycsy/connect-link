@@ -6,6 +6,7 @@ import { HomePage } from '../features/home/pages/HomePage';
 import { NotificationCenterPage } from '../features/notification/pages/NotificationCenterPage';
 import { NotificationOutboxPage } from '../features/notification/pages/NotificationOutboxPage';
 import { OrganizationAdminPage } from '../features/organization/pages/OrganizationAdminPage';
+import { AdminGuard } from './layout/AdminGuard';
 import { AdminHubPage } from './layout/AdminHubPage';
 import { DemoAttachmentsPage } from './layout/DemoAttachmentsPage';
 import { DemoStatesPage } from './layout/DemoStatesPage';
@@ -40,9 +41,15 @@ export const router = createBrowserRouter([
           { path: 'demo/outbox', element: <NotificationOutboxPage /> },
           { path: 'demo/states', element: <DemoStatesPage /> },
           { path: 'demo/attachments', element: <DemoAttachmentsPage /> },
-          // 관리 그룹: 허브와 공통 몫인 기준정보. 나머지 항목은 담당 프로젝트가 admin/ 아래에 더한다.
-          { path: 'admin', element: <AdminHubPage /> },
-          { path: 'admin/organizations', element: <OrganizationAdminPage /> },
+          // 관리 그룹: 허브와 공통 몫인 기준정보. 관리자만 본다. 나머지 항목은 담당 프로젝트가 admin/ 아래에 더한다.
+          {
+            path: 'admin',
+            element: <AdminGuard />,
+            children: [
+              { index: true, element: <AdminHubPage /> },
+              { path: 'organizations', element: <OrganizationAdminPage /> },
+            ],
+          },
           ...FEATURE_MENU.filter((m) => m.key !== 'home' && m.key !== 'admin').map((m) => ({
             path: m.path,
             element: <PlaceholderPage title={m.label} description={m.description} />,

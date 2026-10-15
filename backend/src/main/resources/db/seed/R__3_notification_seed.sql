@@ -4,7 +4,7 @@ DELETE FROM notification_outbox;
 DELETE FROM notification;
 
 INSERT INTO notification (recipient_email, type, business, title, body, link, read_at, created_at, created_by, updated_at, updated_by) VALUES
-  ('admin@kftc.example.com', 'SIGNUP_REQUESTED', NULL, '가나은행 김가나 님이 가입을 신청했습니다', '계좌통합관리 · 현업 담당자. 이메일 도메인이 기관과 일치합니다.', '/account-info/admin', NULL, CURRENT_TIMESTAMP - INTERVAL '1' HOUR, 'seed', CURRENT_TIMESTAMP - INTERVAL '1' HOUR, 'seed'),
+  ('admin@kftc.example.com', 'SIGNUP_REQUESTED', NULL, '마바저축은행 정마바 님이 가입을 신청했습니다', '대출이동 · 전산(개발) 담당자. 이메일 도메인이 기관과 일치합니다.', '/account-info/admin', NULL, CURRENT_TIMESTAMP - INTERVAL '1' HOUR, 'seed', CURRENT_TIMESTAMP - INTERVAL '1' HOUR, 'seed'),
   ('admin@kftc.example.com', 'OPINION_REPLY_DUE', 'ACCOUNT_INFO', '의견 요청 "계좌통합관리 수수료 체계 개편" 회신 기한이 2일 남았습니다', '회신 12/18 기관. 미회신 6곳에 리마인드를 보낼 수 있습니다.', '/account-info/opinions', NULL, CURRENT_TIMESTAMP - INTERVAL '3' HOUR, 'seed', CURRENT_TIMESTAMP - INTERVAL '3' HOUR, 'seed'),
   ('admin@kftc.example.com', 'SUSPENSION_CHANGED', 'CMS', '다라은행 CMS 일시중단이 확정되었습니다', '2026-10-18 02:00~04:00 · 코어뱅킹 정기 점검', '/cms/suspensions', NULL, CURRENT_TIMESTAMP - INTERVAL '5' HOUR, 'seed', CURRENT_TIMESTAMP - INTERVAL '5' HOUR, 'seed'),
   ('admin@kftc.example.com', 'CONTACT_CHANGE_REQUESTED', 'AUTO_TRANSFER', '마바저축은행 담당자 변경 요청', '자동이체통합관리 전산 담당자가 이창수 → 박민지 로 바뀌었습니다. 확인이 필요합니다.', '/auto-transfer/contacts', NULL, CURRENT_TIMESTAMP - INTERVAL '1' DAY, 'seed', CURRENT_TIMESTAMP - INTERVAL '1' DAY, 'seed'),

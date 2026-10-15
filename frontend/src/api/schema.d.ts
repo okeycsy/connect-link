@@ -86,6 +86,46 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/auth/logout': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 로그아웃
+     * @description 세션을 버린다. 로그인하지 않은 상태에서 불러도 204 다.
+     */
+    post: operations['logout'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/auth/login': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 로그인
+     * @description 회사 이메일과 비밀번호로 로그인한다. 틀리면 401 INVALID_CREDENTIALS, 승인 전이면 403 ACCOUNT_PENDING_APPROVAL, 반려면 403 ACCOUNT_REJECTED.
+     */
+    post: operations['login'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/attachments': {
     parameters: {
       query?: never;
@@ -94,7 +134,7 @@ export interface paths {
       cookie?: never;
     };
     /** 대상 하나의 첨부파일 목록(올린 순) */
-    get: operations['list_3'];
+    get: operations['list_4'];
     put?: never;
     /** 첨부파일 올리기 (multipart: file) */
     post: operations['upload'];
@@ -258,6 +298,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/demo/accounts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** 데모 계정 목록 (역할별, 로그인 전에도 열림) */
+    get: operations['list_2'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/change-histories': {
     parameters: {
       query?: never;
@@ -266,7 +323,7 @@ export interface paths {
       cookie?: never;
     };
     /** 대상 하나의 변경 이력(최신순) */
-    get: operations['list_2'];
+    get: operations['list_3'];
     put?: never;
     post?: never;
     delete?: never;
@@ -400,6 +457,29 @@ export interface components {
       /** Format: date-time */
       createdAt: string;
     };
+    LoginRequest: {
+      email: string;
+      password: string;
+    };
+    CurrentUserResponse: {
+      email: string;
+      name: string;
+      organizationCode: string;
+      organizationName: string;
+      /** @enum {string} */
+      organizationType: 'KFTC' | 'FINANCE_ORGANIZATION' | 'USE_ORGANIZATION';
+      organizationTypeLabel: string;
+      admin: boolean;
+      businesses: components['schemas']['BusinessResponse'][];
+      /** @enum {string} */
+      jobRole: 'BUSINESS' | 'IT';
+      jobRoleLabel: string;
+      itRoles: ('DEV' | 'OPS' | 'INFRA' | 'EXTERNAL_LINK' | 'CONTROL_ROOM')[];
+      roleLabel: string;
+      /** @enum {string} */
+      networkZone: 'INTERNAL' | 'EXTERNAL';
+      networkZoneLabel: string;
+    };
     AttachmentResponse: {
       /** Format: int64 */
       id: number;
@@ -502,19 +582,6 @@ export interface components {
       totalPages: number;
       last: boolean;
     };
-    CurrentUserResponse: {
-      email: string;
-      name: string;
-      organizationCode: string;
-      organizationName: string;
-      /** @enum {string} */
-      organizationType: 'KFTC' | 'FINANCE_ORGANIZATION' | 'USE_ORGANIZATION';
-      organizationTypeLabel: string;
-      admin: boolean;
-      /** @enum {string} */
-      networkZone: 'INTERNAL' | 'EXTERNAL';
-      networkZoneLabel: string;
-    };
     HomeCard: {
       /** @enum {string} */
       key:
@@ -577,6 +644,18 @@ export interface components {
       profile: string;
       /** Format: date-time */
       serverTime: string;
+    };
+    DemoAccountResponse: {
+      email: string;
+      name: string;
+      organizationName: string;
+      roleLabel: string;
+      admin: boolean;
+      businessLabels: string[];
+    };
+    DemoAccountsResponse: {
+      password: string;
+      accounts: components['schemas']['DemoAccountResponse'][];
     };
     ChangeHistoryResponse: {
       /** Format: int64 */
@@ -762,7 +841,49 @@ export interface operations {
       };
     };
   };
-  list_3: {
+  logout: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  login: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LoginRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['CurrentUserResponse'];
+        };
+      };
+    };
+  };
+  list_4: {
     parameters: {
       query: {
         ownerType: 'OPINION_REQUEST' | 'OPINION_REPLY' | 'SUSPENSION' | 'DEMO';
@@ -1002,6 +1123,26 @@ export interface operations {
     };
   };
   list_2: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['DemoAccountsResponse'];
+        };
+      };
+    };
+  };
+  list_3: {
     parameters: {
       query: {
         targetType:

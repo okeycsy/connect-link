@@ -1,43 +1,74 @@
 import {
-  Anchor,
+  Alert,
   Box,
   Button,
-  Checkbox,
   Group,
   Paper,
   PasswordInput,
+  ScrollArea,
   Stack,
   Text,
   TextInput,
   Title,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { notifications } from '@mantine/notifications';
+import { IconAlertCircle, IconClock } from '@tabler/icons-react';
+import { useState } from 'react';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
+import { errorCodeOf, fieldErrorsOf } from '../../../api/client';
 import { useBusinesses } from '../../organization/hooks';
+import { DemoAccountList } from '../components/DemoAccountList';
+import {
+  type CurrentUserResponse,
+  homeBusinessSlugOf,
+  type LoginRequest,
+  safeNextPath,
+  useDemoAccounts,
+  useLogin,
+  useMe,
+} from '../hooks';
 import classes from './LoginPage.module.css';
 
 /**
  * 로그인. 결제원 직원과 기관 담당자가 같은 입구를 쓴다("결제원 / 기관" 선택 없음).
- * 실제 인증 API 는 account 모듈과 함께 다음 단계에서 붙는다.
+ * 회사 이메일과 비밀번호로 세션을 만든다. demo 프로필이면 역할별 데모 계정을 골라 같은 로그인 절차로 들어갈 수 있다.
  */
 export function LoginPage() {
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const next = safeNextPath(params.get('next'));
   const { data: businesses } = useBusinesses();
-  const form = useForm({
-    initialValues: { email: '', password: '', remember: true },
+  const { data: me } = useMe();
+  const { data: demo } = useDemoAccounts();
+  const login = useLogin();
+  const [pickedEmail, setPickedEmail] = useState<string>();
+
+  const form = useForm<LoginRequest>({
+    initialValues: { email: '', password: '' },
     validate: {
-      email: (v) => (/^\S+@\S+\.\S+$/.test(v) ? null : '회사 이메일을 입력해 주세요.'),
+      email: (v) => (v.trim().length > 0 ? null : '회사 이메일을 입력해 주세요.'),
       password: (v) => (v.length > 0 ? null : '비밀번호를 입력해 주세요.'),
     },
   });
 
-  const handleSubmit = form.onSubmit(() => {
-    notifications.show({
-      title: '아직 연결 전입니다',
-      message: '로그인 API 는 계정 모듈과 함께 다음 작업에서 붙습니다.',
-      color: 'navy',
+  const goHome = (user: CurrentUserResponse) =>
+    navigate(next ?? `/${homeBusinessSlugOf(user)}/home`, { replace: true });
+
+  const submit = (body: LoginRequest) =>
+    login.mutate(body, {
+      onSuccess: goHome,
+      onError: (error) => form.setErrors(fieldErrorsOf(error)),
+      onSettled: () => setPickedEmail(undefined),
     });
-  });
+
+  // 이미 로그인한 상태로 로그인 주소에 오면 바로 들어간다. 로그인 중에는 goHome 이 이동한다.
+  if (me && login.isIdle) {
+    return <Navigate to={next ?? `/${homeBusinessSlugOf(me)}/home`} replace />;
+  }
+
+  const errorCode = errorCodeOf(login.error);
+  const showAlert = login.isError && Object.keys(fieldErrorsOf(login.error)).length === 0;
 
   return (
     <Box className={classes.page}>
@@ -73,45 +104,88 @@ export function LoginPage() {
       </Box>
 
       <Box className={classes.sheet}>
-        <Paper className={classes.card} p="xl" withBorder>
-          <form onSubmit={handleSubmit}>
-            <Stack gap="md">
-              <div>
-                <Title order={2}>로그인</Title>
-                <Text c="dimmed" size="sm">
-                  회사 이메일로 로그인합니다.
-                </Text>
-              </div>
-              <TextInput
-                label="회사 이메일"
-                placeholder="name@company.example.com"
-                autoComplete="username"
-                {...form.getInputProps('email')}
-              />
-              <PasswordInput
-                label="비밀번호"
-                placeholder="비밀번호"
-                autoComplete="current-password"
-                {...form.getInputProps('password')}
-              />
-              <Group justify="space-between">
-                <Checkbox
-                  label="로그인 유지"
-                  {...form.getInputProps('remember', { type: 'checkbox' })}
+        <Stack gap="md" className={classes.column}>
+          <Paper className={classes.card} p="xl" withBorder>
+            <form onSubmit={form.onSubmit(submit)} noValidate>
+              <Stack gap="md">
+                <div>
+                  <Title order={2}>로그인</Title>
+                  <Text c="dimmed" size="sm">
+                    회사 이메일로 로그인합니다.
+                  </Text>
+                </div>
+                {showAlert && (
+                  <Alert
+                    variant="light"
+                    color={errorCode === 'ACCOUNT_PENDING_APPROVAL' ? 'navy' : 'red'}
+                    icon={
+                      errorCode === 'ACCOUNT_PENDING_APPROVAL' ? (
+                        <IconClock size={18} />
+                      ) : (
+                        <IconAlertCircle size={18} />
+                      )
+                    }
+                    data-testid="login-error"
+                  >
+                    {login.error?.message}
+                  </Alert>
+                )}
+                <TextInput
+                  label="회사 이메일"
+                  placeholder="name@company.example.com"
+                  autoComplete="username"
+                  type="email"
+                  {...form.getInputProps('email')}
                 />
-                <Anchor size="sm" href="#">
-                  비밀번호를 잊으셨나요?
-                </Anchor>
-              </Group>
-              <Button type="submit" fullWidth size="md">
-                로그인
-              </Button>
-              <Text size="sm" ta="center" c="dimmed">
-                아직 계정이 없으신가요? <Anchor href="#">회원가입</Anchor>
+                <PasswordInput
+                  label="비밀번호"
+                  placeholder="비밀번호"
+                  autoComplete="current-password"
+                  {...form.getInputProps('password')}
+                />
+                <Button
+                  type="submit"
+                  fullWidth
+                  size="md"
+                  loading={login.isPending && !pickedEmail}
+                  disabled={login.isPending && Boolean(pickedEmail)}
+                >
+                  로그인
+                </Button>
+              </Stack>
+            </form>
+          </Paper>
+
+          {demo && demo.accounts.length > 0 && (
+            <Paper className={classes.card} p="md" withBorder>
+              <Text fw={700}>데모 계정으로 들어가기</Text>
+              <Text size="xs" c="dimmed" mb="sm">
+                시연용 역할별 계정입니다. 비밀번호는 모두{' '}
+                <Text span ff="monospace" size="xs" c="dark">
+                  {demo.password}
+                </Text>{' '}
+                이고, 고르면 같은 로그인 절차를 거칩니다.
               </Text>
-            </Stack>
-          </form>
-        </Paper>
+              <ScrollArea.Autosize
+                mah={320}
+                type="auto"
+                scrollbars="y"
+                scrollbarSize={6}
+                offsetScrollbars
+              >
+                <DemoAccountList
+                  accounts={demo.accounts}
+                  pendingEmail={pickedEmail}
+                  onPick={(account) => {
+                    setPickedEmail(account.email);
+                    form.setValues({ email: account.email, password: demo.password });
+                    submit({ email: account.email, password: demo.password });
+                  }}
+                />
+              </ScrollArea.Autosize>
+            </Paper>
+          )}
+        </Stack>
       </Box>
     </Box>
   );
