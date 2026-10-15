@@ -79,7 +79,8 @@
 | 알림 채널 | `NotificationChannel` | `EMAIL`, `MATTERMOST` |
 | 발송함 | `NotificationOutbox` | 프로토타입에서 실제 발송 대신 기록. 상태 `OutboxStatus` = `PENDING`(발송 대기), `SENT`, `FAILED` |
 | 로그인 사용자 | `CurrentUser` | Service 권한 판단에 넘기는 값. 데모 관리자는 `DemoUsers.ADMIN` |
-| 내부망/인터넷망 | `NetworkZone` | `INTERNAL`, `EXTERNAL` |
+| 내부망/인터넷망 | `NetworkZone` | `INTERNAL`, `EXTERNAL`. 판단은 `NetworkZoneResolver`(헤더 `X-Network-Zone` 은 local·demo 만, 운영은 `app.network.internal-cidrs`). 내부망 전용 위반은 403 `INTERNAL_ONLY` |
+| 전역 검색 묶음 | `SearchCategory` | `ORGANIZATION`, `CONTACT`, `OPINION_REQUEST`, `TEST_PLAN`, `SUSPENSION`. 기능 모듈은 `SearchProvider` 빈 하나로 자기 묶음을 채운다 |
 
 용어집에 없는 개념이 필요하면 이름을 정해 이 표에 추가하는 것까지 같은 작업에 포함한다.
 
@@ -101,6 +102,7 @@ connect-link/
 │       │   ├── account/       # 가입, 이메일 인증, 가입 승인, 탈퇴
 │       │   ├── organization/  # 기관(결제원·참가기관·이용기관), 업무 기준정보
 │       │   ├── home/          # 홈 "지금 할 일": 카드 자리(HomeCardKey)와 기여자 계약(HomeCardContributor), 샘플 카드(home/sample)
+│       │   ├── search/        # 전역 검색: 묶음(SearchCategory)과 제공자 계약(SearchProvider), 샘플 제공자(search/sample)
 │       │   ├── contact/       # 가. 연락처 관리
 │       │   ├── opinion/       # 나. 의견 회신 취합
 │       │   ├── testplan/      # 다. 기관 테스트
@@ -119,7 +121,7 @@ connect-link/
 │       ├── features/
 │       │   ├── account/ contact/ opinion/ testplan/ suspension/ notification/
 │       │   │   └── (각각) pages/, components/, hooks.ts(Query 훅), *.test.tsx
-│       ├── shared/            # 공통 컴포넌트, 포맷터(날짜, 전화번호), list/(목록 패턴: 머리·필터 칩·상세 패널)
+│       ├── shared/            # 공통 컴포넌트, 포맷터(날짜, 전화번호), list/(목록 패턴), state/(빈·오류·권한 없음·내부망 전용 안내)
 │       └── main.tsx
 ├── e2e/                      # Playwright 시나리오
 ├── docs/

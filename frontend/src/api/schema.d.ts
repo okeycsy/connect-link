@@ -86,6 +86,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/search': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 전역 검색
+     * @description 레일에서 고른 업무 영역 안에서 기관·담당자·의견 요청·기관 테스트·일시중단을 묶음별로 최대 5건씩 돌려준다. 빈 검색어면 묶음이 없다.
+     */
+    get: operations['search'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/organizations/search': {
     parameters: {
       query?: never;
@@ -97,7 +117,7 @@ export interface paths {
      * 기관 기준정보 검색 (관리자)
      * @description 이름·코드 검색어, 구분, 참여 업무(slug), 사용 여부로 거른다. 구분 순(결제원 → 참가기관 → 이용기관) 뒤 이름순.
      */
-    get: operations['search'];
+    get: operations['search_1'];
     put?: never;
     post?: never;
     delete?: never;
@@ -172,7 +192,7 @@ export interface paths {
     };
     /**
      * 내 정보 조회
-     * @description 로그인 사용자의 이름, 소속 기관, 관리자 여부를 돌려준다.
+     * @description 로그인 사용자의 이름, 소속 기관, 관리자 여부와 지금 접속한 망(내부망/인터넷망)을 돌려준다.
      */
     get: operations['me'];
     put?: never;
@@ -311,6 +331,25 @@ export interface components {
       /** Format: date-time */
       createdAt: string;
     };
+    SearchGroup: {
+      /** @enum {string} */
+      category: 'ORGANIZATION' | 'CONTACT' | 'OPINION_REQUEST' | 'TEST_PLAN' | 'SUSPENSION';
+      label: string;
+      /** @enum {string} */
+      source: 'LIVE' | 'SAMPLE';
+      hits: components['schemas']['SearchHit'][];
+    };
+    SearchHit: {
+      title: string;
+      subtitle?: string | null;
+      link: string;
+    };
+    SearchResponse: {
+      query: string;
+      /** @enum {string} */
+      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
+      groups: components['schemas']['SearchGroup'][];
+    };
     OrganizationResponse: {
       /** Format: int64 */
       id: number;
@@ -388,6 +427,9 @@ export interface components {
       organizationType: 'KFTC' | 'FINANCE_ORGANIZATION' | 'USE_ORGANIZATION';
       organizationTypeLabel: string;
       admin: boolean;
+      /** @enum {string} */
+      networkZone: 'INTERNAL' | 'EXTERNAL';
+      networkZoneLabel: string;
     };
     HomeCard: {
       /** @enum {string} */
@@ -594,6 +636,31 @@ export interface operations {
     };
   };
   search: {
+    parameters: {
+      query: {
+        /** @description 업무 영역 slug (예: account-info) */
+        business: string;
+        /** @description 검색어 */
+        q?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['SearchResponse'];
+        };
+      };
+    };
+  };
+  search_1: {
     parameters: {
       query?: {
         keyword?: string;

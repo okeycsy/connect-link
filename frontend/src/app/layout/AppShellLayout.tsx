@@ -15,13 +15,23 @@ import {
   UnstyledButton,
   useMantineTheme,
 } from '@mantine/core';
-import { IconFlask, IconLogout, IconMailForward, IconSearch, IconUser } from '@tabler/icons-react';
+import { useDisclosure, useHotkeys } from '@mantine/hooks';
+import {
+  IconFlask,
+  IconLayoutGrid,
+  IconLogout,
+  IconMailForward,
+  IconSearch,
+  IconUser,
+  IconWorld,
+} from '@tabler/icons-react';
 import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
 
 import { useMe } from '../../features/account/hooks';
 import { NotificationBell } from '../../features/notification/components/NotificationBell';
 import { useBusinesses } from '../../features/organization/hooks';
-import { isDemoProfile, useServerInfo } from '../hooks';
+import { CommandPalette } from '../../features/search/components/CommandPalette';
+import { isDemoProfile, useDemoNetworkZone, useServerInfo } from '../hooks';
 import { DEFAULT_BUSINESS_SLUG, FEATURE_MENU } from '../navigation';
 import classes from './AppShellLayout.module.css';
 
@@ -37,6 +47,9 @@ export function AppShellLayout() {
   const { data: me } = useMe();
   const { data: serverInfo } = useServerInfo();
   const demo = isDemoProfile(serverInfo?.profile);
+  const [searchOpened, { open: openSearch, close: closeSearch }] = useDisclosure(false);
+  const [demoZone, setDemoZone] = useDemoNetworkZone();
+  useHotkeys([['mod+K', openSearch]]);
 
   const railWidth = theme.other.railWidth as number;
   const subMenuWidth = theme.other.subMenuWidth as number;
@@ -60,7 +73,7 @@ export function AppShellLayout() {
               연결고리
             </Text>
           </Group>
-          <UnstyledButton className={classes.search} aria-label="전역 검색">
+          <UnstyledButton className={classes.search} aria-label="전역 검색" onClick={openSearch}>
             <Group gap="xs" wrap="nowrap">
               <IconSearch size={16} />
               <Text size="md" style={{ flex: 1 }}>
@@ -93,11 +106,29 @@ export function AppShellLayout() {
                   >
                     발송함
                   </Menu.Item>
+                  <Menu.Item
+                    component={Link}
+                    to={`/${businessSlug ?? DEFAULT_BUSINESS_SLUG}/demo/states`}
+                    leftSection={<IconLayoutGrid size={16} />}
+                  >
+                    상태 화면
+                  </Menu.Item>
+                  <Menu.Item
+                    leftSection={<IconWorld size={16} />}
+                    onClick={() => setDemoZone(demoZone === 'INTERNAL' ? 'EXTERNAL' : 'INTERNAL')}
+                  >
+                    망 전환: {demoZone === 'INTERNAL' ? '내부망 → 인터넷망' : '인터넷망 → 내부망'}
+                  </Menu.Item>
                   <Menu.Item disabled leftSection={<IconUser size={16} />}>
                     계정 전환 (계정 모듈 후)
                   </Menu.Item>
                 </Menu.Dropdown>
               </Menu>
+            )}
+            {me?.networkZone === 'EXTERNAL' && (
+              <Badge variant="white" color="red" size="sm" data-testid="network-zone-badge">
+                인터넷망
+              </Badge>
             )}
             <NotificationBell />
             <Menu position="bottom-end" shadow="card" width={240}>
@@ -121,8 +152,12 @@ export function AppShellLayout() {
                   )}
                 </Box>
                 <Menu.Divider />
-                <Menu.Item disabled leftSection={<IconUser size={16} />}>
-                  내 정보 (준비 중)
+                <Menu.Item
+                  component={Link}
+                  to={`/${businessSlug ?? DEFAULT_BUSINESS_SLUG}/me`}
+                  leftSection={<IconUser size={16} />}
+                >
+                  내 정보
                 </Menu.Item>
                 <Menu.Item disabled leftSection={<IconLogout size={16} />}>
                   로그아웃 (계정 모듈 후)
@@ -175,6 +210,8 @@ export function AppShellLayout() {
           ))}
         </Box>
       </AppShell.Navbar>
+
+      <CommandPalette opened={searchOpened} onClose={closeSearch} />
 
       <AppShell.Main className={classes.chrome}>
         <Box className={classes.sheet} p="lg">

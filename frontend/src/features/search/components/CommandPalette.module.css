@@ -1,0 +1,43 @@
+.inputRoot {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+}
+
+.input {
+  height: 56px;
+  font-size: 15px;
+  padding-left: 44px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  transition: background 120ms cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  &[data-active] {
+    background: var(--mantine-color-navy-0);
+  }
+}
+
+.itemText {
+  flex: 1;
+  min-width: 0;
+}
+
+.arrow {
+  flex: 0 0 auto;
+  color: var(--mantine-color-navy-4);
+  opacity: 0;
+}
+
+.item[data-active] .arrow {
+  opacity: 1;
+}
+
+.footer {
+  border-top: 1px solid var(--mantine-color-gray-2);
+  background: var(--mantine-color-gray-0);
+}

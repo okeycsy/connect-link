@@ -26,7 +26,18 @@ class MeControllerTest {
         .andExpect(jsonPath("$.email").value("admin@kftc.example.com"))
         .andExpect(jsonPath("$.name").value("데모 관리자"))
         .andExpect(jsonPath("$.organizationTypeLabel").value("결제원"))
-        .andExpect(jsonPath("$.admin").value(true));
+        .andExpect(jsonPath("$.admin").value(true))
+        .andExpect(jsonPath("$.networkZone").value("INTERNAL"))
+        .andExpect(jsonPath("$.networkZoneLabel").value("내부망"));
+  }
+
+  @Test
+  void 테스트_프로필은_망_전환_헤더를_믿는다() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/me").header("X-Network-Zone", "EXTERNAL").with(TestUsers.admin()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.networkZone").value("EXTERNAL"))
+        .andExpect(jsonPath("$.networkZoneLabel").value("인터넷망"));
   }
 
   @Test

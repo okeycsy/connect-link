@@ -1,9 +1,10 @@
 package com.connectlink.auth.dto;
 
 import com.connectlink.auth.CurrentUser;
+import com.connectlink.common.NetworkZone;
 import com.connectlink.organization.OrganizationType;
 
-/** 로그인 사용자. */
+/** 로그인 사용자와 지금 접속한 망. */
 public record CurrentUserResponse(
     String email,
     String name,
@@ -11,9 +12,11 @@ public record CurrentUserResponse(
     String organizationName,
     OrganizationType organizationType,
     String organizationTypeLabel,
-    boolean admin) {
+    boolean admin,
+    NetworkZone networkZone,
+    String networkZoneLabel) {
 
-  public static CurrentUserResponse from(CurrentUser user) {
+  public static CurrentUserResponse from(CurrentUser user, NetworkZone zone) {
     return new CurrentUserResponse(
         user.email(),
         user.name(),
@@ -21,6 +24,8 @@ public record CurrentUserResponse(
         user.organizationName(),
         user.organizationType(),
         user.organizationType().getLabel(),
-        user.admin());
+        user.admin(),
+        zone,
+        zone.getLabel());
   }
 }

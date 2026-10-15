@@ -2,10 +2,11 @@ import { Button, Card, Group, Pagination, Stack, Text, TextInput } from '@mantin
 import { useDebouncedValue } from '@mantine/hooks';
 import { IconPlus, IconSearch } from '@tabler/icons-react';
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 
 import { ChipFilter } from '../../../shared/list/ChipFilter';
 import { ListPageHeader } from '../../../shared/list/ListPageHeader';
+import { ErrorState } from '../../../shared/state/StateView';
 import { OrganizationDrawer } from '../components/OrganizationDrawer';
 import { OrganizationTable } from '../components/OrganizationTable';
 import { useCurrentBusiness, useOrganizationSearch, type OrganizationType } from '../hooks';
@@ -30,10 +31,15 @@ export function OrganizationAdminPage() {
   const [keyword, setKeyword] = useState('');
   const [debouncedKeyword] = useDebouncedValue(keyword.trim(), 300);
   const [page, setPage] = useState(0);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  // 전역 검색 등에서 ?org={id} 로 들어오면 그 기관의 패널을 바로 연다.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedId, setSelectedId] = useState<number | null>(() => {
+    const org = Number(searchParams.get('org'));
+    return Number.isInteger(org) && org > 0 ? org : null;
+  });
   const [creating, setCreating] = useState(false);
 
-  const { data, isPending, isError, isFetching } = useOrganizationSearch({
+  const { data, isPending, isError, error, isFetching } = useOrganizationSearch({
     keyword: debouncedKeyword || undefined,
     type: type === 'ALL' ? undefined : type,
     business: scope === 'current' ? slug : undefined,
@@ -128,11 +134,7 @@ export function OrganizationAdminPage() {
           </Group>
         </Group>
 
-        {isError && (
-          <Text c="red" size="sm">
-            기관 목록을 불러오지 못했습니다.
-          </Text>
-        )}
+        {isError && <ErrorState error={error} homeLink={`/${slug}/home`} />}
         <div style={{ opacity: isFetching && data ? 0.6 : 1, transition: 'opacity 120ms' }}>
           <OrganizationTable
             rows={data?.content}
@@ -164,6 +166,7 @@ export function OrganizationAdminPage() {
         onClose={() => {
           setCreating(false);
           setSelectedId(null);
+          if (searchParams.has('org')) setSearchParams({}, { replace: true });
         }}
         onSaved={(saved) => {
           setCreating(false);
