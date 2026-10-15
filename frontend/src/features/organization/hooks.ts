@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 
 import { api, unwrap } from '../../api/client';
 import type { components } from '../../api/schema';
+import { historyKeys } from '../history/hooks';
 
 export type BusinessResponse = components['schemas']['BusinessResponse'];
 export type OrganizationResponse = components['schemas']['OrganizationResponse'];
@@ -77,7 +78,10 @@ export function useCreateOrganization() {
   return useMutation({
     mutationFn: async (body: OrganizationCreateRequest) =>
       unwrap(await api.POST('/api/v1/organizations', { body })),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: organizationKeys.organizations }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: organizationKeys.organizations });
+      queryClient.invalidateQueries({ queryKey: historyKeys.all });
+    },
   });
 }
 
@@ -86,6 +90,10 @@ export function useUpdateOrganization() {
   return useMutation({
     mutationFn: async ({ id, body }: { id: number; body: OrganizationUpdateRequest }) =>
       unwrap(await api.PUT('/api/v1/organizations/{id}', { params: { path: { id } }, body })),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: organizationKeys.organizations }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: organizationKeys.organizations });
+      // 저장하면 변경 이력이 늘어난다.
+      queryClient.invalidateQueries({ queryKey: historyKeys.all });
+    },
   });
 }

@@ -86,6 +86,24 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/attachments': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** 대상 하나의 첨부파일 목록(올린 순) */
+    get: operations['list_3'];
+    put?: never;
+    /** 첨부파일 올리기 (multipart: file) */
+    post: operations['upload'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/search': {
     parameters: {
       query?: never;
@@ -240,6 +258,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/change-histories': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** 대상 하나의 변경 이력(최신순) */
+    get: operations['list_2'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/businesses': {
     parameters: {
       query?: never;
@@ -255,6 +290,40 @@ export interface paths {
     put?: never;
     post?: never;
     delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/attachments/{id}/download': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** 첨부파일 내려받기 (원래 이름으로) */
+    get: operations['download'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/attachments/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** 첨부파일 지우기 */
+    delete: operations['delete'];
     options?: never;
     head?: never;
     patch?: never;
@@ -330,6 +399,21 @@ export interface components {
       readAt?: string | null;
       /** Format: date-time */
       createdAt: string;
+    };
+    AttachmentResponse: {
+      /** Format: int64 */
+      id: number;
+      /** @enum {string} */
+      ownerType: 'OPINION_REQUEST' | 'OPINION_REPLY' | 'SUSPENSION' | 'DEMO';
+      /** Format: int64 */
+      ownerId: number;
+      name: string;
+      contentType: string;
+      /** Format: int64 */
+      size: number;
+      uploadedBy: string;
+      /** Format: date-time */
+      uploadedAt: string;
     };
     SearchGroup: {
       /** @enum {string} */
@@ -494,6 +578,49 @@ export interface components {
       /** Format: date-time */
       serverTime: string;
     };
+    ChangeHistoryResponse: {
+      /** Format: int64 */
+      id: number;
+      /** @enum {string} */
+      targetType:
+        | 'ORGANIZATION'
+        | 'CONTACT'
+        | 'OPINION_REQUEST'
+        | 'OPINION_REPLY'
+        | 'TEST_PLAN'
+        | 'SUSPENSION';
+      /** Format: int64 */
+      targetId: number;
+      /** @enum {string|null} */
+      business?: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS' | null;
+      /** @enum {string} */
+      action: 'CREATED' | 'UPDATED' | 'DELETED';
+      actionLabel: string;
+      summary: string;
+      changes: components['schemas']['FieldChange'][];
+      changedBy: string;
+      changedByName: string;
+      /** Format: date-time */
+      changedAt: string;
+    };
+    FieldChange: {
+      field: string;
+      label: string;
+      before?: string | null;
+      after?: string | null;
+    };
+    PageResponseChangeHistoryResponse: {
+      content: components['schemas']['ChangeHistoryResponse'][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+      last: boolean;
+    };
   };
   responses: never;
   parameters: never;
@@ -632,6 +759,59 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+    };
+  };
+  list_3: {
+    parameters: {
+      query: {
+        ownerType: 'OPINION_REQUEST' | 'OPINION_REPLY' | 'SUSPENSION' | 'DEMO';
+        ownerId: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['AttachmentResponse'][];
+        };
+      };
+    };
+  };
+  upload: {
+    parameters: {
+      query: {
+        ownerType: 'OPINION_REQUEST' | 'OPINION_REPLY' | 'SUSPENSION' | 'DEMO';
+        ownerId: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        'multipart/form-data': {
+          /** Format: binary */
+          file: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['AttachmentResponse'];
+        };
       };
     };
   };
@@ -821,6 +1001,37 @@ export interface operations {
       };
     };
   };
+  list_2: {
+    parameters: {
+      query: {
+        targetType:
+          | 'ORGANIZATION'
+          | 'CONTACT'
+          | 'OPINION_REQUEST'
+          | 'OPINION_REPLY'
+          | 'TEST_PLAN'
+          | 'SUSPENSION';
+        targetId: number;
+        page?: number;
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['PageResponseChangeHistoryResponse'];
+        };
+      };
+    };
+  };
   listBusinesses: {
     parameters: {
       query?: never;
@@ -838,6 +1049,48 @@ export interface operations {
         content: {
           '*/*': components['schemas']['BusinessResponse'][];
         };
+      };
+    };
+  };
+  download: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/octet-stream': string;
+        };
+      };
+    };
+  };
+  delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
     };
   };

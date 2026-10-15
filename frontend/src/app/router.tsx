@@ -7,6 +7,7 @@ import { NotificationCenterPage } from '../features/notification/pages/Notificat
 import { NotificationOutboxPage } from '../features/notification/pages/NotificationOutboxPage';
 import { OrganizationAdminPage } from '../features/organization/pages/OrganizationAdminPage';
 import { AdminHubPage } from './layout/AdminHubPage';
+import { DemoAttachmentsPage } from './layout/DemoAttachmentsPage';
 import { DemoStatesPage } from './layout/DemoStatesPage';
 import { NotFoundPage } from './layout/NotFoundPage';
 import { RouteErrorPage } from './layout/RouteErrorPage';
@@ -38,6 +39,7 @@ export const router = createBrowserRouter([
           { path: 'me', element: <MyInfoPage /> },
           { path: 'demo/outbox', element: <NotificationOutboxPage /> },
           { path: 'demo/states', element: <DemoStatesPage /> },
+          { path: 'demo/attachments', element: <DemoAttachmentsPage /> },
           // 관리 그룹: 허브와 공통 몫인 기준정보. 나머지 항목은 담당 프로젝트가 admin/ 아래에 더한다.
           { path: 'admin', element: <AdminHubPage /> },
           { path: 'admin/organizations', element: <OrganizationAdminPage /> },

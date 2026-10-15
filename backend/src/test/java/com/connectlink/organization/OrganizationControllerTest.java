@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.connectlink.auth.TestUsers;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -17,6 +18,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
@@ -27,6 +29,7 @@ class OrganizationControllerTest {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private OrganizationRepository organizationRepository;
+  @Autowired private ObjectMapper objectMapper;
 
   @Test
   void 기관_목록은_로그인_없이_조회되고_사용_중인_기관만_돌려준다() throws Exception {
@@ -221,6 +224,79 @@ class OrganizationControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.businesses", hasSize(3)))
         .andExpect(jsonPath("$.updatedBy").value("admin@kftc.example.com"));
+  }
+
+  @Test
+  void 수정하면_바뀐_항목의_변경_전후가_이력에_남고_바뀐_것이_없으면_남지_않는다() throws Exception {
+    Long id = organizationRepository.findByCode("GANA").orElseThrow().getId();
+    String changed =
+        """
+        {"name":"가나은행(새 이름)","emailDomain":"gana.example.com","active":true,
+         "businesses":["ACCOUNT_INFO","AUTO_TRANSFER","LOAN_TRANSFER"]}
+        """;
+    mockMvc
+        .perform(
+            put("/api/v1/organizations/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(changed)
+                .with(TestUsers.admin())
+                .with(csrf()))
+        .andExpect(status().isOk());
+    // 같은 값으로 한 번 더 저장: 이력이 늘지 않아야 한다.
+    mockMvc
+        .perform(
+            put("/api/v1/organizations/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(changed)
+                .with(TestUsers.admin())
+                .with(csrf()))
+        .andExpect(status().isOk());
+
+    mockMvc
+        .perform(
+            get("/api/v1/change-histories")
+                .param("targetType", "ORGANIZATION")
+                .param("targetId", String.valueOf(id))
+                .with(TestUsers.admin()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.totalElements").value(1))
+        .andExpect(jsonPath("$.content[0].action").value("UPDATED"))
+        .andExpect(jsonPath("$.content[0].summary").value("가나은행(새 이름) 수정"))
+        .andExpect(jsonPath("$.content[0].changedBy").value("admin@kftc.example.com"))
+        .andExpect(jsonPath("$.content[0].changedByName").value("데모 관리자"))
+        .andExpect(jsonPath("$.content[0].changes", hasSize(2)))
+        .andExpect(jsonPath("$.content[0].changes[0].field").value("name"))
+        .andExpect(jsonPath("$.content[0].changes[0].before").value("가나은행"))
+        .andExpect(jsonPath("$.content[0].changes[0].after").value("가나은행(새 이름)"))
+        .andExpect(jsonPath("$.content[0].changes[1].label").value("참여 업무"))
+        .andExpect(jsonPath("$.content[0].changes[1].before").value("계좌통합관리, 자동이체통합관리, 대출이동, CMS"))
+        .andExpect(jsonPath("$.content[0].changes[1].after").value("계좌통합관리, 자동이체통합관리, 대출이동"));
+  }
+
+  @Test
+  void 등록하면_등록_이력이_남는다() throws Exception {
+    MvcResult created =
+        mockMvc
+            .perform(
+                post("/api/v1/organizations")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        "{\"code\":\"HIST\",\"name\":\"이력은행\",\"type\":\"FINANCE_ORGANIZATION\",\"businesses\":[\"CMS\"]}")
+                    .with(TestUsers.admin())
+                    .with(csrf()))
+            .andExpect(status().isCreated())
+            .andReturn();
+    long id = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asLong();
+    mockMvc
+        .perform(
+            get("/api/v1/change-histories")
+                .param("targetType", "ORGANIZATION")
+                .param("targetId", String.valueOf(id))
+                .with(TestUsers.admin()))
+        .andExpect(jsonPath("$.totalElements").value(1))
+        .andExpect(jsonPath("$.content[0].action").value("CREATED"))
+        .andExpect(jsonPath("$.content[0].changes[0].after").value("HIST"))
+        .andExpect(jsonPath("$.content[0].changes[4].after").value("CMS"));
   }
 
   @Test

@@ -29,3 +29,18 @@ export function formatPhone(value: string | null | undefined): string {
   if (digits.length === 11) return digits.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
   return value;
 }
+
+/** 파일 크기 표기. 1,024 단위로 B, KB, MB, GB 까지. 소수는 10 미만일 때만 한 자리. */
+export function formatBytes(bytes: number | null | undefined): string {
+  if (bytes == null || !Number.isFinite(bytes) || bytes < 0) return '';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let value = bytes;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  const text =
+    unit === 0 ? String(value) : value < 10 ? value.toFixed(1) : String(Math.round(value));
+  return `${text} ${units[unit]}`;
+}
