@@ -61,3 +61,42 @@ export const FEATURE_MENU: FeatureMenuItem[] = [
 
 /** 로그인 직후 보여 줄 업무 영역. 사용자 소속 업무로 바꾸는 것은 account 모듈이 붙은 뒤다. */
 export const DEFAULT_BUSINESS_SLUG = 'account-info';
+
+/** 관리 그룹의 항목. 메뉴 자리는 공통이 정하고, 화면은 담당 프로젝트가 만든다(가입 승인과 기준정보는 공통). */
+export interface AdminMenuItem {
+  key: 'organizations' | 'signup-approval' | 'update-campaign' | 'notification-targets';
+  label: string;
+  description: string;
+  /** 업무 영역 아래 상대 경로. 없으면 아직 화면이 없는 자리다. */
+  path?: string;
+  /** 화면을 만드는 프로젝트. */
+  owner: string;
+}
+
+export const ADMIN_MENU: AdminMenuItem[] = [
+  {
+    key: 'organizations',
+    label: '기관·업무 기준정보',
+    description: '기관 등록, 참여 업무, 이메일 도메인, 사용 여부',
+    path: 'admin/organizations',
+    owner: '공통',
+  },
+  {
+    key: 'signup-approval',
+    label: '가입 승인',
+    description: '가입 신청 목록, 이메일 도메인과 기관 일치 여부, 승인·반려',
+    owner: '공통 (계정 모듈과 함께)',
+  },
+  {
+    key: 'update-campaign',
+    label: '정기 변경 주간',
+    description: '연락처 현행화 주간 등록과 진행률',
+    owner: '연락처',
+  },
+  {
+    key: 'notification-targets',
+    label: '알림 대상 설정',
+    description: '메일·매터모스트 알림을 받을 사람과 채널',
+    owner: '공통',
+  },
+];

@@ -26,6 +26,8 @@ java -jar app.jar
 | `/login` | 로그인 (계정 모듈 연결 전) |
 | `/{업무}/notifications` | 알림 센터 |
 | `/{업무}/demo/outbox` | 발송함 (데모 도구) |
+| `/{업무}/admin` | 관리 허브 (기준정보, 가입 승인·정기 변경 주간·알림 대상은 준비 중) |
+| `/{업무}/admin/organizations` | 기관·업무 기준정보 (목록 + 오른쪽 상세 패널) |
 | `/swagger-ui.html` | API 문서 |
 | `/api/v1/health` | 서버 상태 |
 

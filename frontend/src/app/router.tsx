@@ -4,6 +4,8 @@ import { LoginPage } from '../features/account/pages/LoginPage';
 import { HomePage } from '../features/home/pages/HomePage';
 import { NotificationCenterPage } from '../features/notification/pages/NotificationCenterPage';
 import { NotificationOutboxPage } from '../features/notification/pages/NotificationOutboxPage';
+import { OrganizationAdminPage } from '../features/organization/pages/OrganizationAdminPage';
+import { AdminHubPage } from './layout/AdminHubPage';
 import { AppShellLayout } from './layout/AppShellLayout';
 import { BusinessGuard } from './layout/BusinessGuard';
 import { PlaceholderPage } from './layout/PlaceholderPage';
@@ -29,7 +31,10 @@ export const router = createBrowserRouter([
           // 전역 화면(알림 센터, 데모 도구)도 레일 문맥을 잃지 않도록 업무 영역 아래에 둔다.
           { path: 'notifications', element: <NotificationCenterPage /> },
           { path: 'demo/outbox', element: <NotificationOutboxPage /> },
-          ...FEATURE_MENU.filter((m) => m.key !== 'home').map((m) => ({
+          // 관리 그룹: 허브와 공통 몫인 기준정보. 나머지 항목은 담당 프로젝트가 admin/ 아래에 더한다.
+          { path: 'admin', element: <AdminHubPage /> },
+          { path: 'admin/organizations', element: <OrganizationAdminPage /> },
+          ...FEATURE_MENU.filter((m) => m.key !== 'home' && m.key !== 'admin').map((m) => ({
             path: m.path,
             element: <PlaceholderPage title={m.label} description={m.description} />,
           })),

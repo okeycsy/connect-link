@@ -83,7 +83,8 @@ public class OrganizationService {
             request.type(),
             normalizeDomain(request.emailDomain()));
     organization.replaceBusinesses(orEmpty(request.businesses()));
-    return OrganizationDetailResponse.from(organizationRepository.save(organization));
+    // 감사 컬럼(등록자·등록 일시)이 응답에 실리도록 바로 flush 한다.
+    return OrganizationDetailResponse.from(organizationRepository.saveAndFlush(organization));
   }
 
   @Transactional
@@ -94,7 +95,8 @@ public class OrganizationService {
     organization.update(
         request.name().trim(), normalizeDomain(request.emailDomain()), request.active());
     organization.replaceBusinesses(orEmpty(request.businesses()));
-    return OrganizationDetailResponse.from(organization);
+    // 수정자·수정 일시가 응답에 실리도록 바로 flush 한다.
+    return OrganizationDetailResponse.from(organizationRepository.saveAndFlush(organization));
   }
 
   private Organization load(Long id) {

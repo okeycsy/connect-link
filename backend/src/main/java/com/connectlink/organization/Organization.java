@@ -106,11 +106,16 @@ public class Organization extends AuditedEntity {
 
   /** 참여 업무를 주어진 집합과 같게 맞춘다. 빠진 업무는 지우고 새 업무만 더한다(기존 행의 감사 정보는 유지). */
   public void replaceBusinesses(Set<Business> businesses) {
-    participations.removeIf(p -> !businesses.contains(p.getBusiness()));
+    boolean changed = participations.removeIf(p -> !businesses.contains(p.getBusiness()));
     for (Business business : businesses) {
       if (!participatesIn(business)) {
         participations.add(new OrganizationBusiness(this, business));
+        changed = true;
       }
+    }
+    if (changed) {
+      // 참여 업무만 바뀌어도 기관의 수정자·수정 일시가 갱신되게 한다.
+      touch();
     }
   }
 }

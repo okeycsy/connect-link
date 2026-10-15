@@ -194,12 +194,33 @@ class OrganizationControllerTest {
         .andExpect(jsonPath("$.emailDomain").doesNotExist())
         .andExpect(jsonPath("$.active").value(false))
         .andExpect(jsonPath("$.businesses", hasSize(2)))
-        .andExpect(jsonPath("$.businesses[1].code").value("CMS"));
+        .andExpect(jsonPath("$.businesses[1].code").value("CMS"))
+        .andExpect(jsonPath("$.updatedBy").value("admin@kftc.example.com"));
 
     // 공개 목록에서는 사용 중지된 기관이 빠진다.
     mockMvc
         .perform(get("/api/v1/organizations"))
         .andExpect(jsonPath("$[*].code", not(org.hamcrest.Matchers.hasItem("PAHA"))));
+  }
+
+  @Test
+  void 참여_업무만_바꿔도_수정자와_수정_일시가_갱신된다() throws Exception {
+    Long id = organizationRepository.findByCode("SAA").orElseThrow().getId();
+    String body =
+        """
+        {"name":"사아증권","emailDomain":"saa.example.com","active":true,
+         "businesses":["ACCOUNT_INFO","AUTO_TRANSFER","LOAN_TRANSFER"]}
+        """;
+    mockMvc
+        .perform(
+            put("/api/v1/organizations/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body)
+                .with(TestUsers.admin())
+                .with(csrf()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.businesses", hasSize(3)))
+        .andExpect(jsonPath("$.updatedBy").value("admin@kftc.example.com"));
   }
 
   @Test
