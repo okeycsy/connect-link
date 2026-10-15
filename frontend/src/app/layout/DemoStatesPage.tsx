@@ -1,6 +1,7 @@
-import { Card, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { Card, SimpleGrid, Stack, Text } from '@mantine/core';
 
 import { StateView, type StateKind } from '../../shared/state/StateView';
+import { PageHeader } from '../../shared/PageHeader';
 
 const KINDS: { kind: StateKind; when: string }[] = [
   { kind: 'empty', when: '목록·검색 결과가 비었을 때' },
@@ -14,12 +15,10 @@ const KINDS: { kind: StateKind; when: string }[] = [
 export function DemoStatesPage() {
   return (
     <Stack gap="md">
-      <div>
-        <Title order={2}>상태 화면</Title>
-        <Text c="dimmed" size="lg">
-          기능 화면이 쓰는 공통 안내 다섯 가지. 실제로는 해당 상황이 생길 때만 보입니다.
-        </Text>
-      </div>
+      <PageHeader
+        title="상태 화면"
+        description="기능 화면이 쓰는 공통 안내 다섯 가지. 실제로는 해당 상황이 생길 때만 보입니다."
+      />
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md" data-testid="demo-states">
         {KINDS.map((k) => (
           <Card key={k.kind} padding="sm">

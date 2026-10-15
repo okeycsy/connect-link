@@ -16,6 +16,9 @@ import { formatDate } from '../../../shared/format';
 import type { HomeCard, HomeItem } from '../hooks';
 import classes from './HomeCardView.module.css';
 
+/** 기한 배지 색: 초과 빨강 채움, 임박 앰버, 여유 스카이. frontend/CLAUDE.md "상태 색". */
+const URGENCY_COLOR = { OVERDUE: 'red', SOON: 'amber', NONE: 'sky' } as const;
+
 interface Props {
   card: HomeCard;
   /** 가장 급한 카드 하나는 크게 보인다. */
@@ -41,18 +44,18 @@ export function HomeCardView({ card, featured = false }: Props) {
           </Text>
           {card.source === 'SAMPLE' && (
             <Tooltip label="기능 프로젝트가 붙기 전까지 공통이 넣어 둔 샘플입니다." withArrow>
-              <Badge size="xs" variant="outline" color="navy">
+              <Badge size="sm" variant="outline" color="gray">
                 샘플
               </Badge>
             </Tooltip>
           )}
           {card.urgency === 'OVERDUE' && (
-            <Badge size="xs" color="red" variant="filled">
+            <Badge size="sm" color="red" variant="filled">
               초과
             </Badge>
           )}
           {card.urgency === 'SOON' && (
-            <Badge size="xs" color="red" variant="outline">
+            <Badge size="sm" color="amber">
               임박
             </Badge>
           )}
@@ -85,7 +88,7 @@ export function HomeCardView({ card, featured = false }: Props) {
                 sections={[
                   {
                     value: (card.progress!.done / Math.max(card.progress!.total, 1)) * 100,
-                    color: 'navy',
+                    color: 'clay',
                   },
                 ]}
                 label={
@@ -133,13 +136,13 @@ export function HomeCardView({ card, featured = false }: Props) {
                 value={(card.progress.done / Math.max(card.progress.total, 1)) * 100}
                 size="sm"
                 radius="xl"
-                color="navy"
+                color="clay"
               />
             </div>
           )}
 
           {card.items.length > 0 && (
-            <Stack gap={4} className={classes.items}>
+            <Stack gap={8} className={classes.items}>
               {card.items.map((item, i) => (
                 <ItemRow key={i} item={item} />
               ))}
@@ -173,10 +176,8 @@ function ItemRow({ item }: { item: HomeItem }) {
       {item.dueAt && (
         <Badge
           size="sm"
-          variant={
-            item.urgency === 'OVERDUE' ? 'filled' : item.urgency === 'SOON' ? 'outline' : 'light'
-          }
-          color={item.urgency === 'NONE' ? 'navy' : 'red'}
+          variant={item.urgency === 'OVERDUE' ? 'filled' : 'light'}
+          color={URGENCY_COLOR[item.urgency]}
           className={classes.number}
           style={{ flexShrink: 0 }}
         >

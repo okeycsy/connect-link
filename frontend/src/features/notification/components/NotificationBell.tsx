@@ -48,11 +48,12 @@ export function NotificationBell() {
         <Indicator color="red" size={9} offset={6} disabled={count === 0} withBorder>
           <ActionIcon
             variant="subtle"
-            color="gray"
+            color="dark"
+            size="lg"
             aria-label={count > 0 ? `알림 ${count}건` : '알림'}
             onClick={() => setOpened((o) => !o)}
           >
-            <IconBell size={20} color="white" />
+            <IconBell size={20} />
           </ActionIcon>
         </Indicator>
       </Popover.Target>

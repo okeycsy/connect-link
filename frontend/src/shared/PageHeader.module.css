@@ -1,0 +1,16 @@
+/* 본문 여백(--cl-page-gutter)을 거슬러 위·양옆 끝까지 붙는다. */
+.bar {
+  margin: calc(-1 * var(--cl-page-gutter)) calc(-1 * var(--cl-page-gutter)) 0;
+  padding: 18px var(--cl-page-gutter);
+  background: var(--cl-card);
+  border-bottom: 1px solid var(--cl-line);
+}
+
+.text {
+  min-width: 0;
+}
+
+.title {
+  font-size: 20px;
+  line-height: 1.4;
+}

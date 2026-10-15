@@ -2,26 +2,25 @@
   display: block;
   width: 100%;
   padding: 10px 12px;
-  border-radius: 10px;
-  transition: background 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  border-radius: 14px;
+  transition: background 160ms var(--cl-ease);
 
   &:hover {
-    background: var(--mantine-color-navy-0);
+    background: var(--cl-sunken);
   }
 }
 
-/* 상태 점 8px + 연한 외곽 링. 읽지 않은 것만 빨강, 나머지는 navy-300. */
+/* 상태 점 8px. 읽지 않은 것만 빨강 + 연한 링, 나머지는 gray-5. */
 .dot {
   flex: 0 0 auto;
   width: 8px;
   height: 8px;
   margin-top: 6px;
   border-radius: 50%;
-  background: var(--mantine-color-navy-2);
-  box-shadow: 0 0 0 3px rgba(169, 180, 204, 0.25);
+  background: var(--mantine-color-gray-5);
 }
 
 .item[data-unread] .dot {
   background: var(--mantine-color-red-6);
-  box-shadow: 0 0 0 3px rgba(179, 38, 30, 0.18);
+  box-shadow: 0 0 0 3px var(--mantine-color-red-1);
 }

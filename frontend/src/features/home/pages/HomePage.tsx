@@ -8,7 +8,7 @@ import classes from './HomePage.module.css';
 const URGENCY_RANK = { OVERDUE: 2, SOON: 1, NONE: 0 } as const;
 
 /**
- * 홈: "지금 할 일". 남색 밴드 위 글래스 KPI 타일 네 개, 가장 급한 카드 하나를 크게, 나머지 카드를 작게.
+ * 홈: "지금 할 일". 파스텔 번짐 위에 인사말과 흰 KPI 타일 네 개, 가장 급한 카드 하나를 크게, 나머지 카드를 작게.
  * 카드 내용은 서버(/api/v1/home)가 자리별 기여자에게서 모아 준다. 업무 영역(레일)마다 다르다.
  */
 export function HomePage() {
@@ -19,22 +19,28 @@ export function HomePage() {
   const rest = data?.cards.filter((c) => c !== featured) ?? [];
 
   return (
-    <Stack gap="lg">
-      <Box className={classes.band}>
-        <Text c="white" size="sm" opacity={0.75}>
-          {data?.businessLabel ?? '업무 영역'}
-        </Text>
-        <Title order={2} c="white" mb="md">
-          {data
-            ? `안녕하세요, ${data.userName} 님. 지금 할 일을 모았습니다.`
-            : '지금 할 일을 모으는 중입니다.'}
-        </Title>
-        <SimpleGrid cols={{ base: 2, md: 4 }} spacing="sm">
-          {data
-            ? data.kpis.map((k) => <KpiTile key={k.label} kpi={k} />)
-            : [0, 1, 2, 3].map((i) => <Skeleton key={i} h={72} radius="md" opacity={0.4} />)}
-        </SimpleGrid>
-      </Box>
+    <Stack gap="lg" className={classes.home}>
+      <Group justify="space-between" align="flex-end" gap="md">
+        <Stack gap={10} align="flex-start">
+          <Box className={classes.dateTag}>
+            {formatToday()} · {data?.businessLabel ?? '업무 영역'}
+          </Box>
+          <Title order={1}>
+            {data ? `안녕하세요, ${data.userName} 님` : '지금 할 일을 모으는 중입니다.'}
+          </Title>
+          {data && (
+            <Text size="lg" c="var(--cl-ink-soft)">
+              지금 할 일을 모았습니다.
+            </Text>
+          )}
+        </Stack>
+      </Group>
+
+      <SimpleGrid cols={{ base: 2, md: 4 }} spacing={14}>
+        {data
+          ? data.kpis.map((k) => <KpiTile key={k.label} kpi={k} />)
+          : [0, 1, 2, 3].map((i) => <Skeleton key={i} h={112} radius={22} />)}
+      </SimpleGrid>
 
       {isError && (
         <Text c="red" size="sm">
@@ -84,20 +90,29 @@ function pickFeatured(cards: HomeCard[]): HomeCard | undefined {
   }, undefined);
 }
 
+/** 머리 날짜 태그. 예: "10월 15일 목요일". */
+function formatToday() {
+  return new Date().toLocaleDateString('ko-KR', {
+    month: 'long',
+    day: 'numeric',
+    weekday: 'long',
+    timeZone: 'Asia/Seoul',
+  });
+}
+
+/** KPI 타일: 흰 면 radius 22, 이름(보조 글자) + 큰 숫자(40px) + 단위. 급하면 이름 앞에 빨간 점 하나. */
 function KpiTile({ kpi }: { kpi: HomeKpi }) {
   return (
     <Box className={classes.kpi} data-urgent={kpi.urgent || undefined}>
       <Group gap={6} wrap="nowrap">
         {kpi.urgent && <Box className={classes.kpiDot} aria-label="급함" />}
-        <Text size="sm" c="white" opacity={0.75} truncate>
+        <Text size="md" c="dimmed" truncate>
           {kpi.label}
         </Text>
       </Group>
       <Group gap={4} align="baseline">
-        <Text className={classes.kpiValue} c="white">
-          {kpi.value}
-        </Text>
-        <Text size="sm" c="white" opacity={0.75}>
+        <Text className={classes.kpiValue}>{kpi.value}</Text>
+        <Text size="xl" fw={500}>
           {kpi.unit}
         </Text>
       </Group>

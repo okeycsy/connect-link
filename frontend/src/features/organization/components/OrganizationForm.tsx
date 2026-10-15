@@ -84,7 +84,7 @@ export function OrganizationForm({ organization, defaultBusiness, onSaved, onCan
           });
       notifications.show({
         message: organization ? '기관 정보를 저장했습니다.' : '기관을 등록했습니다.',
-        color: 'navy',
+        color: 'clay',
       });
       onSaved(saved);
     } catch (error) {

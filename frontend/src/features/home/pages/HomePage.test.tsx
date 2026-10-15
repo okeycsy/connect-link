@@ -68,10 +68,11 @@ describe('HomePage', () => {
   it('업무 영역, 인사말, KPI 와 카드를 보여 주고 가장 급한 카드를 크게 둔다', async () => {
     renderWithProviders(<HomePage />);
 
-    expect(await screen.findByText('계좌통합관리')).toBeInTheDocument();
+    expect(await screen.findByText(/· 계좌통합관리$/)).toBeInTheDocument();
     expect(
-      screen.getByText('안녕하세요, 데모 관리자 님. 지금 할 일을 모았습니다.'),
+      screen.getByRole('heading', { level: 1, name: '안녕하세요, 데모 관리자 님' }),
     ).toBeInTheDocument();
+    expect(screen.getByText('지금 할 일을 모았습니다.')).toBeInTheDocument();
     expect(screen.getAllByText('확인 필요 담당자').length).toBeGreaterThan(0);
 
     const featured = screen.getByTestId('home-card-CONTACT_CONFIRM');

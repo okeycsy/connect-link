@@ -79,7 +79,7 @@ export function OrganizationTable({ rows, loading, selectedId, currentBusiness, 
                     key={b.code}
                     size="sm"
                     variant={b.code === currentBusiness ? 'filled' : 'light'}
-                    color="navy"
+                    color="clay"
                     title={b.label}
                   >
                     {b.shortLabel}
@@ -99,7 +99,7 @@ export function OrganizationTable({ rows, loading, selectedId, currentBusiness, 
             </Table.Td>
             <Table.Td>
               {o.active ? (
-                <Badge size="sm" variant="light" color="navy">
+                <Badge size="sm" color="sky">
                   사용 중
                 </Badge>
               ) : (

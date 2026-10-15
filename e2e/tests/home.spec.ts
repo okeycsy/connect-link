@@ -3,9 +3,7 @@ import { expect, test } from '@playwright/test';
 test.describe('홈 대시보드', () => {
   test('KPI 타일 네 개와 할 일 카드 여섯 장이 보이고 가장 급한 카드가 크다', async ({ page }) => {
     await page.goto('/account-info/home');
-    await expect(
-      page.getByText('안녕하세요, 데모 관리자 님. 지금 할 일을 모았습니다.'),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: '안녕하세요, 데모 관리자 님' })).toBeVisible();
 
     const cards = page.getByTestId('home-cards');
     for (const key of [

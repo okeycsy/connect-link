@@ -1,7 +1,8 @@
-import { Button, Card, Chip, Group, Pagination, Skeleton, Stack, Text, Title } from '@mantine/core';
+import { Button, Card, Chip, Group, Pagination, Skeleton, Stack, Text } from '@mantine/core';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { PageHeader } from '../../../shared/PageHeader';
 import { NotificationItem } from '../components/NotificationItem';
 import {
   useMarkAllRead,
@@ -31,22 +32,20 @@ export function NotificationCenterPage() {
 
   return (
     <Stack gap="md">
-      <Group justify="space-between" align="flex-end">
-        <div>
-          <Title order={2}>알림 센터</Title>
-          <Text c="dimmed" size="lg">
-            읽지 않은 알림 {unread?.count ?? 0}건
-          </Text>
-        </div>
-        <Button
-          variant="light"
-          disabled={(unread?.count ?? 0) === 0}
-          loading={markAllRead.isPending}
-          onClick={() => markAllRead.mutate()}
-        >
-          모두 읽음
-        </Button>
-      </Group>
+      <PageHeader
+        title="알림 센터"
+        description={`읽지 않은 알림 ${unread?.count ?? 0}건`}
+        actions={
+          <Button
+            variant="light"
+            disabled={(unread?.count ?? 0) === 0}
+            loading={markAllRead.isPending}
+            onClick={() => markAllRead.mutate()}
+          >
+            모두 읽음
+          </Button>
+        }
+      />
 
       <Card data-testid="notification-list">
         <Group justify="space-between" mb="sm">
