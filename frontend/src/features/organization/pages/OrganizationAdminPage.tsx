@@ -2,7 +2,7 @@ import { Button, Card, Group, Pagination, Stack, Text, TextInput } from '@mantin
 import { useDebouncedValue } from '@mantine/hooks';
 import { IconPlus, IconSearch } from '@tabler/icons-react';
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 
 import { ChipFilter } from '../../../shared/list/ChipFilter';
 import { ListPageHeader } from '../../../shared/list/ListPageHeader';
@@ -30,7 +30,12 @@ export function OrganizationAdminPage() {
   const [keyword, setKeyword] = useState('');
   const [debouncedKeyword] = useDebouncedValue(keyword.trim(), 300);
   const [page, setPage] = useState(0);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  // 전역 검색 등에서 ?org={id} 로 들어오면 그 기관의 패널을 바로 연다.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedId, setSelectedId] = useState<number | null>(() => {
+    const org = Number(searchParams.get('org'));
+    return Number.isInteger(org) && org > 0 ? org : null;
+  });
   const [creating, setCreating] = useState(false);
 
   const { data, isPending, isError, isFetching } = useOrganizationSearch({
@@ -164,6 +169,7 @@ export function OrganizationAdminPage() {
         onClose={() => {
           setCreating(false);
           setSelectedId(null);
+          if (searchParams.has('org')) setSearchParams({}, { replace: true });
         }}
         onSaved={(saved) => {
           setCreating(false);

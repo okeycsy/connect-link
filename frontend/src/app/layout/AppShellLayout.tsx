@@ -15,12 +15,14 @@ import {
   UnstyledButton,
   useMantineTheme,
 } from '@mantine/core';
+import { useDisclosure, useHotkeys } from '@mantine/hooks';
 import { IconFlask, IconLogout, IconMailForward, IconSearch, IconUser } from '@tabler/icons-react';
 import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
 
 import { useMe } from '../../features/account/hooks';
 import { NotificationBell } from '../../features/notification/components/NotificationBell';
 import { useBusinesses } from '../../features/organization/hooks';
+import { CommandPalette } from '../../features/search/components/CommandPalette';
 import { isDemoProfile, useServerInfo } from '../hooks';
 import { DEFAULT_BUSINESS_SLUG, FEATURE_MENU } from '../navigation';
 import classes from './AppShellLayout.module.css';
@@ -37,6 +39,8 @@ export function AppShellLayout() {
   const { data: me } = useMe();
   const { data: serverInfo } = useServerInfo();
   const demo = isDemoProfile(serverInfo?.profile);
+  const [searchOpened, { open: openSearch, close: closeSearch }] = useDisclosure(false);
+  useHotkeys([['mod+K', openSearch]]);
 
   const railWidth = theme.other.railWidth as number;
   const subMenuWidth = theme.other.subMenuWidth as number;
@@ -60,7 +64,7 @@ export function AppShellLayout() {
               연결고리
             </Text>
           </Group>
-          <UnstyledButton className={classes.search} aria-label="전역 검색">
+          <UnstyledButton className={classes.search} aria-label="전역 검색" onClick={openSearch}>
             <Group gap="xs" wrap="nowrap">
               <IconSearch size={16} />
               <Text size="md" style={{ flex: 1 }}>
@@ -175,6 +179,8 @@ export function AppShellLayout() {
           ))}
         </Box>
       </AppShell.Navbar>
+
+      <CommandPalette opened={searchOpened} onClose={closeSearch} />
 
       <AppShell.Main className={classes.chrome}>
         <Box className={classes.sheet} p="lg">
