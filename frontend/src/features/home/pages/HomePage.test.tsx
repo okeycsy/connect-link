@@ -131,6 +131,11 @@ describe('HomePage', () => {
       await screen.findByText('수수료 체계 개편 의견 요청이 등록되었습니다'),
     ).toBeInTheDocument();
 
+    expect(screen.getByRole('link', { name: '더보기' })).toHaveAttribute(
+      'href',
+      '/account-info/notifications',
+    );
+
     // 이번 주 일시중단: 오늘 칸에 칩
     expect(screen.getByTestId('suspension-week')).toHaveTextContent('다라은행 23:00');
     expect(
