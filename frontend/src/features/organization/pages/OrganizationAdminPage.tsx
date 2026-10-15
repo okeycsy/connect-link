@@ -6,6 +6,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 
 import { ChipFilter } from '../../../shared/list/ChipFilter';
 import { ListPageHeader } from '../../../shared/list/ListPageHeader';
+import { ErrorState } from '../../../shared/state/StateView';
 import { OrganizationDrawer } from '../components/OrganizationDrawer';
 import { OrganizationTable } from '../components/OrganizationTable';
 import { useCurrentBusiness, useOrganizationSearch, type OrganizationType } from '../hooks';
@@ -38,7 +39,7 @@ export function OrganizationAdminPage() {
   });
   const [creating, setCreating] = useState(false);
 
-  const { data, isPending, isError, isFetching } = useOrganizationSearch({
+  const { data, isPending, isError, error, isFetching } = useOrganizationSearch({
     keyword: debouncedKeyword || undefined,
     type: type === 'ALL' ? undefined : type,
     business: scope === 'current' ? slug : undefined,
@@ -133,11 +134,7 @@ export function OrganizationAdminPage() {
           </Group>
         </Group>
 
-        {isError && (
-          <Text c="red" size="sm">
-            기관 목록을 불러오지 못했습니다.
-          </Text>
-        )}
+        {isError && <ErrorState error={error} homeLink={`/${slug}/home`} />}
         <div style={{ opacity: isFetching && data ? 0.6 : 1, transition: 'opacity 120ms' }}>
           <OrganizationTable
             rows={data?.content}

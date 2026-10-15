@@ -15,6 +15,23 @@ const csrfMiddleware: Middleware = {
   },
 };
 
+/** 데모 도구의 망 전환이 저장한 값. 서버는 local·demo 프로필에서만 이 헤더를 믿는다. */
+export const DEMO_NETWORK_ZONE_KEY = 'demo.networkZone';
+
+const demoNetworkZoneMiddleware: Middleware = {
+  onRequest({ request }) {
+    try {
+      const zone = window.localStorage.getItem(DEMO_NETWORK_ZONE_KEY);
+      if (zone) {
+        request.headers.set('X-Network-Zone', zone);
+      }
+    } catch {
+      // 저장소를 못 쓰는 환경(시크릿 창 등)에서는 헤더 없이 보낸다.
+    }
+    return request;
+  },
+};
+
 function readCookie(name: string): string | undefined {
   return document.cookie
     .split('; ')
@@ -28,6 +45,7 @@ function readCookie(name: string): string | undefined {
  */
 export const api = createClient<paths>({ baseUrl: '/', credentials: 'same-origin' });
 api.use(csrfMiddleware);
+api.use(demoNetworkZoneMiddleware);
 
 /** openapi-fetch 응답에서 데이터만 꺼내고, 오류면 서버의 ErrorResponse 를 던진다. */
 export function unwrap<T>(result: { data?: T; error?: unknown; response: Response }): T {
@@ -45,6 +63,15 @@ export class ApiError extends Error {
     super(extractDetail(body) ?? `요청에 실패했습니다 (${status})`);
     this.name = 'ApiError';
   }
+}
+
+/** 서버 ErrorResponse 의 업무 오류 코드(예: ACCESS_DENIED, INTERNAL_ONLY). 없으면 undefined. */
+export function errorCodeOf(error: unknown): string | undefined {
+  if (!(error instanceof ApiError) || !error.body || typeof error.body !== 'object') {
+    return undefined;
+  }
+  const code = (error.body as { code?: unknown }).code;
+  return typeof code === 'string' ? code : undefined;
 }
 
 function extractDetail(body: unknown): string | undefined {

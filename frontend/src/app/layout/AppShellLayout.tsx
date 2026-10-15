@@ -16,14 +16,22 @@ import {
   useMantineTheme,
 } from '@mantine/core';
 import { useDisclosure, useHotkeys } from '@mantine/hooks';
-import { IconFlask, IconLogout, IconMailForward, IconSearch, IconUser } from '@tabler/icons-react';
+import {
+  IconFlask,
+  IconLayoutGrid,
+  IconLogout,
+  IconMailForward,
+  IconSearch,
+  IconUser,
+  IconWorld,
+} from '@tabler/icons-react';
 import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
 
 import { useMe } from '../../features/account/hooks';
 import { NotificationBell } from '../../features/notification/components/NotificationBell';
 import { useBusinesses } from '../../features/organization/hooks';
 import { CommandPalette } from '../../features/search/components/CommandPalette';
-import { isDemoProfile, useServerInfo } from '../hooks';
+import { isDemoProfile, useDemoNetworkZone, useServerInfo } from '../hooks';
 import { DEFAULT_BUSINESS_SLUG, FEATURE_MENU } from '../navigation';
 import classes from './AppShellLayout.module.css';
 
@@ -40,6 +48,7 @@ export function AppShellLayout() {
   const { data: serverInfo } = useServerInfo();
   const demo = isDemoProfile(serverInfo?.profile);
   const [searchOpened, { open: openSearch, close: closeSearch }] = useDisclosure(false);
+  const [demoZone, setDemoZone] = useDemoNetworkZone();
   useHotkeys([['mod+K', openSearch]]);
 
   const railWidth = theme.other.railWidth as number;
@@ -97,11 +106,29 @@ export function AppShellLayout() {
                   >
                     발송함
                   </Menu.Item>
+                  <Menu.Item
+                    component={Link}
+                    to={`/${businessSlug ?? DEFAULT_BUSINESS_SLUG}/demo/states`}
+                    leftSection={<IconLayoutGrid size={16} />}
+                  >
+                    상태 화면
+                  </Menu.Item>
+                  <Menu.Item
+                    leftSection={<IconWorld size={16} />}
+                    onClick={() => setDemoZone(demoZone === 'INTERNAL' ? 'EXTERNAL' : 'INTERNAL')}
+                  >
+                    망 전환: {demoZone === 'INTERNAL' ? '내부망 → 인터넷망' : '인터넷망 → 내부망'}
+                  </Menu.Item>
                   <Menu.Item disabled leftSection={<IconUser size={16} />}>
                     계정 전환 (계정 모듈 후)
                   </Menu.Item>
                 </Menu.Dropdown>
               </Menu>
+            )}
+            {me?.networkZone === 'EXTERNAL' && (
+              <Badge variant="white" color="red" size="sm" data-testid="network-zone-badge">
+                인터넷망
+              </Badge>
             )}
             <NotificationBell />
             <Menu position="bottom-end" shadow="card" width={240}>
@@ -125,8 +152,12 @@ export function AppShellLayout() {
                   )}
                 </Box>
                 <Menu.Divider />
-                <Menu.Item disabled leftSection={<IconUser size={16} />}>
-                  내 정보 (준비 중)
+                <Menu.Item
+                  component={Link}
+                  to={`/${businessSlug ?? DEFAULT_BUSINESS_SLUG}/me`}
+                  leftSection={<IconUser size={16} />}
+                >
+                  내 정보
                 </Menu.Item>
                 <Menu.Item disabled leftSection={<IconLogout size={16} />}>
                   로그아웃 (계정 모듈 후)
