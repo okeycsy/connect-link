@@ -12,7 +12,7 @@
 1. **바탕은 밝은 회색, 일하는 면은 흰색.** 페이지·사이드바는 `page`(#F8F8F9), 본문과 카드는 흰색. 어두운 크롬(남색 상단 바 등)은 쓰지 않는다.
 2. **유채색은 의미가 있을 때만.** 메인 `clay` 는 "누를 수 있음·지금 여기"(버튼, 링크, 활성 메뉴), `sky`·`amber`·`red` 는 상태에만 쓴다. 장식에 색을 쓰는 곳은 파스텔 번짐 하나뿐이다.
 3. **둥글고 부드럽게.** 버튼은 알약, 카드는 radius 24, 목록 한 줄은 14, 메뉴 한 줄은 8. 각진 모서리와 굵은 그림자는 쓰지 않는다.
-4. **파스텔 번짐은 정해진 세 곳에만.** 상단 바 오른쪽, 사이드바 아래, 홈 머리(그리고 로그인 바탕). 다른 화면에 번짐을 늘리지 않는다.
+4. **파스텔 번짐은 정해진 곳에만.** 상단 바 오른쪽, 사이드바 아래, 홈 머리, 로그인 배경(시안 랜딩과 똑같이). 다른 화면에 번짐을 늘리지 않는다.
 5. **hex 를 화면 코드에 쓰지 않는다.** TSX 에서는 Mantine 색 이름(`color="sky"`, `c="dimmed"`), CSS 모듈에서는 `var(--mantine-color-clay-6)` 이나 `var(--cl-line)` 만 쓴다.
 
 ## 2. 색 토큰
@@ -50,17 +50,19 @@
 
 ### 2.2 CSS 변수 (global.css)
 
-| 변수                                            | 값                             | 용도                               |
-| ----------------------------------------------- | ------------------------------ | ---------------------------------- |
-| `--cl-page`                                     | #F8F8F9                        | 페이지 바탕                        |
-| `--cl-card`                                     | #FFFFFF                        | 본문, 카드                         |
-| `--cl-sunken`                                   | #F3F4F6                        | 레일, 검색 칸, 목록 한 줄          |
-| `--cl-line` / `--cl-line-soft`                  | #E3E4E8 / #EDEEF1              | 경계선 / 표 행 구분                |
-| `--cl-ink` / `--cl-ink-soft` / `--cl-ink-muted` | #1D1715 / #3E4048 / #62656D    | 글자 3단                           |
-| `--cl-online`                                   | #3FA36B                        | 사용자 아바타의 접속 점(이 용도만) |
-| `--cl-pastel-peach` / `-sky` / `-butter`        | #F6D6CC / #CFE0F3 / #F7EFB8    | 파스텔 번짐                        |
-| `--cl-ease`                                     | cubic-bezier(0.2, 0.8, 0.2, 1) | 모든 전환(160ms)                   |
-| `--cl-page-gutter`                              | 24px                           | 본문 안쪽 여백                     |
+| 변수                                                           | 값                                              | 용도                               |
+| -------------------------------------------------------------- | ----------------------------------------------- | ---------------------------------- |
+| `--cl-page`                                                    | #F8F8F9                                         | 페이지 바탕                        |
+| `--cl-card`                                                    | #FFFFFF                                         | 본문, 카드                         |
+| `--cl-sunken`                                                  | #F3F4F6                                         | 레일, 검색 칸, 목록 한 줄          |
+| `--cl-line` / `--cl-line-soft`                                 | #E3E4E8 / #EDEEF1                               | 경계선 / 표 행 구분                |
+| `--cl-ink` / `--cl-ink-soft` / `--cl-ink-muted`                | #1D1715 / #3E4048 / #62656D                     | 글자 3단                           |
+| `--cl-online`                                                  | #3FA36B                                         | 사용자 아바타의 접속 점(이 용도만) |
+| `--cl-pastel-peach` / `-sky` / `-butter`                       | #F6D6CC / #CFE0F3 / #F7EFB8                     | 파스텔 번짐                        |
+| `--cl-blob-peach` / `-blush` / `-rose` / `-cream` / `-apricot` | #F6C9BC / #F3D9C9 / #F4D3CB / #F8F0BE / #F6DCCF | 로그인 배경 번짐 전용              |
+| `--cl-font-sans` / `--cl-font-mono` (fonts.css)                | Pretendard Variable … / ui-monospace …          | 글꼴(3절)                          |
+| `--cl-ease`                                                    | cubic-bezier(0.2, 0.8, 0.2, 1)                  | 모든 전환(160ms)                   |
+| `--cl-page-gutter`                                             | 24px                                            | 본문 안쪽 여백                     |
 
 ### 2.3 상태 색 (업무 상태 → 배지 색)
 
@@ -79,7 +81,14 @@
 
 ## 3. 글꼴과 글자 크기
 
-- 글꼴은 **Pretendard Variable**(npm `pretendard` 번들)이다. 시안은 IBM Plex Sans KR 을 썼지만 외부 웹폰트를 쓸 수 없어 Pretendard 로 옮겼다. 다른 글꼴 패키지를 넣으려면 사용자 확인이 필요하다(루트 CLAUDE.md 2-5).
+- 지금 글꼴은 **Pretendard Variable**(npm `pretendard` 번들)이다. 시안의 IBM Plex Sans KR 은 따르지 않는다(SHY 결정).
+- **글꼴은 `src/app/fonts.css` 한 곳에서만 정한다.** 앱 전체(Mantine 테마의 `fontFamily`, 제목, 숫자)가 CSS 변수 `--cl-font-sans`(고정폭은 `--cl-font-mono`) 하나를 쓴다. `theme.ts`, CSS 모듈, 컴포넌트에서 글꼴 이름을 직접 쓰지 않는다(`ff="monospace"` 는 Mantine 이 `--cl-font-mono` 로 바꿔 준다).
+- **글꼴 바꾸는 방법**(사용자가 글꼴 파일을 받아 오면):
+  1. woff2 파일을 `src/assets/fonts/` 에 둔다. 빌드 때 app.jar 에 함께 들어가므로 외부 URL 이 생기지 않는다.
+  2. `fonts.css` 의 `@font-face` 예시 주석을 풀고 이름·파일명·굵기 범위를 맞춘다.
+  3. `--cl-font-sans` 맨 앞에 새 이름을 넣는다. Pretendard 를 더 쓰지 않으면 `@import 'pretendard/…'` 줄을 지운다.
+  4. `./gradlew build` 후 캡처로 줄바꿈·굵기를 확인한다. 다른 파일은 고치지 않는다.
+- npm 글꼴 패키지를 새로 넣는 방식은 의존성 추가라 사용자 확인이 필요하다(루트 CLAUDE.md 2-5). 파일을 직접 두는 방식은 확인 없이 해도 된다.
 - 숫자는 `font-variant-numeric: tabular-nums`(표의 번호·날짜·건수, KPI 숫자).
 
 | 용도                 | 크기 / 굵기  | Mantine                     |
@@ -139,7 +148,15 @@
 ### 카드
 
 - **흰 본문 위**: 기본 `<Card>`(테두리 1px `line`, radius 24, 그림자 없음).
-- **page 바탕 위(홈)**: 테두리 없는 흰 면(`HomeCardView` 의 `.card`). 강조는 1.5px clay-3 링 하나. 왼쪽 굵은 테두리는 쓰지 않는다.
+- **page 바탕 위(홈)**: 테두리 없는 흰 면(`HomeCardView` 의 `.card`). 왼쪽 굵은 테두리는 쓰지 않는다.
+- **작게 두는 카드**: 중요도가 낮은 자리는 `HomeCardView compact` 로 한 줄 띠(제목, 배지, 요약, 숫자, 모두 보기)로만 보인다. 항목 목록은 그리지 않는다.
+
+### 홈 배치 (`features/home/pages/HomePage.tsx`)
+
+- 위에서부터: 날짜 태그 + 인사말 → KPI 타일 네 개 → [왼쪽 7/12 **최근 소식** | 오른쪽 5/12 회신 대기 의견 요청, 이번 주 일시중단] → 나머지 카드 3열 → 작은 띠(확인이 필요한 담당자).
+- **최근 소식**(`RecentNotificationsCard`): 알림 센터와 같은 내용(`/api/v1/notifications`, 최근 6건). 한 줄 = 36px 둥근 사각 아바타(알림 종류 첫 글자, 읽지 않으면 clay-6 채움 + 빨간 점) + 종류(굵게)·`# 업무`(clay-6)·시각 + 제목·본문.
+- **이번 주 일시중단**(`SuspensionWeek`): 월~금 다섯 칸(sunken, radius 12, 오늘 칸은 clay-1). 칩은 sky 연한 배지 모양, 오늘 건(임박)은 흰 바탕 + clay-3 선 + clay-7 글자. 칸 배치는 카드 항목의 `dueAt` 으로만 정한다.
+- 자리 배치는 `SIDE_KEYS`·`COMPACT_KEYS` 상수가 정한다. 카드를 옮길 때는 이 상수만 고친다.
 - 아직 없는 자리는 점선 테두리 + 투명 바탕(`AdminHubPage` 의 `.pending`).
 
 ### 목록 한 줄 / 표
@@ -175,12 +192,13 @@
 
 ### 파스텔 번짐
 
-- `radial-gradient(… var(--cl-pastel-peach) 0%, transparent 100%)` 를 겹쳐서 만든다. `filter: blur` 나 이미지 파일은 쓰지 않는다.
-- 쓰는 곳: 상단 바, 사이드바, 홈(`HomePage.module.css` 의 `.home`), 로그인. 그 밖에는 쓰지 않는다.
+- 앱 안(상단 바, 사이드바, 홈 `.home`): `radial-gradient(… var(--cl-pastel-peach) 0%, transparent 100%)` 를 겹쳐서 만든다. `filter: blur` 나 이미지 파일은 쓰지 않는다.
+- **로그인 배경은 시안 B 랜딩과 똑같이 한다**(SHY 요청): 번짐 세 개(오른쪽 위 720×620 peach→blush→sky blur 40 / 왼쪽 620×640 butter→rose→sky blur 46 / 오른쪽 아래 460×420 cream→apricot blur 40), 카드 뒤 지름 600 고리(2px clay-5)와 작은 점(26px clay-3), 흰 네 갈래 반짝임 셋. `filter: blur` 는 여기에만 쓴다. 값은 `LoginPage.module.css` 와 `--cl-blob-*` 변수가 기준이고, 바꾸면 시안과 달라지므로 그대로 둔다.
+- 그 밖의 화면에는 번짐을 쓰지 않는다.
 
 ## 7. 하지 말 것
 
-- 남색 크롬, 글래스(반투명 + blur) 타일, 그라데이션 버튼, 왼쪽 굵은 테두리 카드.
+- 남색 크롬, 글래스(반투명 + blur) 타일, 그라데이션 버튼, 왼쪽 굵은 테두리 카드. (blur 는 로그인 배경 번짐에만 쓴다.)
 - 색 이름 추가(`blue`, `green`, `teal`, `navy` …), TSX 의 hex·rgb, 인라인 `style` 로 색 지정.
 - 이모지 아이콘. 아이콘은 `@tabler/icons-react`(선 굵기 1.6~1.8, 18~20px)만 쓴다.
 - 외부 웹폰트·CDN(루트 CLAUDE.md 2-2).

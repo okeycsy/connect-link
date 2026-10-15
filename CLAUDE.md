@@ -161,7 +161,7 @@ connect-link/
 - `src/api/schema.d.ts`는 생성물이다. 손으로 고치지 않는다(8절).
 - **디자인 시스템은 `frontend/CLAUDE.md`(B안 메신저형)를 따른다.** 색·글꼴·radius·앱 셸 치수·컴포넌트 모양과 금지 사항이 거기 있고, 화면 모양에 관해서는 그 문서가 우선한다.
 - UI는 Mantine 컴포넌트와 Mantine 테마(`app/theme.ts`)만 쓴다. 인라인 스타일과 별도 CSS 파일은 Mantine으로 안 될 때만 최소로 쓴다.
-- 글꼴은 Pretendard Variable 을 npm 패키지(`pretendard`)로 번들해서 쓴다. 외부에서 웹폰트를 불러오지 않는다. 숫자 서체(Geist) 도입은 확인 대기.
+- 글꼴은 Pretendard Variable 을 npm 패키지(`pretendard`)로 번들해서 쓴다. 외부에서 웹폰트를 불러오지 않는다. 글꼴은 `frontend/src/app/fonts.css` 의 `--cl-font-sans` 한 곳에서만 정하고, 바꾸는 방법은 `frontend/CLAUDE.md` 3절에 있다. 숫자 서체(Geist) 도입은 확인 대기.
 - 화면 구성: Mantine `AppShell`, 왼쪽 레일(업무 영역: 계좌통합관리 / 자동이체통합관리 / 대출이동 / CMS) + 사이드바(기능: 홈 / 연락처 / 의견 요청 / 기관 테스트 / 일시중단 / 관리, 바로가기에 알림 센터), 상단 바에 전역 검색·알림·사용자 정보. 주소는 `/{업무 slug}/{기능}`. 디자인 토큰과 셸 치수는 `frontend/CLAUDE.md`, 화면 범위와 구조 결정은 `docs/design/common-screens.md`, 분류는 `docs/service-taxonomy.md`를 따른다. `demo` 프로필이면 상단에 데모 도구(계정 전환, 망 전환, 발송함)를 보인다.
 - 날짜 표기 `YYYY-MM-DD`, 일시 `YYYY-MM-DD HH:mm`. 전화번호 표기와 마스킹 형식은 `shared/format.ts` 한 곳에서만 처리한다(마스킹 판단 자체는 서버가 한다).
 - 데스크톱 우선(1280px 기준), 태블릿 폭에서 깨지지 않게 한다.

@@ -1,13 +1,18 @@
 /* 홈 카드: page 바탕 위의 흰 면이라 테두리 없이 radius 24. */
 .card {
   height: 100%;
+}
+
+/* 오른쪽 열처럼 세로로 쌓일 때는 내용 높이만큼만 */
+.card[data-stacked] {
+  height: auto;
   border: 0;
   padding: 24px;
 }
 
-/* 가장 급한 카드: 클레이 링 하나로 한 단계 앞세운다(왼쪽 굵은 테두리는 쓰지 않는다). */
-.card[data-featured] {
-  box-shadow: 0 0 0 1.5px var(--mantine-color-clay-3);
+/* 작게 두는 카드: 한 줄 띠 */
+.card[data-compact] {
+  padding: 14px 24px;
 }
 
 .number {
@@ -28,10 +33,6 @@
   &:hover {
     background: var(--mantine-color-clay-0);
   }
-}
-
-.card[data-featured] .item {
-  padding: 13px 14px;
 }
 
 /* 상태 점: 여유 gray-5, 임박 amber-5, 초과 red-6 */

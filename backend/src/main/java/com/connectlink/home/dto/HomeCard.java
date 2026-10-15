@@ -38,7 +38,7 @@ public record HomeCard(
       Urgency urgency,
       @Schema(nullable = true) String link) {}
 
-  /** 남색 밴드의 글래스 타일에 올리는 숫자. 카드와 함께 {@code HomeContribution} 으로 전달된다. */
+  /** 홈 머리의 KPI 타일에 올리는 숫자. 카드와 함께 {@code HomeContribution} 으로 전달된다. */
   public record HomeCardKpi(String label, long value, String unit, boolean urgent) {}
 
   /** 기여자가 없는 자리. */

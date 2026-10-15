@@ -2,21 +2,31 @@ import { Box, Grid, Group, SimpleGrid, Skeleton, Stack, Text, Title } from '@man
 import { useParams } from 'react-router-dom';
 
 import { HomeCardView } from '../components/HomeCardView';
+import { RecentNotificationsCard } from '../components/RecentNotificationsCard';
 import { useHome, type HomeCard, type HomeKpi } from '../hooks';
 import classes from './HomePage.module.css';
 
-const URGENCY_RANK = { OVERDUE: 2, SOON: 1, NONE: 0 } as const;
+/** 오른쪽 열에 두는 카드 자리(위에서부터). 나머지는 아래 줄에 서버 순서대로 놓는다. */
+const SIDE_KEYS: HomeCard['key'][] = ['OPINION_REPLIES', 'SUSPENSIONS'];
+/** 중요도가 낮아 아래 줄 끝에 작게 두는 자리. SHY 요청(2026-10-15). */
+const COMPACT_KEYS: HomeCard['key'][] = ['CONTACT_CONFIRM'];
 
 /**
- * 홈: "지금 할 일". 파스텔 번짐 위에 인사말과 흰 KPI 타일 네 개, 가장 급한 카드 하나를 크게, 나머지 카드를 작게.
+ * 홈: "지금 할 일". 파스텔 번짐 위에 인사말과 흰 KPI 타일 네 개.
+ * 그 아래 왼쪽 큰 칸은 최근 알림(알림 센터와 같은 내용), 오른쪽은 회신 대기 의견 요청과 이번 주 일시중단,
+ * 아래 줄은 나머지 카드이고 확인이 필요한 담당자는 끝에 작게 둔다.
  * 카드 내용은 서버(/api/v1/home)가 자리별 기여자에게서 모아 준다. 업무 영역(레일)마다 다르다.
  */
 export function HomePage() {
   const { business } = useParams<{ business: string }>();
   const { data, isPending, isError } = useHome(business);
 
-  const featured = data ? pickFeatured(data.cards) : undefined;
-  const rest = data?.cards.filter((c) => c !== featured) ?? [];
+  const cards = data?.cards ?? [];
+  const side = SIDE_KEYS.map((k) => cards.find((c) => c.key === k)).filter(
+    (c): c is HomeCard => c !== undefined,
+  );
+  const bottom = cards.filter((c) => !SIDE_KEYS.includes(c.key) && !COMPACT_KEYS.includes(c.key));
+  const compact = cards.filter((c) => COMPACT_KEYS.includes(c.key));
 
   return (
     <Stack gap="lg" className={classes.home}>
@@ -57,37 +67,29 @@ export function HomePage() {
       ) : (
         <Stack gap="md" data-testid="home-cards">
           <Grid gutter="md">
-            {featured && (
-              <Grid.Col span={{ base: 12, md: 7 }}>
-                <HomeCardView card={featured} featured />
-              </Grid.Col>
-            )}
-            <Grid.Col span={{ base: 12, md: featured ? 5 : 12 }}>
-              <Stack gap="md" h="100%">
-                {rest.slice(0, 2).map((c) => (
-                  <HomeCardView key={c.key} card={c} />
+            <Grid.Col span={{ base: 12, md: 7 }}>
+              <RecentNotificationsCard />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, md: 5 }}>
+              <Stack gap="md">
+                {side.map((c) => (
+                  <HomeCardView key={c.key} card={c} stacked />
                 ))}
               </Stack>
             </Grid.Col>
           </Grid>
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="md">
-            {rest.slice(2).map((c) => (
+            {bottom.map((c) => (
               <HomeCardView key={c.key} card={c} />
             ))}
           </SimpleGrid>
+          {compact.map((c) => (
+            <HomeCardView key={c.key} card={c} compact />
+          ))}
         </Stack>
       )}
     </Stack>
   );
-}
-
-/** 가장 급한 카드. 급한 정도가 같으면 자리 순서가 앞선 것. */
-function pickFeatured(cards: HomeCard[]): HomeCard | undefined {
-  return cards.reduce<HomeCard | undefined>((best, c) => {
-    if (c.source === 'UNAVAILABLE') return best;
-    if (!best || URGENCY_RANK[c.urgency] > URGENCY_RANK[best.urgency]) return c;
-    return best;
-  }, undefined);
 }
 
 /** 머리 날짜 태그. 예: "10월 15일 목요일". */

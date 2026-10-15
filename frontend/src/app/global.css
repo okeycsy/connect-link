@@ -15,6 +15,13 @@
   --cl-pastel-sky: #cfe0f3;
   --cl-pastel-butter: #f7efb8;
 
+  /* 로그인 배경 번짐 전용(시안 B 랜딩과 같은 값). LoginPage.module.css 에서만 쓴다. */
+  --cl-blob-peach: #f6c9bc;
+  --cl-blob-blush: #f3d9c9;
+  --cl-blob-rose: #f4d3cb;
+  --cl-blob-cream: #f8f0be;
+  --cl-blob-apricot: #f6dccf;
+
   --cl-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --cl-page-gutter: 24px;
 }

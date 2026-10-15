@@ -125,9 +125,9 @@ export const theme = createTheme({
   variantColorResolver,
   white: '#FFFFFF',
   black: surface.ink,
-  fontFamily:
-    'Pretendard Variable, Pretendard, -apple-system, BlinkMacSystemFont, "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif',
-  fontFamilyMonospace: 'ui-monospace, "Cascadia Mono", Consolas, monospace',
+  // 글꼴은 app/fonts.css 의 변수 하나로만 정한다. 글꼴을 바꿀 때 이 파일은 고치지 않는다.
+  fontFamily: 'var(--cl-font-sans)',
+  fontFamilyMonospace: 'var(--cl-font-mono)',
   headings: {
     fontWeight: '700',
     sizes: {
