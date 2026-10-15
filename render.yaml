@@ -1,0 +1,12 @@
+# Render(https://render.com) 무료 웹 서비스 설정. 저장소를 연결하면 main 에 머지될 때마다 다시 배포된다.
+# 공개 미리보기 전용이다. 올라가는 데이터는 샘플(가상)뿐이다.
+services:
+  - type: web
+    name: connect-link
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: main
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/v1/health
+    autoDeploy: true

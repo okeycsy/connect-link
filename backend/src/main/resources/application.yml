@@ -27,7 +27,8 @@ spring:
       date-time: iso
 
 server:
-  port: 8080
+  # Render 같은 호스팅은 PORT 환경변수로 포트를 준다.
+  port: ${PORT:8080}
   servlet:
     session:
       cookie:

@@ -1,0 +1,8 @@
+.git
+.gradle
+**/build
+**/node_modules
+frontend/dist
+e2e
+docs
+*.md
