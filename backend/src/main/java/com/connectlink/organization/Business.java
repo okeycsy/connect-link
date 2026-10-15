@@ -32,4 +32,9 @@ public enum Business {
   public String getShortLabel() {
     return shortLabel;
   }
+
+  /** 주소의 slug 로 업무 영역을 찾는다. 없으면 비어 있다. */
+  public static java.util.Optional<Business> fromSlug(String slug) {
+    return java.util.Arrays.stream(values()).filter(b -> b.slug.equals(slug)).findFirst();
+  }
 }

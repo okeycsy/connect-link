@@ -99,6 +99,7 @@ connect-link/
 │       │   ├── auth/          # 로그인, 세션, 보안 설정
 │       │   ├── account/       # 가입, 이메일 인증, 가입 승인, 탈퇴
 │       │   ├── organization/  # 기관(결제원·참가기관·이용기관), 업무 기준정보
+│       │   ├── home/          # 홈 "지금 할 일": 카드 자리(HomeCardKey)와 기여자 계약(HomeCardContributor), 샘플 카드(home/sample)
 │       │   ├── contact/       # 가. 연락처 관리
 │       │   ├── opinion/       # 나. 의견 회신 취합
 │       │   ├── testplan/      # 다. 기관 테스트

@@ -1,0 +1,56 @@
+.card {
+  height: 100%;
+}
+
+/* 가장 급한 카드: 남색 왼쪽 테두리로 한 단계 앞세운다. 빨강은 배지와 점에만. */
+.card[data-featured] {
+  border-left: 4px solid var(--mantine-color-navy-9);
+}
+
+.number {
+  font-variant-numeric: tabular-nums;
+}
+
+.items {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--mantine-color-gray-2);
+}
+
+.item {
+  padding: 6px 4px;
+}
+
+.card[data-featured] .item {
+  padding: 10px 6px;
+}
+
+.item {
+  border-radius: 8px;
+  transition: background 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  &:hover {
+    background: var(--mantine-color-navy-0);
+  }
+}
+
+/* 상태 점: 기본은 navy-300, 임박은 빨간 테두리, 초과는 빨간 채움 */
+.dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--mantine-color-navy-2);
+  box-shadow: 0 0 0 3px rgba(169, 180, 204, 0.25);
+}
+
+.dot[data-urgency='SOON'] {
+  background: #fff;
+  border: 2px solid var(--mantine-color-red-6);
+  box-shadow: 0 0 0 3px rgba(179, 38, 30, 0.14);
+}
+
+.dot[data-urgency='OVERDUE'] {
+  background: var(--mantine-color-red-6);
+  box-shadow: 0 0 0 3px rgba(179, 38, 30, 0.18);
+}
