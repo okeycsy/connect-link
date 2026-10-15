@@ -74,8 +74,10 @@
 | 테스트 요구사항 | `TestItem` | |
 | 테스트 결과 | `TestResult` | `PASSED`(정상), `FAILED`(오류), `IN_PROGRESS`(수행중), `NOT_STARTED`(미수행) |
 | 일시중단 | `Suspension` | 상태 `CONFIRMED`(확정), `PENDING_REVIEW`(검토 대기), `IN_REVIEW`(검토 중), `COMPLETED`(완료) |
-| 알림 | `Notification` | 채널 `EMAIL`, `MATTERMOST` |
-| 발송함 | `NotificationOutbox` | 프로토타입에서 실제 발송 대신 기록 |
+| 알림 | `Notification` | 알림 센터 항목. 종류 `NotificationType` (`SIGNUP_REQUESTED`, `SIGNUP_APPROVED`, `CONTACT_CHANGE_REQUESTED`, `CONTACT_RECONFIRM_DUE`, `OPINION_REQUEST_OPENED`, `OPINION_REPLY_DUE`, `TEST_PLAN_OPENED`, `SUSPENSION_CHANGED`, `SYSTEM`) |
+| 알림 채널 | `NotificationChannel` | `EMAIL`, `MATTERMOST` |
+| 발송함 | `NotificationOutbox` | 프로토타입에서 실제 발송 대신 기록. 상태 `OutboxStatus` = `PENDING`(발송 대기), `SENT`, `FAILED` |
+| 로그인 사용자 | `CurrentUser` | Service 권한 판단에 넘기는 값. 데모 관리자는 `DemoUsers.ADMIN` |
 | 내부망/인터넷망 | `NetworkZone` | `INTERNAL`, `EXTERNAL` |
 
 용어집에 없는 개념이 필요하면 이름을 정해 이 표에 추가하는 것까지 같은 작업에 포함한다.
