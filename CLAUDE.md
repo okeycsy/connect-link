@@ -153,8 +153,8 @@ connect-link/
 - **API 호출은 `src/api/client.ts`(openapi-fetch)와 각 모듈의 `hooks.ts`(TanStack Query)로만** 한다. 컴포넌트에서 `fetch`를 직접 쓰지 않는다.
 - `src/api/schema.d.ts`는 생성물이다. 손으로 고치지 않는다(8절).
 - UI는 Mantine 컴포넌트와 Mantine 테마(`app/theme.ts`)만 쓴다. 인라인 스타일과 별도 CSS 파일은 Mantine으로 안 될 때만 최소로 쓴다.
-- 폰트는 시스템 폰트(Windows는 맑은 고딕)를 쓴다. 웹폰트를 불러오지 않는다.
-- 화면 구성: Mantine `AppShell`, 왼쪽 메뉴(연락처 / 의견 회신 / 기관 테스트 / 일시중단 / 관리), 상단에 사용자 정보. `demo` 프로필이면 상단에 데모 도구(계정 전환, 망 전환, 발송함)를 보인다.
+- 글꼴은 Pretendard Variable 을 npm 패키지(`pretendard`)로 번들해서 쓴다. 외부에서 웹폰트를 불러오지 않는다. 숫자 서체(Geist) 도입은 확인 대기.
+- 화면 구성: Mantine `AppShell`, 왼쪽 레일(업무 영역: 계좌통합관리 / 자동이체통합관리 / 대출이동 / CMS) + 보조 메뉴(기능: 홈 / 연락처 / 의견 요청 / 기관 테스트 / 일시중단 / 관리), 상단 바에 전역 검색·알림·사용자 정보. 주소는 `/{업무 slug}/{기능}`. 디자인 토큰과 구조는 `docs/design/common-screens.md`, 분류는 `docs/service-taxonomy.md`를 따른다. `demo` 프로필이면 상단에 데모 도구(계정 전환, 망 전환, 발송함)를 보인다.
 - 날짜 표기 `YYYY-MM-DD`, 일시 `YYYY-MM-DD HH:mm`. 전화번호 표기와 마스킹 형식은 `shared/format.ts` 한 곳에서만 처리한다(마스킹 판단 자체는 서버가 한다).
 - 데스크톱 우선(1280px 기준), 태블릿 폭에서 깨지지 않게 한다.
 - 화면 문구는 한국어로 컴포넌트에 직접 쓴다. 다국어 처리는 하지 않는다.
