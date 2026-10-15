@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>html{color-scheme:light dark}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>연결고리 공통 화면 시안</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Geist:wght@500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: 한 열 문서. 결정 요약 → 디자인 언어(레이어드 네이비) → 홈 / 연락처 / 로그인 / 다크 모드 목업 → 확인 사항 */
+:root{
+  --bg:#EEF2FA; --surface:#FFFFFF; --fg:#15203A; --muted:#56637C; --line:#D6DEEC;
+  --accent:#0F1E3C; --accent-soft:#E3E9F5; --good:#0F1E3C; --bad:#D23B2F;
+  --font-body:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --font-num:"Geist","IBM Plex Sans KR",system-ui,sans-serif;
+  --font-mono:"Geist Mono","IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0F1522; --surface:#171E2E; --fg:#E6EBF6; --muted:#9AA7C2; --line:#283350;
+  --accent:#9DB2E6; --accent-soft:#1B2745; --good:#9DB2E6; --bad:#FF8A80; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1522; --surface:#171E2E; --fg:#E6EBF6; --muted:#9AA7C2; --line:#283350;
+  --accent:#9DB2E6; --accent-soft:#1B2745; --good:#9DB2E6; --bad:#FF8A80; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.65;padding-inline:16px;padding-block:32px 64px;word-break:keep-all}
+.wrap{max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:52px}
+h1,h2,h3{text-wrap:balance;line-height:1.3;margin:0}
+h1{font-size:30px;font-weight:700;letter-spacing:-.01em}
+h2{font-size:22px;font-weight:700}
+h3{font-size:16px;font-weight:600}
+p{margin:0;max-width:68ch}
+a{color:var(--accent)}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--accent);font-weight:700}
+.lead{color:var(--muted);font-size:16px}
+section{display:flex;flex-direction:column;gap:18px}
+.hdr{display:flex;flex-direction:column;gap:12px}
+.decisions{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.decisions div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0;font-size:14px}
+.decisions small{color:var(--muted);font-size:12px;font-weight:600;letter-spacing:.04em}
+.decisions div.new{border-color:var(--accent)}
+.decisions div.new small{color:var(--accent)}
+.mocks{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start}
+@media (max-width:860px){.mocks{grid-template-columns:minmax(0,1fr)}}
+.stage{overflow-x:auto;min-width:0;padding-bottom:6px}
+.cap{font-size:12px;color:var(--muted);margin-top:6px}
+ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.notes li{font-size:14px}
+.mantine{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.screen{border-top:2px solid var(--fg);padding-top:18px;display:flex;flex-direction:column;gap:16px}
+.screen .tag{font-family:var(--font-mono);font-size:12px;color:var(--accent)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+.cols > div{min-width:0;display:flex;flex-direction:column;gap:8px;font-size:14px}
+.cols p{font-size:14px}
+.layers{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.layer{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.layer .pv{height:76px;position:relative;overflow:hidden}
+.layer .tx{padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.layer .tx b{font-size:13.5px}
+.layer .tx span{color:var(--muted);font-size:12.5px;line-height:1.5}
+.sig{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px 20px;font-size:14px}
+.sig div{display:flex;gap:10px;min-width:0}
+.sig b{color:var(--accent);font-family:var(--font-mono);font-size:12px;flex:none;padding-top:3px}
+.tokens{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.sw{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:12.5px}
+.sw i{display:block;height:46px}
+.sw div{padding:7px 10px;display:flex;flex-direction:column;gap:1px}
+.sw b{font-size:12.5px}
+.sw code{font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+.callout{background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:8px}
+.alts{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.alt{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;min-width:0;font-size:14px}
+.alt .chips{display:flex;gap:5px}
+.alt .chips i{flex:1;height:26px;border-radius:5px}
+.alt .ref{font-size:12.5px;color:var(--muted)}
+
+/* ---------- 목업 공통: 앱 화면은 자체 색을 고정 ---------- */
+.mk{
+  --b:#0F1E3C; --b6:#16294F; --b7:#0B1730; --b4:#4A6BB5; --b1:#E3E9F5;
+  --t2:#A9B4CC; --t3:#6F80A6; --t4:#3A4F7A;
+  --canvas:#F2F4F8; --card:#FFFFFF; --ink:#16213B; --muted:#5B677F; --line:#D9DEE8; --head:#EEF1F6;
+  --frost:rgba(255,255,255,.88); --frost-line:rgba(255,255,255,.5);
+  --bad:#B3261E; --bad-bg:#FCE8E8;
+  --chrome:radial-gradient(ellipse at 15% 0%,rgba(90,125,205,.42),transparent 55%),linear-gradient(180deg,#1B2F58 0%,#0F1E3C 55%,#0B1730 100%);
+  --grain:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)'/%3E%3C/svg%3E");
+  font-family:var(--font-body);color:var(--ink);font-size:12px;line-height:1.45;word-break:keep-all
+}
+.mk.dk{--b:#4F74C4;--b1:#223156;--t2:#5F7099;--t3:#8A9BC2;--t4:#B8C6E6;--canvas:#0B1120;--card:#131C33;--ink:#E6EAF4;--muted:#9AA5BF;--line:#263352;--head:#1A2440;--frost:rgba(11,17,32,.82);--frost-line:rgba(255,255,255,.12);--bad:#FF8A80;--bad-bg:#3B1A1A}
+.mk.dk .sub .i.on{color:#C9D4EE}
+.num{font-family:var(--font-num);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.mono{font-family:var(--font-mono);font-size:10.5px;font-variant-numeric:tabular-nums}
+.dt{width:900px;height:580px;border-radius:12px;overflow:hidden;border:1px solid #B9C6E0;box-shadow:0 18px 40px -16px rgba(27,42,74,.4);display:flex;flex-direction:column;background:var(--grain),var(--chrome)}
+.win{height:26px;flex:none;background:#E3E8F1;display:flex;align-items:center;gap:6px;padding:0 10px}
+.win i{width:9px;height:9px;border-radius:50%;background:#BFC8D8;display:block}
+.win span{margin-left:12px;font-family:var(--font-mono);font-size:10px;color:#6B778E;background:#fff;border-radius:4px;padding:1px 10px}
+.mk.dk .win{background:#1A2440}.mk.dk .win i{background:#34446A}.mk.dk .win span{background:#131C33;color:#9AA5BF}
+
+/* 상단 바 */
+.top{height:48px;flex:none;display:flex;align-items:center;gap:10px;padding:0 14px;color:#fff;border-bottom:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.2)}
+.logo{width:26px;height:26px;border-radius:7px;background:#fff;color:var(--b7);font-family:var(--font-num);font-weight:700;font-size:9px;display:inline-flex;align-items:center;justify-content:center;flex:none;letter-spacing:0}
+.brand{font-weight:700;font-size:13.5px}
+.gs{display:flex;align-items:center;gap:8px;margin-left:auto;margin-right:auto;width:340px;padding:5px 10px;border-radius:8px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.26);color:rgba(255,255,255,.9);box-shadow:inset 0 1px 0 rgba(255,255,255,.2)}
+.kcs{display:flex;gap:3px;align-items:center}
+.gs .kcs{margin-left:auto}
+.kc{font-family:var(--font-mono);font-size:9.5px;line-height:1.3;border:1px solid rgba(255,255,255,.45);border-bottom-width:2px;border-radius:4px;padding:0 4px;color:#fff;background:rgba(255,255,255,.12)}
+.kc.d{border-color:var(--line);color:var(--muted);background:var(--head)}
+.top .r{display:flex;gap:10px;align-items:center}
+.bell{position:relative;width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.26);display:inline-flex;align-items:center;justify-content:center;color:#fff;flex:none}
+.bell:after{content:"";position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--bad);box-shadow:0 0 0 2px #0F1E3C}
+.av{width:26px;height:26px;border-radius:50%;background:#fff;color:var(--b7);font-size:10.5px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex:none}
+
+/* 레일 + 보조 메뉴 + 시트 */
+.shell{flex:1;display:flex;min-height:0}
+.rail{width:64px;flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0;background:rgba(15,35,95,.12);border-right:1px solid rgba(255,255,255,.12)}
+.rail div{display:flex;flex-direction:column;align-items:center;gap:3px;width:56px;padding:4px 0;color:rgba(255,255,255,.82);font-size:9.5px}
+.rail b{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:10.5px;color:#fff;position:relative}
+.rail .on{color:#fff;font-weight:700}
+.rail .on b{background:#fff;color:var(--b7);border-color:#fff;box-shadow:0 8px 16px -6px rgba(10,30,80,.55)}
+.rail .pin{position:absolute;top:-3px;right:-3px;width:8px;height:8px;border-radius:50%;background:var(--bad);box-shadow:0 0 0 2px #0F1E3C}
+.rail hr{width:30px;border:0;border-top:1px solid rgba(255,255,255,.22);margin:4px 0}
+.sub{width:176px;flex:none;background:var(--frost);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-right:1px solid var(--frost-line);padding:14px 10px;display:flex;flex-direction:column;gap:2px;color:var(--ink)}
+.sub .t{font-weight:700;font-size:13.5px;padding:0 8px 2px}
+.sub .d{font-size:10.5px;color:var(--muted);padding:0 8px 10px}
+.sub .i{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;color:var(--ink)}
+.sub .i i{width:13px;height:13px;border:1.5px solid currentColor;border-radius:3px;opacity:.6;flex:none}
+.sub .n{margin-left:auto;font-family:var(--font-mono);font-size:9.5px;background:var(--b);color:#fff;border-radius:999px;padding:0 6px;font-weight:600}
+.sub .n.a{background:var(--bad);color:#fff}
+.sub .i.on{background:var(--card);color:var(--b);font-weight:700;box-shadow:0 1px 3px rgba(27,42,74,.14)}
+.sub .g{font-size:10px;color:var(--muted);letter-spacing:.06em;padding:12px 8px 4px;font-weight:600}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.sheet{flex:1;min-height:0;background:var(--canvas);border-radius:14px 0 0 0;display:flex;flex-direction:column;overflow:hidden;color:var(--ink)}
+
+/* 홈 */
+.home{padding:14px 16px;gap:12px}
+.band{border-radius:14px;padding:14px 16px;background:var(--grain),var(--chrome);color:#fff;display:grid;grid-template-columns:1.15fr repeat(4,1fr);gap:10px;align-items:stretch;box-shadow:0 14px 28px -16px rgba(15,30,60,.55);flex:none}
+.band .hello{display:flex;flex-direction:column;gap:4px;min-width:0}
+.band .hello strong{font-size:16px;line-height:1.3}
+.band .hello span{color:rgba(255,255,255,.8);font-size:11px}
+.band .hello .kcs{margin-top:auto;font-size:10px;color:rgba(255,255,255,.85);gap:4px}
+.tile{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);border-radius:10px;padding:9px 10px;display:flex;flex-direction:column;gap:2px;min-width:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.28);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.tile small{font-size:10.5px;color:rgba(255,255,255,.85);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile small b{color:#fff;font-weight:700}
+.tile .v{font-size:24px;line-height:1.1;font-weight:600;color:#fff}
+.tile .v em{font-style:normal;font-size:11px;font-weight:500;color:rgba(255,255,255,.85);margin-left:3px;font-family:var(--font-body);letter-spacing:0}
+.tile svg{display:block;margin-top:5px;width:100%;height:16px}
+.tile .hl{height:3px;border-radius:2px;background:rgba(255,255,255,.25);margin-top:7px;overflow:hidden}
+.tile .hl i{display:block;height:100%;background:#fff}
+.bento{display:grid;grid-template-columns:1.15fr 1fr 1fr;grid-auto-rows:minmax(0,1fr);gap:10px;flex:1;min-height:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0;min-height:0;box-shadow:0 1px 2px rgba(27,42,74,.06),0 12px 28px -18px rgba(15,30,60,.28)}
+.card .hd{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card small{color:var(--muted);font-size:10.5px}
+.card h5{margin:0;font-size:12.5px;font-weight:700}
+.big{font-size:22px;font-weight:600;line-height:1.1}
+.big .u{font-size:12px;font-weight:500;color:var(--muted);font-family:var(--font-body);letter-spacing:0;margin-left:2px}
+.card.tall{grid-row:span 2}
+.acts{display:flex;gap:6px;margin-top:auto;flex-wrap:wrap}
+.btn{border:1px solid var(--b);background:var(--b);color:#fff;border-radius:7px;padding:4px 11px;font-weight:600;font-size:11px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.btn.ghost{background:var(--card);color:var(--b)}
+.btn.sm{padding:1px 8px;font-size:10px}
+.btn.full{justify-content:center;padding:9px;font-size:12px;border-radius:8px}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:10px;padding:1px 7px;border-radius:999px;font-weight:600;white-space:nowrap}
+.p-amber{background:var(--card);color:var(--bad);box-shadow:inset 0 0 0 1px var(--bad)}.p-bad{background:var(--bad-bg);color:var(--bad)}.p-ok{background:var(--b1);color:var(--b)}.p-info{background:var(--b1);color:var(--b)}.p-gray{background:var(--head);color:var(--muted)}
+.mk.dk .p-info,.mk.dk .p-ok{color:#C9D4EE}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex:none}
+.d-ok{background:var(--b);box-shadow:0 0 0 3px rgba(15,30,60,.14)}.d-amber{background:var(--card);box-shadow:inset 0 0 0 1.5px var(--bad),0 0 0 3px rgba(210,59,47,.16)}.d-bad{background:var(--bad);box-shadow:0 0 0 3px rgba(210,59,47,.2)}.d-gray{background:var(--t2);box-shadow:0 0 0 3px rgba(169,180,204,.3)}
+.mk.dk .d-ok{background:#C9D4EE}
+.mg{width:24px;height:24px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;flex:none}
+.mg.a,.mg.b,.mg.c,.mg.d{background:var(--b1);color:var(--b)}
+.mk.dk .mg{color:#C9D4EE}
+.lst{display:flex;flex-direction:column}
+.lst > div{display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid var(--line);font-size:11.5px}
+.lst > div:first-child{border-top:0}
+.lst .grow{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lst .m{color:var(--muted);font-size:10.5px}
+.kv{display:flex;flex-direction:column}
+.kv > div{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-top:1px solid var(--line);font-size:11px}
+.kv > div:first-child{border-top:0}
+.kv span:first-child{color:var(--muted)}
+.ring{display:flex;align-items:center;gap:12px}
+.ring svg{width:58px;height:58px;flex:none}
+.ring .rt{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0}
+.stack{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--b1);gap:2px}
+.stack i{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:10px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.legend i{width:8px;height:8px;border-radius:2px;display:inline-block}
+
+/* 목록 화면 */
+.gridwrap{padding:14px 16px;gap:10px}
+.gtop{display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:none}
+.gtop h4{margin:0 4px 0 0;font-size:14px}
+.cnt{font-family:var(--font-mono);font-size:10px;background:var(--b1);color:var(--b);border-radius:999px;padding:1px 7px;margin-right:6px}
+.flt{border:1px solid var(--line);border-radius:999px;padding:2px 10px;color:var(--ink);background:var(--card);font-size:11px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.flt.on{border-color:var(--b);color:#fff;background:var(--b);font-weight:600}
+.gtop .r{margin-left:auto;display:flex;gap:6px}
+.tbl{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 1px 2px rgba(27,42,74,.06),0 12px 28px -18px rgba(15,30,60,.28);display:flex;flex-direction:column;min-height:0;flex:1}
+.gt{width:100%;border-collapse:collapse;font-size:11.5px}
+.gt th{font-size:10px;padding:7px 10px;background:var(--head);color:var(--muted);text-align:left;font-weight:600;letter-spacing:.02em;white-space:nowrap}
+.gt td{padding:6px 10px;border-top:1px solid var(--line);white-space:nowrap;vertical-align:middle}
+.gt .who{display:flex;align-items:center;gap:7px}
+.gt .who .m{color:var(--muted);font-size:10.5px}
+.gt tr.sel td{background:var(--b1)}
+.gt tr.sel td:first-child{box-shadow:inset 2px 0 0 var(--b)}
+.gt .st{display:inline-flex;align-items:center;gap:6px}
+.gt .chev{color:var(--muted);text-align:right}
+.foot{display:flex;justify-content:space-between;align-items:center;padding:7px 12px;color:var(--muted);font-size:10.5px;border-top:1px solid var(--line);margin-top:auto}
+.pg{display:flex;gap:4px}
+.pg span{min-width:18px;text-align:center;border-radius:5px;padding:0 4px;font-family:var(--font-mono);font-size:10px}
+.pg .on{background:var(--b);color:#fff}
+
+/* 로그인 */
+.login{flex:1;display:grid;grid-template-columns:1.05fr 1fr;min-height:0}
+.lside{position:relative;color:#fff;padding:30px 32px;display:flex;flex-direction:column;gap:12px;overflow:hidden}
+.lside .hd2{display:flex;align-items:center;gap:10px;position:relative}
+.lside h5{margin:0;font-size:23px;line-height:1.35;font-weight:700;position:relative}
+.lside h5 em{font-style:normal;color:#9DB2E6}
+.lside .pts{display:flex;flex-direction:column;gap:5px;font-size:12px;color:rgba(255,255,255,.9);position:relative}
+.lside .pts div{display:flex;align-items:center;gap:8px}
+.lside .graph{position:absolute;right:-12px;bottom:60px;width:280px;height:224px}
+.lside .areas{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;position:relative}
+.lside .areas span{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:2px 10px;font-size:10.5px}
+.lform{background:var(--canvas);display:flex;align-items:center;justify-content:center;padding:24px;border-radius:14px 0 0 14px;min-width:0}
+.form{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 24px;display:flex;flex-direction:column;gap:12px;width:100%;max-width:330px;box-shadow:0 1px 2px rgba(27,42,74,.06),0 24px 48px -28px rgba(15,30,60,.35)}
+.form h6{margin:0;font-size:17px;font-weight:700}
+.fld{display:flex;flex-direction:column;gap:4px}
+.fld label{font-size:10.5px;color:var(--muted);font-weight:600}
+.fld .in{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--card);color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fld .in.focus{border-color:var(--b);box-shadow:0 0 0 3px rgba(15,30,60,.15)}
+.fld .in.ph{color:#97A2B6}
+.links{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted)}
+.links a{color:var(--b);font-weight:700;text-decoration:none}
+.hint{font-size:10.5px;color:var(--muted);background:var(--head);border-radius:8px;padding:8px 10px}
+
+/* 모바일 */
+.mb{width:300px;height:600px;border-radius:30px;overflow:hidden;border:8px solid #141B2D;display:flex;flex-direction:column;margin-inline:auto;background:var(--grain),var(--chrome);color:var(--ink)}
+.sbar{height:22px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 18px;font-size:10px;font-weight:600;color:#fff}
+.mtop{height:44px;flex:none;display:flex;align-items:center;gap:8px;padding:0 14px;color:#fff}
+.mtop .r{margin-left:auto;display:flex;gap:8px;align-items:center}
+.chips{display:flex;gap:6px;padding:4px 12px 12px;overflow:hidden;flex:none}
+.chips span{border-radius:999px;padding:3px 10px;white-space:nowrap;font-size:11px;color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.26)}
+.chips span.on{background:#fff;color:var(--b7);border-color:#fff;font-weight:700}
+.msheet{flex:1;min-height:0;background:var(--canvas);border-radius:14px 14px 0 0;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.mbody{flex:1;min-height:0;overflow:hidden;padding:12px;display:flex;flex-direction:column;gap:10px}
+.mfilters{display:flex;gap:6px;padding:10px 12px 0;overflow:hidden;flex:none}
+.tabbar{height:54px;flex:none;display:grid;grid-template-columns:repeat(5,1fr);font-size:9.5px;color:var(--muted);text-align:center;align-items:center;background:var(--card);border-top:1px solid var(--line)}
+.tabbar div{display:flex;flex-direction:column;align-items:center;gap:3px}
+.tabbar i{width:16px;height:16px;border:1.5px solid currentColor;border-radius:4px;display:block}
+.tabbar .on{color:var(--b);font-weight:700}
+.item{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 11px;display:flex;align-items:center;gap:9px}
+.item .tx{flex:1;min-width:0}
+.item .tx b{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .tx small{display:block;color:var(--muted);font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bsheet{position:absolute;left:0;right:0;bottom:0;background:var(--card);border-radius:16px 16px 0 0;padding:10px 14px 14px;box-shadow:0 -14px 36px -12px rgba(27,42,74,.4);display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line)}
+.bsheet .hdl{width:36px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 4px}
+.bsheet .who{display:flex;align-items:center;gap:10px}
+.bsheet .who .mg{width:36px;height:36px;border-radius:10px;font-size:12px}
+.bsheet .who .nm{flex:1;min-width:0}
+.bsheet .who .nm b{display:block;font-size:13px}
+.bsheet .who .nm small{display:block;color:var(--muted);font-size:10.5px}
+.mlogin{padding:14px 18px 30px;color:#fff;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden;flex:none}
+.mlogin .hd2{display:flex;align-items:center;gap:8px;position:relative}
+.mlogin .h{font-size:17px;font-weight:700;line-height:1.4;position:relative}
+.mlogin .h em{font-style:normal;color:#9DB2E6}
+.mlogin .graph{position:absolute;right:-18px;top:6px;width:130px;height:104px;opacity:.9}
+.areas-m{display:flex;gap:6px;flex-wrap:wrap}
+.areas-m span{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:2px 9px;font-size:10.5px;color:var(--muted)}
+
+@media (prefers-reduced-motion:no-preference){.dt,.mb{transition:transform .25s cubic-bezier(.2,.8,.2,1)}.dt:hover{transform:translateY(-2px)}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header class="hdr">
+  <div class="eyebrow">공통 영역 · 5차 시안 · 2026-10-13</div>
+  <h1>연결고리 공통 화면 5차 시안</h1>
+  <p class="lead">메인색을 남색으로 바꾸고 색 수를 줄였습니다. 쓰는 색은 남색과 그 틴트, 흰 카드, 회색 글자, 그리고 급한 것에만 쓰는 빨강 하나입니다. 레일 + 보조 메뉴 구조, 카드 홈, 단일 로그인과 4차에서 잡은 네 겹의 깊이(그레인 그라데이션 크롬, 프로스트 보조 메뉴, 틴트 시트, 글래스 타일)는 그대로입니다. 디자인 언어 이름은 레이어드 네이비입니다. 목업의 기관·사람·번호는 모두 가짜입니다.</p>
+  <div class="decisions">
+    <div><small>구조</small>C안: 레일 + 보조 메뉴</div>
+    <div><small>메인 화면</small>B안: 카드 대시보드</div>
+    <div class="new"><small>색</small>남색 메인 #0F1E3C · 보조색은 빨강 하나</div>
+    <div><small>로그인</small>결제원·기관 하나로</div>
+    <div><small>디자인 언어</small>레이어드 네이비</div>
+  </div>
+</header>
+
+<!-- ================= 디자인 언어 ================= -->
+<section>
+  <h2>디자인 언어: 레이어드 네이비</h2>
+  <p>남색 하나를 네 겹으로 쌓습니다. 가장 바깥은 미세한 그레인이 깔린 남색 그라데이션 크롬(상단 바, 레일, 로그인 패널)이고, 그 위에 남색이 은근히 비치는 프로스트 보조 메뉴, 모서리가 둥근 연한 틴트 시트, 그리고 흰 카드가 올라갑니다. 홈 상단의 남색 밴드 위에는 반투명 글래스 타일이 뜹니다. 유채색은 남색과 그 틴트, 그리고 급한 것에만 쓰는 빨강 하나뿐이고, 상태와 진행률도 남색의 밝기 차이로 읽습니다. 숫자는 전용 서체로 한글 본문과 질감을 나눕니다.</p>
+
+  <div class="layers">
+    <div class="layer"><div class="pv mk" style="background:var(--grain),var(--chrome)"></div><div class="tx"><b>0층 · 크롬</b><span>그라데이션 + 좌상단 빛 + 그레인. 상단 바, 레일, 로그인 패널, 홈 밴드가 같은 레시피.</span></div></div>
+    <div class="layer"><div class="pv mk" style="background:var(--grain),var(--chrome)"><div style="position:absolute;left:0;top:0;bottom:0;width:38%;background:var(--frost);backdrop-filter:blur(10px)"></div><div style="position:absolute;left:38%;right:0;top:12px;bottom:0;background:var(--canvas);border-radius:12px 0 0 0"></div></div><div class="tx"><b>1층 · 프로스트와 시트</b><span>보조 메뉴는 남색이 비치는 유리, 본문은 크롬 안에 끼운 둥근 시트.</span></div></div>
+    <div class="layer"><div class="pv mk" style="background:var(--canvas)"><div style="position:absolute;left:14px;right:14px;top:14px;bottom:-10px;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 28px -18px rgba(15,30,60,.35)"></div></div><div class="tx"><b>2층 · 카드</b><span>흰색은 카드·폼·표 본문에만. 그림자는 남색 기운.</span></div></div>
+    <div class="layer"><div class="pv mk" style="background:var(--grain),var(--chrome)"><div style="position:absolute;left:14px;right:14px;top:14px;bottom:14px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);border-radius:10px;box-shadow:inset 0 1px 0 rgba(255,255,255,.3);backdrop-filter:blur(8px)"></div></div><div class="tx"><b>3층 · 글래스</b><span>남색 밴드 위에 뜨는 반투명 KPI 타일. 두께는 상단 1px 하이라이트로.</span></div></div>
+  </div>
+
+  <h3>시그니처 요소</h3>
+  <div class="sig">
+    <div><b>01</b><span><strong>남색 위의 시트.</strong> 본문이 radius 14의 시트처럼 크롬 안에 끼워져 있어 모서리 밖으로 그레인 그라데이션이 비칩니다. 모든 화면에서 반복되는 가장 큰 인식 요소입니다.</span></div>
+    <div><b>02</b><span><strong>글래스 KPI 타일.</strong> 홈 첫 줄, 남색 밴드 위의 반투명 타일 네 개. 24px 숫자 전용 서체, 한글 라벨, 흰 진행 헤어라인 또는 흰 스파크라인.</span></div>
+    <div><b>03</b><span><strong>빨강은 하나, 두 단계.</strong> 유채색 보조색은 빨강 하나뿐이고 마감 임박, 미확인, 새 알림에만 씁니다. 임박은 테두리만, 초과와 미확인은 채움으로 구분해 어디서든 ‘급한 것’으로 읽힙니다.</span></div>
+    <div><b>04</b><span><strong>링 게이지와 업무별 스택 바.</strong> 정기 변경 진행률은 링, 업무별 완료 수는 남색 네 단계로 쌓은 바. 카드가 전부 같은 모양이 되지 않게 합니다.</span></div>
+    <div><b>05</b><span><strong>레일 토큰과 기관 모노그램.</strong> 네 업무는 둥근 사각 토큰, 기관은 두 글자 모노그램 타일. 같은 모양이 레일, 표, 상세 패널에 반복돼 내비게이션과 데이터를 묶습니다.</span></div>
+    <div><b>06</b><span><strong>키캡과 헤일로 점.</strong> Ctrl K 키캡이 검색과 안내 문구에 반복되고, 상태 점은 8px 점 + 연한 외곽 링으로 홈·표·모바일에서 같은 체계를 씁니다.</span></div>
+  </div>
+
+  <h3>색</h3>
+  <div class="tokens">
+    <div class="sw"><i style="background:#0F1E3C"></i><div><b>남색</b><code>#0F1E3C · 크롬, 버튼, 링크, 활성 표시</code></div></div>
+    <div class="sw"><i style="background:linear-gradient(180deg,#1B2F58,#0B1730)"></i><div><b>크롬 그라데이션</b><code>#1B2F58 → #0B1730 · 상단 바, 레일, 밴드</code></div></div>
+    <div class="sw"><i style="background:linear-gradient(90deg,#3A4F7A 0 33%,#6F80A6 33% 66%,#A9B4CC 66%)"></i><div><b>남색 틴트 3단계</b><code>#3A4F7A · #6F80A6 · #A9B4CC · 스택 바, 비활성</code></div></div>
+    <div class="sw"><i style="background:#E3E9F5"></i><div><b>연한 틴트</b><code>#E3E9F5 · 선택 행, 활성 항목, 모노그램, 칩</code></div></div>
+    <div class="sw"><i style="background:#F2F4F8;border-bottom:1px solid #D9DEE8"></i><div><b>시트</b><code>#F2F4F8 · 본문 바탕. 순백 아님</code></div></div>
+    <div class="sw"><i style="background:#FFFFFF;border-bottom:1px solid #D9DEE8"></i><div><b>카드</b><code>#FFFFFF · 카드, 폼, 표 본문에만</code></div></div>
+    <div class="sw"><i style="background:linear-gradient(90deg,#16213B 50%,#5B677F 50%)"></i><div><b>잉크 · 보조 잉크</b><code>#16213B · #5B677F</code></div></div>
+    <div class="sw"><i style="background:#D9DEE8"></i><div><b>라인</b><code>#D9DEE8 · 헤어라인</code></div></div>
+    <div class="sw"><i style="background:linear-gradient(90deg,#B3261E 50%,#FCE8E8 50%)"></i><div><b>빨강, 유일한 보조색</b><code>#B3261E · 배경 #FCE8E8 · 임박, 미확인, 새 알림</code></div></div>
+    <div class="sw"><i style="background:linear-gradient(90deg,#0B1120 50%,#131C33 50%)"></i><div><b>다크 시트 · 카드</b><code>#0B1120 · #131C33 · 크롬은 같은 남색</code></div></div>
+  </div>
+
+  <div class="cols">
+    <div><h3>글꼴</h3><p>본문과 UI는 Pretendard Variable(OFL, npm으로 번들), 숫자와 라틴 표시는 Geist(OFL, Vercel 공개), 내선·코드·키캡은 Geist Mono. Geist에는 한글이 없어 스택을 Geist 다음 Pretendard로 두면 숫자만 Geist로 떨어져 KPI와 한글 라벨 사이에 대비가 생깁니다. 크기는 11 / 12 / 13 / 14 / 16 / 20 / 24 / 32px, 한글은 word-break keep-all, 숫자는 tabular-nums. 이 페이지는 Google Fonts의 IBM Plex Sans KR과 Geist로 대신 그렸습니다.</p></div>
+    <div><h3>모션</h3><p>160~240ms, 이징 cubic-bezier(.2,.8,.2,1), 튕김 없음. 레일의 흰 토큰이 180ms로 다음 업무로 미끄러지고, 보조 메뉴는 200ms 크로스페이드. 링 게이지는 첫 로딩에 한 번만 600ms로 그려지고, 상세 패널은 240ms로 들어옵니다. prefers-reduced-motion에서는 투명도 전환만 남깁니다.</p></div>
+    <div><h3>참고한 레퍼런스</h3><ul class="notes">
+      <li><a href="https://stripe.com" target="_blank" rel="noopener">Stripe</a>, <a href="https://mercury.com" target="_blank" rel="noopener">Mercury</a>: 그라데이션 크롬 위 글래스, 숫자 중심 대시보드</li>
+      <li><a href="https://linear.app" target="_blank" rel="noopener">Linear</a>, <a href="https://arc.net" target="_blank" rel="noopener">Arc</a>: 크롬 안에 끼운 둥근 시트, 키캡</li>
+      <li><a href="https://vercel.com/geist/introduction" target="_blank" rel="noopener">Vercel Geist</a>: 숫자 서체와 1px 디테일</li>
+      <li><a href="https://toss.im" target="_blank" rel="noopener">토스</a>: 말하듯 쓰는 한국어 카피, 큰 숫자</li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- ================= 화면 1 홈 ================= -->
+<section class="screen">
+  <span class="tag">화면 1</span>
+  <h2>홈: 할 일 대시보드</h2>
+  <p>로그인하면 바로 이 화면입니다. 남색 밴드에 인사말과 글래스 KPI 타일 네 개, 그 아래 흰 카드 다섯 장. 가장 급한 내 연락처 확인이 왼쪽 큰 카드이고, 정기 변경 진행률은 링과 업무별 스택 바로 보여 줍니다. 카드는 레일에서 고른 업무와 권한에 따라 바뀌어, 기관 담당자에게는 승인·진행률 대신 우리 기관 담당자 목록이 나옵니다.</p>
+  <div class="mocks">
+    <div class="stage">
+      <div class="dt mk">
+        <div class="win"><i></i><i></i><i></i><span>연결고리 · 계좌통합관리 · 홈</span></div>
+        <div class="top"><span class="logo">KFTC</span><span class="brand">연결고리</span><span class="gs">⌕ 전체 업무에서 담당자·기관 검색<span class="kcs"><span class="kc">Ctrl</span><span class="kc">K</span></span></span><div class="r"><span class="bell">◔</span><span class="av">김</span></div></div>
+        <div class="shell">
+          <nav class="rail"><div><b>전체</b>전체</div><hr><div class="on"><b>계좌</b>계좌통합</div><div><b>자동<span class="pin"></span></b>자동이체</div><div><b>대출</b>대출이동</div><div><b>CMS</b>CMS</div></nav>
+          <aside class="sub">
+            <div class="t">계좌통합관리</div><div class="d">어카운트인포 · 57개 기관</div>
+            <div class="i on"><i></i>홈</div>
+            <div class="i"><i></i>담당자 연락처</div>
+            <div class="i"><i></i>의견 요청<span class="n a">2</span></div>
+            <div class="i"><i></i>기관 테스트</div>
+            <div class="i"><i></i>일시중단<span class="n">1</span></div>
+            <div class="g">관리</div>
+            <div class="i"><i></i>가입 승인<span class="n">3</span></div>
+            <div class="i"><i></i>정기 변경 주간</div>
+          </aside>
+          <div class="main"><div class="sheet home">
+            <div class="band">
+              <div class="hello"><strong>김지원님, 확인할 일이 4건 있어요</strong><span>2026-10-13 (화) · 운영부 계좌팀</span><div class="kcs"><span class="kc">Ctrl</span><span class="kc">K</span><span>담당자 바로 찾기</span></div></div>
+              <div class="tile"><small>재확인 필요</small><div class="v num">1<em>건</em></div><div class="hl"><i style="width:100%"></i></div></div>
+              <div class="tile"><small>회신 대기 의견 요청</small><div class="v num">2<em>건</em></div><small>가장 빠른 마감 <b>D-3</b></small></div>
+              <div class="tile"><small>오늘 일시중단</small><div class="v num">1<em>곳</em></div><small>한결은행 22:00~02:00</small></div>
+              <div class="tile"><small>정기 변경 진행률</small><div class="v num">72<em>%</em></div><svg viewBox="0 0 100 16" preserveAspectRatio="none" aria-hidden="true"><polyline points="0,13 14,11 28,12 42,8 56,9 70,5 84,6 100,2" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            </div>
+            <div class="bento">
+              <div class="card tall">
+                <div class="hd"><h5>내 연락처 확인</h5><span class="pill p-amber">6개월 경과</span></div>
+                <div class="big num">194<span class="u">일째</span></div>
+                <small>마지막 확인 2026-04-02. 바뀐 게 없으면 한 번만 눌러 주세요.</small>
+                <div class="kv"><div><span>내선</span><span class="mono">02-531-7012</span></div><div><span>휴대폰</span><span class="mono">010-****-3381</span></div><div><span>부서·팀</span><span>운영부 · 계좌팀</span></div><div><span>직무</span><span>전산 · 운영</span></div></div>
+                <div class="acts"><span class="btn">바뀐 게 없어요</span><span class="btn ghost">수정</span></div>
+              </div>
+              <div class="card">
+                <div class="hd"><h5>정기 변경 진행률</h5><span class="pill p-info">10-06 ~ 10-17</span></div>
+                <div class="ring">
+                  <svg viewBox="0 0 58 58" aria-hidden="true"><circle cx="29" cy="29" r="23" fill="none" style="stroke:var(--b1)" stroke-width="5"/><circle cx="29" cy="29" r="23" fill="none" style="stroke:var(--b)" stroke-width="5" stroke-linecap="round" stroke-dasharray="104 144.5" transform="rotate(-90 29 29)"/><text x="29" y="33" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--ink);font-family:var(--font-num)">72%</text></svg>
+                  <div class="rt"><small>41 / 57 기관 완료 · 미확인 16곳</small><div class="stack"><i style="width:24.6%;background:var(--b)"></i><i style="width:19.3%;background:var(--t4)"></i><i style="width:15.8%;background:var(--t3)"></i><i style="width:12.3%;background:var(--t2)"></i></div><div class="legend"><span><i style="background:var(--b)"></i>계좌 14</span><span><i style="background:var(--t4)"></i>자동 11</span><span><i style="background:var(--t3)"></i>대출 9</span><span><i style="background:var(--t2)"></i>CMS 7</span></div></div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="hd"><h5>회신 대기 의견 요청</h5><span class="pill p-gray">11곳 미회신</span></div>
+                <div class="lst">
+                  <div><span class="dot d-amber"></span><span class="grow">오픈뱅킹 API 응답코드 변경</span><span class="pill p-amber">D-3</span></div>
+                  <div><span class="dot d-gray"></span><span class="grow">수수료 정산 주기 개편 의견</span><span class="pill p-info">D-9</span></div>
+                </div>
+                <div class="acts"><span class="btn ghost sm">미회신 기관에 리마인드</span></div>
+              </div>
+              <div class="card">
+                <div class="hd"><h5>일시중단</h5><span class="pill p-ok">오늘 1 · 예정 1</span></div>
+                <div class="lst">
+                  <div><span class="mg a">한결</span><span class="grow">한결은행 <span class="m">정기 DB 작업</span></span><span class="mono">22:00~02:00</span><span class="pill p-info">확정</span></div>
+                  <div><span class="mg c">바른</span><span class="grow">바른저축은행 <span class="m">망 교체</span></span><span class="mono">10-18 02:00</span><span class="pill p-amber">검토 중</span></div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="hd"><h5>가입 승인 대기</h5><span class="pill p-info">3명</span></div>
+                <div class="lst">
+                  <div><span class="mg b">누리</span><span class="grow">박서윤 <span class="m">누리증권 · 전산(대외계)</span></span><span class="btn ghost sm">검토</span></div>
+                  <div><span class="mg a">한결</span><span class="grow">이도현 <span class="m">한결은행 · 현업</span></span><span class="btn ghost sm">검토</span></div>
+                  <div><span class="mg d">하늘</span><span class="grow">최민재 <span class="m">하늘캐피탈 · 전산(운영)</span></span><span class="btn ghost sm">검토</span></div>
+                </div>
+              </div>
+            </div>
+          </div></div>
+        </div>
+      </div>
+      <div class="cap">데스크톱 · 결제원 운영 직원(계좌통합관리) 기준. 자동이체 토큰의 빨간 점은 새 알림이 있다는 뜻입니다.</div>
+    </div>
+    <div>
+      <div class="mb mk">
+        <div class="sbar"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="mtop"><span class="logo">KFTC</span><strong class="brand">연결고리</strong><div class="r"><span>⌕</span><span class="bell" style="width:26px;height:26px">◔</span></div></div>
+        <div class="chips"><span>전체</span><span class="on">계좌통합</span><span>자동이체</span><span>대출이동</span><span>CMS</span></div>
+        <div class="msheet">
+          <div class="mbody">
+            <div class="band" style="grid-template-columns:1fr 1fr;padding:12px 14px"><div class="hello" style="grid-column:span 2"><strong style="font-size:15px">확인할 일이 4건 있어요</strong><span>계좌통합관리 · 10-13 (화)</span></div><div class="tile"><small>재확인 필요</small><div class="v num">1<em>건</em></div><div class="hl"><i style="width:100%"></i></div></div><div class="tile"><small>회신 대기</small><div class="v num">2<em>건</em></div><small>마감 <b>D-3</b></small></div></div>
+            <div class="card"><div class="hd"><h5>내 연락처 확인</h5><span class="pill p-amber">6개월 경과</span></div><div class="big num">194<span class="u">일째</span></div><small>마지막 확인 2026-04-02</small><div class="acts"><span class="btn">바뀐 게 없어요</span><span class="btn ghost">수정</span></div></div>
+            <div class="card"><div class="hd"><h5>정기 변경 진행률</h5><b class="num" style="font-size:14px">72%</b></div><div class="stack"><i style="width:24.6%;background:var(--b)"></i><i style="width:19.3%;background:var(--t4)"></i><i style="width:15.8%;background:var(--t3)"></i><i style="width:12.3%;background:var(--t2)"></i></div><small>41 / 57 기관 완료</small></div>
+          </div>
+          <div class="tabbar"><div class="on"><i></i>홈</div><div><i></i>연락처</div><div><i></i>의견</div><div><i></i>중단</div><div><i></i>더보기</div></div>
+        </div>
+      </div>
+      <div class="cap" style="text-align:center">모바일 · 레일은 크롬 위 업무 칩으로, 보조 메뉴는 하단 탭으로</div>
+    </div>
+  </div>
+  <p class="mantine">Mantine: AppShell(header + navbar 2단), NavLink, @mantine/spotlight, SimpleGrid, Card, RingProgress, Progress.Root(sections), Badge, Kbd</p>
+</section>
+
+<!-- ================= 화면 2 연락처 ================= -->
+<section class="screen">
+  <span class="tag">화면 2</span>
+  <h2>목록 화면: 담당자 연락처 그리드</h2>
+  <p>홈을 뺀 목록 화면(연락처, 의견 요청, 기관 테스트, 일시중단)은 모두 이 모양입니다. 켜진 필터는 남색 칩, 기관은 모노그램 타일, 최근 확인일은 헤일로 점과 날짜로 읽습니다. 행을 누르면 데스크톱은 오른쪽 패널, 모바일은 바텀 시트로 상세가 열립니다. 엑셀 내려받기와 수정은 내부망에서 접속한 결제원 직원에게만 보입니다.</p>
+  <div class="mocks">
+    <div class="stage">
+      <div class="dt mk">
+        <div class="win"><i></i><i></i><i></i><span>연결고리 · 대출이동 · 담당자 연락처</span></div>
+        <div class="top"><span class="logo">KFTC</span><span class="brand">연결고리</span><span class="gs">⌕ 전체 업무에서 담당자·기관 검색<span class="kcs"><span class="kc">Ctrl</span><span class="kc">K</span></span></span><div class="r"><span class="bell">◔</span><span class="av">김</span></div></div>
+        <div class="shell">
+          <nav class="rail"><div><b>전체</b>전체</div><hr><div><b>계좌</b>계좌통합</div><div><b>자동<span class="pin"></span></b>자동이체</div><div class="on"><b>대출</b>대출이동</div><div><b>CMS</b>CMS</div></nav>
+          <aside class="sub">
+            <div class="t">대출이동</div><div class="d">신규·보유기관 · 43개 기관</div>
+            <div class="i"><i></i>홈</div>
+            <div class="i on"><i></i>담당자 연락처</div>
+            <div class="i"><i></i>의견 요청</div>
+            <div class="i"><i></i>기관 테스트<span class="n">1</span></div>
+            <div class="i"><i></i>일시중단</div>
+            <div class="g">관리</div>
+            <div class="i"><i></i>정기 변경 주간</div>
+          </aside>
+          <div class="main"><div class="sheet gridwrap">
+            <div class="gtop"><h4>담당자 연락처</h4><span class="cnt">24명</span><span class="flt on">참가기관 ✕</span><span class="flt on">주담대 ✕</span><span class="flt">직무</span><span class="flt">최근 확인일</span><span class="flt">+ 필터</span><div class="r"><span class="btn ghost">엑셀</span><span class="btn">담당자 추가</span></div></div>
+            <div class="tbl">
+              <table class="gt">
+                <thead><tr><th>기관</th><th>담당자</th><th>세부업무</th><th>내선</th><th>최근 확인</th><th></th></tr></thead>
+                <tbody>
+                  <tr><td><span class="who"><span class="mg a">한결</span>한결은행</span></td><td><span class="who">최유나<span class="m">현업 주담당</span></span></td><td>주담대 · 신규</td><td class="mono">02-555-2214</td><td><span class="st"><span class="dot d-ok"></span>09-28</span></td><td class="chev">›</td></tr>
+                  <tr class="sel"><td><span class="who"><span class="mg a">한결</span>한결은행</span></td><td><span class="who">정하은<span class="m">전산 개발</span></span></td><td>주담대 · 보유</td><td class="mono">02-555-2381</td><td><span class="st"><span class="dot d-ok"></span>08-11</span></td><td class="chev">›</td></tr>
+                  <tr><td><span class="who"><span class="mg b">누리</span>누리증권</span></td><td><span class="who">강민호<span class="m">현업 부담당</span></span></td><td>주담대</td><td class="mono">02-777-4410</td><td><span class="st"><span class="dot d-amber"></span>03-30</span></td><td class="chev">›</td></tr>
+                  <tr><td><span class="who"><span class="mg c">바른</span>바른저축은행</span></td><td><span class="who">오세린<span class="m">전산 대외계</span></span></td><td>주담대</td><td class="mono">031-210-3302</td><td><span class="st"><span class="dot d-bad"></span>미확인</span></td><td class="chev">›</td></tr>
+                  <tr><td><span class="who"><span class="mg d">하늘</span>하늘캐피탈</span></td><td><span class="who">윤태경<span class="m">현업 주담당</span></span></td><td>주담대 · 신규</td><td class="mono">02-321-0090</td><td><span class="st"><span class="dot d-ok"></span>10-02</span></td><td class="chev">›</td></tr>
+                  <tr><td><span class="who"><span class="mg b">누리</span>누리증권</span></td><td><span class="who">한지민<span class="m">전산 운영</span></span></td><td>주담대 · 보유</td><td class="mono">02-777-4502</td><td><span class="st"><span class="dot d-ok"></span>09-15</span></td><td class="chev">›</td></tr>
+                  <tr><td><span class="who"><span class="mg a">한결</span>한결은행</span></td><td><span class="who">서도윤<span class="m">전산 인프라</span></span></td><td>주담대 · 신규</td><td class="mono">02-555-2470</td><td><span class="st"><span class="dot d-amber"></span>04-01</span></td><td class="chev">›</td></tr>
+                  <tr><td><span class="who"><span class="mg d">하늘</span>하늘캐피탈</span></td><td><span class="who">임서현<span class="m">현업 부담당</span></span></td><td>주담대 · 보유</td><td class="mono">02-321-0112</td><td><span class="st"><span class="dot d-ok"></span>09-30</span></td><td class="chev">›</td></tr>
+                </tbody>
+              </table>
+              <div class="foot"><span>24명 중 1 ~ 8 · 최근 확인일 순</span><span class="pg"><span>‹</span><span class="on">1</span><span>2</span><span>3</span><span>›</span></span></div>
+            </div>
+          </div></div>
+        </div>
+      </div>
+      <div class="cap">데스크톱 · 결제원 운영 직원 기준. 점은 확인됨 남색, 6개월 가까이 빨간 테두리, 미확인 빨강 채움. 선택한 행(정하은)은 왼쪽 남색 선.</div>
+    </div>
+    <div>
+      <div class="mb mk">
+        <div class="sbar"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="mtop"><span>☰</span><strong class="brand">담당자 연락처</strong><div class="r"><span>⌕</span></div></div>
+        <div class="chips"><span>계좌통합</span><span>자동이체</span><span class="on">대출이동</span><span>CMS</span></div>
+        <div class="msheet">
+          <div class="mfilters"><span class="flt on">참가기관 ✕</span><span class="flt on">주담대 ✕</span><span class="flt">+ 필터</span></div>
+          <div class="mbody" style="gap:8px">
+            <div class="item"><span class="mg a">한결</span><div class="tx"><b>최유나 · 한결은행</b><small>주담대 신규 · 현업 주담당 · 02-555-2214</small></div><span class="dot d-ok"></span></div>
+            <div class="item" style="border-color:var(--b);background:var(--b1)"><span class="mg a">한결</span><div class="tx"><b>정하은 · 한결은행</b><small>주담대 보유 · 전산 개발 · 02-555-2381</small></div><span class="dot d-ok"></span></div>
+            <div class="item"><span class="mg b">누리</span><div class="tx"><b>강민호 · 누리증권</b><small>주담대 · 현업 부담당 · 02-777-4410</small></div><span class="dot d-amber"></span></div>
+            <div class="item"><span class="mg c">바른</span><div class="tx"><b>오세린 · 바른저축은행</b><small>주담대 · 전산 대외계 · 031-210-3302</small></div><span class="dot d-bad"></span></div>
+            <div class="item"><span class="mg d">하늘</span><div class="tx"><b>윤태경 · 하늘캐피탈</b><small>주담대 신규 · 현업 주담당</small></div><span class="dot d-ok"></span></div>
+          </div>
+          <div class="bsheet">
+            <div class="hdl"></div>
+            <div class="who"><span class="mg a">한결</span><div class="nm"><b>정하은</b><small>한결은행 · 주담대 보유 · 전산 개발</small></div><span class="pill p-ok"><span class="dot d-ok"></span>08-11 확인</span></div>
+            <div class="kv"><div><span>내선</span><span class="mono">02-555-2381</span></div><div><span>휴대폰</span><span class="mono">010-****-7781</span></div><div><span>이메일</span><span class="mono">haeun.jung@hangyeol.example</span></div><div><span>이전 담당자</span><span>김도영 · 내선 2377</span></div></div>
+            <div class="acts" style="margin-top:2px"><span class="btn">전화</span><span class="btn ghost">수정 요청</span><span class="btn ghost">변경 이력</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="cap" style="text-align:center">모바일 · 표는 카드 목록으로, 상세는 바텀 시트로</div>
+    </div>
+  </div>
+  <p class="mantine">Mantine: Chip.Group, Table(+ TanStack Table 정렬·페이지), Avatar(모노그램), Indicator, Drawer(데스크톱 상세), Drawer position=bottom(모바일), Pagination</p>
+</section>
+
+<!-- ================= 화면 3 로그인 ================= -->
+<section class="screen">
+  <span class="tag">화면 3</span>
+  <h2>로그인: 하나의 입구</h2>
+  <p>결제원 직원과 기관 담당자가 같은 화면에서 회사 이메일로 로그인합니다. 왼쪽 남색 패널에는 결제원과 기관을 잇는 연결 그래프를 그렸고, 오른쪽은 틴트 시트 위에 흰 폼 카드 하나입니다. 이메일 도메인과 가입 정보로 소속을 구분하므로 “결제원 / 기관” 선택 버튼은 없습니다.</p>
+  <div class="mocks">
+    <div class="stage">
+      <div class="dt mk">
+        <div class="win"><i></i><i></i><i></i><span>연결고리 · 로그인</span></div>
+        <div class="login">
+          <div class="lside">
+            <div class="hd2"><span class="logo">KFTC</span><strong style="font-size:14px">연결고리</strong></div>
+            <h5>금융결제원과 기관 담당자를<br><em>한곳에서</em> 잇습니다</h5>
+            <div class="pts"><div><span class="dot" style="background:rgba(255,255,255,.85)"></span>업무별 담당자 연락처 확인과 수정</div><div><span class="dot" style="background:rgba(255,255,255,.85)"></span>의견 요청 회신, 기관 테스트 결과 등록</div><div><span class="dot" style="background:rgba(255,255,255,.85)"></span>일시중단 일정 공유</div></div>
+            <svg class="graph" viewBox="0 0 280 224" aria-hidden="true">
+              <g stroke="rgba(255,255,255,.38)" stroke-width="1">
+                <line x1="140" y1="112" x2="56" y2="56"/><line x1="140" y1="112" x2="214" y2="38"/><line x1="140" y1="112" x2="252" y2="112"/><line x1="140" y1="112" x2="224" y2="186"/><line x1="140" y1="112" x2="140" y2="200"/><line x1="140" y1="112" x2="52" y2="176"/><line x1="140" y1="112" x2="28" y2="112"/><line x1="140" y1="112" x2="122" y2="28"/>
+              </g>
+              <g stroke-width="2" fill="none"><line x1="140" y1="112" x2="214" y2="38" stroke="#fff"/><line x1="140" y1="112" x2="52" y2="176" stroke="#fff"/></g>
+              <g fill="rgba(255,255,255,.94)"><circle cx="56" cy="56" r="11"/><circle cx="214" cy="38" r="11"/><circle cx="252" cy="112" r="11"/><circle cx="224" cy="186" r="11"/><circle cx="140" cy="200" r="11"/><circle cx="52" cy="176" r="11"/><circle cx="28" cy="112" r="11"/><circle cx="122" cy="28" r="11"/></g>
+              <g font-size="8" font-weight="700" fill="#0F1E3C" text-anchor="middle" style="font-family:var(--font-body)"><text x="56" y="59">한결</text><text x="214" y="41">누리</text><text x="252" y="115">바른</text><text x="224" y="189">하늘</text><text x="140" y="203">서림</text><text x="52" y="179">모아</text><text x="28" y="115">다온</text><text x="122" y="31">온새</text></g>
+              <circle cx="140" cy="112" r="22" fill="#fff"/><text x="140" y="116" text-anchor="middle" font-size="9.5" font-weight="700" fill="#0F1E3C" style="font-family:var(--font-num)">KFTC</text>
+            </svg>
+            <div class="areas"><span>계좌통합관리</span><span>자동이체통합관리</span><span>대출이동</span><span>CMS</span></div>
+          </div>
+          <div class="lform">
+            <div class="form">
+              <h6>로그인</h6>
+              <div class="fld"><label>회사 이메일</label><div class="in focus">jiwon.kim@kftc.example</div></div>
+              <div class="fld"><label>비밀번호</label><div class="in ph">••••••••</div></div>
+              <div class="links"><span>☐ 이메일 기억하기</span><span>비밀번호 찾기</span></div>
+              <span class="btn full">로그인<span class="kc" style="margin-left:4px">Enter</span></span>
+              <div class="links" style="justify-content:center;gap:6px"><span>처음이신가요?</span><a>회원가입</a></div>
+              <div class="hint">가입 신청 후 관리자 승인이 끝나야 로그인할 수 있습니다.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="cap">데스크톱 · 왼쪽 크롬 패널 위 연결 그래프, 오른쪽 틴트 시트 위 폼 카드</div>
+    </div>
+    <div>
+      <div class="mb mk">
+        <div class="sbar"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="mlogin">
+          <div class="hd2"><span class="logo">KFTC</span><strong class="brand">연결고리</strong></div>
+          <div class="h">금융결제원과<br>기관 담당자를<br><em>한곳에서</em> 잇습니다</div>
+          <svg class="graph" viewBox="0 0 130 104" aria-hidden="true"><g stroke="rgba(255,255,255,.4)" stroke-width="1"><line x1="65" y1="52" x2="22" y2="22"/><line x1="65" y1="52" x2="108" y2="18"/><line x1="65" y1="52" x2="112" y2="70"/><line x1="65" y1="52" x2="40" y2="90"/></g><line x1="65" y1="52" x2="108" y2="18" stroke="#fff" stroke-width="2"/><g fill="rgba(255,255,255,.94)"><circle cx="22" cy="22" r="7"/><circle cx="108" cy="18" r="7"/><circle cx="112" cy="70" r="7"/><circle cx="40" cy="90" r="7"/></g><circle cx="65" cy="52" r="13" fill="#fff"/><text x="65" y="55" text-anchor="middle" font-size="6.5" font-weight="700" fill="#0F1E3C" style="font-family:var(--font-num)">KFTC</text></svg>
+        </div>
+        <div class="msheet" style="border-radius:16px 16px 0 0">
+          <div class="mbody">
+            <div class="form" style="max-width:none;padding:16px">
+              <div class="fld"><label>회사 이메일</label><div class="in focus">dohyun.lee@hangyeol.example</div></div>
+              <div class="fld"><label>비밀번호</label><div class="in ph">••••••••</div></div>
+              <span class="btn full">로그인</span>
+              <div class="links"><span>비밀번호 찾기</span><a>회원가입</a></div>
+            </div>
+            <div class="hint">가입 신청 후 관리자 승인이 끝나야 로그인할 수 있습니다.</div>
+            <div class="areas-m"><span>계좌통합관리</span><span>자동이체통합관리</span><span>대출이동</span><span>CMS</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="cap" style="text-align:center">모바일 · 기관 담당자 예시</div>
+    </div>
+  </div>
+  <p class="mantine">Mantine: Grid(2열, 모바일 1열), Paper, TextInput, PasswordInput, Checkbox, Button, Kbd</p>
+</section>
+
+<!-- ================= 화면 4 다크 모드 ================= -->
+<section class="screen">
+  <span class="tag">화면 4</span>
+  <h2>다크 모드: 같은 홈</h2>
+  <p>다크 모드에서도 크롬은 같은 남색 그라데이션이고, 시트와 카드가 더 어두운 남색으로 내려갑니다. 버튼과 링, 활성 표시는 밝은 남색 틴트로 바뀌어 대비를 지킵니다. Mantine 색 체계(primaryShade, 다크 팔레트)로 토큰만 바꿔 구현합니다.</p>
+  <div class="stage">
+    <div class="dt mk dk">
+      <div class="win"><i></i><i></i><i></i><span>연결고리 · 계좌통합관리 · 홈 · 다크</span></div>
+      <div class="top"><span class="logo">KFTC</span><span class="brand">연결고리</span><span class="gs">⌕ 전체 업무에서 담당자·기관 검색<span class="kcs"><span class="kc">Ctrl</span><span class="kc">K</span></span></span><div class="r"><span class="bell">◔</span><span class="av">김</span></div></div>
+      <div class="shell">
+        <nav class="rail"><div><b>전체</b>전체</div><hr><div class="on"><b>계좌</b>계좌통합</div><div><b>자동<span class="pin"></span></b>자동이체</div><div><b>대출</b>대출이동</div><div><b>CMS</b>CMS</div></nav>
+        <aside class="sub">
+          <div class="t">계좌통합관리</div><div class="d">어카운트인포 · 57개 기관</div>
+          <div class="i on"><i></i>홈</div>
+          <div class="i"><i></i>담당자 연락처</div>
+          <div class="i"><i></i>의견 요청<span class="n a">2</span></div>
+          <div class="i"><i></i>기관 테스트</div>
+          <div class="i"><i></i>일시중단<span class="n">1</span></div>
+          <div class="g">관리</div>
+          <div class="i"><i></i>가입 승인<span class="n">3</span></div>
+          <div class="i"><i></i>정기 변경 주간</div>
+        </aside>
+        <div class="main"><div class="sheet home">
+          <div class="band">
+            <div class="hello"><strong>김지원님, 확인할 일이 4건 있어요</strong><span>2026-10-13 (화) · 운영부 계좌팀</span><div class="kcs"><span class="kc">Ctrl</span><span class="kc">K</span><span>담당자 바로 찾기</span></div></div>
+            <div class="tile"><small>재확인 필요</small><div class="v num">1<em>건</em></div><div class="hl"><i style="width:100%"></i></div></div>
+            <div class="tile"><small>회신 대기 의견 요청</small><div class="v num">2<em>건</em></div><small>가장 빠른 마감 <b>D-3</b></small></div>
+            <div class="tile"><small>오늘 일시중단</small><div class="v num">1<em>곳</em></div><small>한결은행 22:00~02:00</small></div>
+            <div class="tile"><small>정기 변경 진행률</small><div class="v num">72<em>%</em></div><svg viewBox="0 0 100 16" preserveAspectRatio="none" aria-hidden="true"><polyline points="0,13 14,11 28,12 42,8 56,9 70,5 84,6 100,2" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+          <div class="bento">
+            <div class="card tall">
+              <div class="hd"><h5>내 연락처 확인</h5><span class="pill p-amber">6개월 경과</span></div>
+              <div class="big num">194<span class="u">일째</span></div>
+              <small>마지막 확인 2026-04-02. 바뀐 게 없으면 한 번만 눌러 주세요.</small>
+              <div class="kv"><div><span>내선</span><span class="mono">02-531-7012</span></div><div><span>휴대폰</span><span class="mono">010-****-3381</span></div><div><span>부서·팀</span><span>운영부 · 계좌팀</span></div><div><span>직무</span><span>전산 · 운영</span></div></div>
+              <div class="acts"><span class="btn">바뀐 게 없어요</span><span class="btn ghost">수정</span></div>
+            </div>
+            <div class="card">
+              <div class="hd"><h5>정기 변경 진행률</h5><span class="pill p-info">10-06 ~ 10-17</span></div>
+              <div class="ring">
+                <svg viewBox="0 0 58 58" aria-hidden="true"><circle cx="29" cy="29" r="23" fill="none" style="stroke:var(--b1)" stroke-width="5"/><circle cx="29" cy="29" r="23" fill="none" style="stroke:var(--b)" stroke-width="5" stroke-linecap="round" stroke-dasharray="104 144.5" transform="rotate(-90 29 29)"/><text x="29" y="33" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--ink);font-family:var(--font-num)">72%</text></svg>
+                <div class="rt"><small>41 / 57 기관 완료 · 미확인 16곳</small><div class="stack"><i style="width:24.6%;background:var(--b)"></i><i style="width:19.3%;background:var(--t4)"></i><i style="width:15.8%;background:var(--t3)"></i><i style="width:12.3%;background:var(--t2)"></i></div><div class="legend"><span><i style="background:var(--b)"></i>계좌 14</span><span><i style="background:var(--t4)"></i>자동 11</span><span><i style="background:var(--t3)"></i>대출 9</span><span><i style="background:var(--t2)"></i>CMS 7</span></div></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="hd"><h5>회신 대기 의견 요청</h5><span class="pill p-gray">11곳 미회신</span></div>
+              <div class="lst">
+                <div><span class="dot d-amber"></span><span class="grow">오픈뱅킹 API 응답코드 변경</span><span class="pill p-amber">D-3</span></div>
+                <div><span class="dot d-gray"></span><span class="grow">수수료 정산 주기 개편 의견</span><span class="pill p-info">D-9</span></div>
+              </div>
+              <div class="acts"><span class="btn ghost sm">미회신 기관에 리마인드</span></div>
+            </div>
+            <div class="card">
+              <div class="hd"><h5>일시중단</h5><span class="pill p-ok">오늘 1 · 예정 1</span></div>
+              <div class="lst">
+                <div><span class="mg a">한결</span><span class="grow">한결은행 <span class="m">정기 DB 작업</span></span><span class="mono">22:00~02:00</span><span class="pill p-info">확정</span></div>
+                <div><span class="mg c">바른</span><span class="grow">바른저축은행 <span class="m">망 교체</span></span><span class="mono">10-18 02:00</span><span class="pill p-amber">검토 중</span></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="hd"><h5>가입 승인 대기</h5><span class="pill p-info">3명</span></div>
+              <div class="lst">
+                <div><span class="mg b">누리</span><span class="grow">박서윤 <span class="m">누리증권 · 전산(대외계)</span></span><span class="btn ghost sm">검토</span></div>
+                <div><span class="mg a">한결</span><span class="grow">이도현 <span class="m">한결은행 · 현업</span></span><span class="btn ghost sm">검토</span></div>
+                <div><span class="mg d">하늘</span><span class="grow">최민재 <span class="m">하늘캐피탈 · 전산(운영)</span></span><span class="btn ghost sm">검토</span></div>
+              </div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+    <div class="cap">데스크톱 · 다크 모드. 시트 #0B1120, 카드 #131C33, 크롬은 라이트와 같은 남색.</div>
+  </div>
+</section>
+
+<section>
+  <div class="callout">
+    <h2>확인해 주실 것</h2>
+    <ul>
+      <li><strong>‘전체’ 레일:</strong> 운영·상황실·대외계처럼 전 업무를 보는 결제원 직원에게만 맨 위 ‘전체’를 보이게 했습니다. 괜찮으면 이대로 갑니다.</li>
+      <li><strong>숫자 서체:</strong> KPI와 표의 숫자에 Geist를 함께 쓸지, Pretendard 하나로 갈지. 두 서체면 번들이 100KB쯤 늘고 숫자 대비가 또렷해집니다.</li>
+      <li><strong>로고:</strong> 목업의 “KFTC” 상자는 자리표시입니다. 연결고리 전용 로고가 생기면 바꿉니다.</li>
+    </ul>
+  </div>
+</section>
+
+</div>
+
+</body>
+</html>
