@@ -1,0 +1,33 @@
+/* 요일 칸: sunken 바탕 radius 12, 오늘은 clay-1 */
+.day {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 104px;
+  padding: 8px 6px;
+  border-radius: 12px;
+  background: var(--cl-sunken);
+
+  &[data-today] {
+    background: var(--mantine-color-clay-1);
+  }
+}
+
+/* 일시중단 칩: sky 연한 배지 모양, 오늘 건은 clay */
+.chip {
+  display: block;
+  padding: 5px 6px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  word-break: keep-all;
+  background: var(--mantine-color-sky-1);
+  color: var(--mantine-color-sky-7);
+
+  &[data-soon] {
+    background: var(--cl-card);
+    color: var(--mantine-color-clay-7);
+    box-shadow: inset 0 0 0 1px var(--mantine-color-clay-3);
+  }
+}

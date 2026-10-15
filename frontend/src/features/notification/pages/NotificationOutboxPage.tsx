@@ -1,8 +1,9 @@
-import { Badge, Card, Group, Pagination, Skeleton, Stack, Table, Text, Title } from '@mantine/core';
+import { Badge, Card, Group, Pagination, Skeleton, Stack, Table, Text } from '@mantine/core';
 import { useState } from 'react';
 
 import { formatDateTime } from '../../../shared/format';
 import { useNotificationOutbox } from '../hooks';
+import { PageHeader } from '../../../shared/PageHeader';
 
 const PAGE_SIZE = 20;
 
@@ -13,12 +14,10 @@ export function NotificationOutboxPage() {
 
   return (
     <Stack gap="md">
-      <div>
-        <Title order={2}>발송함</Title>
-        <Text c="dimmed" size="lg">
-          시연 환경은 메일과 매터모스트를 실제로 보내지 않고 여기에 기록합니다.
-        </Text>
-      </div>
+      <PageHeader
+        title="발송함"
+        description="시연 환경은 메일과 매터모스트를 실제로 보내지 않고 여기에 기록합니다."
+      />
 
       <Card data-testid="outbox-table">
         {isError && (
@@ -47,9 +46,7 @@ export function NotificationOutboxPage() {
               {data?.content.map((o) => (
                 <Table.Tr key={o.id}>
                   <Table.Td>
-                    <Badge variant={o.channel === 'EMAIL' ? 'light' : 'outline'} color="navy">
-                      {o.channelLabel}
-                    </Badge>
+                    <Badge color={o.channel === 'EMAIL' ? 'sky' : 'clay'}>{o.channelLabel}</Badge>
                   </Table.Td>
                   <Table.Td>
                     <Text size="sm" ff="monospace">
@@ -67,7 +64,7 @@ export function NotificationOutboxPage() {
                     )}
                   </Table.Td>
                   <Table.Td>
-                    <Badge variant="outline" color="navy">
+                    <Badge variant="outline" color="gray">
                       {o.statusLabel}
                     </Badge>
                   </Table.Td>

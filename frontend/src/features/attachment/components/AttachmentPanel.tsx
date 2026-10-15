@@ -64,7 +64,7 @@ export function AttachmentPanel({
     if (!file) return;
     try {
       await upload.mutateAsync(file);
-      notifications.show({ message: `${file.name} 을(를) 올렸습니다.`, color: 'navy' });
+      notifications.show({ message: `${file.name} 을(를) 올렸습니다.`, color: 'clay' });
     } catch (e) {
       notifications.show({
         title: '올리지 못했습니다',
@@ -77,7 +77,7 @@ export function AttachmentPanel({
   const onDelete = async (attachment: Attachment) => {
     try {
       await remove.mutateAsync(attachment.id);
-      notifications.show({ message: `${attachment.name} 을(를) 지웠습니다.`, color: 'navy' });
+      notifications.show({ message: `${attachment.name} 을(를) 지웠습니다.`, color: 'clay' });
     } catch (e) {
       notifications.show({
         title: '지우지 못했습니다',
@@ -160,7 +160,7 @@ function AttachmentRow({
         borderRadius: 'var(--mantine-radius-sm)',
       }}
     >
-      <ThemeIcon variant="light" color="navy" size={32} radius="sm">
+      <ThemeIcon variant="light" color="clay" size={32} radius="sm">
         <Icon size={18} stroke={1.6} />
       </ThemeIcon>
       <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>

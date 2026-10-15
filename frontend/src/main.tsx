@@ -1,6 +1,6 @@
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
-import 'pretendard/dist/web/variable/pretendardvariable.css';
+import './app/fonts.css';
 import './app/global.css';
 
 import { MantineProvider } from '@mantine/core';

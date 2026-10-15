@@ -2,8 +2,7 @@
   cursor: pointer;
 
   &[data-selected] {
-    background: var(--mantine-color-navy-0);
-    box-shadow: inset 3px 0 0 var(--mantine-color-navy-9);
+    background: var(--mantine-color-clay-1);
   }
 
   &[data-inactive] {
@@ -11,7 +10,7 @@
   }
 
   &:focus-visible {
-    outline: 2px solid var(--mantine-color-navy-9);
+    outline: 2px solid var(--mantine-color-clay-6);
     outline-offset: -2px;
   }
 }

@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
 import { ChipFilter } from '../../../shared/list/ChipFilter';
-import { ListPageHeader } from '../../../shared/list/ListPageHeader';
+import { PageHeader } from '../../../shared/PageHeader';
 import { ErrorState } from '../../../shared/state/StateView';
 import { OrganizationDrawer } from '../components/OrganizationDrawer';
 import { OrganizationTable } from '../components/OrganizationTable';
@@ -57,7 +57,7 @@ export function OrganizationAdminPage() {
 
   return (
     <Stack gap="md">
-      <ListPageHeader
+      <PageHeader
         title="기관·업무 기준정보"
         description={
           current

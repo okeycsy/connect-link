@@ -1,5 +1,5 @@
 .inputRoot {
-  border-bottom: 1px solid var(--mantine-color-gray-2);
+  border-bottom: 1px solid var(--cl-line);
 }
 
 .input {
@@ -15,10 +15,11 @@
   width: 100%;
   padding: 8px 10px;
   border-radius: 8px;
-  transition: background 120ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: background 120ms var(--cl-ease);
 
   &[data-active] {
-    background: var(--mantine-color-navy-0);
+    background: var(--mantine-color-clay-1);
+    color: var(--mantine-color-clay-8);
   }
 }
 
@@ -29,7 +30,7 @@
 
 .arrow {
   flex: 0 0 auto;
-  color: var(--mantine-color-navy-4);
+  color: var(--mantine-color-clay-6);
   opacity: 0;
 }
 
@@ -38,6 +39,6 @@
 }
 
 .footer {
-  border-top: 1px solid var(--mantine-color-gray-2);
-  background: var(--mantine-color-gray-0);
+  border-top: 1px solid var(--cl-line);
+  background: var(--cl-page);
 }

@@ -68,7 +68,7 @@ export function StateView({ kind, title, description, action, compact = false }:
         size={compact ? 40 : 56}
         radius="xl"
         variant="light"
-        color={kind === 'error' || kind === 'internalOnly' ? 'red' : 'navy'}
+        color={kind === 'error' ? 'red' : kind === 'internalOnly' ? 'amber' : 'clay'}
       >
         <Icon size={compact ? 20 : 28} stroke={1.6} />
       </ThemeIcon>

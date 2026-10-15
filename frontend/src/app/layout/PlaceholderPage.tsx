@@ -1,6 +1,7 @@
-import { Badge, Card, Stack, Text, Title } from '@mantine/core';
+import { Badge, Card, Stack, Text } from '@mantine/core';
 
 import { useCurrentBusiness } from '../../features/organization/hooks';
+import { PageHeader } from '../../shared/PageHeader';
 
 interface Props {
   title: string;
@@ -12,12 +13,7 @@ export function PlaceholderPage({ title, description }: Props) {
   const business = useCurrentBusiness();
   return (
     <Stack gap="md">
-      <div>
-        <Title order={2}>{title}</Title>
-        <Text c="dimmed" size="lg">
-          {description}
-        </Text>
-      </div>
+      <PageHeader title={title} description={description} />
       <Card>
         <Stack gap="xs" align="flex-start">
           <Badge variant="light">준비 중</Badge>

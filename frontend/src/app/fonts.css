@@ -1,0 +1,25 @@
+/*
+ * 글꼴 교체 지점. 앱의 모든 글자(본문, 제목, 숫자, Mantine 컴포넌트)는 --cl-font-sans 하나를 쓴다.
+ * 글꼴을 바꿀 때는 이 파일만 고친다. 방법은 frontend/CLAUDE.md "3. 글꼴" 참고.
+ *
+ * 1) 내려받은 woff2 파일을 src/assets/fonts/ 에 둔다(빌드 결과 app.jar 에 함께 들어간다. 외부 URL 금지).
+ * 2) 아래 @font-face 예시의 주석을 풀고 이름·파일명·굵기를 맞춘다.
+ * 3) --cl-font-sans 맨 앞에 새 글꼴 이름을 넣는다. 나머지는 대체 글꼴로 남긴다.
+ *
+ * @font-face {
+ *   font-family: 'NewSans';
+ *   src: url('../assets/fonts/NewSans-Variable.woff2') format('woff2');
+ *   font-weight: 100 900;
+ *   font-display: swap;
+ * }
+ */
+
+/* 지금 글꼴: Pretendard Variable (npm pretendard 번들) */
+@import 'pretendard/dist/web/variable/pretendardvariable.css';
+
+:root {
+  --cl-font-sans:
+    'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Malgun Gothic',
+    'Apple SD Gothic Neo', system-ui, sans-serif;
+  --cl-font-mono: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+}
