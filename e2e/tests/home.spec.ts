@@ -52,10 +52,10 @@ test.describe('홈 대시보드', () => {
     await expect(page).toHaveURL(/\/account-info\/opinions$/);
   });
 
-  test('최근 소식은 4건까지만 보이고 더보기는 알림 센터로 간다', async ({ page }) => {
+  test('최근 소식은 4건 이상 채워 보이고 더보기는 알림 센터로 간다', async ({ page }) => {
     await page.goto('/account-info/home');
     const recent = page.getByTestId('home-recent-notifications');
-    await expect(recent.getByRole('button')).toHaveCount(4);
+    await expect(recent.getByRole('button').nth(3)).toBeVisible();
     await recent.getByRole('link', { name: '더보기' }).click();
     await expect(page).toHaveURL(/\/account-info\/notifications$/);
   });

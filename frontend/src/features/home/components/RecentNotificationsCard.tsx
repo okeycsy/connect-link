@@ -21,12 +21,13 @@ import {
 import { formatDateTime } from '../../../shared/format';
 import classes from './RecentNotificationsCard.module.css';
 
-/** 홈에는 최근 4건만 보이고 나머지는 더보기로 알림 센터에서 본다. SHY 요청. */
-const SIZE = 4;
+/** 넉넉히 받아 두고 카드 높이에 들어가는 만큼만 보인다(잘린 줄은 CSS 가 통째로 숨긴다). */
+const SIZE = 12;
 
 /**
  * 홈 왼쪽 큰 칸: 최근 알림. 알림 센터(/api/v1/notifications)와 같은 내용을 시안 B 의 "최근 소식" 모양으로 보인다.
- * 최근 4건만 보이고 카드 높이는 내용만큼이다. 오른쪽 아래 작은 "더보기" 글자 링크가 알림 센터로 간다.
+ * 카드는 오른쪽 열과 같은 높이이고, 그 높이에 온전히 들어가는 줄만 보여 빈 공간을 남기지 않는다(최소 4건).
+ * 오른쪽 아래 작은 "더보기" 글자 링크가 알림 센터로 간다.
  * 한 줄 = 둥근 사각 아바타(알림 종류 첫 글자) + 종류·업무·시각 + 제목·본문. 누르면 읽음 처리하고 연결된 화면으로 간다.
  */
 export function RecentNotificationsCard() {
@@ -44,7 +45,7 @@ export function RecentNotificationsCard() {
   };
 
   return (
-    <Card className={classes.card} data-testid="home-recent-notifications">
+    <Card className={classes.card} h="100%" data-testid="home-recent-notifications">
       <Group align="center" mb="xs" px={16} wrap="nowrap">
         <Group gap="xs">
           <Text fw={700} size="xl">
@@ -70,7 +71,7 @@ export function RecentNotificationsCard() {
           ))}
         </Stack>
       ) : data?.content.length ? (
-        <Stack gap={2}>
+        <div className={classes.list}>
           {data.content.map((n) => (
             <UnstyledButton
               key={n.id}
@@ -108,14 +109,14 @@ export function RecentNotificationsCard() {
               </Box>
             </UnstyledButton>
           ))}
-        </Stack>
+        </div>
       ) : (
         <Text c="dimmed" ta="center" py="xl">
           새 소식이 없습니다.
         </Text>
       )}
 
-      <Group justify="flex-end" mt={4} px={16}>
+      <Group justify="flex-end" mt="auto" pt={4} px={16}>
         <Anchor component={Link} to={centerPath} size="xs" c="dimmed">
           더보기
         </Anchor>
