@@ -31,13 +31,13 @@ java -jar app.jar
 
 ### 외부 미리보기 (Render)
 
-내부망 시연과 별개로, 여러 기기에서 같은 주소로 보려고 [Render](https://render.com) 무료 웹 서비스에 올린다. `render.yaml` 과 `Dockerfile` 이 그 설정이다. 올라가는 데이터는 샘플(가상)뿐이다.
+내부망 시연과 별개로, 여러 기기에서 같은 주소로 보려고 [Render](https://render.com) 무료 웹 서비스에 올려 두었다. 올라가는 데이터는 샘플(가상)뿐이다.
 
-1. Render 에 GitHub 계정으로 가입한다.
-2. Dashboard → New → **Blueprint** → 이 저장소(`okeycsy/connect-link`)를 고르고 Apply 한다. `render.yaml` 을 읽어 서비스 `connect-link` 가 만들어진다.
-3. 첫 빌드(5~10분)가 끝나면 `https://connect-link-xxxx.onrender.com` 같은 주소가 생긴다. 이후 `main` 에 머지될 때마다 자동으로 다시 배포된다.
+- 미리보기 주소: **https://connect-link-xmwv.onrender.com** (`demo` 프로필)
+- `main` 에 머지될 때마다 자동으로 다시 배포된다(빌드 5~10분).
+- 무료 등급은 15분 동안 요청이 없으면 잠들고, 다음 접속에 1분 정도 걸린다.
 
-무료 등급은 15분 동안 요청이 없으면 잠들고, 다음 접속에 1분 정도 걸린다.
+설정은 `render.yaml` 과 `Dockerfile` 이다. 다시 만들어야 하면 Render 에 GitHub 계정으로 가입한 뒤 Dashboard → New → **Blueprint** → 이 저장소(`okeycsy/connect-link`)를 골라 Apply 한다.
 
 ## 개발
 
