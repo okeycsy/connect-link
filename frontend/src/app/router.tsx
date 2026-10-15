@@ -2,6 +2,8 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 
 import { LoginPage } from '../features/account/pages/LoginPage';
 import { HomePage } from '../features/home/pages/HomePage';
+import { NotificationCenterPage } from '../features/notification/pages/NotificationCenterPage';
+import { NotificationOutboxPage } from '../features/notification/pages/NotificationOutboxPage';
 import { AppShellLayout } from './layout/AppShellLayout';
 import { BusinessGuard } from './layout/BusinessGuard';
 import { PlaceholderPage } from './layout/PlaceholderPage';
@@ -24,6 +26,9 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <Navigate to="home" replace /> },
           { path: 'home', element: <HomePage /> },
+          // 전역 화면(알림 센터, 데모 도구)도 레일 문맥을 잃지 않도록 업무 영역 아래에 둔다.
+          { path: 'notifications', element: <NotificationCenterPage /> },
+          { path: 'demo/outbox', element: <NotificationOutboxPage /> },
           ...FEATURE_MENU.filter((m) => m.key !== 'home').map((m) => ({
             path: m.path,
             element: <PlaceholderPage title={m.label} description={m.description} />,

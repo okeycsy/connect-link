@@ -1,11 +1,12 @@
 import {
-  ActionIcon,
   AppShell,
   Avatar,
+  Badge,
   Box,
+  Button,
   Group,
-  Indicator,
   Kbd,
+  Menu,
   NavLink,
   Skeleton,
   Stack,
@@ -14,11 +15,14 @@ import {
   UnstyledButton,
   useMantineTheme,
 } from '@mantine/core';
-import { IconBell, IconSearch } from '@tabler/icons-react';
+import { IconFlask, IconLogout, IconMailForward, IconSearch, IconUser } from '@tabler/icons-react';
 import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
 
+import { useMe } from '../../features/account/hooks';
+import { NotificationBell } from '../../features/notification/components/NotificationBell';
 import { useBusinesses } from '../../features/organization/hooks';
-import { FEATURE_MENU } from '../navigation';
+import { isDemoProfile, useServerInfo } from '../hooks';
+import { DEFAULT_BUSINESS_SLUG, FEATURE_MENU } from '../navigation';
 import classes from './AppShellLayout.module.css';
 
 /**
@@ -30,6 +34,9 @@ export function AppShellLayout() {
   const { business: businessSlug } = useParams<{ business: string }>();
   const location = useLocation();
   const { data: businesses } = useBusinesses();
+  const { data: me } = useMe();
+  const { data: serverInfo } = useServerInfo();
+  const demo = isDemoProfile(serverInfo?.profile);
 
   const railWidth = theme.other.railWidth as number;
   const subMenuWidth = theme.other.subMenuWidth as number;
@@ -64,14 +71,64 @@ export function AppShellLayout() {
             </Group>
           </UnstyledButton>
           <Group gap="sm" wrap="nowrap">
-            <Indicator color="red" size={8} offset={4} disabled>
-              <ActionIcon variant="subtle" color="gray" aria-label="알림">
-                <IconBell size={20} color="white" />
-              </ActionIcon>
-            </Indicator>
-            <Avatar radius="xl" size={32} color="navy" variant="filled">
-              게
-            </Avatar>
+            {demo && (
+              <Menu position="bottom-end" shadow="card" width={200}>
+                <Menu.Target>
+                  <Button
+                    size="compact-sm"
+                    variant="white"
+                    color="navy"
+                    leftSection={<IconFlask size={14} />}
+                    aria-label="데모 도구"
+                  >
+                    데모
+                  </Button>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Label>데모 도구</Menu.Label>
+                  <Menu.Item
+                    component={Link}
+                    to={`/${businessSlug ?? DEFAULT_BUSINESS_SLUG}/demo/outbox`}
+                    leftSection={<IconMailForward size={16} />}
+                  >
+                    발송함
+                  </Menu.Item>
+                  <Menu.Item disabled leftSection={<IconUser size={16} />}>
+                    계정 전환 (계정 모듈 후)
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+            )}
+            <NotificationBell />
+            <Menu position="bottom-end" shadow="card" width={240}>
+              <Menu.Target>
+                <UnstyledButton aria-label="사용자 메뉴">
+                  <Avatar radius="xl" size={32} color="navy" variant="filled">
+                    {me?.name?.slice(0, 1) ?? ''}
+                  </Avatar>
+                </UnstyledButton>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Box px="sm" py="xs">
+                  <Text fw={700}>{me?.name ?? '로그인 전'}</Text>
+                  <Text size="xs" c="dimmed">
+                    {me ? `${me.organizationName} · ${me.email}` : ''}
+                  </Text>
+                  {me?.admin && (
+                    <Badge size="xs" variant="light" mt={6}>
+                      관리자
+                    </Badge>
+                  )}
+                </Box>
+                <Menu.Divider />
+                <Menu.Item disabled leftSection={<IconUser size={16} />}>
+                  내 정보 (준비 중)
+                </Menu.Item>
+                <Menu.Item disabled leftSection={<IconLogout size={16} />}>
+                  로그아웃 (계정 모듈 후)
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
           </Group>
         </Group>
       </AppShell.Header>

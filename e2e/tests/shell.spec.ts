@@ -49,7 +49,9 @@ test.describe('앱 셸', () => {
     const docs = await request.get('/v3/api-docs');
     expect(docs.ok()).toBeTruthy();
 
-    const protectedApi = await request.get('/api/v1/contacts');
-    expect(protectedApi.status()).toBe(401);
+    // demo 프로필은 로그인 없는 요청을 데모 관리자로 인증한다(운영 프로필은 401).
+    const me = await request.get('/api/v1/me');
+    expect(me.ok()).toBeTruthy();
+    expect((await me.json()).email).toBe('admin@kftc.example.com');
   });
 });
