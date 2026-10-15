@@ -1,7 +1,9 @@
 package com.connectlink.organization;
 
+import com.connectlink.common.Labeled;
+
 /** 기관 구분. */
-public enum OrganizationType {
+public enum OrganizationType implements Labeled {
   /** 결제원(KFTC). */
   KFTC("결제원"),
   /** 참가기관. 은행, 증권사 등 금융회사. */

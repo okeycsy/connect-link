@@ -21,6 +21,7 @@ import {
   IconLayoutGrid,
   IconLogout,
   IconMailForward,
+  IconPaperclip,
   IconSearch,
   IconUser,
   IconWorld,
@@ -112,6 +113,13 @@ export function AppShellLayout() {
                     leftSection={<IconLayoutGrid size={16} />}
                   >
                     상태 화면
+                  </Menu.Item>
+                  <Menu.Item
+                    component={Link}
+                    to={`/${businessSlug ?? DEFAULT_BUSINESS_SLUG}/demo/attachments`}
+                    leftSection={<IconPaperclip size={16} />}
+                  >
+                    첨부파일
                   </Menu.Item>
                   <Menu.Item
                     leftSection={<IconWorld size={16} />}

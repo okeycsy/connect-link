@@ -25,6 +25,11 @@ spring:
     format:
       date: iso
       date-time: iso
+  servlet:
+    multipart:
+      # app.attachment.max-size 와 같게 둔다. 넘으면 413 FILE_TOO_LARGE.
+      max-file-size: 20MB
+      max-request-size: 25MB
 
 server:
   # Render 같은 호스팅은 PORT 환경변수로 포트를 준다.
@@ -49,6 +54,10 @@ app:
     internal-cidrs: []
     header-override: false
     default-zone: EXTERNAL
+  attachment:
+    # 프로토타입 저장소(임시 디렉터리). 운영은 공유 스토리지 경로나 다른 FileStorage 구현으로 바꾼다.
+    dir: ${java.io.tmpdir}/connect-link-files
+    max-size: 20MB
 
 logging:
   level:

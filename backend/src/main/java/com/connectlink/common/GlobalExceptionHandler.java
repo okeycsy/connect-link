@@ -11,6 +11,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.server.ResponseStatusException;
 
 /** API 오류를 {@link ErrorResponse} 하나의 형식으로 바꾼다. 오류 형식은 여기서만 만든다. */
@@ -41,6 +42,12 @@ public class GlobalExceptionHandler {
       ResponseStatusException e, HttpServletRequest request) {
     HttpStatus status = HttpStatus.valueOf(e.getRawStatusCode());
     return build(status, e.getReason(), status.name(), List.of(), request);
+  }
+
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public ResponseEntity<ErrorResponse> handleTooLarge(
+      MaxUploadSizeExceededException e, HttpServletRequest request) {
+    return build(HttpStatus.PAYLOAD_TOO_LARGE, "파일이 너무 큽니다.", "FILE_TOO_LARGE", List.of(), request);
   }
 
   @ExceptionHandler(AccessDeniedException.class)
