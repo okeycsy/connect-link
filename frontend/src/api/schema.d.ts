@@ -25,6 +25,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/sign-ups': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 가입 신청
+     * @description 인증 토큰과 가입 정보를 받아 승인 대기 계정을 만든다. 토큰이 없거나 만료·사용됐으면 400 VERIFICATION_REQUIRED, 기관이 참여하지 않는 업무면 400 BUSINESS_NOT_PARTICIPATED.
+     */
+    post: operations['signUp'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/organizations': {
     parameters: {
       query?: never;
@@ -86,6 +106,46 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/email-verifications': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 회사 이메일 인증 코드 받기
+     * @description 숫자 6자리 코드를 메일로 보낸다(프로토타입은 발송함에 기록). 이미 계정이 있으면 409 EMAIL_ALREADY_REGISTERED, 재발송 간격 전이면 429 VERIFICATION_RESEND_TOO_SOON.
+     */
+    post: operations['request'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/email-verifications/confirm': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 회사 이메일 인증 코드 확인
+     * @description 맞으면 가입 신청에 쓸 인증 토큰을 준다. 틀리면 400 VERIFICATION_CODE_MISMATCH, 정해진 횟수를 넘기면 VERIFICATION_ATTEMPTS_EXCEEDED, 유효 시간이 지나면 VERIFICATION_EXPIRED.
+     */
+    post: operations['confirm'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/auth/logout': {
     parameters: {
       query?: never;
@@ -134,7 +194,7 @@ export interface paths {
       cookie?: never;
     };
     /** 대상 하나의 첨부파일 목록(올린 순) */
-    get: operations['list_4'];
+    get: operations['list_5'];
     put?: never;
     /** 첨부파일 올리기 (multipart: file) */
     post: operations['upload'];
@@ -261,6 +321,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/job-roles': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 직무 목록 조회
+     * @description 가입 화면의 직무 선택지. 전산이면 세부 직무를 하나 이상 고른다. 로그인 없이 쓸 수 있다.
+     */
+    get: operations['listJobRoles'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/home': {
     parameters: {
       query?: never;
@@ -298,6 +378,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/demo/mailbox': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** 받은 메일함 (받는 사람별 최근 메일 5건, 로그인 전에도 열림) */
+    get: operations['list_2'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/demo/accounts': {
     parameters: {
       query?: never;
@@ -306,7 +403,7 @@ export interface paths {
       cookie?: never;
     };
     /** 데모 계정 목록 (역할별, 로그인 전에도 열림) */
-    get: operations['list_2'];
+    get: operations['list_3'];
     put?: never;
     post?: never;
     delete?: never;
@@ -323,7 +420,7 @@ export interface paths {
       cookie?: never;
     };
     /** 대상 하나의 변경 이력(최신순) */
-    get: operations['list_3'];
+    get: operations['list_4'];
     put?: never;
     post?: never;
     delete?: never;
@@ -421,6 +518,42 @@ export interface components {
       updatedAt: string;
       updatedBy: string;
     };
+    SignUpBusinessRequest: {
+      /** @enum {string} */
+      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
+      subBusiness?: string | null;
+    };
+    SignUpRequest: {
+      verificationToken: string;
+      email: string;
+      /** Format: int64 */
+      organizationId: number;
+      businesses: components['schemas']['SignUpBusinessRequest'][];
+      /** @enum {string} */
+      jobRole: 'BUSINESS' | 'IT';
+      /** @description 전산 세부 직무. 직무가 전산이면 하나 이상, 현업이면 비워 둔다(보내도 버린다). */
+      itRoles?: ('DEV' | 'OPS' | 'INFRA' | 'EXTERNAL_LINK' | 'CONTROL_ROOM' | null)[] | null;
+      name: string;
+      department: string;
+      team: string;
+      jobTitle: string;
+      extensionPhone: string;
+      mobilePhone?: string | null;
+      password: string;
+    };
+    SignUpResponse: {
+      email: string;
+      name: string;
+      organizationName: string;
+      organizationTypeLabel: string;
+      businesses: components['schemas']['BusinessResponse'][];
+      jobRoleLabel: string;
+      /** @enum {string} */
+      status: 'PENDING_APPROVAL' | 'ACTIVE' | 'REJECTED' | 'WITHDRAWN';
+      statusLabel: string;
+      /** Format: date-time */
+      appliedAt: string;
+    };
     OrganizationCreateRequest: {
       code: string;
       name: string;
@@ -456,6 +589,27 @@ export interface components {
       readAt?: string | null;
       /** Format: date-time */
       createdAt: string;
+    };
+    EmailVerificationRequest: {
+      email: string;
+    };
+    EmailVerificationResponse: {
+      email: string;
+      /** Format: date-time */
+      expiresAt: string;
+      /** Format: int64 */
+      resendAfterSeconds: number;
+    };
+    EmailVerificationConfirmRequest: {
+      email: string;
+      code: string;
+    };
+    EmailVerificationConfirmResponse: {
+      email: string;
+      verificationToken: string;
+      /** Format: date-time */
+      tokenExpiresAt: string;
+      suggestedOrganizationIds: number[];
     };
     LoginRequest: {
       email: string;
@@ -522,6 +676,7 @@ export interface components {
       /** @enum {string} */
       type: 'KFTC' | 'FINANCE_ORGANIZATION' | 'USE_ORGANIZATION';
       typeLabel: string;
+      businesses: ('ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS')[];
     };
     PageResponseOrganizationDetailResponse: {
       content: components['schemas']['OrganizationDetailResponse'][];
@@ -581,6 +736,17 @@ export interface components {
       /** Format: int32 */
       totalPages: number;
       last: boolean;
+    };
+    ItRoleResponse: {
+      /** @enum {string} */
+      code: 'DEV' | 'OPS' | 'INFRA' | 'EXTERNAL_LINK' | 'CONTROL_ROOM';
+      label: string;
+    };
+    JobRoleResponse: {
+      /** @enum {string} */
+      code: 'BUSINESS' | 'IT';
+      label: string;
+      itRoles: components['schemas']['ItRoleResponse'][];
     };
     HomeCard: {
       /** @enum {string} */
@@ -759,6 +925,30 @@ export interface operations {
       };
     };
   };
+  signUp: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SignUpRequest'];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['SignUpResponse'];
+        };
+      };
+    };
+  };
   listOrganizations: {
     parameters: {
       query?: never;
@@ -843,6 +1033,54 @@ export interface operations {
       };
     };
   };
+  request: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EmailVerificationRequest'];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['EmailVerificationResponse'];
+        };
+      };
+    };
+  };
+  confirm: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EmailVerificationConfirmRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['EmailVerificationConfirmResponse'];
+        };
+      };
+    };
+  };
   logout: {
     parameters: {
       query?: never;
@@ -885,7 +1123,7 @@ export interface operations {
       };
     };
   };
-  list_4: {
+  list_5: {
     parameters: {
       query: {
         ownerType: 'OPINION_REQUEST' | 'OPINION_REPLY' | 'SUSPENSION' | 'DEMO';
@@ -1081,6 +1319,26 @@ export interface operations {
       };
     };
   };
+  listJobRoles: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['JobRoleResponse'][];
+        };
+      };
+    };
+  };
   home: {
     parameters: {
       query: {
@@ -1126,6 +1384,29 @@ export interface operations {
   };
   list_2: {
     parameters: {
+      query: {
+        /** @description 받는 사람 이메일. 대소문자를 가리지 않는다 */
+        email: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['NotificationOutboxResponse'][];
+        };
+      };
+    };
+  };
+  list_3: {
+    parameters: {
       query?: never;
       header?: never;
       path?: never;
@@ -1144,7 +1425,7 @@ export interface operations {
       };
     };
   };
-  list_3: {
+  list_4: {
     parameters: {
       query: {
         targetType:

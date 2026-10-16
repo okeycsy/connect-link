@@ -1,0 +1,27 @@
+/* 로그인 전 화면 틀: 앱 셸과 같은 상단 바(높이 56, 흰 바탕, 아래 1px 선) + page 바탕 본문. */
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--cl-page);
+}
+
+.top {
+  flex: 0 0 auto;
+  height: 56px;
+  padding: 0 var(--cl-page-gutter);
+  background: var(--cl-card);
+  border-bottom: 1px solid var(--cl-line);
+}
+
+/* PageHeader 가 이 여백을 거슬러 양옆 끝까지 붙는다. */
+.main {
+  flex: 1;
+  padding: var(--cl-page-gutter);
+}
+
+.content {
+  width: 100%;
+  max-width: 760px;
+  margin: 8px auto 0;
+}

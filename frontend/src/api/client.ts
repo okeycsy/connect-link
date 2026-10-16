@@ -82,12 +82,17 @@ function extractDetail(body: unknown): string | undefined {
   return undefined;
 }
 
-/** 서버 검증 오류(400)의 필드별 메시지를 폼 오류 꼴({ field: message })로 바꾼다. 검증 오류가 아니면 빈 객체. */
+/**
+ * 서버 검증 오류(400)의 필드별 메시지를 폼 오류 꼴({ field: message })로 바꾼다. 검증 오류가 아니면 빈 객체.
+ * 목록 칸의 경로는 @mantine/form 꼴로 바꾼다(businesses[0].subBusiness → businesses.0.subBusiness).
+ */
 export function fieldErrorsOf(error: unknown): Record<string, string> {
   if (!(error instanceof ApiError) || !error.body || typeof error.body !== 'object') {
     return {};
   }
   const fieldErrors = (error.body as { fieldErrors?: { field: string; message: string }[] })
     .fieldErrors;
-  return Object.fromEntries((fieldErrors ?? []).map((f) => [f.field, f.message]));
+  return Object.fromEntries(
+    (fieldErrors ?? []).map((f) => [f.field.replace(/\[(\d+)\]/g, '.$1'), f.message]),
+  );
 }

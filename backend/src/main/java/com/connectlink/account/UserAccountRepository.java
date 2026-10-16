@@ -12,4 +12,6 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long> 
 
   @EntityGraph(attributePaths = "organization")
   List<UserAccount> findByStatus(AccountStatus status);
+
+  boolean existsByEmail(String email);
 }

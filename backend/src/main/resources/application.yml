@@ -54,6 +54,13 @@ app:
     internal-cidrs: []
     header-override: false
     default-zone: EXTERNAL
+  account:
+    verification:
+      # 회사 이메일 인증. 명세에 없어 기본값을 두었다(docs/decisions.md).
+      code-ttl: 10m
+      max-attempts: 5
+      resend-interval: 60s
+      token-ttl: 30m
   attachment:
     # 프로토타입 저장소(임시 디렉터리). 운영은 공유 스토리지 경로나 다른 FileStorage 구현으로 바꾼다.
     dir: ${java.io.tmpdir}/connect-link-files

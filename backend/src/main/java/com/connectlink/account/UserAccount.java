@@ -8,6 +8,7 @@ import com.connectlink.organization.Organization;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -89,6 +90,46 @@ public class UserAccount extends AuditedEntity {
   private List<UserAccountItRole> itRoles = new ArrayList<>();
 
   protected UserAccount() {}
+
+  /**
+   * 가입 신청. 승인 대기 상태로 만들고 관리자 권한은 주지 않는다. 담당 업무는 업무와 세부업무 짝이며, 전산 세부 직무는 직무가 전산일 때만 남긴다.
+   *
+   * @param businesses 업무 → 세부업무(없으면 null). 넣은 순서와 상관없이 업무 순서로 보인다
+   */
+  public static UserAccount apply(
+      String email,
+      String passwordHash,
+      String name,
+      Organization organization,
+      JobRole jobRole,
+      Set<ItRole> itRoles,
+      Map<Business, String> businesses,
+      String department,
+      String team,
+      String jobTitle,
+      String extensionPhone,
+      String mobilePhone) {
+    UserAccount account = new UserAccount();
+    account.email = email;
+    account.passwordHash = passwordHash;
+    account.name = name;
+    account.organization = organization;
+    account.status = AccountStatus.PENDING_APPROVAL;
+    account.admin = false;
+    account.jobRole = jobRole;
+    account.department = department;
+    account.team = team;
+    account.jobTitle = jobTitle;
+    account.extensionPhone = extensionPhone;
+    account.mobilePhone = mobilePhone;
+    businesses.forEach(
+        (business, subBusiness) ->
+            account.businesses.add(new UserAccountBusiness(account, business, subBusiness)));
+    if (jobRole == JobRole.IT) {
+      itRoles.forEach(role -> account.itRoles.add(new UserAccountItRole(account, role)));
+    }
+    return account;
+  }
 
   public Long getId() {
     return id;

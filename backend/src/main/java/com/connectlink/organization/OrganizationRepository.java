@@ -10,6 +10,8 @@ public interface OrganizationRepository
 
   List<Organization> findAllByActiveTrue();
 
+  List<Organization> findAllByActiveTrueAndEmailDomainIgnoreCase(String emailDomain);
+
   Optional<Organization> findByCode(String code);
 
   boolean existsByCode(String code);

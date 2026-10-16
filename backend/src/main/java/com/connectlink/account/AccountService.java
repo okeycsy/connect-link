@@ -11,7 +11,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** 계정. 로그인 확인과 로그인 사용자({@link CurrentUser}) 만들기를 맡는다. 가입·승인·탈퇴는 다음 단계에서 이 Service 에 더한다. */
+/**
+ * 계정. 로그인 확인과 로그인 사용자({@link CurrentUser}) 만들기를 맡는다. 가입 신청은 {@link SignUpService}, 회사 이메일 인증은
+ * {@link EmailVerificationService} 가 한다. 가입 승인·탈퇴는 다음 단계에서 더한다.
+ */
 @Service
 @Transactional(readOnly = true)
 public class AccountService {

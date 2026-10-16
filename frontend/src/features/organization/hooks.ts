@@ -12,6 +12,7 @@ export type OrganizationCreateRequest = components['schemas']['OrganizationCreat
 export type OrganizationUpdateRequest = components['schemas']['OrganizationUpdateRequest'];
 export type OrganizationType = OrganizationDetail['type'];
 export type BusinessCode = BusinessResponse['code'];
+export type JobRoleResponse = components['schemas']['JobRoleResponse'];
 
 export interface OrganizationSearchParams {
   keyword?: string;
@@ -25,6 +26,7 @@ export interface OrganizationSearchParams {
 
 export const organizationKeys = {
   businesses: ['businesses'] as const,
+  jobRoles: ['job-roles'] as const,
   organizations: ['organizations'] as const,
   search: (params: OrganizationSearchParams) => ['organizations', 'search', params] as const,
   detail: (id: number) => ['organizations', 'detail', id] as const,
@@ -35,6 +37,15 @@ export function useBusinesses() {
   return useQuery({
     queryKey: organizationKeys.businesses,
     queryFn: async () => unwrap(await api.GET('/api/v1/businesses')),
+    staleTime: Infinity,
+  });
+}
+
+/** 직무와 전산 세부 직무 선택지(공개). 가입 화면이 쓴다. */
+export function useJobRoles() {
+  return useQuery({
+    queryKey: organizationKeys.jobRoles,
+    queryFn: async () => unwrap(await api.GET('/api/v1/job-roles')),
     staleTime: Infinity,
   });
 }

@@ -8,6 +8,7 @@ import com.connectlink.history.ChangeHistoryService;
 import com.connectlink.history.FieldChanges;
 import com.connectlink.history.HistoryTargetType;
 import com.connectlink.organization.dto.BusinessResponse;
+import com.connectlink.organization.dto.JobRoleResponse;
 import com.connectlink.organization.dto.OrganizationCreateRequest;
 import com.connectlink.organization.dto.OrganizationDetailResponse;
 import com.connectlink.organization.dto.OrganizationResponse;
@@ -59,8 +60,28 @@ public class OrganizationService {
             () -> BusinessException.notFound("ORGANIZATION_NOT_FOUND", "기관을 찾을 수 없습니다: " + code));
   }
 
+  /** 사용 중인 기관 하나. 없거나 사용하지 않는 기관이면 404 다. 가입 신청처럼 기관을 고르는 곳이 쓴다. */
+  public Organization getActive(Long id) {
+    return organizationRepository
+        .findById(id)
+        .filter(Organization::isActive)
+        .orElseThrow(() -> BusinessException.notFound("ORGANIZATION_NOT_FOUND", "기관을 찾을 수 없습니다."));
+  }
+
+  /** 이메일 도메인이 같은 사용 중인 기관들. 가입 화면이 회사 이메일로 기관을 미리 골라 줄 때 쓴다. */
+  public List<Organization> findActiveByEmailDomain(String emailDomain) {
+    if (emailDomain == null || emailDomain.isBlank()) {
+      return List.of();
+    }
+    return organizationRepository.findAllByActiveTrueAndEmailDomainIgnoreCase(emailDomain);
+  }
+
   public List<BusinessResponse> listBusinesses() {
     return Arrays.stream(Business.values()).map(BusinessResponse::from).toList();
+  }
+
+  public List<JobRoleResponse> listJobRoles() {
+    return Arrays.stream(JobRole.values()).map(JobRoleResponse::from).toList();
   }
 
   /** 관리 화면의 기관 목록. 검색어(이름·코드), 구분, 참여 업무, 사용 여부로 거른다. */

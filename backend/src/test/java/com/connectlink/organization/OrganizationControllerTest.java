@@ -39,7 +39,34 @@ class OrganizationControllerTest {
         .andExpect(jsonPath("$", hasSize(11)))
         .andExpect(jsonPath("$[0].code").value("KFTC"))
         .andExpect(jsonPath("$[0].typeLabel").value("결제원"))
+        .andExpect(jsonPath("$[0].businesses", hasSize(4)))
         .andExpect(jsonPath("$[*].code", not(org.hamcrest.Matchers.hasItem("OLD"))));
+  }
+
+  @Test
+  void 기관_목록은_가입_화면이_업무를_거르도록_참여_업무를_업무_순서로_담는다() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/organizations"))
+        .andExpect(jsonPath("$[?(@.code == 'DARA')].businesses[*]").isArray())
+        .andExpect(
+            jsonPath(
+                "$[?(@.code == 'MABA')].businesses[*]",
+                org.hamcrest.Matchers.contains("ACCOUNT_INFO", "LOAN_TRANSFER")));
+  }
+
+  @Test
+  void 직무_목록은_로그인_없이_열리고_전산만_세부_직무가_있다() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/job-roles"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasSize(2)))
+        .andExpect(jsonPath("$[0].code").value("BUSINESS"))
+        .andExpect(jsonPath("$[0].label").value("현업"))
+        .andExpect(jsonPath("$[0].itRoles", hasSize(0)))
+        .andExpect(jsonPath("$[1].code").value("IT"))
+        .andExpect(jsonPath("$[1].itRoles", hasSize(5)))
+        .andExpect(jsonPath("$[1].itRoles[3].code").value("EXTERNAL_LINK"))
+        .andExpect(jsonPath("$[1].itRoles[3].label").value("대외계"));
   }
 
   @Test

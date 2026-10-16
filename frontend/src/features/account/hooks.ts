@@ -9,6 +9,11 @@ import { DEFAULT_BUSINESS_SLUG } from '../../app/navigation';
 export type CurrentUserResponse = components['schemas']['CurrentUserResponse'];
 export type LoginRequest = components['schemas']['LoginRequest'];
 export type DemoAccountResponse = components['schemas']['DemoAccountResponse'];
+export type EmailVerificationResponse = components['schemas']['EmailVerificationResponse'];
+export type EmailVerificationConfirmResponse =
+  components['schemas']['EmailVerificationConfirmResponse'];
+export type SignUpRequest = components['schemas']['SignUpRequest'];
+export type SignUpResponse = components['schemas']['SignUpResponse'];
 
 export const accountKeys = {
   me: ['me'] as const,
@@ -103,5 +108,28 @@ export function useDemoAccounts() {
     queryFn: async () => unwrap(await api.GET('/api/v1/demo/accounts')),
     enabled: isDemoProfile(serverInfo?.profile),
     staleTime: 5 * 60_000,
+  });
+}
+
+/** 가입 ①: 회사 이메일로 인증 코드 받기. 실패는 409 EMAIL_ALREADY_REGISTERED, 429 VERIFICATION_RESEND_TOO_SOON 등. */
+export function useRequestVerification() {
+  return useMutation({
+    mutationFn: async (email: string) =>
+      unwrap(await api.POST('/api/v1/email-verifications', { body: { email } })),
+  });
+}
+
+/** 가입 ①: 받은 코드 확인. 맞으면 가입 신청에 쓸 인증 토큰과 도메인이 같은 기관을 준다. */
+export function useConfirmVerification() {
+  return useMutation({
+    mutationFn: async (body: { email: string; code: string }) =>
+      unwrap(await api.POST('/api/v1/email-verifications/confirm', { body })),
+  });
+}
+
+/** 가입 신청. 성공하면 승인 대기 계정이 생긴다(승인 전에는 로그인할 수 없다). */
+export function useSignUp() {
+  return useMutation({
+    mutationFn: async (body: SignUpRequest) => unwrap(await api.POST('/api/v1/sign-ups', { body })),
   });
 }

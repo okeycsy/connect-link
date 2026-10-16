@@ -4,6 +4,7 @@ import com.connectlink.auth.CurrentUserProvider;
 import com.connectlink.common.BusinessException;
 import com.connectlink.common.PageResponse;
 import com.connectlink.organization.dto.BusinessResponse;
+import com.connectlink.organization.dto.JobRoleResponse;
 import com.connectlink.organization.dto.OrganizationCreateRequest;
 import com.connectlink.organization.dto.OrganizationDetailResponse;
 import com.connectlink.organization.dto.OrganizationResponse;
@@ -48,6 +49,14 @@ public class OrganizationController {
   @Operation(summary = "기관 목록 조회", description = "사용 중인 기관을 구분·이름순으로 돌려준다. 로그인 없이 쓸 수 있다.")
   public List<OrganizationResponse> listOrganizations() {
     return organizationService.listActive();
+  }
+
+  @GetMapping("/job-roles")
+  @Operation(
+      summary = "직무 목록 조회",
+      description = "가입 화면의 직무 선택지. 전산이면 세부 직무를 하나 이상 고른다. 로그인 없이 쓸 수 있다.")
+  public List<JobRoleResponse> listJobRoles() {
+    return organizationService.listJobRoles();
   }
 
   @GetMapping("/businesses")
