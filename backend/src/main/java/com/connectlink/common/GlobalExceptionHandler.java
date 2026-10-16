@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(BusinessException.class)
   public ResponseEntity<ErrorResponse> handleBusiness(
       BusinessException e, HttpServletRequest request) {
-    return build(e.getStatus(), e.getMessage(), e.getCode(), List.of(), request);
+    return build(e.getStatus(), e.getMessage(), e.getCode(), e.getFieldErrors(), request);
   }
 
   @ExceptionHandler(ResponseStatusException.class)

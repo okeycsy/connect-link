@@ -112,4 +112,16 @@ public class NotificationService {
         outboxRepository.findAllByOrderByCreatedAtDescIdDesc(pageable),
         NotificationOutboxResponse::from);
   }
+
+  /**
+   * 데모 도구: 한 받는 사람에게 간 최근 메일 5건(최신순). 가입 화면이 로그인 전에 인증 코드 메일을 보여 줄 때 쓴다. 운영에는 이 기능을 부르는 API 가 없다.
+   */
+  @Transactional(readOnly = true)
+  public List<NotificationOutboxResponse> listRecentEmailsTo(String recipient) {
+    return outboxRepository
+        .findTop5ByChannelAndRecipientOrderByIdDesc(NotificationChannel.EMAIL, recipient)
+        .stream()
+        .map(NotificationOutboxResponse::from)
+        .toList();
+  }
 }

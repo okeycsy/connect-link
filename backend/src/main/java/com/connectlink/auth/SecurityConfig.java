@@ -20,7 +20,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 /**
- * 보안 기본값. 세션(쿠키) 인증, CSRF 쿠키 토큰, 화면·공개 기준정보·로그인·API 문서만 열어 두고 나머지 API는 로그인 필수. 로그인과 로그아웃은 {@link
+ * 보안 기본값. 세션(쿠키) 인증, CSRF 쿠키 토큰, 화면·공개 기준정보·로그인·가입·API 문서만 열어 두고 나머지 API는 로그인 필수. 로그인과 로그아웃은 {@link
  * AuthController} 가 한다(폼 로그인·기본 로그아웃 필터는 끈다).
  */
 @Configuration
@@ -48,13 +48,23 @@ public class SecurityConfig {
                     .permitAll()
                     .regexMatchers("/(?!api/)[^.]*")
                     .permitAll()
-                    // 공개 API: 상태, 가입 화면이 쓰는 기준정보(조회만), 로그인·로그아웃, API 문서
-                    .antMatchers(HttpMethod.GET, "/api/v1/businesses", "/api/v1/organizations")
+                    // 공개 API: 상태, 가입 화면이 쓰는 기준정보(조회만), 로그인·로그아웃, 가입, API 문서
+                    .antMatchers(
+                        HttpMethod.GET,
+                        "/api/v1/businesses",
+                        "/api/v1/job-roles",
+                        "/api/v1/organizations")
                     .permitAll()
-                    .antMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/logout")
+                    .antMatchers(
+                        HttpMethod.POST,
+                        "/api/v1/auth/login",
+                        "/api/v1/auth/logout",
+                        "/api/v1/email-verifications",
+                        "/api/v1/email-verifications/confirm",
+                        "/api/v1/sign-ups")
                     .permitAll()
-                    // 데모 계정 목록(로그인 화면). 운영 프로필에는 이 API 가 없어 404 다.
-                    .antMatchers(HttpMethod.GET, "/api/v1/demo/accounts")
+                    // 데모 계정 목록(로그인 화면)과 받은 메일함(가입 화면). 운영 프로필에는 이 API 가 없어 404 다.
+                    .antMatchers(HttpMethod.GET, "/api/v1/demo/accounts", "/api/v1/demo/mailbox")
                     .permitAll()
                     .antMatchers(
                         "/api/v1/health",
