@@ -9,6 +9,7 @@ export type HomeItem = components['schemas']['HomeCardItem'];
 export type HomeKpi = components['schemas']['HomeCardKpi'];
 
 export const homeKeys = {
+  all: ['home'] as const,
   summary: (businessSlug: string) => ['home', businessSlug] as const,
 };
 

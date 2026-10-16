@@ -21,8 +21,11 @@ export interface FeatureMenuItem {
   description: string;
   icon: Icon;
   group: SidebarGroup;
-  /** 관리 그룹은 관리자에게만 보인다(/api/v1/me 의 admin). 주소로 들어와도 AdminGuard 가 막는다. */
-  adminOnly?: boolean;
+  /**
+   * 관리 그룹은 관리 메뉴를 쓸 수 있는 사람(관리자, 결제원 담당자)에게만 보인다(features/account/hooks 의 canUseAdminMenu).
+   * 주소로 들어와도 AdminGuard 가 막는다.
+   */
+  adminMenu?: boolean;
 }
 
 export const FEATURE_MENU: FeatureMenuItem[] = [
@@ -73,7 +76,7 @@ export const FEATURE_MENU: FeatureMenuItem[] = [
     description: '가입 승인, 정기 변경 주간, 알림 대상, 기준정보',
     icon: IconSettings,
     group: '관리',
-    adminOnly: true,
+    adminMenu: true,
   },
 ];
 
@@ -101,6 +104,8 @@ export interface AdminMenuItem {
   path?: string;
   /** 화면을 만드는 프로젝트. */
   owner: string;
+  /** 관리자에게만 보인다. 없으면 관리 메뉴를 쓰는 결제원 담당자에게도 보인다(가입 승인은 맡은 업무만 처리한다). */
+  adminOnly?: boolean;
 }
 
 export const ADMIN_MENU: AdminMenuItem[] = [
@@ -110,12 +115,14 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     description: '기관 등록, 참여 업무, 이메일 도메인, 사용 여부',
     path: 'admin/organizations',
     owner: '공통',
+    adminOnly: true,
   },
   {
     key: 'signup-approval',
     label: '가입 승인',
     description: '가입 신청 목록, 이메일 도메인과 기관 일치 여부, 승인·반려',
-    owner: '공통 (계정 모듈과 함께)',
+    path: 'admin/sign-ups',
+    owner: '공통',
   },
   {
     key: 'update-campaign',

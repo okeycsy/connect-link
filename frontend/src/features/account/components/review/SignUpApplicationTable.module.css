@@ -1,0 +1,17 @@
+.row {
+  cursor: pointer;
+
+  &[data-selected] {
+    background: var(--mantine-color-clay-1);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mantine-color-clay-6);
+    outline-offset: -2px;
+  }
+}
+
+.numeric {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
