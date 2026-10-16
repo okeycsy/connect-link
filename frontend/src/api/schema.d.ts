@@ -649,6 +649,8 @@ export interface components {
       email: string;
       name: string;
       organizationName: string;
+      /** @enum {string} */
+      organizationType: 'KFTC' | 'FINANCE_ORGANIZATION' | 'USE_ORGANIZATION';
       roleLabel: string;
       admin: boolean;
       businessLabels: string[];

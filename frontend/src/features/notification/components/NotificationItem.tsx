@@ -11,7 +11,7 @@ interface Props {
   compact?: boolean;
 }
 
-/** 알림 한 줄. 읽지 않은 것은 빨간 점(유일한 보조색)으로만 구분한다. */
+/** 알림 한 줄. 읽지 않은 것은 빨간 점과 굵은 제목으로 구분한다. */
 export function NotificationItem({ notification, onOpen, compact = false }: Props) {
   return (
     <UnstyledButton
@@ -24,11 +24,9 @@ export function NotificationItem({ notification, onOpen, compact = false }: Prop
         <Box className={classes.dot} aria-hidden />
         <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
           <Group gap={6}>
-            <Badge size="xs" variant="light">
-              {notification.typeLabel}
-            </Badge>
+            <Badge size="sm">{notification.typeLabel}</Badge>
             {notification.businessLabel && (
-              <Badge size="xs" variant="outline" color="navy">
+              <Badge size="sm" variant="outline" color="gray">
                 {notification.businessLabel}
               </Badge>
             )}

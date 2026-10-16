@@ -1,4 +1,31 @@
-/* Mantine 테마로 표현할 수 없는 전역 기본값만 둔다. 색과 간격은 app/theme.ts 가 기준이다. */
+/* Mantine 테마로 표현할 수 없는 전역 기본값만 둔다. 색 값의 기준은 app/theme.ts 이고, CSS 모듈은 아래 변수만 쓴다. */
+:root {
+  --cl-page: #f8f8f9;
+  --cl-card: #ffffff;
+  --cl-sunken: #f3f4f6;
+  --cl-line: #e3e4e8;
+  --cl-line-soft: #edeef1;
+  --cl-ink: #1d1715;
+  --cl-ink-soft: #3e4048;
+  --cl-ink-muted: #62656d;
+  --cl-online: #3fa36b;
+
+  /* 파스텔 번짐(시그니처). 헤더 오른쪽, 사이드바 아래, 홈 머리에만 쓴다. */
+  --cl-pastel-peach: #f6d6cc;
+  --cl-pastel-sky: #cfe0f3;
+  --cl-pastel-butter: #f7efb8;
+
+  /* 로그인 배경 번짐 전용(시안 B 랜딩과 같은 값). LoginPage.module.css 에서만 쓴다. */
+  --cl-blob-peach: #f6c9bc;
+  --cl-blob-blush: #f3d9c9;
+  --cl-blob-rose: #f4d3cb;
+  --cl-blob-cream: #f8f0be;
+  --cl-blob-apricot: #f6dccf;
+
+  --cl-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --cl-page-gutter: 24px;
+}
+
 html,
 body,
 #root {
@@ -7,9 +34,11 @@ body,
 
 body {
   word-break: keep-all;
-  background: var(--mantine-color-navy-9);
+  background: var(--cl-page);
+  color: var(--cl-ink);
 }
 
-[data-mantine-color-scheme='dark'] body {
-  background: var(--mantine-color-navy-9);
+:focus-visible {
+  outline: 2px solid var(--mantine-color-clay-6);
+  outline-offset: 2px;
 }

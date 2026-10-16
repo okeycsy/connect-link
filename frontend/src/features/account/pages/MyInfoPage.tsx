@@ -1,9 +1,10 @@
-import { Badge, Button, Card, Grid, Group, Skeleton, Stack, Text, Title } from '@mantine/core';
+import { Badge, Button, Card, Grid, Group, Skeleton, Stack, Text } from '@mantine/core';
 import { IconUserCheck, IconUserOff } from '@tabler/icons-react';
 
 import { OrgMonogram } from '../../../shared/OrgMonogram';
 import { ErrorState } from '../../../shared/state/StateView';
 import { useMe } from '../hooks';
+import { PageHeader } from '../../../shared/PageHeader';
 
 /**
  * 내 정보. 지금은 읽기 전용(SHY 결정 2026-10-15): 서버가 아는 로그인 사용자 정보를 보여 주고, 연락처 수정·"변동 없음" 확인·탈퇴 자리는
@@ -16,12 +17,7 @@ export function MyInfoPage() {
 
   return (
     <Stack gap="md">
-      <div>
-        <Title order={2}>내 정보</Title>
-        <Text c="dimmed" size="lg">
-          로그인한 계정과 소속, 연락처를 확인합니다.
-        </Text>
-      </div>
+      <PageHeader title="내 정보" description="로그인한 계정과 소속, 연락처를 확인합니다." />
 
       <Grid gutter="md">
         <Grid.Col span={{ base: 12, md: 5 }}>
@@ -55,7 +51,7 @@ export function MyInfoPage() {
                   value={
                     <Group gap={6} data-testid="my-businesses">
                       {me.businesses.map((b) => (
-                        <Badge key={b.code} variant="light" color="navy">
+                        <Badge key={b.code} color="sky">
                           {b.label}
                         </Badge>
                       ))}
@@ -65,23 +61,12 @@ export function MyInfoPage() {
                 <Field label="직무" value={me.jobRoleLabel} />
                 <Field
                   label="권한"
-                  value={
-                    me.admin ? (
-                      <Badge variant="light" color="navy">
-                        관리자
-                      </Badge>
-                    ) : (
-                      '담당자'
-                    )
-                  }
+                  value={me.admin ? <Badge color="clay">관리자</Badge> : '담당자'}
                 />
                 <Field
                   label="지금 접속한 망"
                   value={
-                    <Badge
-                      variant={me.networkZone === 'INTERNAL' ? 'light' : 'outline'}
-                      color="navy"
-                    >
+                    <Badge color={me.networkZone === 'INTERNAL' ? 'sky' : 'red'}>
                       {me.networkZoneLabel}
                     </Badge>
                   }

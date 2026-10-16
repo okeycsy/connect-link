@@ -58,7 +58,7 @@ test.describe('로그인', () => {
     await page.goto('/login');
     await page.getByRole('button', { name: '김가나 (참가기관 · 현업)로 로그인' }).click();
     await expect(page).toHaveURL(/\/account-info\/home$/);
-    await expect(page.getByText('안녕하세요, 김가나 님. 지금 할 일을 모았습니다.')).toBeVisible();
+    await expect(page.getByRole('heading', { name: '안녕하세요, 김가나 님' })).toBeVisible();
     expect(await railLabels(page)).toEqual(['계좌통합관리']);
     await expect(rail(page).getByRole('link', { name: '관리', exact: true })).toHaveCount(0);
     await page.screenshot({ path: 'screenshots/login-member-home.png', fullPage: true });
@@ -88,7 +88,7 @@ test.describe('로그인', () => {
 
     await dialog.getByRole('button', { name: /^이다라 / }).click();
     await expect(page).toHaveURL(/\/auto-transfer\/home$/);
-    await expect(page.getByText('안녕하세요, 이다라 님. 지금 할 일을 모았습니다.')).toBeVisible();
+    await expect(page.getByRole('heading', { name: '안녕하세요, 이다라 님' })).toBeVisible();
     expect(await railLabels(page)).toEqual(['자동이체통합관리', 'CMS']);
 
     await page.getByRole('button', { name: '사용자 메뉴' }).click();

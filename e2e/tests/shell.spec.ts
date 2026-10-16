@@ -16,9 +16,7 @@ test.describe('앱 셸', () => {
 
     const cards = page.getByTestId('home-cards');
     await expect(cards.getByText('확인이 필요한 담당자')).toBeVisible();
-    await expect(
-      page.getByText('안녕하세요, 데모 관리자 님. 지금 할 일을 모았습니다.'),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: '안녕하세요, 데모 관리자 님' })).toBeVisible();
 
     await page.screenshot({ path: 'screenshots/home.png', fullPage: true });
   });

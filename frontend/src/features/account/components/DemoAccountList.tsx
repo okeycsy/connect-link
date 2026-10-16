@@ -31,7 +31,12 @@ export function DemoAccountList({ accounts, onPick, pendingEmail, currentEmail }
             aria-label={`${account.name} (${account.roleLabel})로 로그인`}
           >
             <Group gap="sm" wrap="nowrap">
-              <Avatar radius="xl" size={32} color="navy" variant={current ? 'filled' : 'light'}>
+              <Avatar
+                radius={8}
+                size={32}
+                color={account.organizationType === 'KFTC' ? 'sky' : 'clay'}
+                variant={current ? 'filled' : 'light'}
+              >
                 {account.name.slice(0, 1)}
               </Avatar>
               <div className={classes.body}>
@@ -43,7 +48,7 @@ export function DemoAccountList({ accounts, onPick, pendingEmail, currentEmail }
                     {account.roleLabel}
                   </Text>
                   {account.admin && (
-                    <Badge size="xs" variant="light">
+                    <Badge size="xs" color="clay">
                       관리자
                     </Badge>
                   )}

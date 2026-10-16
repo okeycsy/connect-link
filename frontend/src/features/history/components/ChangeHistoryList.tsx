@@ -42,7 +42,7 @@ export function ChangeHistoryList({
 
   return (
     <Stack gap="xs" data-testid="change-history">
-      <Timeline bulletSize={26} lineWidth={2} color="navy">
+      <Timeline bulletSize={26} lineWidth={2} color="clay">
         {data.content.map((history) => (
           <HistoryItem key={history.id} history={history} />
         ))}
@@ -70,7 +70,7 @@ function HistoryItem({ history }: { history: ChangeHistory }) {
           <Badge
             size="xs"
             variant={history.action === 'UPDATED' ? 'light' : 'outline'}
-            color="navy"
+            color="clay"
           >
             {history.actionLabel}
           </Badge>

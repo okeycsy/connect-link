@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('홈 대시보드', () => {
-  test('KPI 타일 네 개와 할 일 카드 여섯 장이 보이고 가장 급한 카드가 크다', async ({ page }) => {
+  test('KPI 타일, 최근 소식, 이번 주 일시중단과 카드 여섯 장이 보이고 확인 필요 담당자는 작다', async ({
+    page,
+  }) => {
     await page.goto('/account-info/home');
-    await expect(
-      page.getByText('안녕하세요, 데모 관리자 님. 지금 할 일을 모았습니다.'),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: '안녕하세요, 데모 관리자 님' })).toBeVisible();
 
     const cards = page.getByTestId('home-cards');
     for (const key of [
@@ -19,9 +19,12 @@ test.describe('홈 대시보드', () => {
       await expect(cards.getByTestId(`home-card-${key}`)).toBeVisible();
     }
     await expect(cards.getByTestId('home-card-CONTACT_CONFIRM')).toHaveAttribute(
-      'data-featured',
+      'data-compact',
       'true',
     );
+    // 큰 칸은 알림 센터와 같은 최근 소식, 일시중단은 월~금 요일 칸
+    await expect(cards.getByTestId('home-recent-notifications')).toBeVisible();
+    await expect(cards.getByTestId('suspension-week')).toBeVisible();
     await expect(cards.getByText('샘플').first()).toBeVisible();
     await page.screenshot({ path: 'screenshots/home.png', fullPage: true });
   });
@@ -47,5 +50,13 @@ test.describe('홈 대시보드', () => {
       .getByRole('link', { name: '모두 보기' })
       .click();
     await expect(page).toHaveURL(/\/account-info\/opinions$/);
+  });
+
+  test('최근 소식은 4건 이상 채워 보이고 더보기는 알림 센터로 간다', async ({ page }) => {
+    await page.goto('/account-info/home');
+    const recent = page.getByTestId('home-recent-notifications');
+    await expect(recent.getByRole('button').nth(3)).toBeVisible();
+    await recent.getByRole('link', { name: '더보기' }).click();
+    await expect(page).toHaveURL(/\/account-info\/notifications$/);
   });
 });

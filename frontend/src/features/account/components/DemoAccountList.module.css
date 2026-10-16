@@ -1,13 +1,14 @@
+/* 데모 계정 한 줄: 목록 한 줄 규칙(sunken 바탕, radius 14, hover clay-0). frontend/CLAUDE.md 6절. */
 .row {
   display: block;
   width: 100%;
-  padding: 8px 10px;
-  border-radius: var(--mantine-radius-md);
-  border: 1px solid transparent;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--cl-sunken);
+  transition: background-color 160ms var(--cl-ease);
 
   &:hover:not(:disabled) {
-    background: var(--mantine-color-navy-0);
-    border-color: var(--mantine-color-navy-1);
+    background: var(--mantine-color-clay-0);
   }
 
   &:disabled {
@@ -15,7 +16,7 @@
   }
 
   &[data-current] {
-    background: var(--mantine-color-gray-0);
+    background: var(--mantine-color-clay-1);
   }
 }
 
@@ -25,6 +26,6 @@
 }
 
 .chevron {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-6);
   flex: 0 0 auto;
 }

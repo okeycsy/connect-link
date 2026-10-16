@@ -17,6 +17,7 @@ import { useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { errorCodeOf, fieldErrorsOf } from '../../../api/client';
+import { BrandMark } from '../../../shared/BrandMark';
 import { useBusinesses } from '../../organization/hooks';
 import { DemoAccountList } from '../components/DemoAccountList';
 import {
@@ -68,44 +69,51 @@ export function LoginPage() {
   }
 
   const errorCode = errorCodeOf(login.error);
+  const pendingApproval = errorCode === 'ACCOUNT_PENDING_APPROVAL';
   const showAlert = login.isError && Object.keys(fieldErrorsOf(login.error)).length === 0;
 
   return (
     <Box className={classes.page}>
+      {/* 배경: 시안 B 랜딩과 같은 파스텔 번짐 세 개와 흰 반짝임 */}
+      <Box className={classes.blobTopRight} aria-hidden />
+      <Box className={classes.blobLeft} aria-hidden />
+      <Box className={classes.blobBottomRight} aria-hidden />
+      <Sparkle className={classes.sparkleA} size={34} />
+      <Sparkle className={classes.sparkleB} size={24} />
+
       <Box className={classes.panel}>
         <Stack gap="xl" justify="space-between" h="100%">
-          <Group gap="sm">
-            <Box className={classes.logo}>KFTC</Box>
-            <Text c="white" fw={700} size="xl">
+          <BrandMark size={32} textSize="18px" />
+          <Stack gap="lg" align="flex-start">
+            <Box className={classes.tag}>참가기관 · 금융결제원 협업 포털</Box>
+            <Title order={1} className={classes.headline}>
+              <span className={classes.headlineSub}>참가기관과 결제원을 잇는</span>
               연결고리
-            </Text>
-          </Group>
-          <div>
-            <Title order={1} c="white" className={classes.headline}>
-              결제원과 기관 담당자를
-              <br />
-              하나의 고리로 잇습니다.
             </Title>
-            <Text c="white" opacity={0.75} mt="sm" size="lg">
-              연락처, 의견 요청, 기관 테스트, 일시중단을 한곳에서.
+            <Text size="xl" c="var(--cl-ink-soft)" maw={460} lh={1.75}>
+              담당자 연락처, 의견 요청, 기관 테스트, 일시중단을 한곳에서 관리합니다.
             </Text>
-            <Group gap="xs" mt="lg">
+            <Group gap="xs">
               {businesses?.map((b) => (
                 <Box key={b.code} className={classes.chip}>
                   {b.label}
                 </Box>
               ))}
             </Group>
-          </div>
-          <Text c="white" opacity={0.5} size="xs">
-            샘플 데이터로 동작하는 프로토타입입니다.
+          </Stack>
+          <Text c="dimmed" size="sm">
+            샘플 데이터로 동작하는 프로토타입입니다. 모든 기관명과 담당자는 가상 데이터입니다.
           </Text>
         </Stack>
       </Box>
 
       <Box className={classes.sheet}>
+        {/* 카드 뒤 클레이 선 고리와 작은 점, 반짝임 하나 */}
+        <Box className={classes.ring} aria-hidden />
+        <Box className={classes.ringDot} aria-hidden />
+        <Sparkle className={classes.sparkleC} size={40} />
         <Stack gap="md" className={classes.column}>
-          <Paper className={classes.card} p="xl" withBorder>
+          <Paper className={classes.card} p={32}>
             <form onSubmit={form.onSubmit(submit)} noValidate>
               <Stack gap="md">
                 <div>
@@ -117,14 +125,8 @@ export function LoginPage() {
                 {showAlert && (
                   <Alert
                     variant="light"
-                    color={errorCode === 'ACCOUNT_PENDING_APPROVAL' ? 'navy' : 'red'}
-                    icon={
-                      errorCode === 'ACCOUNT_PENDING_APPROVAL' ? (
-                        <IconClock size={18} />
-                      ) : (
-                        <IconAlertCircle size={18} />
-                      )
-                    }
+                    color={pendingApproval ? 'sky' : 'red'}
+                    icon={pendingApproval ? <IconClock size={18} /> : <IconAlertCircle size={18} />}
                     data-testid="login-error"
                   >
                     {login.error?.message}
@@ -157,17 +159,17 @@ export function LoginPage() {
           </Paper>
 
           {demo && demo.accounts.length > 0 && (
-            <Paper className={classes.card} p="md" withBorder>
+            <Paper className={classes.demoCard} p="md">
               <Text fw={700}>데모 계정으로 들어가기</Text>
               <Text size="xs" c="dimmed" mb="sm">
                 시연용 역할별 계정입니다. 비밀번호는 모두{' '}
-                <Text span ff="monospace" size="xs" c="dark">
+                <Text span ff="monospace" size="xs" c="var(--cl-ink)">
                   {demo.password}
                 </Text>{' '}
                 이고, 고르면 같은 로그인 절차를 거칩니다.
               </Text>
               <ScrollArea.Autosize
-                mah={320}
+                mah={300}
                 type="auto"
                 scrollbars="y"
                 scrollbarSize={6}
@@ -188,5 +190,17 @@ export function LoginPage() {
         </Stack>
       </Box>
     </Box>
+  );
+}
+
+/** 네 갈래 반짝임(흰색). 장식이라 화면 읽기에서 뺀다. */
+function Sparkle({ className, size }: { className: string; size: number }) {
+  return (
+    <svg className={className} width={size} height={size} viewBox="0 0 24 24" aria-hidden>
+      <path
+        d="M12 0C12.8 7.5 16.5 11.2 24 12C16.5 12.8 12.8 16.5 12 24C11.2 16.5 7.5 12.8 0 12C7.5 11.2 11.2 7.5 12 0Z"
+        fill="currentColor"
+      />
+    </svg>
   );
 }
