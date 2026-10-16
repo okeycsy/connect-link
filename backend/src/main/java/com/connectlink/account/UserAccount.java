@@ -5,9 +5,12 @@ import com.connectlink.organization.Business;
 import com.connectlink.organization.ItRole;
 import com.connectlink.organization.JobRole;
 import com.connectlink.organization.Organization;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import javax.persistence.CascadeType;
@@ -81,6 +84,25 @@ public class UserAccount extends AuditedEntity {
   @Column(name = "mobile_phone", length = 30)
   private String mobilePhone;
 
+  /** 가입 신청 일시. 반려 뒤 다시 신청하면 그때로 바뀐다. */
+  @Column(name = "applied_at", nullable = false)
+  private LocalDateTime appliedAt;
+
+  /** 승인·반려한 일시. 승인 대기면 없다. */
+  @Column(name = "reviewed_at")
+  private LocalDateTime reviewedAt;
+
+  /** 승인·반려한 결제원 담당자의 이메일과 그때 이름. */
+  @Column(name = "reviewer_email", length = 200)
+  private String reviewerEmail;
+
+  @Column(name = "reviewer_name", length = 50)
+  private String reviewerName;
+
+  /** 반려 사유. 반려 메일에 그대로 들어간다. */
+  @Column(name = "rejection_reason", length = 500)
+  private String rejectionReason;
+
   @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
   @BatchSize(size = 50)
   private List<UserAccountBusiness> businesses = new ArrayList<>();
@@ -108,27 +130,159 @@ public class UserAccount extends AuditedEntity {
       String team,
       String jobTitle,
       String extensionPhone,
-      String mobilePhone) {
+      String mobilePhone,
+      LocalDateTime appliedAt) {
     UserAccount account = new UserAccount();
     account.email = email;
-    account.passwordHash = passwordHash;
-    account.name = name;
-    account.organization = organization;
-    account.status = AccountStatus.PENDING_APPROVAL;
     account.admin = false;
-    account.jobRole = jobRole;
-    account.department = department;
-    account.team = team;
-    account.jobTitle = jobTitle;
-    account.extensionPhone = extensionPhone;
-    account.mobilePhone = mobilePhone;
-    businesses.forEach(
-        (business, subBusiness) ->
-            account.businesses.add(new UserAccountBusiness(account, business, subBusiness)));
-    if (jobRole == JobRole.IT) {
-      itRoles.forEach(role -> account.itRoles.add(new UserAccountItRole(account, role)));
-    }
+    account.fill(
+        passwordHash,
+        name,
+        organization,
+        jobRole,
+        itRoles,
+        businesses,
+        department,
+        team,
+        jobTitle,
+        extensionPhone,
+        mobilePhone,
+        appliedAt);
     return account;
+  }
+
+  /**
+   * 반려된 계정의 다시 신청. 같은 계정 행을 새 신청 내용으로 바꾸고 승인 대기로 돌린다. 지난 반려 기록(처리한 사람, 사유)은 지운다.
+   *
+   * @throws IllegalStateException 반려 상태가 아니면
+   */
+  public void reapply(
+      String passwordHash,
+      String name,
+      Organization organization,
+      JobRole jobRole,
+      Set<ItRole> itRoles,
+      Map<Business, String> businesses,
+      String department,
+      String team,
+      String jobTitle,
+      String extensionPhone,
+      String mobilePhone,
+      LocalDateTime appliedAt) {
+    if (status != AccountStatus.REJECTED) {
+      throw new IllegalStateException("반려된 계정만 다시 신청할 수 있습니다: " + status);
+    }
+    fill(
+        passwordHash,
+        name,
+        organization,
+        jobRole,
+        itRoles,
+        businesses,
+        department,
+        team,
+        jobTitle,
+        extensionPhone,
+        mobilePhone,
+        appliedAt);
+  }
+
+  private void fill(
+      String passwordHash,
+      String name,
+      Organization organization,
+      JobRole jobRole,
+      Set<ItRole> itRoles,
+      Map<Business, String> businesses,
+      String department,
+      String team,
+      String jobTitle,
+      String extensionPhone,
+      String mobilePhone,
+      LocalDateTime appliedAt) {
+    this.passwordHash = passwordHash;
+    this.name = name;
+    this.organization = organization;
+    this.status = AccountStatus.PENDING_APPROVAL;
+    this.jobRole = jobRole;
+    this.department = department;
+    this.team = team;
+    this.jobTitle = jobTitle;
+    this.extensionPhone = extensionPhone;
+    this.mobilePhone = mobilePhone;
+    this.appliedAt = appliedAt;
+    this.reviewedAt = null;
+    this.reviewerEmail = null;
+    this.reviewerName = null;
+    this.rejectionReason = null;
+    replaceBusinesses(businesses);
+    replaceItRoles(jobRole == JobRole.IT ? itRoles : Set.of());
+  }
+
+  /**
+   * 담당 업무를 바꾼다. 남는 업무는 행을 그대로 두고 세부업무만 고친다. 같은 업무 행을 지우고 다시 넣으면 Hibernate 가 넣기를 먼저 해서 (계정, 업무) 유일
+   * 제약에 걸린다.
+   */
+  private void replaceBusinesses(Map<Business, String> requested) {
+    businesses.removeIf(b -> !requested.containsKey(b.getBusiness()));
+    requested.forEach(
+        (business, subBusiness) ->
+            businesses.stream()
+                .filter(b -> b.getBusiness() == business)
+                .findFirst()
+                .ifPresentOrElse(
+                    b -> b.changeSubBusiness(subBusiness),
+                    () -> businesses.add(new UserAccountBusiness(this, business, subBusiness))));
+  }
+
+  private void replaceItRoles(Set<ItRole> requested) {
+    itRoles.removeIf(r -> !requested.contains(r.getItRole()));
+    Set<ItRole> current = getItRoles();
+    requested.stream()
+        .filter(role -> !current.contains(role))
+        .sorted()
+        .forEach(role -> itRoles.add(new UserAccountItRole(this, role)));
+  }
+
+  /**
+   * 가입 승인. 사용 중 계정이 되어 로그인할 수 있다.
+   *
+   * @throws IllegalStateException 승인 대기가 아니면
+   */
+  public void approve(String reviewerEmail, String reviewerName, LocalDateTime now) {
+    review(AccountStatus.ACTIVE, reviewerEmail, reviewerName, now);
+    this.rejectionReason = null;
+  }
+
+  /**
+   * 가입 반려. 로그인할 수 없고, 같은 이메일로 다시 신청할 수 있다.
+   *
+   * @throws IllegalStateException 승인 대기가 아니면
+   */
+  public void reject(String reviewerEmail, String reviewerName, String reason, LocalDateTime now) {
+    review(AccountStatus.REJECTED, reviewerEmail, reviewerName, now);
+    this.rejectionReason = reason;
+  }
+
+  private void review(
+      AccountStatus next, String reviewerEmail, String reviewerName, LocalDateTime now) {
+    if (status != AccountStatus.PENDING_APPROVAL) {
+      throw new IllegalStateException("승인 대기 계정만 처리할 수 있습니다: " + status);
+    }
+    this.status = next;
+    this.reviewedAt = now;
+    this.reviewerEmail = reviewerEmail;
+    this.reviewerName = reviewerName;
+  }
+
+  /** 회사 이메일의 도메인이 소속 기관에 등록된 도메인과 같은지. 기관에 도메인이 없으면 false 다. */
+  public boolean emailDomainMatches() {
+    String domain = organization.getEmailDomain();
+    if (domain == null || domain.isBlank()) {
+      return false;
+    }
+    String emailDomain = email.substring(email.indexOf('@') + 1);
+    return emailDomain.equals(domain.trim().toLowerCase(Locale.ROOT));
   }
 
   public Long getId() {
@@ -183,6 +337,26 @@ public class UserAccount extends AuditedEntity {
     return mobilePhone;
   }
 
+  public LocalDateTime getAppliedAt() {
+    return appliedAt;
+  }
+
+  public LocalDateTime getReviewedAt() {
+    return reviewedAt;
+  }
+
+  public String getReviewerEmail() {
+    return reviewerEmail;
+  }
+
+  public String getReviewerName() {
+    return reviewerName;
+  }
+
+  public String getRejectionReason() {
+    return rejectionReason;
+  }
+
   /** 담당 업무. 업무 영역 순서(enum 순)다. */
   public Set<Business> getBusinesses() {
     EnumSet<Business> result = EnumSet.noneOf(Business.class);
@@ -190,8 +364,11 @@ public class UserAccount extends AuditedEntity {
     return result;
   }
 
+  /** 담당 업무와 세부업무. 업무 영역 순서다. */
   public List<UserAccountBusiness> getBusinessDetails() {
-    return List.copyOf(businesses);
+    return businesses.stream()
+        .sorted(Comparator.comparing(UserAccountBusiness::getBusiness))
+        .toList();
   }
 
   public Set<ItRole> getItRoles() {

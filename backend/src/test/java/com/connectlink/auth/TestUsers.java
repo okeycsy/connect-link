@@ -41,6 +41,32 @@ public final class TestUsers {
           JobRole.BUSINESS,
           Set.of());
 
+  /** 결제원 계좌통합관리·자동이체통합관리 현업 담당자(관리자 아님). 그 업무의 가입 신청을 승인한다. */
+  public static final CurrentUser KFTC_ACCOUNT_INFO =
+      new CurrentUser(
+          "hong.gildong@kftc.example.com",
+          "홍길동",
+          "KFTC",
+          "금융결제원",
+          OrganizationType.KFTC,
+          false,
+          Set.of(Business.ACCOUNT_INFO, Business.AUTO_TRANSFER),
+          JobRole.BUSINESS,
+          Set.of());
+
+  /** 결제원 CMS 현업 담당자(관리자 아님). */
+  public static final CurrentUser KFTC_CMS =
+      new CurrentUser(
+          "park.cms@kftc.example.com",
+          "박하늘",
+          "KFTC",
+          "금융결제원",
+          OrganizationType.KFTC,
+          false,
+          Set.of(Business.CMS),
+          JobRole.BUSINESS,
+          Set.of());
+
   private TestUsers() {}
 
   public static RequestPostProcessor admin() {

@@ -54,6 +54,30 @@ class HomeServiceTest {
   }
 
   @Test
+  void 기여자가_이_사용자에게는_없는_자리라고_하면_카드를_뺀다() {
+    HomeCardContributor hidden =
+        new HomeCardContributor() {
+          @Override
+          public HomeCardKey key() {
+            return HomeCardKey.SIGNUP_APPROVAL;
+          }
+
+          @Override
+          public HomeContribution contribute(CurrentUser user, Business business) {
+            return null;
+          }
+        };
+    HomeService service =
+        new HomeService(
+            List.of(stub(HomeCardKey.OPINION_REPLIES), hidden), new BusinessAccessPolicy());
+
+    HomeResponse home = service.summary(TestUsers.GANA_MEMBER, Business.ACCOUNT_INFO);
+
+    assertThat(home.cards()).hasSize(HomeCardKey.values().length - 1);
+    assertThat(home.cards()).noneMatch(c -> c.key() == HomeCardKey.SIGNUP_APPROVAL);
+  }
+
+  @Test
   void 같은_자리에_기여자가_둘이면_기동하지_않는다() {
     assertThatThrownBy(
             () ->

@@ -11,7 +11,10 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Service;
 
-/** 홈 화면 조립. 카드 자리({@link HomeCardKey}) 순서대로 기여자를 불러 모으고, 기여자가 없는 자리는 "연결 예정" 카드로 채운다. */
+/**
+ * 홈 화면 조립. 카드 자리({@link HomeCardKey}) 순서대로 기여자를 불러 모으고, 기여자가 없는 자리는 "연결 예정" 카드로 채운다. 기여자가 이 사용자에게는
+ * 없는 자리라고 하면(null) 그 카드를 뺀다.
+ */
 @Service
 public class HomeService {
 
@@ -50,6 +53,9 @@ public class HomeService {
         continue;
       }
       HomeContribution contribution = contributor.contribute(user, business);
+      if (contribution == null) {
+        continue;
+      }
       cards.add(contribution.card());
       if (contribution.kpi() != null) {
         kpis.add(contribution.kpi());

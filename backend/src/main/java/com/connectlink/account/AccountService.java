@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 계정. 로그인 확인과 로그인 사용자({@link CurrentUser}) 만들기를 맡는다. 가입 신청은 {@link SignUpService}, 회사 이메일 인증은
- * {@link EmailVerificationService} 가 한다. 가입 승인·탈퇴는 다음 단계에서 더한다.
+ * {@link EmailVerificationService}, 가입 승인·반려는 {@link SignUpReviewService} 가 한다. 탈퇴는 다음 단계에서 더한다.
  */
 @Service
 @Transactional(readOnly = true)
@@ -52,7 +52,9 @@ public class AccountService {
               "가입 승인 전입니다. 결제원 담당자가 승인하면 회사 이메일로 알려 드립니다.");
       case REJECTED ->
           throw new BusinessException(
-              HttpStatus.FORBIDDEN, "ACCOUNT_REJECTED", "가입이 반려된 계정입니다. 결제원 담당자에게 문의해 주세요.");
+              HttpStatus.FORBIDDEN,
+              "ACCOUNT_REJECTED",
+              "가입 신청이 반려되었습니다. 반려 사유는 회사 이메일로 보냈습니다. 내용을 고쳐 다시 가입 신청할 수 있습니다.");
       default -> {
         // ACTIVE
       }

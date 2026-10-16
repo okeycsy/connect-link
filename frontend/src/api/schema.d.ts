@@ -12,7 +12,7 @@ export interface paths {
       cookie?: never;
     };
     /** 기관 기준정보 상세 조회 (관리자) */
-    get: operations['get'];
+    get: operations['get_1'];
     /**
      * 기관 수정 (관리자)
      * @description 이름, 이메일 도메인, 사용 여부, 참여 업무를 통째로 바꾼다.
@@ -32,13 +32,57 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    get?: never;
+    /**
+     * 가입 신청 목록 조회
+     * @description 한 업무 영역을 신청에 넣은 계정을 상태별로 최근 신청 순서로 돌려준다. 승인(ACTIVE)·반려(REJECTED)는 가입 승인을 거친 계정만 나온다.
+     */
+    get: operations['list'];
     put?: never;
     /**
      * 가입 신청
      * @description 인증 토큰과 가입 정보를 받아 승인 대기 계정을 만든다. 토큰이 없거나 만료·사용됐으면 400 VERIFICATION_REQUIRED, 기관이 참여하지 않는 업무면 400 BUSINESS_NOT_PARTICIPATED.
      */
     post: operations['signUp'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/sign-ups/{id}/rejection': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 가입 반려
+     * @description 사유를 받아 계정을 반려로 바꾸고 신청자에게 반려 메일을 보낸다. 반려된 이메일은 다시 가입 신청할 수 있다. 승인 대기가 아니면 409.
+     */
+    post: operations['reject'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/sign-ups/{id}/approval': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 가입 승인
+     * @description 계정을 사용 중으로 바꾸고 신청자에게 승인 알림과 메일을 보낸다. 승인 대기가 아니면 409 SIGN_UP_ALREADY_REVIEWED.
+     */
+    post: operations['approve'];
     delete?: never;
     options?: never;
     head?: never;
@@ -194,10 +238,50 @@ export interface paths {
       cookie?: never;
     };
     /** 대상 하나의 첨부파일 목록(올린 순) */
-    get: operations['list_5'];
+    get: operations['list_6'];
     put?: never;
     /** 첨부파일 올리기 (multipart: file) */
     post: operations['upload'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/sign-ups/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 가입 신청 상세 조회
+     * @description 신청한 업무 중 하나라도 맡은 결제원 담당자나 관리자만 본다.
+     */
+    get: operations['get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/sign-ups/counts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 가입 신청 건수 조회
+     * @description 한 업무 영역의 승인 대기·승인·반려 건수. 목록의 필터 칩과 관리 화면이 쓴다.
+     */
+    get: operations['counts'];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -255,7 +339,7 @@ export interface paths {
      * 내 알림 목록 조회
      * @description 최신순. unreadOnly=true 면 읽지 않은 알림만 돌려준다.
      */
-    get: operations['list'];
+    get: operations['list_1'];
     put?: never;
     post?: never;
     delete?: never;
@@ -292,7 +376,7 @@ export interface paths {
      * 발송함 조회
      * @description 최신순. 관리자만 볼 수 있다.
      */
-    get: operations['list_1'];
+    get: operations['list_2'];
     put?: never;
     post?: never;
     delete?: never;
@@ -386,7 +470,7 @@ export interface paths {
       cookie?: never;
     };
     /** 받은 메일함 (받는 사람별 최근 메일 5건, 로그인 전에도 열림) */
-    get: operations['list_2'];
+    get: operations['list_3'];
     put?: never;
     post?: never;
     delete?: never;
@@ -403,7 +487,7 @@ export interface paths {
       cookie?: never;
     };
     /** 데모 계정 목록 (역할별, 로그인 전에도 열림) */
-    get: operations['list_3'];
+    get: operations['list_4'];
     put?: never;
     post?: never;
     delete?: never;
@@ -420,7 +504,7 @@ export interface paths {
       cookie?: never;
     };
     /** 대상 하나의 변경 이력(최신순) */
-    get: operations['list_4'];
+    get: operations['list_5'];
     put?: never;
     post?: never;
     delete?: never;
@@ -554,6 +638,49 @@ export interface components {
       /** Format: date-time */
       appliedAt: string;
     };
+    SignUpRejectionRequest: {
+      reason: string;
+    };
+    SignUpApplicationBusinessResponse: {
+      /** @enum {string} */
+      code: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
+      slug: string;
+      label: string;
+      shortLabel: string;
+      subBusiness?: string | null;
+    };
+    SignUpApplicationResponse: {
+      /** Format: int64 */
+      id: number;
+      email: string;
+      name: string;
+      /** Format: int64 */
+      organizationId: number;
+      organizationName: string;
+      /** @enum {string} */
+      organizationType: 'KFTC' | 'FINANCE_ORGANIZATION' | 'USE_ORGANIZATION';
+      organizationTypeLabel: string;
+      organizationEmailDomain?: string | null;
+      emailDomainMatches: boolean;
+      businesses: components['schemas']['SignUpApplicationBusinessResponse'][];
+      /** @enum {string} */
+      jobRole: 'BUSINESS' | 'IT';
+      jobRoleLabel: string;
+      department: string;
+      team: string;
+      jobTitle: string;
+      extensionPhone: string;
+      mobilePhone?: string | null;
+      /** @enum {string} */
+      status: 'PENDING_APPROVAL' | 'ACTIVE' | 'REJECTED' | 'WITHDRAWN';
+      statusLabel: string;
+      /** Format: date-time */
+      appliedAt: string;
+      /** Format: date-time */
+      reviewedAt?: string | null;
+      reviewerName?: string | null;
+      rejectionReason?: string | null;
+    };
     OrganizationCreateRequest: {
       code: string;
       name: string;
@@ -648,6 +775,26 @@ export interface components {
       uploadedBy: string;
       /** Format: date-time */
       uploadedAt: string;
+    };
+    PageResponseSignUpApplicationResponse: {
+      content: components['schemas']['SignUpApplicationResponse'][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+      last: boolean;
+    };
+    SignUpApplicationCountsResponse: {
+      /** Format: int64 */
+      pending: number;
+      /** Format: int64 */
+      approved: number;
+      /** Format: int64 */
+      rejected: number;
     };
     SearchGroup: {
       /** @enum {string} */
@@ -877,7 +1024,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-  get: {
+  get_1: {
     parameters: {
       query?: never;
       header?: never;
@@ -925,6 +1072,33 @@ export interface operations {
       };
     };
   };
+  list: {
+    parameters: {
+      query: {
+        /** @description 업무 영역 slug (예: account-info) */
+        business: string;
+        status?: 'PENDING_APPROVAL' | 'ACTIVE' | 'REJECTED' | 'WITHDRAWN';
+        /** @description 0부터 시작 */
+        page?: number;
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['PageResponseSignUpApplicationResponse'];
+        };
+      };
+    };
+  };
   signUp: {
     parameters: {
       query?: never;
@@ -945,6 +1119,54 @@ export interface operations {
         };
         content: {
           '*/*': components['schemas']['SignUpResponse'];
+        };
+      };
+    };
+  };
+  reject: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SignUpRejectionRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['SignUpApplicationResponse'];
+        };
+      };
+    };
+  };
+  approve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['SignUpApplicationResponse'];
         };
       };
     };
@@ -1123,7 +1345,7 @@ export interface operations {
       };
     };
   };
-  list_5: {
+  list_6: {
     parameters: {
       query: {
         ownerType: 'OPINION_REQUEST' | 'OPINION_REPLY' | 'SUSPENSION' | 'DEMO';
@@ -1172,6 +1394,51 @@ export interface operations {
         };
         content: {
           '*/*': components['schemas']['AttachmentResponse'];
+        };
+      };
+    };
+  };
+  get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['SignUpApplicationResponse'];
+        };
+      };
+    };
+  };
+  counts: {
+    parameters: {
+      query: {
+        /** @description 업무 영역 slug (예: account-info) */
+        business: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['SignUpApplicationCountsResponse'];
         };
       };
     };
@@ -1230,7 +1497,7 @@ export interface operations {
       };
     };
   };
-  list: {
+  list_1: {
     parameters: {
       query?: {
         /** @description 0부터 시작 */
@@ -1275,7 +1542,7 @@ export interface operations {
       };
     };
   };
-  list_1: {
+  list_2: {
     parameters: {
       query?: {
         /** @description 0부터 시작 */
@@ -1382,7 +1649,7 @@ export interface operations {
       };
     };
   };
-  list_2: {
+  list_3: {
     parameters: {
       query: {
         /** @description 받는 사람 이메일. 대소문자를 가리지 않는다 */
@@ -1405,7 +1672,7 @@ export interface operations {
       };
     };
   };
-  list_3: {
+  list_4: {
     parameters: {
       query?: never;
       header?: never;
@@ -1425,7 +1692,7 @@ export interface operations {
       };
     };
   };
-  list_4: {
+  list_5: {
     parameters: {
       query: {
         targetType:
