@@ -1,5 +1,6 @@
 package com.connectlink.auth;
 
+import com.connectlink.account.AccountService;
 import com.connectlink.common.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.OffsetDateTime;
@@ -17,11 +18,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 /**
  * 보안 기본값. 세션(쿠키) 인증, CSRF 쿠키 토큰, 화면·공개 기준정보·로그인·가입·API 문서만 열어 두고 나머지 API는 로그인 필수. 로그인과 로그아웃은 {@link
- * AuthController} 가 한다(폼 로그인·기본 로그아웃 필터는 끈다).
+ * AuthController} 가 한다(폼 로그인·기본 로그아웃 필터는 끈다). 탈퇴한 계정의 다른 세션은 {@link ActiveAccountFilter} 가 끝낸다.
  */
 @Configuration
 @EnableWebSecurity
@@ -34,7 +36,8 @@ public class SecurityConfig {
   }
 
   @Bean
-  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+  public SecurityFilterChain securityFilterChain(HttpSecurity http, AccountService accountService)
+      throws Exception {
     http.csrf(
             csrf ->
                 csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
@@ -75,6 +78,8 @@ public class SecurityConfig {
                     .permitAll()
                     .anyRequest()
                     .authenticated())
+        .addFilterBefore(
+            new ActiveAccountFilter(accountService), AnonymousAuthenticationFilter.class)
         .exceptionHandling(ex -> ex.authenticationEntryPoint(jsonUnauthorizedEntryPoint()))
         .formLogin(AbstractHttpConfigurer::disable)
         .httpBasic(AbstractHttpConfigurer::disable)

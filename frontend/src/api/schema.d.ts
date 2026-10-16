@@ -150,6 +150,30 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/me/withdrawal': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 탈퇴 가능 여부 조회
+     * @description 지금 탈퇴할 수 있는지와, 막혀 있으면 그 까닭(무엇을 하면 되는지, 그 화면 주소)을 모두 돌려준다.
+     */
+    get: operations['check'];
+    put?: never;
+    /**
+     * 탈퇴
+     * @description 비밀번호를 다시 확인하고 계정을 탈퇴시킨 뒤 세션을 끝낸다. 계정 정보와 알림은 지우고 탈퇴 확인 메일을 보낸다. 비밀번호가 틀리면 400 PASSWORD_MISMATCH, 막는 까닭이 있으면 409 WITHDRAWAL_BLOCKED.
+     */
+    post: operations['withdraw'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/email-verifications': {
     parameters: {
       query?: never;
@@ -717,6 +741,9 @@ export interface components {
       /** Format: date-time */
       createdAt: string;
     };
+    WithdrawalRequest: {
+      password: string;
+    };
     EmailVerificationRequest: {
       email: string;
     };
@@ -883,6 +910,15 @@ export interface components {
       /** Format: int32 */
       totalPages: number;
       last: boolean;
+    };
+    WithdrawalBlockerResponse: {
+      code: string;
+      message: string;
+      link: string;
+    };
+    WithdrawalCheckResponse: {
+      allowed: boolean;
+      blockers: components['schemas']['WithdrawalBlockerResponse'][];
     };
     ItRoleResponse: {
       /** @enum {string} */
@@ -1245,6 +1281,48 @@ export interface operations {
       cookie?: never;
     };
     requestBody?: never;
+    responses: {
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  check: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['WithdrawalCheckResponse'];
+        };
+      };
+    };
+  };
+  withdraw: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['WithdrawalRequest'];
+      };
+    };
     responses: {
       /** @description No Content */
       204: {

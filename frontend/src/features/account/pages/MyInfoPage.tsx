@@ -1,17 +1,33 @@
-import { Badge, Button, Card, Grid, Group, Skeleton, Stack, Text } from '@mantine/core';
-import { IconUserCheck, IconUserOff } from '@tabler/icons-react';
+import {
+  Alert,
+  Anchor,
+  Badge,
+  Button,
+  Card,
+  Grid,
+  Group,
+  Skeleton,
+  Stack,
+  Text,
+} from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import { IconAlertTriangle, IconUserCheck, IconUserOff } from '@tabler/icons-react';
+import { Link } from 'react-router-dom';
 
 import { OrgMonogram } from '../../../shared/OrgMonogram';
 import { ErrorState } from '../../../shared/state/StateView';
-import { useMe } from '../hooks';
+import { WithdrawModal } from '../components/WithdrawModal';
+import { useMe, useWithdrawalCheck } from '../hooks';
 import { PageHeader } from '../../../shared/PageHeader';
 
 /**
- * 내 정보. 지금은 읽기 전용(SHY 결정 2026-10-15): 서버가 아는 로그인 사용자 정보를 보여 주고, 연락처 수정·"변동 없음" 확인·탈퇴 자리는
- * 계정·연락처 모듈이 붙을 때 동작을 연결한다. 담당 업무와 직무는 계정 값이며 레일(업무 영역)의 조회 범위를 정한다.
+ * 내 정보. 서버가 아는 로그인 사용자 정보를 보여 주고 여기서 탈퇴한다. 연락처 수정·"변동 없음" 확인 자리는 연락처 모듈이 붙을 때 동작을
+ * 연결한다(SHY 결정 2026-10-15). 담당 업무와 직무는 계정 값이며 레일(업무 영역)의 조회 범위를 정한다.
  */
 export function MyInfoPage() {
   const { data: me, isPending, isError, error } = useMe();
+  const { data: withdrawal } = useWithdrawalCheck();
+  const [withdrawOpened, withdrawModal] = useDisclosure(false);
 
   if (isError) return <ErrorState error={error} />;
 
@@ -107,28 +123,57 @@ export function MyInfoPage() {
 
         <Grid.Col span={12}>
           <Card data-testid="my-withdraw">
-            <Group justify="space-between" align="flex-start">
+            <Group justify="space-between" align="flex-start" wrap="nowrap" gap="lg">
               <div>
                 <Text fw={700} size="lg">
                   탈퇴
                 </Text>
                 <Text size="sm" c="dimmed" mt={4}>
-                  기관에 담당자가 혼자면 후임자를 먼저 적어야 탈퇴할 수 있습니다. 계정 모듈이 붙으면
-                  여기서 진행합니다.
+                  탈퇴하면 이름, 부서, 연락처, 담당 업무 같은 계정 정보가 지워지고 이 계정으로 다시
+                  로그인할 수 없습니다. 같은 회사 이메일로 다시 가입할 수 있습니다.
                 </Text>
               </div>
               <Button
-                variant="subtle"
-                color="gray"
+                color="red"
+                variant="light"
                 leftSection={<IconUserOff size={16} />}
-                disabled
+                disabled={!me || !withdrawal?.allowed}
+                onClick={withdrawModal.open}
+                style={{ flex: '0 0 auto' }}
               >
-                탈퇴 (계정 모듈 후)
+                탈퇴하기
               </Button>
             </Group>
+            {withdrawal && !withdrawal.allowed && (
+              <Alert
+                variant="light"
+                color="amber"
+                mt="md"
+                icon={<IconAlertTriangle size={18} />}
+                title="지금은 탈퇴할 수 없습니다"
+                data-testid="withdraw-blockers"
+              >
+                <Stack gap={4}>
+                  {withdrawal.blockers.map((blocker) => (
+                    <Text key={blocker.code} size="sm">
+                      {blocker.message}
+                      {blocker.link && (
+                        <>
+                          {' '}
+                          <Anchor component={Link} to={blocker.link} size="sm" fw={600}>
+                            바로 가기
+                          </Anchor>
+                        </>
+                      )}
+                    </Text>
+                  ))}
+                </Stack>
+              </Alert>
+            )}
           </Card>
         </Grid.Col>
       </Grid>
+      {me && <WithdrawModal me={me} opened={withdrawOpened} onClose={withdrawModal.close} />}
     </Stack>
   );
 }
@@ -148,7 +193,12 @@ function Field({
         {label}
       </Text>
       {typeof value === 'string' ? (
-        <Text size="md" ff={mono ? 'monospace' : undefined}>
+        // 긴 이메일이 카드 밖으로 넘치지 않게 줄을 바꾼다.
+        <Text
+          size="md"
+          ff={mono ? 'monospace' : undefined}
+          style={{ minWidth: 0, overflowWrap: 'anywhere' }}
+        >
           {value}
         </Text>
       ) : (

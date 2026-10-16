@@ -25,6 +25,7 @@ export type SignUpResponse = components['schemas']['SignUpResponse'];
 export type SignUpApplicationResponse = components['schemas']['SignUpApplicationResponse'];
 export type SignUpApplicationCountsResponse =
   components['schemas']['SignUpApplicationCountsResponse'];
+export type WithdrawalCheckResponse = components['schemas']['WithdrawalCheckResponse'];
 /** 가입 승인 화면의 상태 칩. 승인은 사용 중(ACTIVE) 계정이다. */
 export type SignUpReviewStatus = 'PENDING_APPROVAL' | 'ACTIVE' | 'REJECTED';
 
@@ -39,6 +40,7 @@ export interface SignUpApplicationParams {
 export const accountKeys = {
   me: ['me'] as const,
   demoAccounts: ['demo-accounts'] as const,
+  withdrawalCheck: ['withdrawal-check'] as const,
 };
 
 export const signUpKeys = {
@@ -127,6 +129,38 @@ export function useLogout() {
     onSettled: () => {
       navigate('/login', { replace: true });
       clearUserData(queryClient);
+    },
+  });
+}
+
+/** 내 정보 > 탈퇴: 지금 탈퇴할 수 있는지와, 막혀 있으면 그 까닭(할 일과 그 화면 주소). */
+export function useWithdrawalCheck() {
+  return useQuery({
+    queryKey: accountKeys.withdrawalCheck,
+    queryFn: async () => unwrap(await api.GET('/api/v1/me/withdrawal')),
+  });
+}
+
+/**
+ * 탈퇴. 비밀번호가 틀리면 400(password 칸 오류), 그사이 막는 까닭이 생겼으면 409 WITHDRAWAL_BLOCKED 이고 탈퇴 가능 여부를 다시 읽는다.
+ * 성공하면 서버가 세션을 끝내므로 로그인 화면(탈퇴 완료 안내)으로 가고 화면 데이터를 모두 버린다.
+ */
+export function useWithdraw() {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  return useMutation({
+    mutationFn: async (password: string) => {
+      const result = await api.POST('/api/v1/me/withdrawal', { body: { password } });
+      if (!result.response.ok) throw new ApiError(result.response.status, result.error);
+    },
+    onSuccess: () => {
+      navigate('/login?withdrawn=1', { replace: true });
+      clearUserData(queryClient);
+    },
+    onError: (error) => {
+      if (error instanceof ApiError && error.status === 409) {
+        void queryClient.invalidateQueries({ queryKey: accountKeys.withdrawalCheck });
+      }
     },
   });
 }
