@@ -93,7 +93,7 @@ public class EmailVerificationService {
             mailBody(code, properties.getCodeTtl()),
             null));
     return new EmailVerificationResponse(
-        email, verification.getExpiresAt(), now.plus(properties.getResendInterval()));
+        email, verification.getExpiresAt(), properties.getResendInterval().toSeconds());
   }
 
   /** 받은 코드를 확인하고 인증 토큰을 내준다. 틀리면 틀린 횟수를 남기므로(그래서 업무 예외에도 되돌리지 않는다) 정해진 횟수를 넘기면 그 코드는 더 쓸 수 없다. */

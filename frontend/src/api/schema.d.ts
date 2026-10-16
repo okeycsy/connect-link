@@ -597,8 +597,8 @@ export interface components {
       email: string;
       /** Format: date-time */
       expiresAt: string;
-      /** Format: date-time */
-      resendAvailableAt: string;
+      /** Format: int64 */
+      resendAfterSeconds: number;
     };
     EmailVerificationConfirmRequest: {
       email: string;

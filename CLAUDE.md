@@ -60,6 +60,7 @@
 | 참가기관 | `FINANCE_ORGANIZATION` (기관 구분), `FinanceOrganization` | 은행, 증권사 등 금융회사 |
 | 이용기관 | `USE_ORGANIZATION` (기관 구분), `UseOrganization` | 금융회사가 아닌 일반 회사(주로 결제원의 고객). 이용기관 담당자의 권한과 기능은 명세에 정해지기 전까지 구현하지 않는다 |
 | 계정 | `UserAccount` | 로그인 주체. 식별 키는 회사 이메일(소문자). 상태 `AccountStatus` = `PENDING_APPROVAL`(승인 대기), `ACTIVE`(사용 중), `REJECTED`(반려), `WITHDRAWN`(탈퇴). 담당 업무는 `UserAccountBusiness`, 전산 세부 직무는 `UserAccountItRole` |
+| 회사 이메일 인증 | `EmailVerification` | 가입 때 숫자 6자리 코드 확인 한 건. 맞으면 가입 신청에 한 번 쓰는 인증 토큰을 준다. 설정 `app.account.verification.*`. 가입 신청은 `SignUpService` 가 계정을 승인 대기로 만든다 |
 | 담당자 연락처 | `Contact` | 계정이 없는 담당자(후임자 등)도 존재 가능 |
 | 기관 업무 참여 | `OrganizationBusiness` | 기관이 참여하는 업무 영역 한 건. 레일별 조회 범위의 기준. 테이블 `organization_business` |
 | 업무 | `Business` | `ACCOUNT_INFO`(계좌통합관리), `AUTO_TRANSFER`(자동이체통합관리), `LOAN_TRANSFER`(대출이동), `CMS` |

@@ -1,5 +1,6 @@
 import {
   Alert,
+  Anchor,
   Box,
   Button,
   Group,
@@ -14,7 +15,7 @@ import {
 import { useForm } from '@mantine/form';
 import { IconAlertCircle, IconClock } from '@tabler/icons-react';
 import { useState } from 'react';
-import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { errorCodeOf, fieldErrorsOf } from '../../../api/client';
 import { BrandMark } from '../../../shared/BrandMark';
@@ -154,6 +155,12 @@ export function LoginPage() {
                 >
                   로그인
                 </Button>
+                <Text size="sm" c="dimmed" ta="center">
+                  처음 오셨나요?{' '}
+                  <Anchor component={Link} to="/sign-up" size="sm" fw={600}>
+                    회원가입
+                  </Anchor>
+                </Text>
               </Stack>
             </form>
           </Paper>

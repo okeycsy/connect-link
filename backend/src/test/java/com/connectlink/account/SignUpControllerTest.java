@@ -140,7 +140,7 @@ class SignUpControllerTest {
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.email").value("flow.tester@gana.example.com"))
         .andExpect(jsonPath("$.expiresAt").exists())
-        .andExpect(jsonPath("$.resendAvailableAt").exists());
+        .andExpect(jsonPath("$.resendAfterSeconds").value(60));
 
     String code = latestCode("flow.tester@gana.example.com");
     String json =

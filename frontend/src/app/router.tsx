@@ -2,6 +2,8 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 
 import { LoginPage } from '../features/account/pages/LoginPage';
 import { MyInfoPage } from '../features/account/pages/MyInfoPage';
+import { SignUpPage } from '../features/account/pages/SignUpPage';
+import { SignUpPendingPage } from '../features/account/pages/SignUpPendingPage';
 import { HomePage } from '../features/home/pages/HomePage';
 import { NotificationCenterPage } from '../features/notification/pages/NotificationCenterPage';
 import { NotificationOutboxPage } from '../features/notification/pages/NotificationOutboxPage';
@@ -22,7 +24,10 @@ import { DEFAULT_BUSINESS_SLUG, FEATURE_MENU } from './navigation';
  * 업무 영역(레일)은 조회 범위, 기능(보조 메뉴)은 화면을 정한다. docs/service-taxonomy.md 참고.
  */
 export const router = createBrowserRouter([
+  // 로그인 전 화면: 로그인, 회원가입(4단계), 승인 대기
   { path: '/login', element: <LoginPage /> },
+  { path: '/sign-up', element: <SignUpPage /> },
+  { path: '/sign-up/pending', element: <SignUpPendingPage /> },
   {
     path: '/',
     element: <AppShellLayout />,
