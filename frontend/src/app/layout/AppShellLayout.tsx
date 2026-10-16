@@ -3,8 +3,10 @@ import {
   Badge,
   Box,
   Button,
+  Center,
   Group,
   Kbd,
+  Loader,
   Menu,
   Skeleton,
   Stack,
@@ -22,17 +24,20 @@ import {
   IconPaperclip,
   IconSearch,
   IconUser,
+  IconUsers,
   IconWorld,
   type Icon,
 } from '@tabler/icons-react';
-import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
+import { Link, Navigate, Outlet, useLocation, useParams } from 'react-router-dom';
 
-import { useMe } from '../../features/account/hooks';
+import { AccountSwitchModal } from '../../features/account/components/AccountSwitchModal';
+import { canViewBusiness, isUnauthorized, useLogout, useMe } from '../../features/account/hooks';
 import { NotificationBell } from '../../features/notification/components/NotificationBell';
 import { useUnreadCount } from '../../features/notification/hooks';
 import { useBusinesses } from '../../features/organization/hooks';
 import { CommandPalette } from '../../features/search/components/CommandPalette';
 import { BrandMark } from '../../shared/BrandMark';
+import { ErrorState } from '../../shared/state/StateView';
 import { isDemoProfile, useDemoNetworkZone, useServerInfo } from '../hooks';
 import { DEFAULT_BUSINESS_SLUG, FEATURE_MENU, SHORTCUT_MENU, SIDEBAR_GROUPS } from '../navigation';
 import classes from './AppShellLayout.module.css';
@@ -40,13 +45,17 @@ import classes from './AppShellLayout.module.css';
 /**
  * 앱 셸 (B안 메신저형). 상단 바 + 왼쪽 업무 레일 + 사이드바(묶음별 메뉴) + 흰 본문.
  * 레일 = 업무 영역(조회 범위), 사이드바 = 기능. 구조와 치수는 frontend/CLAUDE.md "앱 셸" 이 기준이다. 상단 가로 메뉴로 바꾸지 않는다.
+ * 로그인한 사용자만 들어온다. 로그인 전이거나 세션이 끝났으면(401) 지금 주소를 next 로 달고 로그인 화면으로 보낸다.
+ * 레일은 사용자가 볼 수 있는 업무 영역만, 관리 묶음은 관리자에게만 보인다(서버도 같은 규칙으로 막는다).
  */
 export function AppShellLayout() {
   const theme = useMantineTheme();
   const { business: businessSlug } = useParams<{ business: string }>();
   const location = useLocation();
   const { data: businesses } = useBusinesses();
-  const { data: me } = useMe();
+  const { data: me, error: meError } = useMe();
+  const logout = useLogout();
+  const [switchOpened, { open: openSwitch, close: closeSwitch }] = useDisclosure(false);
   const { data: unread } = useUnreadCount();
   const { data: serverInfo } = useServerInfo();
   const demo = isDemoProfile(serverInfo?.profile);
@@ -62,6 +71,24 @@ export function AppShellLayout() {
   const currentFeature = location.pathname.split('/')[2] ?? 'home';
   const base = `/${businessSlug ?? DEFAULT_BUSINESS_SLUG}`;
   const unreadCount = unread?.count ?? 0;
+
+  if (isUnauthorized(meError)) {
+    const next = location.pathname === '/' ? '' : location.pathname + location.search;
+    return <Navigate to={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} replace />;
+  }
+  if (!me) {
+    return (
+      <Center h="100vh" p="lg">
+        {meError ? <ErrorState error={meError} /> : <Loader size="sm" />}
+      </Center>
+    );
+  }
+
+  const railBusinesses = businesses?.filter((b) => canViewBusiness(me, b.slug));
+  const featureMenu = FEATURE_MENU.filter((item) => !item.adminOnly || me.admin);
+  const sidebarGroups = SIDEBAR_GROUPS.filter(
+    (group) => group === '바로가기' || featureMenu.some((m) => m.group === group),
+  );
 
   return (
     <AppShell
@@ -131,13 +158,13 @@ export function AppShellLayout() {
                   >
                     망 전환: {demoZone === 'INTERNAL' ? '내부망 → 인터넷망' : '인터넷망 → 내부망'}
                   </Menu.Item>
-                  <Menu.Item disabled leftSection={<IconUser size={16} />}>
-                    계정 전환 (계정 모듈 후)
+                  <Menu.Item leftSection={<IconUsers size={16} />} onClick={openSwitch}>
+                    계정 전환
                   </Menu.Item>
                 </Menu.Dropdown>
               </Menu>
             )}
-            {me?.networkZone === 'EXTERNAL' && (
+            {me.networkZone === 'EXTERNAL' && (
               <Badge color="red" size="md" data-testid="network-zone-badge">
                 인터넷망
               </Badge>
@@ -147,21 +174,26 @@ export function AppShellLayout() {
               <Menu.Target>
                 <UnstyledButton aria-label="사용자 메뉴" className={classes.user}>
                   <Box className={classes.userAvatar} aria-hidden>
-                    {me?.name?.slice(0, 1) ?? ''}
+                    {me.name.slice(0, 1)}
                     <span className={classes.online} />
                   </Box>
                   <Text size="md" fw={500} visibleFrom="md">
-                    {me?.name ?? ''}
+                    {me.name}
                   </Text>
                 </UnstyledButton>
               </Menu.Target>
               <Menu.Dropdown>
                 <Box px="sm" py="xs">
-                  <Text fw={700}>{me?.name ?? '로그인 전'}</Text>
-                  <Text size="xs" c="dimmed">
-                    {me ? `${me.organizationName} · ${me.email}` : ''}
+                  <Text fw={700} data-testid="user-name">
+                    {me.name}
                   </Text>
-                  {me?.admin && (
+                  <Text size="xs" c="dimmed">
+                    {me.organizationName} · {me.roleLabel}
+                  </Text>
+                  <Text size="xs" c="dimmed">
+                    {me.email}
+                  </Text>
+                  {me.admin && (
                     <Badge size="xs" mt={6}>
                       관리자
                     </Badge>
@@ -171,8 +203,12 @@ export function AppShellLayout() {
                 <Menu.Item component={Link} to={`${base}/me`} leftSection={<IconUser size={16} />}>
                   내 정보
                 </Menu.Item>
-                <Menu.Item disabled leftSection={<IconLogout size={16} />}>
-                  로그아웃 (계정 모듈 후)
+                <Menu.Item
+                  leftSection={<IconLogout size={16} />}
+                  onClick={() => logout.mutate()}
+                  disabled={logout.isPending}
+                >
+                  로그아웃
                 </Menu.Item>
               </Menu.Dropdown>
             </Menu>
@@ -183,8 +219,8 @@ export function AppShellLayout() {
       <AppShell.Navbar withBorder={false} className={classes.navbar}>
         <Box className={classes.rail} w={railWidth}>
           <Stack gap={12} align="center">
-            {businesses
-              ? businesses.map((b) => {
+            {railBusinesses
+              ? railBusinesses.map((b) => {
                   const active = b.slug === businessSlug;
                   return (
                     <Tooltip key={b.code} label={b.label} position="right" withArrow>
@@ -211,22 +247,24 @@ export function AppShellLayout() {
               {currentBusiness?.label ?? '업무 영역'}
             </Text>
             <Text size="sm" c="dimmed" truncate>
-              {me?.organizationName ?? ''}
+              {me.organizationName}
             </Text>
           </Box>
           <Stack gap={18}>
-            {SIDEBAR_GROUPS.map((group) => (
+            {sidebarGroups.map((group) => (
               <div key={group}>
                 <Text className={classes.groupTitle}>{group}</Text>
-                {FEATURE_MENU.filter((m) => m.group === group).map((item) => (
-                  <SidebarItem
-                    key={item.key}
-                    to={`${base}/${item.path}`}
-                    label={item.label}
-                    icon={item.icon}
-                    active={currentFeature === item.path}
-                  />
-                ))}
+                {featureMenu
+                  .filter((m) => m.group === group)
+                  .map((item) => (
+                    <SidebarItem
+                      key={item.key}
+                      to={`${base}/${item.path}`}
+                      label={item.label}
+                      icon={item.icon}
+                      active={currentFeature === item.path}
+                    />
+                  ))}
                 {group === '바로가기' &&
                   SHORTCUT_MENU.map((item) => (
                     <SidebarItem
@@ -245,6 +283,9 @@ export function AppShellLayout() {
       </AppShell.Navbar>
 
       <CommandPalette opened={searchOpened} onClose={closeSearch} />
+      {demo && (
+        <AccountSwitchModal opened={switchOpened} onClose={closeSwitch} currentEmail={me.email} />
+      )}
 
       <AppShell.Main className={classes.main}>
         <Box className={classes.page}>

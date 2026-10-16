@@ -34,7 +34,8 @@ export function NotificationCenterPage() {
     <Stack gap="md">
       <PageHeader
         title="알림 센터"
-        description={`읽지 않은 알림 ${unread?.count ?? 0}건`}
+        // 세는 동안 0건으로 보이지 않게 한다.
+        description={unread ? `읽지 않은 알림 ${unread.count}건` : '읽지 않은 알림을 세는 중…'}
         actions={
           <Button
             variant="light"

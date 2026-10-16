@@ -3,8 +3,9 @@ package com.connectlink.home;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.connectlink.auth.BusinessAccessPolicy;
 import com.connectlink.auth.CurrentUser;
-import com.connectlink.auth.DemoUsers;
+import com.connectlink.auth.TestUsers;
 import com.connectlink.home.dto.HomeCard;
 import com.connectlink.home.dto.HomeResponse;
 import com.connectlink.organization.Business;
@@ -40,9 +41,10 @@ class HomeServiceTest {
 
   @Test
   void 기여자가_없는_자리는_연결_예정_카드로_채운다() {
-    HomeService service = new HomeService(List.of(stub(HomeCardKey.OPINION_REPLIES)));
+    HomeService service =
+        new HomeService(List.of(stub(HomeCardKey.OPINION_REPLIES)), new BusinessAccessPolicy());
 
-    HomeResponse home = service.summary(DemoUsers.ADMIN, Business.LOAN_TRANSFER);
+    HomeResponse home = service.summary(TestUsers.ADMIN, Business.LOAN_TRANSFER);
 
     assertThat(home.cards()).hasSize(HomeCardKey.values().length);
     assertThat(home.cards().get(0).source()).isEqualTo(HomeCardSource.UNAVAILABLE);
@@ -56,7 +58,8 @@ class HomeServiceTest {
     assertThatThrownBy(
             () ->
                 new HomeService(
-                    List.of(stub(HomeCardKey.SUSPENSIONS), stub(HomeCardKey.SUSPENSIONS))))
+                    List.of(stub(HomeCardKey.SUSPENSIONS), stub(HomeCardKey.SUSPENSIONS)),
+                    new BusinessAccessPolicy()))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("SUSPENSIONS");
   }

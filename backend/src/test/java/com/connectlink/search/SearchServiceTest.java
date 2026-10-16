@@ -3,6 +3,7 @@ package com.connectlink.search;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.connectlink.auth.BusinessAccessPolicy;
 import com.connectlink.auth.CurrentUser;
 import com.connectlink.auth.TestUsers;
 import com.connectlink.organization.Business;
@@ -36,7 +37,8 @@ class SearchServiceTest {
                     SearchCategory.SUSPENSION,
                     List.of(new SearchHit("점검", null, "/cms/suspensions"))),
                 stub(SearchCategory.CONTACT, List.of()),
-                stub(SearchCategory.ORGANIZATION, List.of(new SearchHit("가나은행", null, "/x")))));
+                stub(SearchCategory.ORGANIZATION, List.of(new SearchHit("가나은행", null, "/x")))),
+            new BusinessAccessPolicy());
     SearchResponse response = service.search(TestUsers.ADMIN, Business.CMS, " 가나 ");
     assertThat(response.query()).isEqualTo("가나");
     assertThat(response.groups())
@@ -51,7 +53,8 @@ class SearchServiceTest {
                 new SearchService(
                     List.of(
                         stub(SearchCategory.CONTACT, List.of()),
-                        stub(SearchCategory.CONTACT, List.of()))))
+                        stub(SearchCategory.CONTACT, List.of())),
+                    new BusinessAccessPolicy()))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("CONTACT");
   }

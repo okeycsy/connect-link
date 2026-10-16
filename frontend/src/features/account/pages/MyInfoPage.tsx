@@ -8,7 +8,7 @@ import { PageHeader } from '../../../shared/PageHeader';
 
 /**
  * 내 정보. 지금은 읽기 전용(SHY 결정 2026-10-15): 서버가 아는 로그인 사용자 정보를 보여 주고, 연락처 수정·"변동 없음" 확인·탈퇴 자리는
- * 계정·연락처 모듈이 붙을 때 동작을 연결한다.
+ * 계정·연락처 모듈이 붙을 때 동작을 연결한다. 담당 업무와 직무는 계정 값이며 레일(업무 영역)의 조회 범위를 정한다.
  */
 export function MyInfoPage() {
   const { data: me, isPending, isError, error } = useMe();
@@ -47,7 +47,20 @@ export function MyInfoPage() {
                 <Field label="회사 이메일" value={me.email} mono />
                 <Field label="기관 코드" value={me.organizationCode} mono />
                 <Field
-                  label="역할"
+                  label="담당 업무"
+                  value={
+                    <Group gap={6} data-testid="my-businesses">
+                      {me.businesses.map((b) => (
+                        <Badge key={b.code} color="sky">
+                          {b.label}
+                        </Badge>
+                      ))}
+                    </Group>
+                  }
+                />
+                <Field label="직무" value={me.jobRoleLabel} />
+                <Field
+                  label="권한"
                   value={me.admin ? <Badge color="clay">관리자</Badge> : '담당자'}
                 />
                 <Field
@@ -74,12 +87,11 @@ export function MyInfoPage() {
               </Badge>
             </Group>
             <Text size="sm" c="dimmed" mb="md">
-              담당 업무, 직무, 부서·팀·직급, 내선과 휴대폰은 가입 때 적은 값이 들어옵니다. 고치면
-              최근 확인일이 갱신되고, 바뀐 것이 없으면 "변동 없음"으로 확인합니다.
+              부서·팀·직급, 내선과 휴대폰은 가입 때 적은 값이 들어옵니다. 고치면 최근 확인일이
+              갱신되고, 바뀐 것이 없으면 "변동 없음"으로 확인합니다.
             </Text>
             <Stack gap="sm">
-              <Field label="담당 업무" value="-" />
-              <Field label="직무" value="-" />
+              <Field label="세부업무" value="-" />
               <Field label="부서 · 팀 · 직급" value="-" />
               <Field label="내선 · 휴대폰" value="-" />
               <Field label="최근 확인일" value="-" />

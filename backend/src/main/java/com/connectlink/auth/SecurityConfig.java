@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.OffsetDateTime;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -13,36 +12,29 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 /**
- * 보안 기본값. 세션(쿠키) 인증, CSRF 쿠키 토큰, 화면·공개 기준정보·API 문서만 열어 두고 나머지 API는 로그인 필수. 로그인 API 자체는 account 모듈과
- * 함께 마지막 단계에서 붙고, 그때까지 local·demo 프로필은 {@link DemoAuthenticationFilter} 가 데모 관리자로 인증한다.
+ * 보안 기본값. 세션(쿠키) 인증, CSRF 쿠키 토큰, 화면·공개 기준정보·로그인·API 문서만 열어 두고 나머지 API는 로그인 필수. 로그인과 로그아웃은 {@link
+ * AuthController} 가 한다(폼 로그인·기본 로그아웃 필터는 끈다).
  */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
   private final ObjectMapper objectMapper;
-  private final ObjectProvider<DemoAuthenticationFilter> demoAuthenticationFilter;
 
-  public SecurityConfig(
-      ObjectMapper objectMapper,
-      ObjectProvider<DemoAuthenticationFilter> demoAuthenticationFilter) {
+  public SecurityConfig(ObjectMapper objectMapper) {
     this.objectMapper = objectMapper;
-    this.demoAuthenticationFilter = demoAuthenticationFilter;
   }
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-    // local·demo 프로필에서만 빈이 있다. 로그인 없이 들어온 요청을 데모 관리자로 인증한다.
-    demoAuthenticationFilter.ifAvailable(
-        filter -> http.addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class));
     http.csrf(
             csrf ->
                 csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
@@ -56,8 +48,13 @@ public class SecurityConfig {
                     .permitAll()
                     .regexMatchers("/(?!api/)[^.]*")
                     .permitAll()
-                    // 공개 API: 상태, 가입 화면이 쓰는 기준정보(조회만), API 문서
+                    // 공개 API: 상태, 가입 화면이 쓰는 기준정보(조회만), 로그인·로그아웃, API 문서
                     .antMatchers(HttpMethod.GET, "/api/v1/businesses", "/api/v1/organizations")
+                    .permitAll()
+                    .antMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/logout")
+                    .permitAll()
+                    // 데모 계정 목록(로그인 화면). 운영 프로필에는 이 API 가 없어 404 다.
+                    .antMatchers(HttpMethod.GET, "/api/v1/demo/accounts")
                     .permitAll()
                     .antMatchers(
                         "/api/v1/health",
@@ -69,17 +66,9 @@ public class SecurityConfig {
                     .anyRequest()
                     .authenticated())
         .exceptionHandling(ex -> ex.authenticationEntryPoint(jsonUnauthorizedEntryPoint()))
-        .formLogin()
-        .disable()
-        .httpBasic()
-        .disable()
-        .logout(
-            logout ->
-                logout
-                    .logoutUrl("/api/v1/auth/logout")
-                    .logoutSuccessHandler(
-                        (request, response, authentication) ->
-                            response.setStatus(HttpStatus.NO_CONTENT.value())));
+        .formLogin(AbstractHttpConfigurer::disable)
+        .httpBasic(AbstractHttpConfigurer::disable)
+        .logout(AbstractHttpConfigurer::disable);
     return http.build();
   }
 

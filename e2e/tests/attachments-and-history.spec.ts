@@ -6,7 +6,8 @@ async function rename(page: Page, name: string) {
   await dialog.getByRole('tab', { name: '정보' }).click();
   await dialog.getByLabel(/기관명/).fill(name);
   await dialog.getByRole('button', { name: '저장' }).click();
-  await expect(page.getByText('기관 정보를 저장했습니다.')).toBeVisible();
+  // 앞서 저장한 알림이 아직 떠 있을 수 있어 가장 최근 알림을 본다.
+  await expect(page.getByText('기관 정보를 저장했습니다.').last()).toBeVisible();
   await expect(dialog).toContainText(`(admin@kftc.example.com)`);
 }
 

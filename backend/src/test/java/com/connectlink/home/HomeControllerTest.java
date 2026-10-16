@@ -63,4 +63,20 @@ class HomeControllerTest {
         .perform(get("/api/v1/home").param("business", "cms"))
         .andExpect(status().isUnauthorized());
   }
+
+  @Test
+  void 담당_업무가_아닌_업무_영역의_홈은_403이다() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/home").param("business", "cms").with(TestUsers.ganaMember()))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
+  }
+
+  @Test
+  void 담당_업무의_홈은_관리자가_아니어도_열린다() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/home").param("business", "account-info").with(TestUsers.ganaMember()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.userName").value("김가나"));
+  }
 }

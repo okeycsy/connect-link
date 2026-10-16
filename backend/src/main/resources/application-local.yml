@@ -17,3 +17,6 @@ app:
     # 시연·개발·테스트는 내부망이 기본이고, 화면의 망 전환 토글(X-Network-Zone 헤더)을 믿는다.
     header-override: true
     default-zone: INTERNAL
+  demo:
+    # 데모 계정 공통 비밀번호. db/seed/R__2_account_seed.sql 의 해시와 README 의 데모 계정 표와 같아야 한다.
+    account-password: demo1234!

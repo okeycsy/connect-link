@@ -196,3 +196,20 @@
   border-radius: 32px;
   box-shadow: var(--mantine-shadow-card);
 }
+
+/* 로그인 카드와 데모 계정 카드를 세로로 쌓는 열 */
+.column {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 420px;
+}
+
+/* 데모 계정 카드: 흰 면 + 1px 선, radius 24(카드 규칙). 그림자는 로그인 카드에만 둔다. */
+.demoCard {
+  position: relative;
+  z-index: 2;
+  border-radius: 24px;
+  background: var(--cl-card);
+  border: 1px solid var(--cl-line);
+}
