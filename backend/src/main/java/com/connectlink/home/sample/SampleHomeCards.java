@@ -260,41 +260,4 @@ public final class SampleHomeCards {
           title, subtitle, date, date.equals(today) ? Urgency.SOON : Urgency.NONE, link);
     }
   }
-
-  /** 공통. 가입 승인 대기. 계정 모듈이 붙으면 실제 신청 목록으로 바꾼다. */
-  @Component
-  @Profile({"local", "demo", "test"})
-  public static class SignupApproval implements HomeCardContributor {
-    @Override
-    public HomeCardKey key() {
-      return HomeCardKey.SIGNUP_APPROVAL;
-    }
-
-    @Override
-    public HomeContribution contribute(CurrentUser user, Business business) {
-      LocalDate today = LocalDate.now();
-      String link = link(business, key());
-      return card(
-          key(),
-          business,
-          Urgency.NONE,
-          "이메일 인증을 마친 신청입니다. 도메인과 기관이 맞는지 보고 승인합니다.",
-          List.of(new HomeCardMetric("대기", 2, "건")),
-          null,
-          List.of(
-              new HomeCardItem(
-                  "가나은행 · 김가나",
-                  business.getLabel() + " · 현업 · 도메인 일치",
-                  today.minusDays(1),
-                  Urgency.NONE,
-                  link),
-              new HomeCardItem(
-                  "다라은행 · 박다라",
-                  business.getLabel() + " · 전산(개발) · 도메인 일치",
-                  today.minusDays(2),
-                  Urgency.NONE,
-                  link)),
-          null);
-    }
-  }
 }

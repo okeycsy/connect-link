@@ -36,8 +36,14 @@ test.describe('알림 센터와 발송함', () => {
       .click();
     await expect(page).toHaveURL(/\/cms\/suspensions$/);
 
+    // 다른 시나리오의 가입 신청이 같은 때 관리자 알림을 늘릴 수 있어 건수 대신 그 알림이 읽음이 됐는지 본다.
     await page.goto('/cms/notifications');
-    await expect(page.getByText(`읽지 않은 알림 ${countBefore - 1}건`)).toBeVisible();
+    await expect(page.getByText(/읽지 않은 알림 \d+건/)).toBeVisible();
+    const list = await (await page.request.get('/api/v1/notifications?size=50')).json();
+    const clicked = list.content.find(
+      (n: { title: string }) => n.title === '다라은행 CMS 일시중단이 확정되었습니다',
+    );
+    expect(clicked.read).toBe(true);
   });
 
   test('데모 도구 메뉴에서 발송함을 연다', async ({ page }) => {

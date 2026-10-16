@@ -50,4 +50,8 @@ public class UserAccountBusiness extends AuditedEntity {
   public String getSubBusiness() {
     return subBusiness;
   }
+
+  void changeSubBusiness(String subBusiness) {
+    this.subBusiness = subBusiness;
+  }
 }

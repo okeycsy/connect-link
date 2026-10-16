@@ -1,10 +1,18 @@
-import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  type QueryClient,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 
 import { api, ApiError, unwrap } from '../../api/client';
 import type { components } from '../../api/schema';
 import { isDemoProfile, useServerInfo } from '../../app/hooks';
 import { DEFAULT_BUSINESS_SLUG } from '../../app/navigation';
+import { homeKeys } from '../home/hooks';
+import { notificationKeys } from '../notification/hooks';
 
 export type CurrentUserResponse = components['schemas']['CurrentUserResponse'];
 export type LoginRequest = components['schemas']['LoginRequest'];
@@ -14,10 +22,30 @@ export type EmailVerificationConfirmResponse =
   components['schemas']['EmailVerificationConfirmResponse'];
 export type SignUpRequest = components['schemas']['SignUpRequest'];
 export type SignUpResponse = components['schemas']['SignUpResponse'];
+export type SignUpApplicationResponse = components['schemas']['SignUpApplicationResponse'];
+export type SignUpApplicationCountsResponse =
+  components['schemas']['SignUpApplicationCountsResponse'];
+/** 가입 승인 화면의 상태 칩. 승인은 사용 중(ACTIVE) 계정이다. */
+export type SignUpReviewStatus = 'PENDING_APPROVAL' | 'ACTIVE' | 'REJECTED';
+
+export interface SignUpApplicationParams {
+  /** 업무 영역 slug. */
+  business: string;
+  status: SignUpReviewStatus;
+  page?: number;
+  size?: number;
+}
 
 export const accountKeys = {
   me: ['me'] as const,
   demoAccounts: ['demo-accounts'] as const,
+};
+
+export const signUpKeys = {
+  all: ['sign-ups'] as const,
+  list: (params: SignUpApplicationParams) => ['sign-ups', 'list', params] as const,
+  counts: (business: string) => ['sign-ups', 'counts', business] as const,
+  detail: (id: number) => ['sign-ups', 'detail', id] as const,
 };
 
 /** 로그인하지 않았거나 세션이 끝났다는 서버 응답(401)인지. */
@@ -38,6 +66,14 @@ export function useMe() {
 /** 사용자가 볼 수 있는 업무 영역인지. 관리자는 전 업무, 그 밖에는 담당 업무만이다(서버도 같은 규칙으로 막는다). */
 export function canViewBusiness(me: CurrentUserResponse, slug: string | undefined): boolean {
   return me.admin || me.businesses.some((b) => b.slug === slug);
+}
+
+/**
+ * 관리 메뉴를 쓸 수 있는지. 관리자와 결제원 담당자다. 결제원 담당자는 맡은 업무의 가입 승인만 하고, 기준정보 같은 관리자 항목은
+ * 관리자에게만 보인다(서버도 같은 규칙으로 막는다).
+ */
+export function canUseAdminMenu(me: CurrentUserResponse): boolean {
+  return me.admin || me.organizationType === 'KFTC';
 }
 
 /** 로그인 직후와 볼 수 없는 업무 주소에서 보낼 업무 영역. 담당 업무 중 첫 번째(업무 순서)이고 관리자는 기본 업무다. */
@@ -131,5 +167,67 @@ export function useConfirmVerification() {
 export function useSignUp() {
   return useMutation({
     mutationFn: async (body: SignUpRequest) => unwrap(await api.POST('/api/v1/sign-ups', { body })),
+  });
+}
+
+/** 관리 > 가입 승인: 한 업무 영역의 신청 목록. 칩·쪽을 바꿔도 이전 결과를 잠시 보여 줘 표가 깜빡이지 않게 한다. */
+export function useSignUpApplications(params: SignUpApplicationParams) {
+  return useQuery({
+    queryKey: signUpKeys.list(params),
+    queryFn: async () => unwrap(await api.GET('/api/v1/sign-ups', { params: { query: params } })),
+    placeholderData: keepPreviousData,
+  });
+}
+
+/** 상태 칩에 붙는 건수(승인 대기, 승인, 반려). */
+export function useSignUpCounts(business: string | undefined) {
+  return useQuery({
+    queryKey: signUpKeys.counts(business ?? ''),
+    queryFn: async () =>
+      unwrap(
+        await api.GET('/api/v1/sign-ups/counts', { params: { query: { business: business! } } }),
+      ),
+    enabled: !!business,
+  });
+}
+
+export function useSignUpApplication(id: number | null) {
+  return useQuery({
+    queryKey: signUpKeys.detail(id ?? 0),
+    queryFn: async () =>
+      unwrap(await api.GET('/api/v1/sign-ups/{id}', { params: { path: { id: id! } } })),
+    enabled: id != null,
+  });
+}
+
+/** 승인·반려 뒤에는 신청 목록·건수, 홈 가입 승인 카드, 알림 센터를 다시 읽는다. */
+function invalidateAfterReview(queryClient: QueryClient) {
+  queryClient.invalidateQueries({ queryKey: signUpKeys.all });
+  queryClient.invalidateQueries({ queryKey: homeKeys.all });
+  queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+}
+
+/** 승인. 신청자에게 알림 센터 알림과 승인 메일이 간다. 이미 처리한 신청이면 409 SIGN_UP_ALREADY_REVIEWED. */
+export function useApproveSignUp() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) =>
+      unwrap(await api.POST('/api/v1/sign-ups/{id}/approval', { params: { path: { id } } })),
+    onSuccess: () => invalidateAfterReview(queryClient),
+  });
+}
+
+/** 반려. 사유가 반려 메일에 그대로 들어간다. 사유가 비면 400 과 reason 필드 오류. */
+export function useRejectSignUp() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, reason }: { id: number; reason: string }) =>
+      unwrap(
+        await api.POST('/api/v1/sign-ups/{id}/rejection', {
+          params: { path: { id } },
+          body: { reason },
+        }),
+      ),
+    onSuccess: () => invalidateAfterReview(queryClient),
   });
 }

@@ -153,8 +153,9 @@ public class EmailVerificationService {
     return LocalDateTime.now(clock).truncatedTo(ChronoUnit.MILLIS);
   }
 
+  /** 반려가 아닌 계정이 있으면 409 다. 반려된 이메일은 다시 신청할 수 있다. */
   void ensureNotRegistered(String email) {
-    if (accountRepository.existsByEmail(email)) {
+    if (accountRepository.existsByEmailAndStatusNot(email, AccountStatus.REJECTED)) {
       throw BusinessException.onField(
           HttpStatus.CONFLICT, "EMAIL_ALREADY_REGISTERED", "email", "이미 가입했거나 가입을 신청한 이메일입니다.");
     }

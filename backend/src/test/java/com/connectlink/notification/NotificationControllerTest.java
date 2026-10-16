@@ -29,7 +29,7 @@ class NotificationControllerTest {
     mockMvc
         .perform(get("/api/v1/notifications").with(TestUsers.admin()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.totalElements").value(10))
+        .andExpect(jsonPath("$.totalElements").value(9))
         .andExpect(jsonPath("$.page").value(0))
         .andExpect(jsonPath("$.content[0].type").value("SIGNUP_REQUESTED"))
         .andExpect(jsonPath("$.content[0].typeLabel").value("가입 신청"))

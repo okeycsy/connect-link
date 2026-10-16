@@ -11,6 +11,9 @@ import com.connectlink.organization.Organization;
 import com.connectlink.organization.OrganizationService;
 import com.connectlink.organization.OrganizationType;
 import com.connectlink.organization.dto.BusinessResponse;
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
@@ -22,9 +25,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 가입 신청. 회사 이메일 인증 토큰을 확인하고 계정을 승인 대기 상태로 만든다. 승인 전에는 로그인할 수 없다({@link
- * AccountService#authenticate}). 결제원 직원과 기관 담당자가 같은 절차를 쓴다(docs/decisions.md). 승인과 승인자 알림은 다음 단계(가입
- * 승인)에서 더한다.
+ * 가입 신청. 회사 이메일 인증 토큰을 확인하고 계정을 승인 대기 상태로 만든 뒤, 승인할 수 있는 결제원 담당자에게 알린다. 승인 전에는 로그인할 수 없다({@link
+ * AccountService#authenticate}). 결제원 직원과 기관 담당자가 같은 절차를 쓴다(docs/decisions.md). 반려된 이메일로 다시 신청하면 같은
+ * 계정을 새 신청 내용으로 바꾼다. 승인·반려는 {@link SignUpReviewService} 가 한다.
  */
 @Service
 @Transactional
@@ -33,17 +36,23 @@ public class SignUpService {
   private final UserAccountRepository accountRepository;
   private final EmailVerificationService verificationService;
   private final OrganizationService organizationService;
+  private final SignUpReviewService reviewService;
   private final PasswordEncoder passwordEncoder;
+  private final Clock clock;
 
   public SignUpService(
       UserAccountRepository accountRepository,
       EmailVerificationService verificationService,
       OrganizationService organizationService,
-      PasswordEncoder passwordEncoder) {
+      SignUpReviewService reviewService,
+      PasswordEncoder passwordEncoder,
+      Clock clock) {
     this.accountRepository = accountRepository;
     this.verificationService = verificationService;
     this.organizationService = organizationService;
+    this.reviewService = reviewService;
     this.passwordEncoder = passwordEncoder;
+    this.clock = clock;
   }
 
   public SignUpResponse signUp(SignUpRequest request) {
@@ -55,21 +64,46 @@ public class SignUpService {
     Map<Business, String> businesses = businessesOf(organization, request.businesses());
     Set<ItRole> itRoles = itRolesOf(request.jobRole(), request.itRoles());
 
+    String passwordHash = passwordEncoder.encode(request.password());
+    LocalDateTime now = LocalDateTime.now(clock).truncatedTo(ChronoUnit.MILLIS);
     UserAccount account =
-        accountRepository.save(
-            UserAccount.apply(
-                email,
-                passwordEncoder.encode(request.password()),
-                request.name().trim(),
-                organization,
-                request.jobRole(),
-                itRoles,
-                businesses,
-                request.department().trim(),
-                request.team().trim(),
-                request.jobTitle().trim(),
-                request.extensionPhone().trim(),
-                blankToNull(request.mobilePhone())));
+        accountRepository
+            .findByEmail(email)
+            .map(
+                rejected -> {
+                  rejected.reapply(
+                      passwordHash,
+                      request.name().trim(),
+                      organization,
+                      request.jobRole(),
+                      itRoles,
+                      businesses,
+                      request.department().trim(),
+                      request.team().trim(),
+                      request.jobTitle().trim(),
+                      request.extensionPhone().trim(),
+                      blankToNull(request.mobilePhone()),
+                      now);
+                  return rejected;
+                })
+            .orElseGet(
+                () ->
+                    accountRepository.save(
+                        UserAccount.apply(
+                            email,
+                            passwordHash,
+                            request.name().trim(),
+                            organization,
+                            request.jobRole(),
+                            itRoles,
+                            businesses,
+                            request.department().trim(),
+                            request.team().trim(),
+                            request.jobTitle().trim(),
+                            request.extensionPhone().trim(),
+                            blankToNull(request.mobilePhone()),
+                            now)));
+    reviewService.notifyReviewers(account);
     return toResponse(account);
   }
 
@@ -132,7 +166,7 @@ public class SignUpService {
         account.getJobRole().describe(account.getItRoles()),
         account.getStatus(),
         account.getStatus().getLabel(),
-        account.getCreatedAt());
+        account.getAppliedAt());
   }
 
   private static String blankToNull(String value) {

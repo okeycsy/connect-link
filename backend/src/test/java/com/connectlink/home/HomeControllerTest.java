@@ -34,6 +34,8 @@ class HomeControllerTest {
         .andExpect(jsonPath("$.cards[0].urgency").value("OVERDUE"))
         .andExpect(jsonPath("$.cards[0].link").value("/account-info/contacts"))
         .andExpect(jsonPath("$.cards[5].key").value("SIGNUP_APPROVAL"))
+        .andExpect(jsonPath("$.cards[5].source").value("REAL"))
+        .andExpect(jsonPath("$.cards[5].link").value("/account-info/admin/sign-ups"))
         .andExpect(jsonPath("$.kpis", hasSize(4)))
         .andExpect(jsonPath("$.kpis[0].label").value("확인 필요 담당자"))
         .andExpect(jsonPath("$.kpis[0].urgent").value(true));

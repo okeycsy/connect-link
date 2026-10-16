@@ -31,7 +31,13 @@ import {
 import { Link, Navigate, Outlet, useLocation, useParams } from 'react-router-dom';
 
 import { AccountSwitchModal } from '../../features/account/components/AccountSwitchModal';
-import { canViewBusiness, isUnauthorized, useLogout, useMe } from '../../features/account/hooks';
+import {
+  canUseAdminMenu,
+  canViewBusiness,
+  isUnauthorized,
+  useLogout,
+  useMe,
+} from '../../features/account/hooks';
 import { NotificationBell } from '../../features/notification/components/NotificationBell';
 import { useUnreadCount } from '../../features/notification/hooks';
 import { useBusinesses } from '../../features/organization/hooks';
@@ -85,7 +91,7 @@ export function AppShellLayout() {
   }
 
   const railBusinesses = businesses?.filter((b) => canViewBusiness(me, b.slug));
-  const featureMenu = FEATURE_MENU.filter((item) => !item.adminOnly || me.admin);
+  const featureMenu = FEATURE_MENU.filter((item) => !item.adminMenu || canUseAdminMenu(me));
   const sidebarGroups = SIDEBAR_GROUPS.filter(
     (group) => group === '바로가기' || featureMenu.some((m) => m.group === group),
   );
