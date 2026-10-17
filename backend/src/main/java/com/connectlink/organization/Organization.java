@@ -45,6 +45,11 @@ public class Organization extends AuditedEntity {
   @Column(name = "active", nullable = false)
   private boolean active = true;
 
+  /** 업권. 참가기관만 있고 결제원·이용기관은 null 이다. */
+  @Enumerated(EnumType.STRING)
+  @Column(name = "sector", length = 30)
+  private FinanceSector sector;
+
   /** 참여 업무. 목록 화면이 여러 기관을 한꺼번에 읽으므로 묶어서 가져온다. */
   @OneToMany(mappedBy = "organization", cascade = CascadeType.ALL, orphanRemoval = true)
   @BatchSize(size = 50)
@@ -83,6 +88,10 @@ public class Organization extends AuditedEntity {
     return active;
   }
 
+  public FinanceSector getSector() {
+    return sector;
+  }
+
   /** 참여 업무. 업무 영역 순서(enum 순)로 돌려준다. */
   public Set<Business> getBusinesses() {
     if (participations.isEmpty()) {
@@ -97,11 +106,17 @@ public class Organization extends AuditedEntity {
     return participations.stream().anyMatch(p -> p.getBusiness() == business);
   }
 
-  /** 이름, 이메일 도메인, 사용 여부를 고친다. 코드와 구분은 식별값이라 바꾸지 않는다. */
-  public void update(String name, String emailDomain, boolean active) {
+  /** 이름, 이메일 도메인, 사용 여부, 업권을 고친다. 코드와 구분은 식별값이라 바꾸지 않는다. */
+  public void update(String name, String emailDomain, boolean active, FinanceSector sector) {
     this.name = name;
     this.emailDomain = emailDomain;
     this.active = active;
+    changeSector(sector);
+  }
+
+  /** 업권을 정한다. 참가기관이 아니면 업권을 두지 않는다. */
+  public void changeSector(FinanceSector sector) {
+    this.sector = type == OrganizationType.FINANCE_ORGANIZATION ? sector : null;
   }
 
   /** 참여 업무를 주어진 집합과 같게 맞춘다. 빠진 업무는 지우고 새 업무만 더한다(기존 행의 감사 정보는 유지). */

@@ -4,6 +4,7 @@ import com.connectlink.auth.CurrentUserProvider;
 import com.connectlink.common.BusinessException;
 import com.connectlink.common.PageResponse;
 import com.connectlink.organization.dto.BusinessResponse;
+import com.connectlink.organization.dto.FinanceSectorResponse;
 import com.connectlink.organization.dto.JobRoleResponse;
 import com.connectlink.organization.dto.OrganizationCreateRequest;
 import com.connectlink.organization.dto.OrganizationDetailResponse;
@@ -13,6 +14,7 @@ import com.connectlink.organization.dto.OrganizationUpdateRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Arrays;
 import java.util.List;
 import javax.validation.Valid;
 import org.springframework.data.domain.PageRequest;
@@ -57,6 +59,12 @@ public class OrganizationController {
       description = "가입 화면의 직무 선택지. 전산이면 세부 직무를 하나 이상 고른다. 로그인 없이 쓸 수 있다.")
   public List<JobRoleResponse> listJobRoles() {
     return organizationService.listJobRoles();
+  }
+
+  @GetMapping("/finance-sectors")
+  @Operation(summary = "업권 목록 조회", description = "참가기관의 업권(은행, 저축은행, 증권 …) 고정 목록이다.")
+  public List<FinanceSectorResponse> listFinanceSectors() {
+    return Arrays.stream(FinanceSector.values()).map(FinanceSectorResponse::from).toList();
   }
 
   @GetMapping("/businesses")

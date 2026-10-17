@@ -830,6 +830,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/finance-sectors': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 업권 목록 조회
+     * @description 참가기관의 업권(은행, 저축은행, 증권 …) 고정 목록이다.
+     */
+    get: operations['listFinanceSectors'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/demo/mailbox': {
     parameters: {
       query?: never;
@@ -944,6 +964,20 @@ export interface components {
       emailDomain?: string | null;
       active: boolean;
       businesses: ('ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS')[];
+      /**
+       * @description 업권. 참가기관만 쓰고 그 밖의 기관은 무시한다
+       * @enum {string|null}
+       */
+      sector?:
+        | 'BANK'
+        | 'SAVINGS_BANK'
+        | 'SECURITIES'
+        | 'CARD'
+        | 'INSURANCE'
+        | 'CAPITAL'
+        | 'MUTUAL_FINANCE'
+        | 'ETC'
+        | null;
     };
     BusinessResponse: {
       /** @enum {string} */
@@ -962,6 +996,18 @@ export interface components {
       typeLabel: string;
       emailDomain?: string | null;
       active: boolean;
+      /** @enum {string|null} */
+      sector?:
+        | 'BANK'
+        | 'SAVINGS_BANK'
+        | 'SECURITIES'
+        | 'CARD'
+        | 'INSURANCE'
+        | 'CAPITAL'
+        | 'MUTUAL_FINANCE'
+        | 'ETC'
+        | null;
+      sectorLabel?: string | null;
       businesses: components['schemas']['BusinessResponse'][];
       /** Format: date-time */
       createdAt: string;
@@ -1178,6 +1224,20 @@ export interface components {
       type: 'KFTC' | 'FINANCE_ORGANIZATION' | 'USE_ORGANIZATION';
       emailDomain?: string | null;
       businesses: ('ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS')[];
+      /**
+       * @description 업권. 참가기관만 쓰고 그 밖의 기관은 무시한다
+       * @enum {string|null}
+       */
+      sector?:
+        | 'BANK'
+        | 'SAVINGS_BANK'
+        | 'SECURITIES'
+        | 'CARD'
+        | 'INSURANCE'
+        | 'CAPITAL'
+        | 'MUTUAL_FINANCE'
+        | 'ETC'
+        | null;
     };
     OpinionRequestCreateRequest: {
       /** @enum {string} */
@@ -1349,6 +1409,18 @@ export interface components {
       /** @enum {string} */
       type: 'KFTC' | 'FINANCE_ORGANIZATION' | 'USE_ORGANIZATION';
       typeLabel: string;
+      /** @enum {string|null} */
+      sector?:
+        | 'BANK'
+        | 'SAVINGS_BANK'
+        | 'SECURITIES'
+        | 'CARD'
+        | 'INSURANCE'
+        | 'CAPITAL'
+        | 'MUTUAL_FINANCE'
+        | 'ETC'
+        | null;
+      sectorLabel?: string | null;
       businesses: ('ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS')[];
     };
     PageResponseOrganizationDetailResponse: {
@@ -1466,6 +1538,18 @@ export interface components {
       organizationId: number;
       organizationCode: string;
       organizationName: string;
+      /** @enum {string|null} */
+      sector?:
+        | 'BANK'
+        | 'SAVINGS_BANK'
+        | 'SECURITIES'
+        | 'CARD'
+        | 'INSURANCE'
+        | 'CAPITAL'
+        | 'MUTUAL_FINANCE'
+        | 'ETC'
+        | null;
+      sectorLabel?: string | null;
       members: components['schemas']['OpinionRecipientCandidateMember'][];
     };
     OpinionRequestCountsResponse: {
@@ -1605,6 +1689,19 @@ export interface components {
       profile: string;
       /** Format: date-time */
       serverTime: string;
+    };
+    FinanceSectorResponse: {
+      /** @enum {string} */
+      code:
+        | 'BANK'
+        | 'SAVINGS_BANK'
+        | 'SECURITIES'
+        | 'CARD'
+        | 'INSURANCE'
+        | 'CAPITAL'
+        | 'MUTUAL_FINANCE'
+        | 'ETC';
+      label: string;
     };
     DemoAccountResponse: {
       email: string;
@@ -2856,6 +2953,26 @@ export interface operations {
         };
         content: {
           '*/*': components['schemas']['HealthResponse'];
+        };
+      };
+    };
+  };
+  listFinanceSectors: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['FinanceSectorResponse'][];
         };
       };
     };

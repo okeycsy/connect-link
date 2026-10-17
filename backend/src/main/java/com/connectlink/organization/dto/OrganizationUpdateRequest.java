@@ -1,6 +1,7 @@
 package com.connectlink.organization.dto;
 
 import com.connectlink.organization.Business;
+import com.connectlink.organization.FinanceSector;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Set;
 import javax.validation.constraints.NotBlank;
@@ -19,4 +20,5 @@ public record OrganizationUpdateRequest(
         @Size(max = 100, message = "이메일 도메인은 100자까지입니다.")
         String emailDomain,
     @NotNull(message = "사용 여부를 골라 주세요.") Boolean active,
-    @NotNull(message = "참여 업무를 골라 주세요.") Set<Business> businesses) {}
+    @NotNull(message = "참여 업무를 골라 주세요.") Set<Business> businesses,
+    @Schema(nullable = true, description = "업권. 참가기관만 쓰고 그 밖의 기관은 무시한다") FinanceSector sector) {}

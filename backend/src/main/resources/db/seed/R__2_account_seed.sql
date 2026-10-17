@@ -28,6 +28,13 @@ FROM (VALUES
    CURRENT_TIMESTAMP - INTERVAL '40' DAY, CURRENT_TIMESTAMP - INTERVAL '39' DAY, 'park.cms@kftc.example.com', '박하늘', NULL),
   ('choi.saa@saa.example.com',      '최사아',      'SAA',  'ACTIVE',           FALSE, 'BUSINESS', '리테일영업부', '계좌관리팀',   '대리', '4101', NULL,
    CURRENT_TIMESTAMP - INTERVAL '6' DAY, CURRENT_TIMESTAMP - INTERVAL '5' DAY, 'admin@kftc.example.com', '데모 관리자', NULL),
+  -- 계좌통합관리 기관 담당자(세부업무가 서로 달라 의견 요청 대상을 세부업무로 묶어 고르는 시연에 쓴다).
+  ('park.dara@dara.example.com',    '박다라',      'DARA', 'ACTIVE',           FALSE, 'BUSINESS', '디지털채널부', '계좌서비스팀', '과장', '3103', NULL,
+   CURRENT_TIMESTAMP - INTERVAL '60' DAY, NULL, NULL, NULL, NULL),
+  ('yoon.chaka@chaka.example.com',  '윤차카',      'CHAKA', 'ACTIVE',          FALSE, 'BUSINESS', '수신업무부',   '전자금융팀',   '대리', '6101', NULL,
+   CURRENT_TIMESTAMP - INTERVAL '60' DAY, NULL, NULL, NULL, NULL),
+  ('jung.nada@nada.example.com',    '정나다',      'NADA', 'ACTIVE',           FALSE, 'IT',       '전산정보부',   '채널개발팀',   '대리', '7101', NULL,
+   CURRENT_TIMESTAMP - INTERVAL '60' DAY, NULL, NULL, NULL, NULL),
   -- 승인 대기 신청. 오다라는 회사 이메일 도메인이 기관과 다르다.
   ('jung.maba@maba.example.com',    '정마바',      'MABA', 'PENDING_APPROVAL', FALSE, 'IT',       '전산부',       '개발팀',       '사원', '5101', '010-0000-5101',
    CURRENT_TIMESTAMP - INTERVAL '1' HOUR, NULL, NULL, NULL, NULL),
@@ -65,7 +72,10 @@ FROM (VALUES
   ('kim.gana@gana.example.com',     'ACCOUNT_INFO',  '계좌정보 통합조회'),
   ('lee.dara@dara.example.com',     'AUTO_TRANSFER', NULL),
   ('lee.dara@dara.example.com',     'CMS',           '출금이체 전문 연계'),
-  ('choi.saa@saa.example.com',      'ACCOUNT_INFO',  NULL),
+  ('choi.saa@saa.example.com',      'ACCOUNT_INFO',  '오픈뱅킹 안심차단'),
+  ('park.dara@dara.example.com',    'ACCOUNT_INFO',  '내 계좌 한눈에'),
+  ('yoon.chaka@chaka.example.com',  'ACCOUNT_INFO',  '오픈뱅킹 안심차단'),
+  ('jung.nada@nada.example.com',    'ACCOUNT_INFO',  '내 계좌 한눈에'),
   ('jung.maba@maba.example.com',    'LOAN_TRANSFER', '신규기관 주택담보대출'),
   ('han.gana@gana.example.com',     'ACCOUNT_INFO',  '계좌정보 통합조회'),
   ('oh.dara@mail.example.com',      'ACCOUNT_INFO',  NULL),
@@ -84,6 +94,7 @@ FROM (VALUES
   ('lee.dara@dara.example.com',    'DEV'),
   ('lee.dara@dara.example.com',    'EXTERNAL_LINK'),
   ('jung.maba@maba.example.com',   'DEV'),
-  ('oh.dara@mail.example.com',     'DEV')
+  ('oh.dara@mail.example.com',     'DEV'),
+  ('jung.nada@nada.example.com',   'DEV')
 ) AS r (email, it_role)
 JOIN user_account u ON u.email = r.email;

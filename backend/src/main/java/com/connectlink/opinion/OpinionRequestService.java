@@ -287,6 +287,8 @@ public class OpinionRequestService {
                     o.id(),
                     o.code(),
                     o.name(),
+                    o.sector(),
+                    o.sectorLabel(),
                     membersByOrganization.getOrDefault(o.id(), List.of()).stream()
                         .map(
                             m ->

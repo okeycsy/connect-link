@@ -250,8 +250,8 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
                   업권별 회신 양식
                 </Text>
                 <Text size="sm" c="dimmed">
-                  업권마다 양식을 정하고 대상 기관마다 하나를 고릅니다. 양식 파일은 저장한 뒤
-                  상세에서 올립니다. 양식이 없으면 기관은 의견만 적어 회신합니다.
+                  양식을 만들고, 아래 업권 묶음에서 한 번에 정하거나 기관마다 고릅니다. 양식 파일은
+                  저장한 뒤 상세에서 올립니다. 양식이 없으면 기관은 의견만 적어 회신합니다.
                 </Text>
               </div>
               <Button
@@ -313,8 +313,9 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
                 대상 기관과 회신 담당자
               </Text>
               <Text size="sm" c="dimmed">
-                회신 담당자에게 요청·리마인드 메일이 갑니다. 대상 기관의 같은 업무 담당자는 누구나
-                요청을 보고 회신할 수 있습니다.
+                {current?.label ?? '이 업무'} 담당자만 후보입니다. 업무 전체, 세부업무, 업권으로
+                묶어 고르고 한 명씩 더하거나 뺍니다. 회신 담당자에게 요청·리마인드 메일이 가고, 대상
+                기관의 같은 업무 담당자는 누구나 요청을 보고 회신할 수 있습니다.
               </Text>
             </div>
             <TargetPicker

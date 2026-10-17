@@ -196,6 +196,8 @@ class OpinionControllerTest {
     send(get(BASE + "/recipient-candidates").param("business", "account-info"), null, hong())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[?(@.organizationCode == 'GANA')].members[0].name").value("김가나"))
+        .andExpect(jsonPath("$[?(@.organizationCode == 'GANA')].sectorLabel").value("은행"))
+        .andExpect(jsonPath("$[?(@.organizationCode == 'SAA')].sector").value("SECURITIES"))
         .andExpect(jsonPath("$[*].organizationCode").value(not(hasItem("KFTC"))))
         .andExpect(jsonPath("$[*].organizationCode").value(not(hasItem("HAHA"))));
     send(get(BASE + "/recipient-candidates").param("business", "account-info"), null, kim())

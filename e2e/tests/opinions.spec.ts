@@ -146,7 +146,7 @@ test.describe('나. 의견 요청', () => {
       /filename\*=UTF-8''의견취합_.+\.xlsx$/,
     );
 
-    // 새 요청: 양식을 정하고 세부업무로 담당자를 찾아 고른다.
+    // 새 요청: 양식을 만들고, 세부업무 칩·한 명씩 체크로 담당자를 고르고, 업권 묶음에서 양식을 정한다.
     const title = `연동 일정 의견 요청 ${Date.now().toString(36).slice(-5)}`;
     await page
       .getByRole('navigation')
@@ -158,11 +158,18 @@ test.describe('나. 의견 요청', () => {
     await page.getByLabel('요청 목적·내용').fill('다음 분기 연동 일정 초안에 대한 의견을 주세요.');
     await page.getByRole('button', { name: '양식 추가' }).click();
     await page.getByRole('textbox', { name: '양식 이름' }).fill('은행권');
-    await page.getByLabel('세부업무로 담당자 찾기').fill('통합조회');
-    await page.getByRole('button', { name: /찾은 담당자 \d+명 고르기/ }).click();
-    await expect(page.getByRole('checkbox', { name: '가나은행 김가나' })).toBeChecked();
-    await page.getByRole('textbox', { name: '가나은행 회신 양식' }).click();
+    await page
+      .getByRole('group', { name: '세부업무로 고르기' })
+      .getByText('오픈뱅킹 안심차단', { exact: true })
+      .click();
+    await expect(page.getByRole('checkbox', { name: '사아증권 최사아' })).toBeChecked();
+    await expect(page.getByRole('checkbox', { name: '차카저축은행 윤차카' })).toBeChecked();
+    await expect(page.getByRole('checkbox', { name: '다라은행 박다라' })).not.toBeChecked();
+    await page.getByRole('checkbox', { name: '가나은행 김가나' }).check();
+    await expect(page.getByTestId('target-summary')).toHaveText('대상 3곳 · 회신 담당자 3명');
+    await page.getByRole('textbox', { name: '은행 업권 회신 양식', exact: true }).click();
     await page.getByRole('option', { name: '은행권' }).click();
+    await expect(page.getByRole('textbox', { name: '가나은행 회신 양식' })).toHaveValue('은행권');
     await shot(page, 'opinion-editor');
     await page.getByRole('button', { name: '저장', exact: true }).click();
 

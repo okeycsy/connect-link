@@ -234,12 +234,60 @@ class OrganizationControllerTest {
   }
 
   @Test
+  void 업권은_참가기관만_두고_바꾸면_이력에_남는다() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/finance-sectors").with(TestUsers.admin()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].code").value("BANK"))
+        .andExpect(jsonPath("$[0].label").value("은행"));
+
+    Long id = organizationRepository.findByCode("SAA").orElseThrow().getId();
+    mockMvc
+        .perform(
+            put("/api/v1/organizations/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"name":"사아증권","emailDomain":"saa.example.com","active":true,"businesses":["ACCOUNT_INFO","AUTO_TRANSFER"],"sector":"INSURANCE"}
+                    """)
+                .with(TestUsers.admin())
+                .with(csrf()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.sector").value("INSURANCE"))
+        .andExpect(jsonPath("$.sectorLabel").value("보험"));
+    mockMvc
+        .perform(
+            get("/api/v1/change-histories")
+                .param("targetType", "ORGANIZATION")
+                .param("targetId", String.valueOf(id))
+                .with(TestUsers.admin()))
+        .andExpect(jsonPath("$.content[0].changes[0].label").value("업권"))
+        .andExpect(jsonPath("$.content[0].changes[0].before").value("증권"))
+        .andExpect(jsonPath("$.content[0].changes[0].after").value("보험"));
+
+    // 결제원은 업권을 보내도 두지 않는다.
+    Long kftc = organizationRepository.findByCode("KFTC").orElseThrow().getId();
+    mockMvc
+        .perform(
+            put("/api/v1/organizations/{id}", kftc)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"name":"금융결제원","emailDomain":"kftc.example.com","active":true,"businesses":["ACCOUNT_INFO","AUTO_TRANSFER","LOAN_TRANSFER","CMS"],"sector":"BANK"}
+                    """)
+                .with(TestUsers.admin())
+                .with(csrf()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.sector").doesNotExist());
+  }
+
+  @Test
   void 참여_업무만_바꿔도_수정자와_수정_일시가_갱신된다() throws Exception {
     Long id = organizationRepository.findByCode("SAA").orElseThrow().getId();
     String body =
         """
         {"name":"사아증권","emailDomain":"saa.example.com","active":true,
-         "businesses":["ACCOUNT_INFO","AUTO_TRANSFER","LOAN_TRANSFER"]}
+         "businesses":["ACCOUNT_INFO","AUTO_TRANSFER","LOAN_TRANSFER"],"sector":"BANK"}
         """;
     mockMvc
         .perform(
@@ -259,7 +307,7 @@ class OrganizationControllerTest {
     String changed =
         """
         {"name":"가나은행(새 이름)","emailDomain":"gana.example.com","active":true,
-         "businesses":["ACCOUNT_INFO","AUTO_TRANSFER","LOAN_TRANSFER"]}
+         "businesses":["ACCOUNT_INFO","AUTO_TRANSFER","LOAN_TRANSFER"],"sector":"BANK"}
         """;
     mockMvc
         .perform(
@@ -308,7 +356,7 @@ class OrganizationControllerTest {
                 post("/api/v1/organizations")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        "{\"code\":\"HIST\",\"name\":\"이력은행\",\"type\":\"FINANCE_ORGANIZATION\",\"businesses\":[\"CMS\"]}")
+                        "{\"code\":\"HIST\",\"name\":\"이력은행\",\"type\":\"FINANCE_ORGANIZATION\",\"businesses\":[\"CMS\"],\"sector\":\"BANK\"}")
                     .with(TestUsers.admin())
                     .with(csrf()))
             .andExpect(status().isCreated())
@@ -323,7 +371,8 @@ class OrganizationControllerTest {
         .andExpect(jsonPath("$.totalElements").value(1))
         .andExpect(jsonPath("$.content[0].action").value("CREATED"))
         .andExpect(jsonPath("$.content[0].changes[0].after").value("HIST"))
-        .andExpect(jsonPath("$.content[0].changes[4].after").value("CMS"));
+        .andExpect(jsonPath("$.content[0].changes[4].after").value("은행"))
+        .andExpect(jsonPath("$.content[0].changes[5].after").value("CMS"));
   }
 
   @Test
