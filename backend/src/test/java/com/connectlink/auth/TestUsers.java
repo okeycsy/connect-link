@@ -41,6 +41,19 @@ public final class TestUsers {
           JobRole.BUSINESS,
           Set.of());
 
+  /** 사아증권 계좌통합관리 현업 담당자(관리자 아님). 의견 요청에서 가나은행과 다른 대상 기관 담당자로 쓴다. */
+  public static final CurrentUser SAA_MEMBER =
+      new CurrentUser(
+          "choi.saa@saa.example.com",
+          "최사아",
+          "SAA",
+          "사아증권",
+          OrganizationType.FINANCE_ORGANIZATION,
+          false,
+          Set.of(Business.ACCOUNT_INFO),
+          JobRole.BUSINESS,
+          Set.of());
+
   /** 결제원 계좌통합관리·자동이체통합관리 현업 담당자(관리자 아님). 그 업무의 가입 신청을 승인한다. */
   public static final CurrentUser KFTC_ACCOUNT_INFO =
       new CurrentUser(
