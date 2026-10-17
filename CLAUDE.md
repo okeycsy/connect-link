@@ -83,7 +83,10 @@
 | 기관 테스트(페이지) | `TestPlan` | 단위업무/개발 건별 |
 | 테스트 요구사항 | `TestItem` | |
 | 테스트 결과 | `TestResult` | `PASSED`(정상), `FAILED`(오류), `IN_PROGRESS`(수행중), `NOT_STARTED`(미수행) |
-| 일시중단 | `Suspension` | 상태 `CONFIRMED`(확정), `PENDING_REVIEW`(검토 대기), `IN_REVIEW`(검토 중), `COMPLETED`(완료) |
+| 일시중단 | `Suspension` | 참가기관 하나의 업무 중단 한 건(일시, 대상 업무·세부업무, 중단 이유, 결제원 조치사항, 담당자 연락처, 추가 사항, 공문 첨부). 상태 `SuspensionStatus` = `PENDING_REVIEW`(검토 대기), `IN_REVIEW`(검토 중), `CONFIRMED`(확정), `COMPLETED`(완료). 권한 `SuspensionAccessPolicy`. API `/api/v1/suspensions`, 화면 `/{업무}/suspensions` |
+| 일시중단 시기 | `SuspensionPeriod` | 지금 기준 `CURRENT`(진행 중), `UPCOMING`(예정), `PAST`(지난). 저장하지 않고 일시로 계산한다 |
+| 일시중단 확인자 | `SuspensionReviewer` | 확인을 시작한 결제원 담당자 한 명(이름·이메일·직무 표시·시작 일시). 조치 및 인수인계 사항(`handover`)을 쓰면 확정이다 |
+| 전 영업일 취합 | `SuspensionDigest`, `SuspensionDigestService`, `SuspensionDigestFormatter` | 작업일 전 영업일에 확정 일시중단을 모아 운영·관제 매터모스트 채널로 보낸 한 번. 설정 `app.suspension.digest.*`, 영업일 `BusinessDayCalendar`. 전달 양식은 미결이라 `SuspensionDigestFormatter` 빈을 바꿔 끼운다 |
 | 알림 | `Notification` | 알림 센터 항목. 종류 `NotificationType` (`SIGNUP_REQUESTED`, `SIGNUP_APPROVED`, `CONTACT_CHANGE_REQUESTED`, `CONTACT_RECONFIRM_DUE`, `OPINION_REQUEST_OPENED`, `OPINION_REQUEST_CHANGED`, `OPINION_REPLY_DUE`, `OPINION_REPLY_REVISION`, `TEST_PLAN_OPENED`, `SUSPENSION_CHANGED`, `SYSTEM`) |
 | 알림 채널 | `NotificationChannel` | `EMAIL`, `MATTERMOST` |
 | 발송함 | `NotificationOutbox` | 프로토타입에서 실제 발송 대신 기록. 상태 `OutboxStatus` = `PENDING`(발송 대기), `SENT`, `FAILED` |
