@@ -51,9 +51,7 @@ public class OpinionReplyController {
   }
 
   @PostMapping("/my-reply/submission")
-  @Operation(
-      summary = "회신 최종제출",
-      description = "의견 유형이 꼭 있어야 하고 조건부 동의·이견은 세부의견도 있어야 한다(400). 제출한 뒤 고치려면 수정 요청을 한다.")
+  @Operation(summary = "회신 최종제출", description = "필수 질문에 모두 답해야 한다(400). 제출한 뒤 고치려면 수정 요청을 한다.")
   public OpinionMyReplyResponse submit(
       @PathVariable Long requestId, @Valid @RequestBody OpinionReplySaveRequest request) {
     return replyService.submit(currentUserProvider.require(), requestId, request);

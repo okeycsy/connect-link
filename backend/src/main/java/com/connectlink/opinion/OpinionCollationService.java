@@ -12,11 +12,9 @@ import com.connectlink.opinion.dto.OpinionCollationResponse.Row;
 import com.connectlink.opinion.dto.OpinionCollationResponse.RowAnswer;
 import com.connectlink.opinion.dto.OpinionCollationResponse.Summary;
 import com.connectlink.opinion.dto.OpinionCollationResponse.TextAnswer;
-import com.connectlink.opinion.dto.OpinionCollationResponse.TypeCount;
 import com.connectlink.opinion.dto.OpinionReminderResponse;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -29,8 +27,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 회신 관리와 취합. 회신 여부 자동 구분, 의견 유형별 기관 수·목록, 질문별 답 모음, 회신율, 미회신 기관 리마인드 메일과 그 이력, 기관별 취합표와 엑셀을 맡는다. 모두
- * 그 업무를 맡은 결제원 담당자와 관리자만 쓴다. 엑셀은 내부망 전용이다.
+ * 회신 관리와 취합. 회신 여부 자동 구분, 질문별 답 모음(선택지별 기관 수·목록), 회신율, 미회신 기관 리마인드 메일과 그 이력, 기관별 취합표와 엑셀을 맡는다. 모두 그
+ * 업무를 맡은 결제원 담당자와 관리자만 쓴다. 엑셀은 내부망 전용이다.
  */
 @Service
 @Transactional(readOnly = true)
@@ -142,9 +140,6 @@ public class OpinionCollationService {
               reply == null ? null : reply.getId(),
               reply == null ? null : reply.getStatus(),
               reply == null ? null : reply.getStatus().getLabel(),
-              replied ? reply.getType() : null,
-              replied ? reply.getType().getLabel() : null,
-              replied ? reply.getContent() : null,
               reply == null ? null : reply.getReplierName(),
               replied ? reply.getSubmittedAt() : null,
               reply == null ? null : reply.getRevisionReason(),
@@ -153,18 +148,6 @@ public class OpinionCollationService {
     }
     int total = rows.size();
     int repliedCount = (int) rows.stream().filter(Row::replied).count();
-    List<TypeCount> byType =
-        Arrays.stream(OpinionReplyType.values())
-            .map(
-                type -> {
-                  List<String> names =
-                      rows.stream()
-                          .filter(r -> r.type() == type)
-                          .map(Row::organizationName)
-                          .toList();
-                  return new TypeCount(type, type.getLabel(), names.size(), names);
-                })
-            .toList();
     List<String> notReplied =
         rows.stream().filter(r -> !r.replied()).map(Row::organizationName).toList();
     List<QuestionSummary> questions = new ArrayList<>();
@@ -177,7 +160,6 @@ public class OpinionCollationService {
             repliedCount,
             total - repliedCount,
             total == 0 ? 0 : Math.round(repliedCount * 100f / total),
-            byType,
             notReplied),
         questions,
         rows);

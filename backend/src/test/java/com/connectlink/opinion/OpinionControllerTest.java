@@ -104,32 +104,13 @@ class OpinionControllerTest {
         .orElseThrow();
   }
 
-  /** 가나은행(김가나)과 사아증권(최사아)이 대상인 새 요청. 질문은 없다. */
+  /** 가나은행(김가나)과 사아증권(최사아)이 대상인 새 요청. 질문은 객관식(필수, 1월/7월), 체크박스(정산/안내/개발), 주관식(월 조회 건수) 세 개다. */
   private Map<String, Object> newRequest(String title) {
     Map<String, Object> body = new HashMap<>();
     body.put("business", "ACCOUNT_INFO");
     body.put("title", title);
     body.put("content", "의견을 회신해 주세요.");
     body.put("dueDate", LocalDate.now().plusDays(5).toString());
-    body.put(
-        "targets",
-        List.of(
-            Map.of(
-                "organizationId",
-                orgId("GANA"),
-                "recipientAccountIds",
-                List.of(accountId("kim.gana@gana.example.com"))),
-            Map.of(
-                "organizationId",
-                orgId("SAA"),
-                "recipientAccountIds",
-                List.of(accountId("choi.saa@saa.example.com")))));
-    return body;
-  }
-
-  /** 객관식(필수)·체크박스·주관식 질문 세 개가 있는 새 요청. */
-  private Map<String, Object> newRequestWithQuestions(String title) {
-    Map<String, Object> body = newRequest(title);
     body.put(
         "questions",
         List.of(
@@ -152,17 +133,38 @@ class OpinionControllerTest {
                 "options",
                 List.of("정산", "안내", "개발")),
             Map.of("type", "TEXT", "title", "월 조회 건수", "required", false)));
+    body.put(
+        "targets",
+        List.of(
+            Map.of(
+                "organizationId",
+                orgId("GANA"),
+                "recipientAccountIds",
+                List.of(accountId("kim.gana@gana.example.com"))),
+            Map.of(
+                "organizationId",
+                orgId("SAA"),
+                "recipientAccountIds",
+                List.of(accountId("choi.saa@saa.example.com")))));
     return body;
   }
 
-  private Long createOpenWithQuestions(String title) throws Exception {
-    Long id =
-        json(send(post(BASE), newRequestWithQuestions(title), hong())
-                .andExpect(status().isCreated()))
-            .get("id")
-            .asLong();
-    send(post(BASE + "/" + id + "/opening"), null, hong()).andExpect(status().isOk());
-    return id;
+  /** 첫 질문(적용 시기)에 고른 답 하나. 선택지 ID 는 요청 상세에서 찾는다. */
+  private Map<String, Object> answer(Long requestId, String month) throws Exception {
+    JsonNode first = json(send(get(BASE + "/" + requestId), null, hong())).get("questions").get(0);
+    for (JsonNode option : first.get("options")) {
+      if (option.get("label").asText().equals(month)) {
+        return Map.of(
+            "answers",
+            List.of(
+                Map.of(
+                    "questionId",
+                    first.get("id").asLong(),
+                    "optionIds",
+                    List.of(option.get("id").asLong()))));
+      }
+    }
+    throw new IllegalArgumentException(month);
   }
 
   private Long create(String title) throws Exception {
@@ -309,8 +311,7 @@ class OpinionControllerTest {
   @Test
   void 회신을_저장한_기관은_대상에서_뺄_수_없다() throws Exception {
     Long id = createOpen("대상 빼기");
-    send(put(BASE + "/" + id + "/my-reply"), Map.of("type", "AGREE"), kim())
-        .andExpect(status().isOk());
+    send(put(BASE + "/" + id + "/my-reply"), Map.of(), kim()).andExpect(status().isOk());
     Map<String, Object> body = newRequest("대상 빼기");
     body.remove("business");
     body.put(
@@ -339,8 +340,7 @@ class OpinionControllerTest {
         .andExpect(jsonPath("$.status").value("CLOSED"))
         .andExpect(jsonPath("$.cancelled").value(true))
         .andExpect(jsonPath("$.cancelReason").value("다른 요청과 합칩니다."));
-    send(put(BASE + "/" + open + "/my-reply"), Map.of("type", "AGREE"), kim())
-        .andExpect(status().isConflict());
+    send(put(BASE + "/" + open + "/my-reply"), Map.of(), kim()).andExpect(status().isConflict());
   }
 
   // ---- 기관 회신 ----
@@ -353,29 +353,32 @@ class OpinionControllerTest {
         .andExpect(jsonPath("$.replyId").isEmpty())
         .andExpect(jsonPath("$.editable").value(true));
 
-    send(put(BASE + "/" + id + "/my-reply"), Map.of("content", "검토 중"), kim())
+    send(put(BASE + "/" + id + "/my-reply"), Map.of(), kim())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("DRAFT"))
-        .andExpect(jsonPath("$.draftContent").value("검토 중"))
-        .andExpect(jsonPath("$.content").isEmpty());
+        .andExpect(jsonPath("$.answers.length()").value(0));
 
-    send(post(BASE + "/" + id + "/my-reply/submission"), Map.of("content", "검토 중"), kim())
-        .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.fieldErrors[0].field").value("type"));
-    send(post(BASE + "/" + id + "/my-reply/submission"), Map.of("type", "DISAGREE"), kim())
-        .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.fieldErrors[0].field").value("content"));
-
-    send(post(BASE + "/" + id + "/my-reply/submission"), Map.of("type", "AGREE"), kim())
+    send(post(BASE + "/" + id + "/my-reply/submission"), answer(id, "1월"), kim())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("SUBMITTED"))
-        .andExpect(jsonPath("$.typeLabel").value("동의"))
+        .andExpect(jsonPath("$.answers.length()").value(1))
         .andExpect(jsonPath("$.editable").value(false))
         .andExpect(jsonPath("$.revisionRequestable").value(true));
 
-    send(put(BASE + "/" + id + "/my-reply"), Map.of("type", "DISAGREE"), kim())
+    send(put(BASE + "/" + id + "/my-reply"), answer(id, "7월"), kim())
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("OPINION_REPLY_NOT_EDITABLE"));
+  }
+
+  @Test
+  void 질문이_없는_요청은_회신_요청을_시작하지_못한다() throws Exception {
+    Map<String, Object> body = newRequest("질문 없음");
+    body.put("questions", List.of());
+    Long id =
+        json(send(post(BASE), body, hong()).andExpect(status().isCreated())).get("id").asLong();
+    send(post(BASE + "/" + id + "/opening"), null, hong())
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("OPINION_QUESTIONS_REQUIRED"));
   }
 
   @Test
@@ -387,16 +390,14 @@ class OpinionControllerTest {
     Long id =
         json(send(post(BASE), body, hong()).andExpect(status().isCreated())).get("id").asLong();
     send(post(BASE + "/" + id + "/opening"), null, hong()).andExpect(status().isOk());
-    send(put(BASE + "/" + id + "/my-reply"), Map.of("type", "AGREE"), choi())
-        .andExpect(status().isForbidden());
-    send(put(BASE + "/" + id + "/my-reply"), Map.of("type", "AGREE"), hong())
-        .andExpect(status().isForbidden());
+    send(put(BASE + "/" + id + "/my-reply"), Map.of(), choi()).andExpect(status().isForbidden());
+    send(put(BASE + "/" + id + "/my-reply"), Map.of(), hong()).andExpect(status().isForbidden());
   }
 
   @Test
   void 제출한_회신은_수정_요청을_승인받은_뒤_고쳐_다시_제출한다() throws Exception {
     Long id = createOpen("수정 요청 흐름");
-    send(post(BASE + "/" + id + "/my-reply/submission"), Map.of("type", "AGREE"), kim())
+    send(post(BASE + "/" + id + "/my-reply/submission"), answer(id, "1월"), kim())
         .andExpect(status().isOk());
     Long replyId =
         json(send(
@@ -423,15 +424,11 @@ class OpinionControllerTest {
 
     send(get(BASE + "/" + id + "/my-reply"), null, kim())
         .andExpect(jsonPath("$.status").value("REVISING"))
-        .andExpect(jsonPath("$.draftType").value("AGREE"))
-        .andExpect(jsonPath("$.type").value("AGREE"));
-    send(
-            post(BASE + "/" + id + "/my-reply/submission"),
-            Map.of("type", "CONDITIONAL", "content", "7월 적용이면 동의합니다."),
-            kim())
+        .andExpect(jsonPath("$.draftAnswers.length()").value(1))
+        .andExpect(jsonPath("$.answers.length()").value(1));
+    send(post(BASE + "/" + id + "/my-reply/submission"), answer(id, "7월"), kim())
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.status").value("SUBMITTED"))
-        .andExpect(jsonPath("$.type").value("CONDITIONAL"));
+        .andExpect(jsonPath("$.status").value("SUBMITTED"));
 
     send(
             get("/api/v1/change-histories")
@@ -441,8 +438,8 @@ class OpinionControllerTest {
             hong())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content.length()").value(2))
-        .andExpect(jsonPath("$.content[0].changes[0].before").value("동의"))
-        .andExpect(jsonPath("$.content[0].changes[0].after").value("조건부 동의"));
+        .andExpect(jsonPath("$.content[0].changes[0].before").value("1. 언제부터 적용할까요?: 1월"))
+        .andExpect(jsonPath("$.content[0].changes[0].after").value("1. 언제부터 적용할까요?: 7월"));
     send(
             get("/api/v1/change-histories")
                 .param("targetType", "OPINION_REPLY")
@@ -455,7 +452,7 @@ class OpinionControllerTest {
   @Test
   void 수정_요청을_반려하면_사유와_함께_제출_상태로_돌아간다() throws Exception {
     Long id = createOpen("수정 요청 반려");
-    send(post(BASE + "/" + id + "/my-reply/submission"), Map.of("type", "AGREE"), kim());
+    send(post(BASE + "/" + id + "/my-reply/submission"), answer(id, "1월"), kim());
     Long replyId =
         json(send(
                 post(BASE + "/" + id + "/my-reply/revision-request"),
@@ -477,7 +474,7 @@ class OpinionControllerTest {
 
   @Test
   void 요청에_객관식과_주관식_질문을_넣는다() throws Exception {
-    Long id = createOpenWithQuestions("질문 만들기");
+    Long id = createOpen("질문 만들기");
     send(get(BASE + "/" + id), null, kim())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.questions.length()").value(3))
@@ -512,12 +509,12 @@ class OpinionControllerTest {
 
   @Test
   void 회신중_요청의_질문은_고치지_못한다() throws Exception {
-    Long id = createOpenWithQuestions("질문 잠금");
-    Map<String, Object> same = newRequestWithQuestions("질문 잠금");
+    Long id = createOpen("질문 잠금");
+    Map<String, Object> same = newRequest("질문 잠금");
     same.remove("business");
     send(put(BASE + "/" + id), same, hong()).andExpect(status().isOk());
 
-    Map<String, Object> changed = newRequestWithQuestions("질문 잠금");
+    Map<String, Object> changed = newRequest("질문 잠금");
     changed.remove("business");
     changed.put("questions", List.of(Map.of("type", "TEXT", "title", "새 질문", "required", false)));
     send(put(BASE + "/" + id), changed, hong())
@@ -527,7 +524,7 @@ class OpinionControllerTest {
 
   @Test
   void 기관은_질문에_답하고_필수_질문을_비우면_제출하지_못한다() throws Exception {
-    Long id = createOpenWithQuestions("질문 답하기");
+    Long id = createOpen("질문 답하기");
     JsonNode questions = json(send(get(BASE + "/" + id), null, kim())).get("questions");
     long single = questions.get(0).get("id").asLong();
     long july = questions.get(0).get("options").get(1).get("id").asLong();
@@ -546,15 +543,13 @@ class OpinionControllerTest {
         .andExpect(jsonPath("$.draftAnswers[0].text").value("약 1만 건"))
         .andExpect(jsonPath("$.answers.length()").value(0));
 
-    send(post(BASE + "/" + id + "/my-reply/submission"), Map.of("type", "AGREE"), kim())
+    send(post(BASE + "/" + id + "/my-reply/submission"), Map.of(), kim())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("OPINION_ANSWER_REQUIRED"))
         .andExpect(jsonPath("$.fieldErrors[0].field").value("answers." + single));
     send(
             post(BASE + "/" + id + "/my-reply/submission"),
             Map.of(
-                "type",
-                "AGREE",
                 "answers",
                 List.of(Map.of("questionId", single, "optionIds", List.of(january, july)))),
             kim())
@@ -562,11 +557,7 @@ class OpinionControllerTest {
         .andExpect(jsonPath("$.fieldErrors[0].field").value("answers." + single));
     send(
             post(BASE + "/" + id + "/my-reply/submission"),
-            Map.of(
-                "type",
-                "AGREE",
-                "answers",
-                List.of(Map.of("questionId", single, "optionIds", List.of(settle)))),
+            Map.of("answers", List.of(Map.of("questionId", single, "optionIds", List.of(settle)))),
             kim())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("OPINION_ANSWER_INVALID"));
@@ -574,8 +565,6 @@ class OpinionControllerTest {
     send(
             post(BASE + "/" + id + "/my-reply/submission"),
             Map.of(
-                "type",
-                "AGREE",
                 "answers",
                 List.of(
                     Map.of("questionId", single, "optionIds", List.of(july)),
@@ -609,9 +598,9 @@ class OpinionControllerTest {
             .getContentAsByteArray();
     try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(content))) {
       assertThat(workbook.getSheet("질문별 답")).isNotNull();
-      assertThat(workbook.getSheet("기관별 취합표").getRow(0).getCell(6).getStringCellValue())
+      assertThat(workbook.getSheet("기관별 취합표").getRow(0).getCell(4).getStringCellValue())
           .isEqualTo("1. 언제부터 적용할까요?");
-      assertThat(workbook.getSheet("기관별 취합표").getRow(1).getCell(6).getStringCellValue())
+      assertThat(workbook.getSheet("기관별 취합표").getRow(1).getCell(4).getStringCellValue())
           .isEqualTo("7월");
     }
   }
@@ -619,31 +608,28 @@ class OpinionControllerTest {
   // ---- 회신 현황·취합 ----
 
   @Test
-  void 회신_현황은_회신_여부와_유형별_기관을_자동으로_센다() throws Exception {
+  void 회신_현황은_회신_여부와_선택지별_기관을_자동으로_센다() throws Exception {
     Long id = createOpen("현황 집계");
-    send(
-        post(BASE + "/" + id + "/my-reply/submission"),
-        Map.of("type", "CONDITIONAL", "content", "조건이 있습니다."),
-        kim());
-    send(put(BASE + "/" + id + "/my-reply"), Map.of("type", "AGREE"), choi());
+    send(post(BASE + "/" + id + "/my-reply/submission"), answer(id, "7월"), kim());
+    send(put(BASE + "/" + id + "/my-reply"), answer(id, "1월"), choi());
     send(get(BASE + "/" + id + "/collation"), null, hong())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.summary.targetCount").value(2))
         .andExpect(jsonPath("$.summary.repliedCount").value(1))
         .andExpect(jsonPath("$.summary.replyRate").value(50))
-        .andExpect(jsonPath("$.summary.byType[1].type").value("CONDITIONAL"))
-        .andExpect(jsonPath("$.summary.byType[1].organizations[0]").value("가나은행"))
+        .andExpect(jsonPath("$.questions[0].options[1].organizations[0]").value("가나은행"))
+        .andExpect(jsonPath("$.questions[0].options[0].count").value(0))
         .andExpect(jsonPath("$.summary.notRepliedOrganizations[0]").value("사아증권"))
         .andExpect(jsonPath("$.rows[1].replied").value(false))
         .andExpect(jsonPath("$.rows[1].replyStatus").value("DRAFT"))
-        .andExpect(jsonPath("$.rows[1].type").isEmpty());
+        .andExpect(jsonPath("$.rows[1].answers[0].value").isEmpty());
     send(get(BASE + "/" + id + "/collation"), null, kim()).andExpect(status().isForbidden());
   }
 
   @Test
   void 리마인드는_미회신_기관에만_가고_이력이_남는다() throws Exception {
     Long id = createOpen("리마인드 확인");
-    send(post(BASE + "/" + id + "/my-reply/submission"), Map.of("type", "AGREE"), kim());
+    send(post(BASE + "/" + id + "/my-reply/submission"), answer(id, "1월"), kim());
     send(post(BASE + "/" + id + "/reminders"), Map.of(), hong())
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.organizationCount").value(1))
@@ -667,9 +653,9 @@ class OpinionControllerTest {
   }
 
   @Test
-  void 엑셀은_내부망에서_결과_요약과_취합표_두_장으로_내려받는다() throws Exception {
+  void 엑셀은_내부망에서_결과_요약과_취합표로_내려받는다() throws Exception {
     Long id = createOpen("엑셀 확인");
-    send(post(BASE + "/" + id + "/my-reply/submission"), Map.of("type", "AGREE"), kim());
+    send(post(BASE + "/" + id + "/my-reply/submission"), answer(id, "1월"), kim());
     byte[] content =
         send(get(BASE + "/" + id + "/collation/excel"), null, hong())
             .andExpect(status().isOk())
@@ -684,7 +670,7 @@ class OpinionControllerTest {
       assertThat(workbook.getSheet("기관별 취합표").getRow(1).getCell(1).getStringCellValue())
           .isEqualTo("가나은행");
       assertThat(workbook.getSheet("기관별 취합표").getRow(1).getCell(4).getStringCellValue())
-          .isEqualTo("동의");
+          .isEqualTo("1월");
     }
     send(
             get(BASE + "/" + id + "/collation/excel").header("X-Network-Zone", "EXTERNAL"),
@@ -701,7 +687,7 @@ class OpinionControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("CLOSED"))
         .andExpect(jsonPath("$.permissions.edit").value(false));
-    send(post(BASE + "/" + id + "/my-reply/submission"), Map.of("type", "AGREE"), kim())
+    send(post(BASE + "/" + id + "/my-reply/submission"), answer(id, "1월"), kim())
         .andExpect(status().isConflict());
   }
 

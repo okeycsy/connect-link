@@ -264,7 +264,7 @@ export interface paths {
     put?: never;
     /**
      * 회신 최종제출
-     * @description 의견 유형이 꼭 있어야 하고 조건부 동의·이견은 세부의견도 있어야 한다(400). 제출한 뒤 고치려면 수정 요청을 한다.
+     * @description 필수 질문에 모두 답해야 한다(400). 제출한 뒤 고치려면 수정 요청을 한다.
      */
     post: operations['submit'];
     delete?: never;
@@ -625,7 +625,7 @@ export interface paths {
     };
     /**
      * 회신 현황·취합표 조회
-     * @description 회신/미회신 구분, 의견 유형별 기관 수와 목록, 회신율, 대상 기관마다 한 줄의 취합표.
+     * @description 회신/미회신 구분, 회신율, 질문별 답 모음, 대상 기관마다 한 줄의 취합표.
      */
     get: operations['collation'];
     put?: never;
@@ -1005,9 +1005,6 @@ export interface components {
       text?: string | null;
     } | null;
     OpinionReplySaveRequest: {
-      /** @enum {string|null} */
-      type?: 'AGREE' | 'CONDITIONAL' | 'DISAGREE' | null;
-      content?: string | null;
       answers?: components['schemas']['OpinionAnswerRequest'][] | null;
     };
     OpinionAnswerResponse: {
@@ -1027,13 +1024,6 @@ export interface components {
       /** @enum {string|null} */
       status?: 'DRAFT' | 'SUBMITTED' | 'REVISION_REQUESTED' | 'REVISING' | null;
       statusLabel: string;
-      /** @enum {string|null} */
-      type?: 'AGREE' | 'CONDITIONAL' | 'DISAGREE' | null;
-      typeLabel?: string | null;
-      content?: string | null;
-      /** @enum {string|null} */
-      draftType?: 'AGREE' | 'CONDITIONAL' | 'DISAGREE' | null;
-      draftContent?: string | null;
       answers: components['schemas']['OpinionAnswerResponse'][];
       draftAnswers: components['schemas']['OpinionAnswerResponse'][];
       replierName?: string | null;
@@ -1496,10 +1486,6 @@ export interface components {
       /** @enum {string|null} */
       replyStatus?: 'DRAFT' | 'SUBMITTED' | 'REVISION_REQUESTED' | 'REVISING' | null;
       replyStatusLabel?: string | null;
-      /** @enum {string|null} */
-      type?: 'AGREE' | 'CONDITIONAL' | 'DISAGREE' | null;
-      typeLabel?: string | null;
-      content?: string | null;
       replierName?: string | null;
       /** Format: date-time */
       submittedAt?: string | null;
@@ -1522,20 +1508,11 @@ export interface components {
       notRepliedCount: number;
       /** Format: int32 */
       replyRate: number;
-      byType: components['schemas']['OpinionCollationTypeCount'][];
       notRepliedOrganizations: string[];
     };
     OpinionCollationTextAnswer: {
       organizationName: string;
       text: string;
-    };
-    OpinionCollationTypeCount: {
-      /** @enum {string} */
-      type: 'AGREE' | 'CONDITIONAL' | 'DISAGREE';
-      label: string;
-      /** Format: int32 */
-      count: number;
-      organizations: string[];
     };
     OpinionRecipientCandidateMember: {
       /** Format: int64 */

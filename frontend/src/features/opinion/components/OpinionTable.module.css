@@ -15,7 +15,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* 의견 유형 막대. 색은 frontend/CLAUDE.md 2.3 의 차트 순서(동의 sky-6, 조건부 sky-4, 이견 amber-5, 미회신 gray-3). */
+/* 질문별 답 막대(선택지마다 고른 기관 수). 색은 frontend/CLAUDE.md 2.3 의 차트 1단(sky-6), 바탕 gray-3. */
 .bar {
   display: flex;
   height: 12px;
@@ -29,27 +29,8 @@
   transition: width 160ms var(--cl-ease);
 }
 
-.agree {
+.fill {
   background: var(--mantine-color-sky-6);
-}
-
-.conditional {
-  background: var(--mantine-color-sky-4);
-}
-
-.disagree {
-  background: var(--mantine-color-amber-5);
-}
-
-.none {
-  background: var(--mantine-color-gray-3);
-}
-
-.dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
-  flex: none;
 }
 
 .content {

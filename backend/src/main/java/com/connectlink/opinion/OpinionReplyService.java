@@ -70,40 +70,23 @@ public class OpinionReplyService {
     List<Answer> answers = toAnswers(request, body.answers(), false);
     OpinionReply reply = findOrStart(target);
     ensureEditable(reply);
-    reply.saveDraft(body.type(), trimToNull(body.content()), answers, user.email(), user.name());
+    reply.saveDraft(answers, user.email(), user.name());
     replyRepository.saveAndFlush(reply);
     return toResponse(request, target, reply);
   }
 
-  /**
-   * 최종제출. 의견 유형이 있어야 하고, 조건부 동의·이견은 세부의견도 있어야 하며, 필수 질문에는 모두 답해야 한다. 처음 제출이면 등록 이력을, 수정 뒤 다시 제출이면
-   * 바뀐 항목을 이력으로 남긴다.
-   */
+  /** 최종제출. 필수 질문에는 모두 답해야 한다. 처음 제출이면 등록 이력을, 수정 뒤 다시 제출이면 바뀐 답을 이력으로 남긴다. */
   public OpinionMyReplyResponse submit(
       CurrentUser user, Long requestId, OpinionReplySaveRequest body) {
     OpinionRequest request = requestService.load(requestId);
     OpinionTarget target = ownTarget(user, request);
     ensureOpen(request);
-    if (body.type() == null) {
-      throw BusinessException.onField(
-          HttpStatus.BAD_REQUEST, "OPINION_REPLY_TYPE_REQUIRED", "type", "의견 유형을 골라 주세요.");
-    }
-    String content = trimToNull(body.content());
-    if (body.type() != OpinionReplyType.AGREE && content == null) {
-      throw BusinessException.onField(
-          HttpStatus.BAD_REQUEST,
-          "OPINION_REPLY_CONTENT_REQUIRED",
-          "content",
-          body.type().getLabel() + "은(는) 세부의견을 적어 주세요.");
-    }
     List<Answer> answers = toAnswers(request, body.answers(), true);
     OpinionReply reply = findOrStart(target);
     ensureEditable(reply);
     boolean resubmit = reply.isReplied();
-    OpinionReplyType beforeType = reply.getType();
-    String beforeContent = reply.getContent();
     String beforeAnswers = answerSummary(request, reply.getAnswers(Stage.SUBMITTED));
-    reply.submit(body.type(), content, answers, user.email(), user.name(), requestService.now());
+    reply.submit(answers, user.email(), user.name(), requestService.now());
     String afterAnswers = answerSummary(request, answers);
     replyRepository.saveAndFlush(reply);
     String organization = target.getOrganization().getName();
@@ -116,8 +99,6 @@ public class OpinionReplyService {
                 request.getBusiness(),
                 organization + " 회신 수정 제출",
                 FieldChanges.compare()
-                    .field("type", "의견 유형", beforeType, reply.getType())
-                    .field("content", "세부의견", beforeContent, reply.getContent())
                     .field("answers", "질문 답", beforeAnswers, afterAnswers)
                     .toList())
             : ChangeHistoryCommand.created(
@@ -125,11 +106,7 @@ public class OpinionReplyService {
                 reply.getId(),
                 request.getBusiness(),
                 organization + " 회신 제출",
-                FieldChanges.compare()
-                    .value("type", "의견 유형", null, reply.getType())
-                    .value("content", "세부의견", null, reply.getContent())
-                    .value("answers", "질문 답", null, afterAnswers)
-                    .toList()));
+                FieldChanges.compare().value("answers", "질문 답", null, afterAnswers).toList()));
     return toResponse(request, target, reply);
   }
 
@@ -325,11 +302,6 @@ public class OpinionReplyService {
           null,
           null,
           "미작성",
-          null,
-          null,
-          null,
-          null,
-          null,
           List.of(),
           List.of(),
           null,
@@ -347,11 +319,6 @@ public class OpinionReplyService {
         reply.getId(),
         reply.getStatus(),
         reply.getStatus().getLabel(),
-        reply.getType(),
-        reply.getType() == null ? null : reply.getType().getLabel(),
-        reply.getContent(),
-        reply.getDraftType(),
-        reply.getDraftContent(),
         toAnswerResponses(request, reply.getAnswers(Stage.SUBMITTED)),
         toAnswerResponses(request, reply.getAnswers(Stage.DRAFT)),
         reply.getReplierName(),

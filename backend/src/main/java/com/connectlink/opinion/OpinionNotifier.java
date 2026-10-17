@@ -38,7 +38,7 @@ class OpinionNotifier {
             + request.getBusiness().getLabel()
             + " 의견을 요청했습니다. 회신 기한은 "
             + request.getDueDate()
-            + " 입니다. 연결고리에서 요청 내용을 보고 의견 유형과 세부의견을 회신해 주세요.";
+            + " 입니다. 연결고리에서 요청 내용을 보고 질문에 답해 회신해 주세요.";
     publish(
         recipientEmails,
         NotificationType.OPINION_REQUEST_OPENED,

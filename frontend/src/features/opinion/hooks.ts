@@ -33,7 +33,6 @@ export type OpinionCollation = components['schemas']['OpinionCollationResponse']
 export type OpinionCollationRow = components['schemas']['OpinionCollationRow'];
 export type OpinionReminder = components['schemas']['OpinionReminderResponse'];
 export type OpinionRequestStatus = OpinionRequestSummary['status'];
-export type OpinionReplyType = NonNullable<OpinionReplySaveRequest['type']>;
 export type OpinionReplyStatus = NonNullable<OpinionMyReply['status']>;
 
 export interface OpinionRequestListParams {
@@ -54,13 +53,6 @@ export const opinionKeys = {
   collation: (id: number) => ['opinion-requests', 'collation', id] as const,
   reminders: (id: number) => ['opinion-requests', 'reminders', id] as const,
 };
-
-/** 의견 유형 이름. 서버 라벨과 같다. 선택지와 차트 범례가 같은 순서(동의, 조건부 동의, 이견)를 쓴다. */
-export const REPLY_TYPE_OPTIONS: { value: OpinionReplyType; label: string }[] = [
-  { value: 'AGREE', label: '동의' },
-  { value: 'CONDITIONAL', label: '조건부 동의' },
-  { value: 'DISAGREE', label: '이견' },
-];
 
 /** 이 업무의 의견 요청을 만들고 관리할 수 있는지. 관리자와 그 업무의 결제원 담당자다(서버도 같은 규칙으로 막는다). */
 export function canManageOpinions(me: CurrentUserResponse | undefined, slug: string): boolean {

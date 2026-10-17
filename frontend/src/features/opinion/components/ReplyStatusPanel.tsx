@@ -1,7 +1,6 @@
 import {
   Alert,
   Badge,
-  Box,
   Button,
   Card,
   Group,
@@ -29,21 +28,15 @@ import {
   useReviewOpinionReplyRevision,
   useSendOpinionReminder,
 } from '../hooks';
-import { ReplyStatusBadge, ReplyTypeBadge } from './OpinionBadges';
+import { ReplyStatusBadge } from './OpinionBadges';
 import { RemindModal, ReasonModal } from './OpinionModals';
 import { QuestionSummary } from './QuestionSummary';
 import classes from './OpinionTable.module.css';
 
 type ReplyFilter = 'ALL' | 'REPLIED' | 'NOT_REPLIED';
 
-const TYPE_CLASS = {
-  AGREE: classes.agree,
-  CONDITIONAL: classes.conditional,
-  DISAGREE: classes.disagree,
-} as const;
-
 /**
- * 회신 현황(결제원 담당자). 제출 기관 수·회신율, 의견 유형별 기관 수와 이름, 기관별 회신 상태. 미회신만 걸러 리마인드 메일을 보내고,
+ * 회신 현황(결제원 담당자). 제출 기관 수·회신율, 미회신 기관, 질문별 답 집계, 기관별 회신 상태. 미회신만 걸러 리마인드 메일을 보내고,
  * 행을 누르면 회신 내용과 근거자료, 수정 요청 승인·반려를 본다.
  */
 export function ReplyStatusPanel({ request }: { request: OpinionRequestDetail }) {
@@ -113,7 +106,6 @@ export function ReplyStatusPanel({ request }: { request: OpinionRequestDetail })
               <Table.Th>기관</Table.Th>
               <Table.Th w={180}>회신 담당자</Table.Th>
               <Table.Th w={110}>상태</Table.Th>
-              <Table.Th w={120}>의견 유형</Table.Th>
               <Table.Th w={150}>제출 일시</Table.Th>
             </Table.Tr>
           </Table.Thead>
@@ -153,16 +145,13 @@ export function ReplyStatusPanel({ request }: { request: OpinionRequestDetail })
                   <ReplyStatusBadge status={r.replyStatus} size="xs" />
                 </Table.Td>
                 <Table.Td>
-                  <ReplyTypeBadge type={r.type} size="xs" />
-                </Table.Td>
-                <Table.Td>
                   <Text size="sm" className={classes.numeric}>
                     {formatDateTime(r.submittedAt)}
                   </Text>
                 </Table.Td>
               </Table.Tr>
             ))}
-            {rows.length === 0 && <TableEmpty colSpan={5} message="해당하는 기관이 없습니다." />}
+            {rows.length === 0 && <TableEmpty colSpan={4} message="해당하는 기관이 없습니다." />}
           </Table.Tbody>
         </Table>
       </Card>
@@ -192,10 +181,9 @@ export function ReplyStatusPanel({ request }: { request: OpinionRequestDetail })
   );
 }
 
-/** 위쪽 요약: 제출 기관 수, 회신율, 의견 유형별 막대와 기관 이름. */
+/** 위쪽 요약: 제출 기관 수, 회신율, 미회신 기관 이름. */
 function SummaryCards({ collation }: { collation: OpinionCollation }) {
   const { summary } = collation;
-  const total = Math.max(summary.targetCount, 1);
   return (
     <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
       <Card>
@@ -225,40 +213,12 @@ function SummaryCards({ collation }: { collation: OpinionCollation }) {
         </Text>
       </Card>
       <Card>
-        <Text size="sm" c="dimmed" fw={600} mb={8}>
-          의견 유형
+        <Text size="sm" c="dimmed" fw={600}>
+          미회신 기관
         </Text>
-        <div className={classes.bar} role="img" aria-label="의견 유형 분포">
-          {summary.byType.map((t) => (
-            <div
-              key={t.type}
-              className={`${classes.segment} ${TYPE_CLASS[t.type]}`}
-              style={{ width: `${(t.count * 100) / total}%` }}
-            />
-          ))}
-        </div>
-        <Stack gap={4} mt="sm">
-          {summary.byType.map((t) => (
-            <Group key={t.type} gap={6} wrap="nowrap" align="flex-start">
-              <Box component="span" className={`${classes.dot} ${TYPE_CLASS[t.type]}`} mt={5} />
-              <Text size="sm" fw={600} w={80} data-testid={`type-${t.type}`}>
-                {t.label} {t.count}
-              </Text>
-              <Text size="sm" c="dimmed" lineClamp={2}>
-                {t.organizations.join(', ') || '-'}
-              </Text>
-            </Group>
-          ))}
-          <Group gap={6} wrap="nowrap" align="flex-start">
-            <Box component="span" className={`${classes.dot} ${classes.none}`} mt={5} />
-            <Text size="sm" fw={600} w={80}>
-              미회신 {summary.notRepliedCount}
-            </Text>
-            <Text size="sm" c="dimmed" lineClamp={2}>
-              {summary.notRepliedOrganizations.join(', ') || '-'}
-            </Text>
-          </Group>
-        </Stack>
+        <Text size="sm" mt={6} lineClamp={4} data-testid="not-replied-names">
+          {summary.notRepliedOrganizations.join(', ') || '모두 회신했습니다.'}
+        </Text>
       </Card>
     </SimpleGrid>
   );
@@ -312,7 +272,6 @@ function ReplyDrawer({
           <Stack gap="md">
             <Group gap="xs">
               <ReplyStatusBadge status={row.replyStatus} />
-              <ReplyTypeBadge type={row.type} />
             </Group>
             {revision && (
               <Alert variant="light" color="clay" title="수정 요청" data-testid="revision-request">
@@ -331,19 +290,8 @@ function ReplyDrawer({
             )}
             {row.replied ? (
               <>
-                <div>
-                  <Text size="sm" c="dimmed" fw={600}>
-                    세부의견
-                  </Text>
-                  <Text size="md" className={classes.content}>
-                    {row.content ?? '(적지 않음)'}
-                  </Text>
-                </div>
                 {request.questions.length > 0 && (
                   <Stack gap="xs" data-testid="drawer-answers">
-                    <Text size="sm" c="dimmed" fw={600}>
-                      질문 답
-                    </Text>
                     {request.questions.map((q, index) => (
                       <div key={q.id}>
                         <Text size="sm" fw={600}>

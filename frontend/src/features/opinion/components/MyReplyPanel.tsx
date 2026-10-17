@@ -24,21 +24,19 @@ import {
   type OpinionAnswerRequest,
   type OpinionMyReply,
   type OpinionQuestion,
-  type OpinionReplyType,
   type OpinionRequestDetail,
-  REPLY_TYPE_OPTIONS,
   useMyOpinionReply,
   useRequestOpinionReplyRevision,
   useSaveOpinionReplyDraft,
   useSubmitOpinionReply,
 } from '../hooks';
 import { answerText } from '../questions';
-import { ReplyStatusBadge, ReplyTypeBadge } from './OpinionBadges';
+import { ReplyStatusBadge } from './OpinionBadges';
 import { ReasonModal } from './OpinionModals';
 import classes from './OpinionTable.module.css';
 
 /**
- * 우리 기관 회신(기관 담당자). 의견 유형과 세부의견을 쓰고, 요청에 질문이 있으면 답하고, 근거자료를 붙여 임시저장하거나 최종제출한다. 제출한 뒤에는 제출 내용을 보고,
+ * 우리 기관 회신(기관 담당자). 결제원 담당자가 넣은 질문에 답하고 근거자료를 붙여 임시저장하거나 최종제출한다. 제출한 뒤에는 제출 내용을 보고,
  * 고치려면 수정 요청을 한다(결제원 담당자가 승인하면 다시 고칠 수 있다).
  */
 export function MyReplyPanel({ request }: { request: OpinionRequestDetail }) {
@@ -125,35 +123,18 @@ function SubmittedReply({
   const answers = new Map(reply.answers.map((a) => [a.questionId, a]));
   return (
     <Stack gap="sm" data-testid="submitted-reply">
-      <Group gap="xs">
-        <Text size="sm" c="dimmed" fw={600}>
-          의견 유형
-        </Text>
-        <ReplyTypeBadge type={reply.type} />
-      </Group>
-      <div>
-        <Text size="sm" c="dimmed" fw={600}>
-          세부의견
-        </Text>
-        <Text className={classes.content}>{reply.content ?? '(적지 않음)'}</Text>
-      </div>
-      {request.questions.length > 0 && (
-        <Stack gap="xs" data-testid="submitted-answers">
-          <Text size="sm" c="dimmed" fw={600}>
-            질문 답
-          </Text>
-          {request.questions.map((q, index) => (
-            <div key={q.id}>
-              <Text size="sm" fw={600}>
-                {index + 1}. {q.title}
-              </Text>
-              <Text className={classes.content}>
-                {answerText(q, answers.get(q.id)) || '(답하지 않음)'}
-              </Text>
-            </div>
-          ))}
-        </Stack>
-      )}
+      <Stack gap="sm" data-testid="submitted-answers">
+        {request.questions.map((q, index) => (
+          <div key={q.id}>
+            <Text size="sm" fw={600}>
+              {index + 1}. {q.title}
+            </Text>
+            <Text className={classes.content}>
+              {answerText(q, answers.get(q.id)) || '(답하지 않음)'}
+            </Text>
+          </div>
+        ))}
+      </Stack>
       <Text size="sm" c="dimmed">
         {reply.replierName} · {formatDateTime(reply.submittedAt)} 제출
       </Text>
@@ -179,8 +160,6 @@ interface AnswerValue {
 }
 
 interface Values {
-  type: OpinionReplyType | '';
-  content: string;
   answers: Record<string, AnswerValue>;
 }
 
@@ -201,8 +180,6 @@ function ReplyEditor({ request, reply }: { request: OpinionRequestDetail; reply:
   const [notice, setNotice] = useState<string>();
   const form = useForm<Values>({
     initialValues: {
-      type: reply.draftType ?? '',
-      content: reply.draftContent ?? '',
       answers: initialAnswers(request.questions, reply.draftAnswers),
     },
   });
@@ -215,8 +192,6 @@ function ReplyEditor({ request, reply }: { request: OpinionRequestDetail; reply:
     failed && Object.keys(fieldErrorsOf(failed)).length === 0 ? failed.message : undefined;
 
   const body = () => ({
-    type: form.values.type === '' ? null : form.values.type,
-    content: form.values.content,
     answers: request.questions
       .map((q): OpinionAnswerRequest | null => {
         const a = form.values.answers[String(q.id)];
@@ -230,13 +205,6 @@ function ReplyEditor({ request, reply }: { request: OpinionRequestDetail; reply:
 
   return (
     <Stack gap="md">
-      <Radio.Group label="의견 유형" withAsterisk {...form.getInputProps('type')}>
-        <Group gap="lg" mt={6}>
-          {REPLY_TYPE_OPTIONS.map((o) => (
-            <Radio key={o.value} value={o.value} label={o.label} />
-          ))}
-        </Group>
-      </Radio.Group>
       {request.questions.map((q, index) => (
         <QuestionAnswer
           key={q.id}
@@ -250,14 +218,6 @@ function ReplyEditor({ request, reply }: { request: OpinionRequestDetail; reply:
           }}
         />
       ))}
-      <Textarea
-        label="세부의견"
-        description="조건부 동의와 이견은 조건이나 이유를 꼭 적어 주세요."
-        autosize
-        minRows={5}
-        maxLength={4000}
-        {...form.getInputProps('content')}
-      />
       <div>
         <Text size="sm" fw={500} mb={4}>
           근거자료

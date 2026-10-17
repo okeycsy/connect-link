@@ -74,12 +74,12 @@
 | 최근 확인일 | `lastConfirmedAt` | 수정·확인 시 갱신 |
 | 정기 변경(현행화) 주간 | `UpdateCampaign` | |
 | 의견 요청 | `OpinionRequest` | 상태 `OpinionRequestStatus` = `DRAFT`(작성중), `OPEN`(회신중), `CLOSED`(마감). 회신중 요청을 취소하면 `CLOSED` + `cancelled`. 권한 `OpinionAccessPolicy`. API `/api/v1/opinion-requests`, 화면 `/{업무}/opinions` |
-| 질문 | `OpinionQuestion` | 의견 요청에 넣는 질문 하나. 유형 `OpinionQuestionType` = `SINGLE_CHOICE`(객관식), `MULTIPLE_CHOICE`(체크박스), `TEXT`(주관식), 필수 여부. 선택지는 `OpinionQuestionOption`. 작성중일 때만 고친다 |
+| 질문 | `OpinionQuestion` | 의견 요청에 넣는 질문 하나. 유형 `OpinionQuestionType` = `SINGLE_CHOICE`(객관식), `MULTIPLE_CHOICE`(체크박스), `TEXT`(주관식), 필수 여부. 선택지는 `OpinionQuestionOption`. 작성중일 때만 고치고, 하나 이상 있어야 회신 요청을 시작한다 |
 | 질문 답 | `OpinionReplyAnswer` | 기관 회신의 답 한 칸. 회신처럼 제출한 답(`SUBMITTED`)과 임시저장한 답(`DRAFT`)을 따로 둔다. 객관식은 고른 선택지마다, 주관식은 질문마다 한 행 |
 | 대상 기관 | `OpinionTarget` | 요청의 대상 기관 한 곳. 회신 담당자는 `OpinionTargetRecipient`(고를 때의 이름·이메일·세부업무를 남긴다) |
 | 리마인드 이력 | `OpinionReminder` | 미회신 기관에 보낸 리마인드 메일 한 번 |
-| 회신 현황·취합표 | `OpinionCollationService` | 회신율, 유형별 기관, 기관별 취합표와 엑셀(`OpinionExcel`, 내부망 전용) |
-| 기관 회신 | `OpinionReply` | 대상 기관 하나에 하나. 유형 `OpinionReplyType` = `AGREE`(동의), `CONDITIONAL`(조건부 동의), `DISAGREE`(이견). 상태 `OpinionReplyStatus` = `DRAFT`(임시저장), `SUBMITTED`(제출), `REVISION_REQUESTED`(수정 요청), `REVISING`(수정 중) |
+| 회신 현황·취합표 | `OpinionCollationService` | 회신율, 질문별 답 집계, 기관별 취합표와 엑셀(`OpinionExcel`, 내부망 전용) |
+| 기관 회신 | `OpinionReply` | 대상 기관 하나에 하나. 내용은 요청 질문에 대한 답(`OpinionReplyAnswer`)뿐이다(의견 유형·세부의견 칸 없음). 상태 `OpinionReplyStatus` = `DRAFT`(임시저장), `SUBMITTED`(제출), `REVISION_REQUESTED`(수정 요청), `REVISING`(수정 중) |
 | 기관 테스트(페이지) | `TestPlan` | 단위업무/개발 건별 |
 | 테스트 요구사항 | `TestItem` | |
 | 테스트 결과 | `TestResult` | `PASSED`(정상), `FAILED`(오류), `IN_PROGRESS`(수행중), `NOT_STARTED`(미수행) |

@@ -27,7 +27,7 @@ interface Props<V extends { questions: QuestionDraft[] }> {
 
 /**
  * 의견 요청의 질문 만들기. 구글 폼처럼 질문마다 유형(객관식 하나 고르기, 체크박스 여러 개 고르기, 주관식)과 필수 여부를 정하고, 객관식이면
- * 선택지를 적는다. 기관은 의견 유형·세부의견과 함께 이 질문에 답한다.
+ * 선택지를 적는다. 기관 회신은 이 질문들에 대한 답뿐이다.
  */
 export function QuestionBuilder<V extends { questions: QuestionDraft[] }>({
   form,
@@ -50,7 +50,7 @@ export function QuestionBuilder<V extends { questions: QuestionDraft[] }>({
   if (locked && questions.length === 0) {
     return (
       <Text size="sm" c="dimmed">
-        질문 없이 의견 유형과 세부의견만 받습니다.
+        넣은 질문이 없습니다.
       </Text>
     );
   }
@@ -59,7 +59,7 @@ export function QuestionBuilder<V extends { questions: QuestionDraft[] }>({
     <Stack gap="sm">
       {questions.length === 0 && (
         <Text size="sm" c="dimmed">
-          넣은 질문이 없습니다. 질문이 없으면 기관은 의견 유형과 세부의견만 적어 회신합니다.
+          넣은 질문이 없습니다. 회신 요청을 시작하려면 질문이 하나 이상 있어야 합니다.
         </Text>
       )}
       {questions.map((q, index) => (

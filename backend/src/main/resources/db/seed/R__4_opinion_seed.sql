@@ -19,7 +19,7 @@ SELECT r.business, r.title, r.content, CAST(CURRENT_DATE + r.due_days * INTERVAL
        CURRENT_TIMESTAMP - r.created_days * INTERVAL '1' DAY, r.owner_email, CURRENT_TIMESTAMP - COALESCE(r.closed_days, r.opened_days, r.created_days) * INTERVAL '1' DAY, r.owner_email
 FROM (VALUES
   ('ACCOUNT_INFO', '계좌통합관리 수수료 체계 개편 의견 요청',
-   '내년 1월부터 계좌통합관리 조회 수수료를 건별에서 구간별 정액으로 바꾸려고 합니다. 붙임 개편안을 보시고 기관 의견을 회신해 주세요. 조건부 동의나 이견이면 그 사유와 원하는 적용 시기를 세부의견에 적어 주세요.',
+   '내년 1월부터 계좌통합관리 조회 수수료를 건별에서 구간별 정액으로 바꾸려고 합니다. 붙임 개편안을 보시고 기관 의견을 회신해 주세요. 적용 시기, 영향받는 업무, 조회 건수 질문에 답해 주세요.',
    3, 'OPEN', 'hong.gildong@kftc.example.com', '홍길동', 7, CAST(NULL AS INT), 8, FALSE, CAST(NULL AS VARCHAR(500))),
   ('ACCOUNT_INFO', '오픈뱅킹 연계 전문 항목 추가 검토',
    '계좌정보 통합조회 응답 전문에 계좌 별칭 항목(30바이트)을 더하는 안을 검토하고 있습니다. 기관 시스템 반영 가능 여부와 필요한 개발 기간을 알려 주세요.',
@@ -55,6 +55,16 @@ FROM (VALUES
 ) AS q (title_of_request, sort_order, question_type, title, required)
 JOIN opinion_request r ON r.title = q.title_of_request;
 
+-- 나머지 요청은 동의 여부(객관식, 필수)와 의견(주관식)을 묻는다. 결제원 담당자가 흔히 넣는 질문 모양이다.
+INSERT INTO opinion_question (request_id, sort_order, question_type, title, required, created_at, created_by, updated_at, updated_by)
+SELECT r.id, q.sort_order, q.question_type, q.title, q.required, r.created_at, r.created_by, r.created_at, r.created_by
+FROM (VALUES
+  (0, 'SINGLE_CHOICE', '이 안에 동의하십니까?', TRUE),
+  (1, 'TEXT',          '조건이나 다른 의견이 있으면 이유와 함께 적어 주세요.', FALSE)
+) AS q (sort_order, question_type, title, required)
+CROSS JOIN opinion_request r
+WHERE r.title <> '계좌통합관리 수수료 체계 개편 의견 요청';
+
 INSERT INTO opinion_question_option (question_id, sort_order, label, created_at, created_by, updated_at, updated_by)
 SELECT q.id, o.sort_order, o.label, q.created_at, q.created_by, q.created_at, q.created_by
 FROM (VALUES
@@ -63,6 +73,11 @@ FROM (VALUES
 ) AS o (question_order, sort_order, label)
 JOIN opinion_request r ON r.title = '계좌통합관리 수수료 체계 개편 의견 요청'
 JOIN opinion_question q ON q.request_id = r.id AND q.sort_order = o.question_order;
+
+INSERT INTO opinion_question_option (question_id, sort_order, label, created_at, created_by, updated_at, updated_by)
+SELECT q.id, o.sort_order, o.label, q.created_at, q.created_by, q.created_at, q.created_by
+FROM (VALUES (0, '동의'), (1, '조건부 동의'), (2, '이견')) AS o (sort_order, label)
+JOIN opinion_question q ON q.sort_order = 0 AND q.title = '이 안에 동의하십니까?';
 
 -- 대상 기관.
 INSERT INTO opinion_target (request_id, organization_id, created_at, created_by, updated_at, updated_by)
@@ -123,9 +138,9 @@ JOIN opinion_target t ON t.request_id = r.id AND t.organization_id = u.organizat
 JOIN user_account_business b ON b.account_id = u.id AND b.business = r.business;
 
 -- 기관 회신. submitted_days 가 있으면 제출한 회신이다. 사아증권은 수수료 개편 회신을 제출한 뒤 수정 요청을 해 두었다.
-INSERT INTO opinion_reply (target_id, status, reply_type, content, draft_type, draft_content, replier_email, replier_name, submitted_at,
+INSERT INTO opinion_reply (target_id, status, replier_email, replier_name, submitted_at,
                            revision_reason, revision_requested_at, revision_rejection_reason, created_at, created_by, updated_at, updated_by)
-SELECT t.id, p.status, p.reply_type, p.content, p.draft_type, p.draft_content, p.replier_email, p.replier_name,
+SELECT t.id, p.status, p.replier_email, p.replier_name,
        CASE WHEN p.submitted_days IS NULL THEN CAST(NULL AS TIMESTAMP) ELSE CURRENT_TIMESTAMP - p.submitted_days * INTERVAL '1' DAY END,
        p.revision_reason,
        CASE WHEN p.revision_reason IS NULL THEN CAST(NULL AS TIMESTAMP) ELSE CURRENT_TIMESTAMP - INTERVAL '5' HOUR END,
@@ -133,65 +148,63 @@ SELECT t.id, p.status, p.reply_type, p.content, p.draft_type, p.draft_content, p
        CURRENT_TIMESTAMP - COALESCE(p.submitted_days, 1) * INTERVAL '1' DAY, p.replier_email,
        CURRENT_TIMESTAMP - COALESCE(p.submitted_days, 1) * INTERVAL '1' DAY, p.replier_email
 FROM (VALUES
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'DARA',  'SUBMITTED', 'AGREE', CAST(NULL AS VARCHAR(4000)), CAST(NULL AS VARCHAR(20)), CAST(NULL AS VARCHAR(4000)),
-   'park.dara@dara.example.com', '박다라', 5, CAST(NULL AS VARCHAR(500))),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'MABA',  'SUBMITTED', 'CONDITIONAL',
-   '구간별 정액제에 동의합니다. 다만 저축은행은 조회 건수가 적어 최저 구간 금액을 30% 낮춰 주시기를 요청합니다.', NULL, NULL,
-   'jung.maba@maba.example.com', '정마바', 4, NULL),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'CHAKA', 'SUBMITTED', 'DISAGREE',
-   '올해 예산이 이미 확정되어 1월 적용은 어렵습니다. 적용 시기를 7월로 미뤄 주시기 바랍니다.', NULL, NULL,
-   'yoon.chaka@chaka.example.com', '윤차카', 3, NULL),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'SAA',   'REVISION_REQUESTED', 'AGREE', NULL, NULL, NULL,
-   'choi.saa@saa.example.com', '최사아', 2, '내부 검토 결과 적용 시기 조건을 더하려고 합니다. 조건부 동의로 바꾸고 싶습니다.'),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'NADA',  'DRAFT', NULL, NULL, 'CONDITIONAL', '상호금융 중앙회와 협의 중입니다.',
-   'kang.nada@nada.example.com', '강나다', NULL, NULL),
-  ('오픈뱅킹 연계 전문 항목 추가 검토',       'DARA',  'SUBMITTED', 'AGREE', '다음 분기 정기 배포에 반영할 수 있습니다.', NULL, NULL,
-   'park.dara@dara.example.com', '박다라', 1, NULL),
-  ('계좌정보 일괄해지 화면 문구 개선',        'GANA',  'SUBMITTED', 'AGREE', NULL, NULL, NULL,
-   'kim.gana@gana.example.com', '김가나', 30, NULL),
-  ('계좌정보 일괄해지 화면 문구 개선',        'SAA',   'SUBMITTED', 'CONDITIONAL', '"해지" 대신 "연결 끊기" 표현을 함께 써 주세요.', NULL, NULL,
-   'choi.saa@saa.example.com', '최사아', 29, NULL),
-  ('계좌정보 일괄해지 화면 문구 개선',        'DARA',  'SUBMITTED', 'AGREE', NULL, NULL, NULL,
-   'park.dara@dara.example.com', '박다라', 27, NULL),
-  ('계좌정보 일괄해지 화면 문구 개선',        'MABA',  'SUBMITTED', 'DISAGREE', '고객 문의가 늘 수 있어 지금 문구를 유지하기를 바랍니다.', NULL, NULL,
-   'jung.maba@maba.example.com', '정마바', 26, NULL),
-  ('자동이체 통합조회 해지 절차 개선',        'GANA',  'SUBMITTED', 'AGREE', NULL, NULL, NULL,
-   'han.gana2@gana.example.com', '한가람', 6, NULL),
-  ('자동이체 통합조회 해지 절차 개선',        'JACHA', 'SUBMITTED', 'CONDITIONAL', '처리 결과 통지는 영업일 기준 2일 안으로 해 주세요.', NULL, NULL,
-   'yoon.jacha@jacha.example.com', '윤자차', 4, NULL),
-  ('CMS 출금이체 전문 개정 의견 요청',        'TAPA',  'SUBMITTED', 'AGREE', NULL, NULL, NULL,
-   'jung.tapa@tapa.example.com', '정타파', 1, NULL),
-  ('대출이동 신규기관 접수시간 연장',         'GANA',  'SUBMITTED', 'AGREE', NULL, NULL, NULL,
-   'kim.gana@gana.example.com', '김가나', 35, NULL),
-  ('대출이동 신규기관 접수시간 연장',         'MABA',  'SUBMITTED', 'CONDITIONAL', '18시 연장 시 상담 인력 배치가 필요해 시행을 한 달 늦춰 주세요.', NULL, NULL,
-   'jung.maba@maba.example.com', '정마바', 34, NULL),
-  ('대출이동 신규기관 접수시간 연장',         'TAPA',  'SUBMITTED', 'AGREE', NULL, NULL, NULL,
-   'jung.tapa@tapa.example.com', '정타파', 33, NULL)
-) AS p (title, org_code, status, reply_type, content, draft_type, draft_content, replier_email, replier_name, submitted_days, revision_reason)
+  ('계좌통합관리 수수료 체계 개편 의견 요청', 'DARA', 'SUBMITTED', 'park.dara@dara.example.com', '박다라', 5, CAST(NULL AS VARCHAR(500))),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', 'MABA', 'SUBMITTED', 'jung.maba@maba.example.com', '정마바', 4, NULL),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', 'CHAKA', 'SUBMITTED', 'yoon.chaka@chaka.example.com', '윤차카', 3, NULL),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', 'SAA', 'REVISION_REQUESTED', 'choi.saa@saa.example.com', '최사아', 2, '내부 검토 결과 적용 시기를 내년 7월로 바꾸고 싶습니다.'),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', 'NADA', 'DRAFT', 'kang.nada@nada.example.com', '강나다', NULL, NULL),
+  ('오픈뱅킹 연계 전문 항목 추가 검토', 'DARA', 'SUBMITTED', 'park.dara@dara.example.com', '박다라', 1, NULL),
+  ('계좌정보 일괄해지 화면 문구 개선', 'GANA', 'SUBMITTED', 'kim.gana@gana.example.com', '김가나', 30, NULL),
+  ('계좌정보 일괄해지 화면 문구 개선', 'SAA', 'SUBMITTED', 'choi.saa@saa.example.com', '최사아', 29, NULL),
+  ('계좌정보 일괄해지 화면 문구 개선', 'DARA', 'SUBMITTED', 'park.dara@dara.example.com', '박다라', 27, NULL),
+  ('계좌정보 일괄해지 화면 문구 개선', 'MABA', 'SUBMITTED', 'jung.maba@maba.example.com', '정마바', 26, NULL),
+  ('자동이체 통합조회 해지 절차 개선', 'GANA', 'SUBMITTED', 'han.gana2@gana.example.com', '한가람', 6, NULL),
+  ('자동이체 통합조회 해지 절차 개선', 'JACHA', 'SUBMITTED', 'yoon.jacha@jacha.example.com', '윤자차', 4, NULL),
+  ('CMS 출금이체 전문 개정 의견 요청', 'TAPA', 'SUBMITTED', 'jung.tapa@tapa.example.com', '정타파', 1, NULL),
+  ('대출이동 신규기관 접수시간 연장', 'GANA', 'SUBMITTED', 'kim.gana@gana.example.com', '김가나', 35, NULL),
+  ('대출이동 신규기관 접수시간 연장', 'MABA', 'SUBMITTED', 'jung.maba@maba.example.com', '정마바', 34, NULL),
+  ('대출이동 신규기관 접수시간 연장', 'TAPA', 'SUBMITTED', 'jung.tapa@tapa.example.com', '정타파', 33, NULL)
+) AS p (title, org_code, status, replier_email, replier_name, submitted_days, revision_reason)
 JOIN opinion_request r ON r.title = p.title
 JOIN organization o ON o.code = p.org_code
 JOIN opinion_target t ON t.request_id = r.id AND t.organization_id = o.id;
 
--- 질문 답. 수수료 개편 요청에 제출한 기관의 답과 나다상호금융의 임시저장한 답이다. 객관식은 고른 선택지마다 한 행이다.
+-- 질문 답. 제출한 기관의 답과 나다상호금융이 수수료 개편 요청에 임시저장한 답이다. 객관식은 고른 선택지마다 한 행이다.
 INSERT INTO opinion_reply_answer (reply_id, question_id, stage, option_id, text_value, created_at, created_by, updated_at, updated_by)
 SELECT p.id, q.id, a.stage, o.id, a.text_value, p.created_at, p.created_by, p.created_at, p.created_by
 FROM (VALUES
-  ('DARA',  'SUBMITTED', 0, '내년 1월',     CAST(NULL AS VARCHAR(4000))),
-  ('DARA',  'SUBMITTED', 1, '수수료 정산',  NULL),
-  ('DARA',  'SUBMITTED', 2, NULL,           '약 12만 건'),
-  ('MABA',  'SUBMITTED', 0, '내년 7월',     NULL),
-  ('MABA',  'SUBMITTED', 1, '수수료 정산',  NULL),
-  ('MABA',  'SUBMITTED', 1, '고객 안내',    NULL),
-  ('MABA',  'SUBMITTED', 2, NULL,           '약 8천 건'),
-  ('CHAKA', 'SUBMITTED', 0, '내년 7월',     NULL),
-  ('CHAKA', 'SUBMITTED', 1, '수수료 정산',  NULL),
-  ('CHAKA', 'SUBMITTED', 1, '전산 개발',    NULL),
-  ('SAA',   'SUBMITTED', 0, '내년 1월',     NULL),
-  ('SAA',   'SUBMITTED', 1, '영향 없음',    NULL),
-  ('SAA',   'SUBMITTED', 2, NULL,           '약 3만 건'),
-  ('NADA',  'DRAFT',     0, '내후년 1월',   NULL)
-) AS a (org_code, stage, question_order, option_label, text_value)
-JOIN opinion_request r ON r.title = '계좌통합관리 수수료 체계 개편 의견 요청'
+  ('계좌통합관리 수수료 체계 개편 의견 요청', 'DARA', 'SUBMITTED', 0, '내년 1월', CAST(NULL AS VARCHAR(4000))),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', 'DARA', 'SUBMITTED', 1, '수수료 정산', NULL),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', 'DARA', 'SUBMITTED', 2, NULL, '약 12만 건'),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', 'MABA', 'SUBMITTED', 0, '내년 7월', NULL),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', 'MABA', 'SUBMITTED', 1, '수수료 정산', NULL),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', 'MABA', 'SUBMITTED', 1, '고객 안내', NULL),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', 'MABA', 'SUBMITTED', 2, NULL, '약 8천 건'),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', 'CHAKA', 'SUBMITTED', 0, '내년 7월', NULL),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', 'CHAKA', 'SUBMITTED', 1, '수수료 정산', NULL),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', 'CHAKA', 'SUBMITTED', 1, '전산 개발', NULL),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', 'SAA', 'SUBMITTED', 0, '내년 1월', NULL),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', 'SAA', 'SUBMITTED', 1, '영향 없음', NULL),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', 'SAA', 'SUBMITTED', 2, NULL, '약 3만 건'),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', 'NADA', 'DRAFT', 0, '내후년 1월', NULL),
+  ('오픈뱅킹 연계 전문 항목 추가 검토', 'DARA', 'SUBMITTED', 0, '동의', NULL),
+  ('오픈뱅킹 연계 전문 항목 추가 검토', 'DARA', 'SUBMITTED', 1, NULL, '다음 분기 정기 배포에 반영할 수 있습니다.'),
+  ('계좌정보 일괄해지 화면 문구 개선', 'GANA', 'SUBMITTED', 0, '동의', NULL),
+  ('계좌정보 일괄해지 화면 문구 개선', 'SAA', 'SUBMITTED', 0, '조건부 동의', NULL),
+  ('계좌정보 일괄해지 화면 문구 개선', 'SAA', 'SUBMITTED', 1, NULL, '"해지" 대신 "연결 끊기" 표현을 함께 써 주세요.'),
+  ('계좌정보 일괄해지 화면 문구 개선', 'DARA', 'SUBMITTED', 0, '동의', NULL),
+  ('계좌정보 일괄해지 화면 문구 개선', 'MABA', 'SUBMITTED', 0, '이견', NULL),
+  ('계좌정보 일괄해지 화면 문구 개선', 'MABA', 'SUBMITTED', 1, NULL, '고객 문의가 늘 수 있어 지금 문구를 유지하기를 바랍니다.'),
+  ('자동이체 통합조회 해지 절차 개선', 'GANA', 'SUBMITTED', 0, '동의', NULL),
+  ('자동이체 통합조회 해지 절차 개선', 'JACHA', 'SUBMITTED', 0, '조건부 동의', NULL),
+  ('자동이체 통합조회 해지 절차 개선', 'JACHA', 'SUBMITTED', 1, NULL, '처리 결과 통지는 영업일 기준 2일 안으로 해 주세요.'),
+  ('CMS 출금이체 전문 개정 의견 요청', 'TAPA', 'SUBMITTED', 0, '동의', NULL),
+  ('대출이동 신규기관 접수시간 연장', 'GANA', 'SUBMITTED', 0, '동의', NULL),
+  ('대출이동 신규기관 접수시간 연장', 'MABA', 'SUBMITTED', 0, '조건부 동의', NULL),
+  ('대출이동 신규기관 접수시간 연장', 'MABA', 'SUBMITTED', 1, NULL, '18시 연장 시 상담 인력 배치가 필요해 시행을 한 달 늦춰 주세요.'),
+  ('대출이동 신규기관 접수시간 연장', 'TAPA', 'SUBMITTED', 0, '동의', NULL)
+) AS a (title, org_code, stage, question_order, option_label, text_value)
+JOIN opinion_request r ON r.title = a.title
 JOIN organization g ON g.code = a.org_code
 JOIN opinion_target t ON t.request_id = r.id AND t.organization_id = g.id
 JOIN opinion_reply p ON p.target_id = t.id

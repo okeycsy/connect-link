@@ -37,9 +37,7 @@ public class OpinionCollationController {
   }
 
   @GetMapping("/collation")
-  @Operation(
-      summary = "회신 현황·취합표 조회",
-      description = "회신/미회신 구분, 의견 유형별 기관 수와 목록, 회신율, 대상 기관마다 한 줄의 취합표.")
+  @Operation(summary = "회신 현황·취합표 조회", description = "회신/미회신 구분, 회신율, 질문별 답 모음, 대상 기관마다 한 줄의 취합표.")
   public OpinionCollationResponse collation(@PathVariable Long requestId) {
     return collationService.collation(currentUserProvider.require(), requestId);
   }

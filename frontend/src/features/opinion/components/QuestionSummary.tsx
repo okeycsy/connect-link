@@ -62,7 +62,7 @@ export function QuestionSummary({ collation }: { collation: OpinionCollation }) 
                     </Text>
                     <div className={classes.bar} style={{ flex: 1, maxWidth: 240 }}>
                       <div
-                        className={`${classes.segment} ${classes.agree}`}
+                        className={`${classes.segment} ${classes.fill}`}
                         style={{ width: `${(o.count * 100) / replied}%` }}
                       />
                     </div>

@@ -2,7 +2,6 @@ package com.connectlink.opinion;
 
 import com.connectlink.opinion.dto.OpinionCollationResponse;
 import com.connectlink.opinion.dto.OpinionCollationResponse.Row;
-import com.connectlink.opinion.dto.OpinionCollationResponse.TypeCount;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -20,8 +19,8 @@ import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 /**
- * 의견 취합표 엑셀 파일. "결과 요약" 과 "기관별 취합표" 두 장이고, 화면의 회신 현황·취합표와 같은 값({@link OpinionCollationResponse})을
- * 쓴다.
+ * 의견 취합표 엑셀 파일. "결과 요약", "질문별 답"(질문이 있을 때), "기관별 취합표" 이고, 화면의 회신 현황·취합표와 같은 값({@link
+ * OpinionCollationResponse})을 쓴다.
  *
  * @param fileName 내려받을 이름(예: 의견취합_요청명_20261017.xlsx)
  */
@@ -77,23 +76,9 @@ public record OpinionExcel(String fileName, byte[] content) {
       cell(row, 0, line[0], styles.header);
       cell(row, 1, line[1], styles.body);
     }
-    r++;
-    var head = sheet.createRow(r++);
-    cell(head, 0, "의견 유형", styles.header);
-    cell(head, 1, "기관 수", styles.header);
-    cell(head, 2, "기관", styles.header);
-    for (TypeCount type : summary.byType()) {
-      var row = sheet.createRow(r++);
-      cell(row, 0, type.label(), styles.body);
-      row.createCell(1).setCellValue(type.count());
-      row.getCell(1).setCellStyle(styles.body);
-      cell(row, 2, String.join(", ", type.organizations()), styles.body);
-    }
     var notReplied = sheet.createRow(r);
-    cell(notReplied, 0, "미회신", styles.body);
-    notReplied.createCell(1).setCellValue(summary.notRepliedCount());
-    notReplied.getCell(1).setCellStyle(styles.body);
-    cell(notReplied, 2, String.join(", ", summary.notRepliedOrganizations()), styles.body);
+    cell(notReplied, 0, "미회신 기관 이름", styles.header);
+    cell(notReplied, 1, String.join(", ", summary.notRepliedOrganizations()), styles.body);
     sheet.setColumnWidth(0, 16 * 256);
     sheet.setColumnWidth(1, 40 * 256);
     sheet.setColumnWidth(2, 60 * 256);
@@ -137,8 +122,8 @@ public record OpinionExcel(String fileName, byte[] content) {
   }
 
   private static void writeRows(Sheet sheet, Styles styles, OpinionCollationResponse collation) {
-    List<String> headers = new ArrayList<>(List.of("순번", "기관", "회신 담당자", "회신 여부", "의견 유형", "세부의견"));
-    List<Integer> widths = new ArrayList<>(List.of(6, 18, 18, 10, 12, 60));
+    List<String> headers = new ArrayList<>(List.of("순번", "기관", "회신 담당자", "회신 여부"));
+    List<Integer> widths = new ArrayList<>(List.of(6, 18, 18, 10));
     int n = 1;
     for (OpinionCollationResponse.QuestionSummary q : collation.questions()) {
       headers.add(n++ + ". " + q.title());
@@ -159,9 +144,7 @@ public record OpinionExcel(String fileName, byte[] content) {
       cell(line, 1, row.organizationName(), styles.body);
       cell(line, 2, String.join(", ", row.recipientNames()), styles.body);
       cell(line, 3, row.replied() ? "회신" : "미회신", styles.body);
-      cell(line, 4, row.typeLabel(), styles.body);
-      cell(line, 5, row.content(), styles.wrap);
-      int c = 6;
+      int c = 4;
       for (OpinionCollationResponse.RowAnswer answer : row.answers()) {
         cell(line, c++, answer.value(), styles.wrap);
       }

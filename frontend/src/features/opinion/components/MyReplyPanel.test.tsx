@@ -23,21 +23,6 @@ const request = {
   closedAt: null,
   createdAt: '2026-10-09T09:00:00',
   updatedAt: '2026-10-10T09:00:00',
-  questions: [],
-  targets: [],
-  permissions: {
-    manage: false,
-    edit: false,
-    open: false,
-    close: false,
-    cancel: false,
-    delete: false,
-    reply: true,
-  },
-} as OpinionRequestDetail;
-
-const withQuestions = {
-  ...request,
   questions: [
     {
       id: 21,
@@ -70,11 +55,19 @@ const withQuestions = {
       options: [],
     },
   ],
+  targets: [],
+  permissions: {
+    manage: false,
+    edit: false,
+    open: false,
+    close: false,
+    cancel: false,
+    delete: false,
+    reply: true,
+  },
 } as OpinionRequestDetail;
 
 type Body = {
-  type: string | null;
-  content: string;
   answers?: { questionId: number; optionIds?: number[]; text?: string }[];
 };
 
@@ -85,11 +78,6 @@ const empty = {
   replyId: null,
   status: null,
   statusLabel: '미작성',
-  type: null,
-  typeLabel: null,
-  content: null,
-  draftType: null,
-  draftContent: null,
   answers: [],
   draftAnswers: [],
   replierName: null,
@@ -100,6 +88,13 @@ const empty = {
   editable: true,
   revisionRequestable: false,
 };
+
+const toAnswers = (body: Body) =>
+  (body.answers ?? []).map((a) => ({
+    questionId: a.questionId,
+    optionIds: a.optionIds ?? [],
+    text: a.text ?? null,
+  }));
 
 const calls = vi.hoisted(() => ({
   writes: [] as { method: string; path: string; body: unknown }[],
@@ -125,19 +120,15 @@ vi.mock('../../../api/client', async (importOriginal) => {
             replyId: 11,
             status: 'DRAFT',
             statusLabel: '임시저장',
-            draftType: options.body.type,
-            draftContent: options.body.content,
+            draftAnswers: toAnswers(options.body),
           },
           response: new Response(),
         };
       }),
       POST: vi.fn(async (path: string, options: { body: Body }) => {
         calls.writes.push({ method: 'POST', path, body: options.body });
-        if (
-          options.body.type === 'AGREE' &&
-          options.body.answers?.length &&
-          !options.body.answers.some((a) => a.questionId === 21)
-        ) {
+        // 서버처럼 필수 질문(21)에 답하지 않으면 그 질문 칸에 오류를 붙인다.
+        if (!options.body.answers?.some((a) => a.questionId === 21)) {
           return {
             error: {
               status: 400,
@@ -148,30 +139,13 @@ vi.mock('../../../api/client', async (importOriginal) => {
             response: new Response(null, { status: 400 }),
           };
         }
-        if (options.body.type === 'DISAGREE' && !options.body.content) {
-          return {
-            error: {
-              status: 400,
-              code: 'OPINION_REPLY_CONTENT_REQUIRED',
-              detail: '입력값을 확인해 주세요.',
-              fieldErrors: [{ field: 'content', message: '이견은(는) 세부의견을 적어 주세요.' }],
-            },
-            response: new Response(null, { status: 400 }),
-          };
-        }
         return {
           data: {
             ...empty,
             replyId: 11,
             status: 'SUBMITTED',
             statusLabel: '제출',
-            type: options.body.type,
-            content: options.body.content,
-            answers: (options.body.answers ?? []).map((a) => ({
-              questionId: a.questionId,
-              optionIds: a.optionIds ?? [],
-              text: a.text ?? null,
-            })),
+            answers: toAnswers(options.body),
             replierName: '김가나',
             submittedAt: '2026-10-17T10:00:00',
             editable: false,
@@ -189,29 +163,14 @@ beforeEach(() => {
 });
 
 describe('MyReplyPanel', () => {
-  it('세부의견 없이 이견을 제출하면 서버 메시지를 칸 아래에 보이고, 고쳐 제출하면 제출 내용을 보인다', async () => {
+  it('의견 유형·세부의견 칸 없이 질문만 보인다', async () => {
     renderWithProviders(<MyReplyPanel request={request} />, {
       route: '/account-info/opinions/7',
       path: '/:business/opinions/:id',
     });
-
-    fireEvent.click(await screen.findByRole('radio', { name: '이견' }));
-    fireEvent.click(screen.getByRole('button', { name: '최종제출' }));
-    expect(await screen.findByText('이견은(는) 세부의견을 적어 주세요.')).toBeInTheDocument();
-
-    fireEvent.change(screen.getByLabelText('세부의견'), {
-      target: { value: '시행 시기를 늦춰 주세요.' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: '최종제출' }));
-    expect(await screen.findByTestId('submitted-reply')).toHaveTextContent(
-      '시행 시기를 늦춰 주세요.',
-    );
-    expect(screen.getByRole('button', { name: '수정 요청' })).toBeInTheDocument();
-    expect(calls.writes.at(-1)).toEqual({
-      method: 'POST',
-      path: '/api/v1/opinion-requests/{requestId}/my-reply/submission',
-      body: { type: 'DISAGREE', content: '시행 시기를 늦춰 주세요.', answers: [] },
-    });
+    expect(await screen.findByRole('radio', { name: '7월' })).toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: '동의' })).toBeNull();
+    expect(screen.queryByLabelText('세부의견')).toBeNull();
   });
 
   it('임시저장하면 저장 안내가 뜨고 근거자료를 올릴 수 있게 된다', async () => {
@@ -223,21 +182,23 @@ describe('MyReplyPanel', () => {
     expect(
       await screen.findByText('임시저장하면 근거자료를 올릴 수 있습니다.'),
     ).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('radio', { name: '동의' }));
+    fireEvent.click(screen.getByRole('radio', { name: '1월' }));
     fireEvent.click(screen.getByRole('button', { name: '임시저장' }));
     expect(await screen.findByTestId('reply-notice')).toHaveTextContent('임시저장했습니다');
     await waitFor(() => expect(screen.getByText('근거자료 올리기')).toBeInTheDocument());
-    expect(calls.writes[0]).toMatchObject({ method: 'PUT', body: { type: 'AGREE', content: '' } });
+    expect(calls.writes[0]).toMatchObject({
+      method: 'PUT',
+      body: { answers: [{ questionId: 21, optionIds: [31] }] },
+    });
   });
 
   it('질문에 답해 제출하고, 필수 질문을 비우면 그 질문 아래에 서버 메시지를 보인다', async () => {
-    renderWithProviders(<MyReplyPanel request={withQuestions} />, {
+    renderWithProviders(<MyReplyPanel request={request} />, {
       route: '/account-info/opinions/7',
       path: '/:business/opinions/:id',
     });
 
-    fireEvent.click(await screen.findByRole('radio', { name: '동의' }));
-    fireEvent.click(screen.getByRole('checkbox', { name: '정산' }));
+    fireEvent.click(await screen.findByRole('checkbox', { name: '정산' }));
     fireEvent.click(screen.getByRole('button', { name: '최종제출' }));
     expect(await screen.findByText('필수 질문입니다. 답해 주세요.')).toBeInTheDocument();
 
@@ -253,9 +214,8 @@ describe('MyReplyPanel', () => {
     expect(submitted).toHaveTextContent('1. 적용 시기7월');
     expect(submitted).toHaveTextContent('2. 영향받는 업무정산, 안내');
     expect(submitted).toHaveTextContent('3. 월 조회 건수약 1만 건');
+    expect(screen.getByRole('button', { name: '수정 요청' })).toBeInTheDocument();
     expect(calls.writes.at(-1)?.body).toEqual({
-      type: 'AGREE',
-      content: '',
       answers: [
         { questionId: 21, optionIds: [32] },
         { questionId: 22, optionIds: [33, 34] },

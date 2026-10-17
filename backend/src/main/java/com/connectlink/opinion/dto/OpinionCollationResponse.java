@@ -2,7 +2,6 @@ package com.connectlink.opinion.dto;
 
 import com.connectlink.opinion.OpinionQuestionType;
 import com.connectlink.opinion.OpinionReplyStatus;
-import com.connectlink.opinion.OpinionReplyType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -47,7 +46,6 @@ public record OpinionCollationResponse(
 
   /**
    * @param replyRate 회신율(%, 반올림). 대상이 없으면 0
-   * @param byType 의견 유형별 기관 수와 기관 이름(동의, 조건부 동의, 이견 순)
    */
   @Schema(name = "OpinionCollationSummary")
   public record Summary(
@@ -55,17 +53,11 @@ public record OpinionCollationResponse(
       int repliedCount,
       int notRepliedCount,
       int replyRate,
-      List<TypeCount> byType,
       List<String> notRepliedOrganizations) {}
-
-  @Schema(name = "OpinionCollationTypeCount")
-  public record TypeCount(
-      OpinionReplyType type, String label, int count, List<String> organizations) {}
 
   /**
    * @param replied 한 번이라도 제출했는지(회신/미회신 자동 구분)
    * @param replyId 회신 ID. 저장한 적이 없으면 null. 근거자료는 첨부 API 로 본다
-   * @param type 제출한 의견 유형. 미회신이면 null
    * @param recipientNames 회신 담당자 이름들
    * @param answers 질문마다의 제출한 답(질문 순서). 미회신이면 값이 모두 null
    */
@@ -80,9 +72,6 @@ public record OpinionCollationResponse(
       @Schema(nullable = true) Long replyId,
       @Schema(nullable = true) OpinionReplyStatus replyStatus,
       @Schema(nullable = true) String replyStatusLabel,
-      @Schema(nullable = true) OpinionReplyType type,
-      @Schema(nullable = true) String typeLabel,
-      @Schema(nullable = true) String content,
       @Schema(nullable = true) String replierName,
       @Schema(nullable = true) LocalDateTime submittedAt,
       @Schema(nullable = true) String revisionReason,

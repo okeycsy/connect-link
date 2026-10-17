@@ -225,6 +225,11 @@ public class OpinionRequestService {
       throw BusinessException.onField(
           HttpStatus.BAD_REQUEST, "OPINION_TARGETS_REQUIRED", "targets", "대상 기관을 하나 이상 골라 주세요.");
     }
+    // 기관은 질문에만 답하므로 질문이 없으면 받을 회신이 없다.
+    if (request.getQuestions().isEmpty()) {
+      throw BusinessException.onField(
+          HttpStatus.BAD_REQUEST, "OPINION_QUESTIONS_REQUIRED", "questions", "질문을 하나 이상 넣어 주세요.");
+    }
     ensureDueDateNotPast(request.getDueDate());
     request.open(now());
     recordStatus(user, request, OpinionRequestStatus.DRAFT, "회신 요청 보냄", null);

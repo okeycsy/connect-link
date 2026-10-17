@@ -1,6 +1,6 @@
 import { Badge } from '@mantine/core';
 
-import type { OpinionReplyStatus, OpinionReplyType, OpinionRequestStatus } from '../hooks';
+import type { OpinionReplyStatus, OpinionRequestStatus } from '../hooks';
 
 /** 요청 상태 배지. 회신중은 기관 조치가 필요해 amber, 마감은 sky, 작성중은 결제원 내부 흐름이라 clay, 취소는 중립(frontend/CLAUDE.md 2.3). */
 export function OpinionStatusBadge({
@@ -105,37 +105,5 @@ export function ReplyStatusBadge({
           미작성
         </Badge>
       );
-  }
-}
-
-/** 의견 유형 배지. 차트와 같은 계열(동의·조건부 sky, 이견 amber). */
-export function ReplyTypeBadge({
-  type,
-  size = 'sm',
-}: {
-  type: OpinionReplyType | null | undefined;
-  size?: 'xs' | 'sm' | 'md';
-}) {
-  switch (type) {
-    case 'AGREE':
-      return (
-        <Badge size={size} color="sky">
-          동의
-        </Badge>
-      );
-    case 'CONDITIONAL':
-      return (
-        <Badge size={size} color="sky" variant="outline">
-          조건부 동의
-        </Badge>
-      );
-    case 'DISAGREE':
-      return (
-        <Badge size={size} color="amber">
-          이견
-        </Badge>
-      );
-    default:
-      return null;
   }
 }

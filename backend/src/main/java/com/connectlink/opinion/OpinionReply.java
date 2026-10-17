@@ -22,9 +22,8 @@ import javax.persistence.Table;
 import org.hibernate.annotations.BatchSize;
 
 /**
- * 기관 회신. 대상 기관 한 곳에 하나다. 제출한 내용({@code type}, {@code content})과 임시저장한 내용({@code draftType}, {@code
- * draftContent})을 따로 둔다. 질문 답({@link OpinionReplyAnswer})도 제출한 답과 임시저장한 답을 나눈다. 그래서 수정 중에 임시저장해도
- * 결제원이 보는 제출 내용은 다시 제출할 때까지 그대로다. 한 번이라도 제출했으면 회신한 기관이다.
+ * 기관 회신. 대상 기관 한 곳에 하나다. 회신 내용은 요청 질문에 대한 답({@link OpinionReplyAnswer})뿐이고, 제출한 답과 임시저장한 답을 나눠 둔다.
+ * 그래서 수정 중에 임시저장해도 결제원이 보는 제출 내용은 다시 제출할 때까지 그대로다. 한 번이라도 제출했으면 회신한 기관이다.
  */
 @Entity
 @Table(name = "opinion_reply")
@@ -41,21 +40,6 @@ public class OpinionReply extends AuditedEntity {
   @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false, length = 30)
   private OpinionReplyStatus status;
-
-  @Enumerated(EnumType.STRING)
-  @Column(name = "reply_type", length = 20)
-  private OpinionReplyType type;
-
-  /** 제출한 세부의견. */
-  @Column(name = "content", length = 4000)
-  private String content;
-
-  @Enumerated(EnumType.STRING)
-  @Column(name = "draft_type", length = 20)
-  private OpinionReplyType draftType;
-
-  @Column(name = "draft_content", length = 4000)
-  private String draftContent;
 
   /** 마지막으로 저장·제출한 기관 담당자. */
   @Column(name = "replier_email", length = 200)
@@ -104,29 +88,16 @@ public class OpinionReply extends AuditedEntity {
    *
    * @throws IllegalStateException 고칠 수 없는 상태면
    */
-  void saveDraft(
-      OpinionReplyType type, String content, List<Answer> answers, String email, String name) {
+  void saveDraft(List<Answer> answers, String email, String name) {
     ensureEditable();
-    this.draftType = type;
-    this.draftContent = content;
     replaceAnswers(Stage.DRAFT, answers);
     this.replierEmail = email;
     this.replierName = name;
   }
 
   /** 최종제출. 임시저장한 내용은 비운다. */
-  void submit(
-      OpinionReplyType type,
-      String content,
-      List<Answer> answers,
-      String email,
-      String name,
-      LocalDateTime now) {
+  void submit(List<Answer> answers, String email, String name, LocalDateTime now) {
     ensureEditable();
-    this.type = type;
-    this.content = content;
-    this.draftType = null;
-    this.draftContent = null;
     replaceAnswers(Stage.SUBMITTED, answers);
     replaceAnswers(Stage.DRAFT, List.of());
     this.replierEmail = email;
@@ -155,8 +126,6 @@ public class OpinionReply extends AuditedEntity {
   void approveRevision() {
     ensureRevisionRequested();
     this.status = OpinionReplyStatus.REVISING;
-    this.draftType = type;
-    this.draftContent = content;
     replaceAnswers(Stage.DRAFT, getAnswers(Stage.SUBMITTED));
   }
 
@@ -171,8 +140,6 @@ public class OpinionReply extends AuditedEntity {
   void closeOut() {
     if (status == OpinionReplyStatus.REVISION_REQUESTED || status == OpinionReplyStatus.REVISING) {
       this.status = OpinionReplyStatus.SUBMITTED;
-      this.draftType = null;
-      this.draftContent = null;
       replaceAnswers(Stage.DRAFT, List.of());
     }
   }
@@ -238,22 +205,6 @@ public class OpinionReply extends AuditedEntity {
 
   public OpinionReplyStatus getStatus() {
     return status;
-  }
-
-  public OpinionReplyType getType() {
-    return type;
-  }
-
-  public String getContent() {
-    return content;
-  }
-
-  public OpinionReplyType getDraftType() {
-    return draftType;
-  }
-
-  public String getDraftContent() {
-    return draftContent;
   }
 
   public String getReplierEmail() {

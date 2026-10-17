@@ -12,11 +12,10 @@ import {
   useOpinionCollation,
   useOpinionReminders,
 } from '../hooks';
-import { ReplyTypeBadge } from './OpinionBadges';
 import classes from './OpinionTable.module.css';
 
 /**
- * 기관별 취합표. 대상 기관마다 한 줄로 의견 유형, 세부의견, 질문별 답을 모으고, 엑셀(결과 요약, 질문별 답, 기관별 취합표)로
+ * 기관별 취합표. 대상 기관마다 한 줄로 질문별 답을 모으고, 엑셀(결과 요약, 질문별 답, 기관별 취합표)로
  * 내려받는다.
  */
 export function CollationPanel({ request }: { request: OpinionRequestDetail }) {
@@ -37,7 +36,6 @@ export function CollationPanel({ request }: { request: OpinionRequestDetail }) {
           <Text size="sm" c="dimmed" data-testid="collation-summary">
             대상 {summary.targetCount}곳 · 제출 {summary.repliedCount}곳(회신율 {summary.replyRate}
             %)
-            {summary.byType.map((t) => ` · ${t.label} ${t.count}`).join('')}
           </Text>
         </div>
         <Button
@@ -61,13 +59,12 @@ export function CollationPanel({ request }: { request: OpinionRequestDetail }) {
             : excel.error.message}
         </Alert>
       )}
-      <Table.ScrollContainer minWidth={760 + questions.length * 160}>
+      <Table.ScrollContainer minWidth={400 + questions.length * 180}>
         <Table verticalSpacing="sm" data-testid="collation-table">
           <Table.Thead>
             <Table.Tr>
               <Table.Th w={150}>기관</Table.Th>
-              <Table.Th w={120}>의견 유형</Table.Th>
-              <Table.Th>세부의견</Table.Th>
+              <Table.Th w={90}>회신</Table.Th>
               {questions.map((q, index) => (
                 <Table.Th key={q.questionId} w={160}>
                   {index + 1}. {q.title}
@@ -84,17 +81,12 @@ export function CollationPanel({ request }: { request: OpinionRequestDetail }) {
                 </Table.Td>
                 <Table.Td>
                   {r.replied ? (
-                    <ReplyTypeBadge type={r.type} size="xs" />
+                    <Text size="sm">회신</Text>
                   ) : (
                     <Text size="sm" c="dimmed">
                       미회신
                     </Text>
                   )}
-                </Table.Td>
-                <Table.Td>
-                  <Text size="sm" className={classes.content}>
-                    {r.content ?? ''}
-                  </Text>
                 </Table.Td>
                 {questions.map((q) => (
                   <Table.Td key={q.questionId}>
@@ -115,7 +107,7 @@ export function CollationPanel({ request }: { request: OpinionRequestDetail }) {
               </Table.Tr>
             ))}
             {data.rows.length === 0 && (
-              <TableEmpty colSpan={4 + questions.length} message="대상 기관이 없습니다." />
+              <TableEmpty colSpan={3 + questions.length} message="대상 기관이 없습니다." />
             )}
           </Table.Tbody>
         </Table>

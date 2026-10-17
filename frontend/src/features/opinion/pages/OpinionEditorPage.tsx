@@ -107,14 +107,16 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
       title: existing?.title ?? '',
       content: existing?.content ?? '',
       dueDate: existing?.dueDate ?? dayjs().add(7, 'day').format('YYYY-MM-DD'),
-      questions:
-        existing?.questions.map((q) => ({
-          key: `q${q.id}`,
-          type: q.type,
-          title: q.title,
-          required: q.required,
-          options: q.options.map((o) => o.label),
-        })) ?? [],
+      questions: existing?.questions.map((q) => ({
+        key: `q${q.id}`,
+        type: q.type,
+        title: q.title,
+        required: q.required,
+        options: q.options.map((o) => o.label),
+      })) ?? [
+        // 새 요청은 빈 객관식 질문 하나로 시작한다. 질문이 있어야 회신 요청을 시작할 수 있다.
+        { key: 'n-first', type: 'SINGLE_CHOICE', title: '', required: true, options: ['', ''] },
+      ],
     },
   });
   const [targets, setTargets] = useState<TargetValue[]>(
@@ -308,7 +310,7 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
               <Text size="sm" c="dimmed">
                 {questionsLocked
                   ? '회신을 받기 시작한 요청이라 질문은 고칠 수 없습니다.'
-                  : '기관에 물을 내용을 질문으로 나눠 넣습니다. 객관식(하나 고르기), 체크박스(여러 개 고르기), 주관식(글로 답하기) 중에서 고릅니다. 기관은 의견 유형·세부의견과 함께 답합니다.'}
+                  : '기관에 물을 내용을 질문으로 나눠 넣습니다. 객관식(하나 고르기), 체크박스(여러 개 고르기), 주관식(글로 답하기) 중에서 고릅니다. 기관은 이 질문에만 답해 회신합니다. 회신 요청을 시작하려면 질문이 하나 이상 있어야 합니다.'}
               </Text>
             </div>
             <QuestionBuilder form={form} locked={questionsLocked} newKey={newKey} />
