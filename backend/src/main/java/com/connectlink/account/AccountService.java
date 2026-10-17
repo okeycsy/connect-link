@@ -13,7 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 계정. 로그인 확인과 로그인 사용자({@link CurrentUser}) 만들기를 맡는다. 가입 신청은 {@link SignUpService}, 회사 이메일 인증은
- * {@link EmailVerificationService}, 가입 승인·반려는 {@link SignUpReviewService} 가 한다. 탈퇴는 다음 단계에서 더한다.
+ * {@link EmailVerificationService}, 가입 승인·반려는 {@link SignUpReviewService}, 탈퇴는 {@link
+ * WithdrawalService} 가 한다.
  */
 @Service
 @Transactional(readOnly = true)
@@ -60,6 +61,11 @@ public class AccountService {
       }
     }
     return toCurrentUser(account);
+  }
+
+  /** 이 이메일의 계정이 지금 사용 중인지. 다른 곳에서 탈퇴한 세션을 끝내려고 API 요청마다 확인한다. */
+  public boolean isActive(String email) {
+    return repository.existsByEmailAndStatus(normalizeEmail(email), AccountStatus.ACTIVE);
   }
 
   /** 사용 중인 계정 전부. 관리자, 결제원, 참가기관, 이용기관 순이고 같은 구분 안에서는 이름순이다. */

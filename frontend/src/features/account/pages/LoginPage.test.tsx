@@ -79,6 +79,24 @@ describe('LoginPage', () => {
     });
   });
 
+  it('탈퇴하고 오면 탈퇴 완료 안내를 보이고, 로그인에 실패하면 실패 안내로 바꾼다', async () => {
+    POST.mockResolvedValue(
+      fail(401, { code: 'INVALID_CREDENTIALS', detail: '이메일 또는 비밀번호가 맞지 않습니다.' }),
+    );
+    renderWithProviders(<LoginPage />, { route: '/login?withdrawn=1', path: '/login' });
+    expect(await screen.findByTestId('login-withdrawn')).toHaveTextContent(
+      '탈퇴가 완료되었습니다.',
+    );
+
+    fireEvent.change(screen.getByLabelText('회사 이메일'), {
+      target: { value: 'kim.gana@gana.example.com' },
+    });
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'wrong' } });
+    fireEvent.click(screen.getByRole('button', { name: '로그인' }));
+    expect(await screen.findByTestId('login-error')).toBeInTheDocument();
+    expect(screen.queryByTestId('login-withdrawn')).not.toBeInTheDocument();
+  });
+
   it('빈 칸이면 서버를 부르지 않고 필드 메시지를 보여 준다', async () => {
     renderWithProviders(<LoginPage />, { route: '/login', path: '/login' });
     fireEvent.click(screen.getByRole('button', { name: '로그인' }));

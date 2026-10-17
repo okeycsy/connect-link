@@ -72,6 +72,18 @@ const rejected = [
   }),
 ];
 
+const approved = [
+  application({
+    id: 4,
+    email: 'kim.gana@gana.example.com',
+    name: '김가나',
+    status: 'ACTIVE',
+    statusLabel: '사용 중',
+    reviewedAt: '2026-09-26T10:00:00',
+    reviewerName: '홍길동',
+  }),
+];
+
 // vi.mock 은 파일 맨 위로 끌어올려지므로 mock 안에서 쓰는 값은 vi.hoisted 로 만든다.
 const calls = vi.hoisted(() => ({
   list: [] as Record<string, unknown>[],
@@ -107,14 +119,19 @@ vi.mock('../../../api/client', async (importOriginal) => {
                 ? pending
                 : query.status === 'REJECTED'
                   ? rejected
-                  : [];
+                  : approved;
             return { data: page(content), response: new Response() };
           }
           if (path === '/api/v1/sign-ups/counts') {
-            return { data: { pending: 2, approved: 0, rejected: 1 }, response: new Response() };
+            return { data: { pending: 2, approved: 1, rejected: 1 }, response: new Response() };
+          }
+          if (path === '/api/v1/accounts/{id}/withdrawal') {
+            return { data: { allowed: true, blockers: [] }, response: new Response() };
           }
           if (path === '/api/v1/sign-ups/{id}') {
-            const found = [...pending, ...rejected].find((a) => a.id === options?.params?.path?.id);
+            const found = [...pending, ...rejected, ...approved].find(
+              (a) => a.id === options?.params?.path?.id,
+            );
             return { data: found, response: new Response() };
           }
           throw new Error(`unexpected GET ${path}`);
@@ -127,6 +144,20 @@ vi.mock('../../../api/client', async (importOriginal) => {
         ) => {
           const id = options.params.path.id;
           calls.post.push({ path, id, body: options.body });
+          if (path === '/api/v1/accounts/{id}/withdrawal') {
+            if (!options.body?.reason.trim()) {
+              return {
+                error: {
+                  status: 400,
+                  code: 'VALIDATION_FAILED',
+                  detail: '입력값을 확인해 주세요.',
+                  fieldErrors: [{ field: 'reason', message: '탈퇴 처리 사유를 적어 주세요.' }],
+                },
+                response: new Response(null, { status: 400 }),
+              };
+            }
+            return { response: new Response(null, { status: 204 }) };
+          }
           const target = pending.find((a) => a.id === id)!;
           if (path === '/api/v1/sign-ups/{id}/rejection') {
             if (!options.body?.reason.trim()) {
@@ -231,5 +262,33 @@ describe('SignUpApprovalPage', () => {
         { path: '/api/v1/sign-ups/{id}/approval', id: 2, body: undefined },
       ]),
     );
+  });
+
+  it('승인한 참가기관 담당자는 사유를 적어 탈퇴 처리한다', async () => {
+    renderPage('/account-info/admin/sign-ups?id=4');
+
+    const detail = await screen.findByTestId('sign-up-detail');
+    expect(detail).toHaveTextContent('kim.gana@gana.example.com');
+    expect(screen.queryByRole('button', { name: '승인' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '탈퇴 처리' }));
+    const dialog = await screen.findByRole('dialog', { name: '탈퇴 처리' });
+    expect(dialog).toHaveTextContent('가나은행 김가나 님의 계정을 탈퇴 처리합니다.');
+
+    const submit = within(dialog).getByRole('button', { name: '탈퇴 처리' });
+    await waitFor(() => expect(submit).toBeEnabled());
+    fireEvent.click(submit);
+    expect(await within(dialog).findByText('탈퇴 처리 사유를 적어 주세요.')).toBeInTheDocument();
+
+    fireEvent.change(within(dialog).getByLabelText(/탈퇴 처리 사유/), {
+      target: { value: '인사이동으로 담당이 끝났습니다.' },
+    });
+    fireEvent.click(submit);
+    await waitFor(() => expect(calls.post).toHaveLength(2));
+    expect(calls.post[1]).toEqual({
+      path: '/api/v1/accounts/{id}/withdrawal',
+      id: 4,
+      body: { reason: '인사이동으로 담당이 끝났습니다.' },
+    });
+    await waitFor(() => expect(screen.queryByTestId('sign-up-detail')).not.toBeInTheDocument());
   });
 });

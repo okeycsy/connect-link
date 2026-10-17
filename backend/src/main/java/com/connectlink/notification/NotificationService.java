@@ -105,6 +105,21 @@ public class NotificationService {
     return unread.size();
   }
 
+  /**
+   * 한 사람의 알림 센터 알림을 모두 지운다(탈퇴). 메일·매터모스트 발송함 기록은 발송 이력이라 남기고 알림과의 연결만 끊는다.
+   *
+   * @return 지운 알림 수
+   */
+  public int deleteAllFor(String recipientEmail) {
+    List<Long> ids = notificationRepository.findIdsByRecipientEmail(recipientEmail);
+    if (ids.isEmpty()) {
+      return 0;
+    }
+    outboxRepository.detachNotifications(ids);
+    notificationRepository.deleteAllByIdInBatch(ids);
+    return ids.size();
+  }
+
   @Transactional(readOnly = true)
   public PageResponse<NotificationOutboxResponse> listOutbox(CurrentUser user, Pageable pageable) {
     accessPolicy.ensureCanViewOutbox(user);

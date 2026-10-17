@@ -13,7 +13,7 @@ import {
   Title,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { IconAlertCircle, IconClock } from '@tabler/icons-react';
+import { IconAlertCircle, IconCircleCheck, IconClock } from '@tabler/icons-react';
 import { useState } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
@@ -40,6 +40,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const next = safeNextPath(params.get('next'));
+  const withdrawn = params.has('withdrawn');
   const { data: businesses } = useBusinesses();
   const { data: me } = useMe();
   const { data: demo } = useDemoAccounts();
@@ -123,6 +124,17 @@ export function LoginPage() {
                     회사 이메일로 로그인합니다.
                   </Text>
                 </div>
+                {withdrawn && !login.isError && (
+                  <Alert
+                    variant="light"
+                    color="sky"
+                    icon={<IconCircleCheck size={18} />}
+                    data-testid="login-withdrawn"
+                  >
+                    탈퇴가 완료되었습니다. 확인 메일을 회사 이메일로 보냈습니다. 같은 이메일로 다시
+                    가입할 수 있습니다.
+                  </Alert>
+                )}
                 {showAlert && (
                   <Alert
                     variant="light"

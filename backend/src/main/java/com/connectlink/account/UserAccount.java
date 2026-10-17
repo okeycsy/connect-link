@@ -36,6 +36,12 @@ import org.hibernate.annotations.BatchSize;
 @Table(name = "user_account")
 public class UserAccount extends AuditedEntity {
 
+  /** 탈퇴한 계정의 이름. */
+  public static final String WITHDRAWN_NAME = "탈퇴한 사용자";
+
+  /** 탈퇴한 계정의 비밀번호 칸. BCrypt 형식이 아니라 어떤 비밀번호와도 맞지 않는다. */
+  private static final String WITHDRAWN_PASSWORD_HASH = "!withdrawn";
+
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
@@ -102,6 +108,20 @@ public class UserAccount extends AuditedEntity {
   /** 반려 사유. 반려 메일에 그대로 들어간다. */
   @Column(name = "rejection_reason", length = 500)
   private String rejectionReason;
+
+  /** 탈퇴 일시. 탈퇴하지 않았으면 없다. */
+  @Column(name = "withdrawn_at")
+  private LocalDateTime withdrawnAt;
+
+  /** 탈퇴 처리한 결제원 담당자의 이메일과 그때 이름, 사유. 본인이 탈퇴했으면 없다. */
+  @Column(name = "withdrawn_by_email", length = 200)
+  private String withdrawnByEmail;
+
+  @Column(name = "withdrawn_by_name", length = 50)
+  private String withdrawnByName;
+
+  @Column(name = "withdrawal_reason", length = 500)
+  private String withdrawalReason;
 
   @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
   @BatchSize(size = 50)
@@ -275,6 +295,37 @@ public class UserAccount extends AuditedEntity {
     this.reviewerName = reviewerName;
   }
 
+  /**
+   * 탈퇴. 다시 로그인할 수 없고, 이름·부서·연락처·담당 업무·전산 세부 직무·관리자 권한을 지운다. 회사 이메일은 같은 이메일로 다시 가입할 수 있게 계정마다 다른 빈
+   * 주소({@code withdrawn-{id}@withdrawn.invalid})로 바꾼다. 행은 남겨 소속 기관, 가입 승인 기록, 탈퇴 일시와 처리한 사람·사유를 둔다.
+   *
+   * @param byEmail 탈퇴 처리한 결제원 담당자의 이메일. 본인 탈퇴면 null
+   * @param byName 그 담당자의 이름. 본인 탈퇴면 null
+   * @param reason 탈퇴 처리 사유. 본인 탈퇴면 null
+   * @throws IllegalStateException 사용 중 계정이 아니면
+   */
+  public void withdraw(LocalDateTime now, String byEmail, String byName, String reason) {
+    if (status != AccountStatus.ACTIVE) {
+      throw new IllegalStateException("사용 중 계정만 탈퇴할 수 있습니다: " + status);
+    }
+    this.status = AccountStatus.WITHDRAWN;
+    this.withdrawnAt = now;
+    this.withdrawnByEmail = byEmail;
+    this.withdrawnByName = byName;
+    this.withdrawalReason = reason;
+    this.email = "withdrawn-" + id + "@withdrawn.invalid";
+    this.passwordHash = WITHDRAWN_PASSWORD_HASH;
+    this.name = WITHDRAWN_NAME;
+    this.admin = false;
+    this.department = "";
+    this.team = "";
+    this.jobTitle = "";
+    this.extensionPhone = "";
+    this.mobilePhone = null;
+    this.businesses.clear();
+    this.itRoles.clear();
+  }
+
   /** 회사 이메일의 도메인이 소속 기관에 등록된 도메인과 같은지. 기관에 도메인이 없으면 false 다. */
   public boolean emailDomainMatches() {
     String domain = organization.getEmailDomain();
@@ -355,6 +406,22 @@ public class UserAccount extends AuditedEntity {
 
   public String getRejectionReason() {
     return rejectionReason;
+  }
+
+  public LocalDateTime getWithdrawnAt() {
+    return withdrawnAt;
+  }
+
+  public String getWithdrawnByEmail() {
+    return withdrawnByEmail;
+  }
+
+  public String getWithdrawnByName() {
+    return withdrawnByName;
+  }
+
+  public String getWithdrawalReason() {
+    return withdrawalReason;
   }
 
   /** 담당 업무. 업무 영역 순서(enum 순)다. */

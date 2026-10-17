@@ -18,6 +18,10 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long> 
   @EntityGraph(attributePaths = "organization")
   List<UserAccount> findByStatus(AccountStatus status);
 
+  boolean existsByEmailAndStatus(String email, AccountStatus status);
+
+  long countByAdminTrueAndStatus(AccountStatus status);
+
   /** 반려가 아닌 계정이 이 이메일로 있는지. 반려된 이메일은 다시 신청할 수 있다. */
   boolean existsByEmailAndStatusNot(String email, AccountStatus status);
 

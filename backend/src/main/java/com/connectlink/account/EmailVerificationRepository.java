@@ -9,4 +9,7 @@ public interface EmailVerificationRepository extends JpaRepository<EmailVerifica
   Optional<EmailVerification> findFirstByEmailOrderByIdDesc(String email);
 
   Optional<EmailVerification> findByTokenHash(String tokenHash);
+
+  /** 탈퇴한 사람의 인증 기록을 지운다. */
+  long deleteByEmail(String email);
 }

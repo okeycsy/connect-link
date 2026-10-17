@@ -42,7 +42,7 @@ export function SignUpApprovalPage() {
     <Stack gap="md">
       <PageHeader
         title="가입 승인"
-        description={`${current?.label ?? '이 업무'} 담당으로 들어온 가입 신청입니다. 이메일 도메인과 기관이 맞는지 보고 승인하거나 반려합니다.`}
+        description={`${current?.label ?? '이 업무'} 담당으로 들어온 가입 신청입니다. 이메일 도메인과 기관이 맞는지 보고 승인하거나 반려합니다. 승인한 기관 담당자는 상세에서 탈퇴 처리할 수 있습니다.`}
       />
 
       <Card>
