@@ -11,6 +11,7 @@ import java.util.List;
 public record OpinionRecipientCandidateResponse(
     Long organizationId, String organizationCode, String organizationName, List<Member> members) {
 
+  @Schema(name = "OpinionRecipientCandidateMember")
   public record Member(
       Long accountId,
       String name,

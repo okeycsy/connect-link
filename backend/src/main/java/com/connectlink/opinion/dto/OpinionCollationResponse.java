@@ -18,6 +18,7 @@ public record OpinionCollationResponse(Summary summary, List<Row> rows) {
    * @param replyRate 회신율(%, 반올림). 대상이 없으면 0
    * @param byType 의견 유형별 기관 수와 기관 이름(동의, 조건부 동의, 이견 순)
    */
+  @Schema(name = "OpinionCollationSummary")
   public record Summary(
       int targetCount,
       int repliedCount,
@@ -26,6 +27,7 @@ public record OpinionCollationResponse(Summary summary, List<Row> rows) {
       List<TypeCount> byType,
       List<String> notRepliedOrganizations) {}
 
+  @Schema(name = "OpinionCollationTypeCount")
   public record TypeCount(
       OpinionReplyType type, String label, int count, List<String> organizations) {}
 
@@ -35,6 +37,7 @@ public record OpinionCollationResponse(Summary summary, List<Row> rows) {
    * @param type 제출한 의견 유형. 미회신이면 null
    * @param recipientNames 회신 담당자 이름들
    */
+  @Schema(name = "OpinionCollationRow")
   public record Row(
       Long targetId,
       Long organizationId,

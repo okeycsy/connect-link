@@ -1,0 +1,58 @@
+.row {
+  cursor: pointer;
+
+  &[data-selected] {
+    background: var(--mantine-color-clay-1);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mantine-color-clay-6);
+    outline-offset: -2px;
+  }
+}
+
+.numeric {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 의견 유형 막대. 색은 frontend/CLAUDE.md 2.3 의 차트 순서(동의 sky-6, 조건부 sky-4, 이견 amber-5, 미회신 gray-3). */
+.bar {
+  display: flex;
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--mantine-color-gray-3);
+}
+
+.segment {
+  height: 100%;
+  transition: width 160ms var(--cl-ease);
+}
+
+.agree {
+  background: var(--mantine-color-sky-6);
+}
+
+.conditional {
+  background: var(--mantine-color-sky-4);
+}
+
+.disagree {
+  background: var(--mantine-color-amber-5);
+}
+
+.none {
+  background: var(--mantine-color-gray-3);
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+}
+
+.content {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
