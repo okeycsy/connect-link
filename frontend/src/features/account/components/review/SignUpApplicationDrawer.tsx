@@ -1,6 +1,6 @@
 import { Alert, Badge, Button, Divider, Group, Skeleton, Stack, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconAlertTriangle, IconCircleCheck } from '@tabler/icons-react';
+import { IconAlertTriangle, IconCircleCheck, IconUserOff } from '@tabler/icons-react';
 import { useState, type ReactNode } from 'react';
 
 import { formatDateTime, formatPhone } from '../../../../shared/format';
@@ -9,6 +9,7 @@ import { OrgMonogram } from '../../../../shared/OrgMonogram';
 import { type SignUpApplicationResponse, useSignUpApplication } from '../../hooks';
 import { SignUpStatusBadge } from './SignUpStatusBadge';
 import { ApproveSignUpModal, RejectSignUpModal } from './SignUpReviewModals';
+import { WithdrawAccountModal } from './WithdrawAccountModal';
 
 interface Props {
   /** 보고 있는 신청. null 이면 닫힘. */
@@ -16,10 +17,13 @@ interface Props {
   onClose: () => void;
 }
 
-/** 가입 신청 상세 패널. 승인 대기 신청이면 아래에 반려·승인 버튼이 있고, 둘 다 확인 창을 한 번 거친다. */
+/**
+ * 가입 신청 상세 패널. 승인 대기 신청이면 아래에 반려·승인 버튼이 있고, 승인한(사용 중) 참가기관 담당자면 탈퇴 처리 버튼이 있다. 모두 확인 창을 한 번
+ * 거친다.
+ */
 export function SignUpApplicationDrawer({ applicationId, onClose }: Props) {
   const { data, isPending, isError } = useSignUpApplication(applicationId);
-  const [confirm, setConfirm] = useState<'approve' | 'reject' | null>(null);
+  const [confirm, setConfirm] = useState<'approve' | 'reject' | 'withdraw' | null>(null);
 
   const done = (message: string) => {
     setConfirm(null);
@@ -45,13 +49,25 @@ export function SignUpApplicationDrawer({ applicationId, onClose }: Props) {
         }
         subtitle={data ? `${data.organizationName} · ${data.organizationTypeLabel}` : undefined}
         footer={
-          data?.status === 'PENDING_APPROVAL' && (
+          data?.status === 'PENDING_APPROVAL' ? (
             <>
               <Button color="red" variant="light" onClick={() => setConfirm('reject')}>
                 반려
               </Button>
               <Button onClick={() => setConfirm('approve')}>승인</Button>
             </>
+          ) : (
+            data?.status === 'ACTIVE' &&
+            data.organizationType === 'FINANCE_ORGANIZATION' && (
+              <Button
+                color="red"
+                variant="light"
+                leftSection={<IconUserOff size={16} />}
+                onClick={() => setConfirm('withdraw')}
+              >
+                탈퇴 처리
+              </Button>
+            )
           )
         }
       >
@@ -80,6 +96,12 @@ export function SignUpApplicationDrawer({ applicationId, onClose }: Props) {
             opened={confirm === 'reject'}
             onClose={() => setConfirm(null)}
             onDone={(r) => done(`${r.name} 님의 가입 신청을 반려했습니다. 반려 메일을 보냈습니다.`)}
+          />
+          <WithdrawAccountModal
+            application={data}
+            opened={confirm === 'withdraw'}
+            onClose={() => setConfirm(null)}
+            onDone={() => done(`${data.name} 님을 탈퇴 처리했습니다. 탈퇴 메일을 보냈습니다.`)}
           />
         </>
       )}

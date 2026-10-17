@@ -1,9 +1,11 @@
 import { screen } from '@testing-library/react';
-import dayjs from 'dayjs';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { renderWithProviders } from '../../../test/render';
 import { HomePage } from './HomePage';
+
+// 이번 주 일시중단은 월~금만 그린다. 주말에 돌려도 같은 결과가 나오게 오늘을 수요일로 고정한다.
+const TODAY = '2026-10-14';
 
 const home = {
   business: 'ACCOUNT_INFO',
@@ -56,7 +58,7 @@ const home = {
         {
           title: '다라은행 23:00',
           subtitle: '코어뱅킹 점검 · 확정',
-          dueAt: dayjs().format('YYYY-MM-DD'),
+          dueAt: TODAY,
           urgency: 'SOON',
           link: '/account-info/suspensions',
         },
@@ -111,6 +113,15 @@ vi.mock('../../../api/client', () => ({
 }));
 
 describe('HomePage', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(`${TODAY}T10:00:00+09:00`));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('업무 영역, 인사말, KPI, 최근 소식, 이번 주 일시중단을 보여 주고 확인 필요 담당자는 작게 둔다', async () => {
     renderWithProviders(<HomePage />);
 

@@ -1,8 +1,9 @@
-import { expect, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 
 import {
   applyForGana,
   approveAsHong,
+  closeToast,
   csrf,
   mailbox,
   NEW_ACCOUNT_PASSWORD as PASSWORD,
@@ -11,7 +12,11 @@ import {
 // 공통 세션(데모 관리자)은 탈퇴시키지 않는다. 새로 가입·승인한 계정으로 빈 브라우저에서 시작한다.
 test.use({ storageState: { cookies: [], origins: [] } });
 
-test.describe('내 정보 > 탈퇴', () => {
+/** 가입 승인 표의 한 행(신청자 이름으로 찾는다). */
+const row = (page: Page, name: string) =>
+  page.getByTestId('sign-up-table').getByRole('button', { name: `${name} 가입 신청` });
+
+test.describe('탈퇴', () => {
   test('비밀번호를 다시 넣어 탈퇴하면 모든 세션이 끝나고 같은 이메일로 다시 가입할 수 있다', async ({
     page,
     browser,
@@ -99,5 +104,75 @@ test.describe('내 정보 > 탈퇴', () => {
       page.getByTestId('my-withdraw').getByRole('button', { name: '탈퇴하기' }),
     ).toBeDisabled();
     await page.screenshot({ path: 'screenshots/withdrawal-blocked.png', fullPage: true });
+  });
+
+  test('결제원 담당자는 가입 승인 화면에서 맡은 업무의 기관 담당자를 사유와 함께 탈퇴 처리한다', async ({
+    page,
+    browser,
+    request,
+  }) => {
+    const email = `moved.${Date.now().toString(36).slice(-6)}@gana.example.com`;
+    const name = '이동해';
+    await applyForGana(request, email, name);
+    await approveAsHong(request, email);
+    const approvedList = (await (
+      await request.get('/api/v1/sign-ups?business=account-info&status=ACTIVE&size=100')
+    ).json()) as { content: { id: number; email: string }[] };
+    const id = approvedList.content.find((a) => a.email === email)!.id;
+
+    // 그 업무를 맡지 않은 결제원 담당자(박하늘, CMS)는 API 로도 처리하지 못한다.
+    const park = await request.post('/api/v1/auth/login', {
+      data: { email: 'park.cms@kftc.example.com', password: 'demo1234!' },
+      headers: await csrf(request),
+    });
+    expect(park.ok()).toBeTruthy();
+    const denied = await request.post(`/api/v1/accounts/${id}/withdrawal`, {
+      data: { reason: '사유' },
+      headers: await csrf(request),
+    });
+    expect(denied.status()).toBe(403);
+
+    // 탈퇴 처리될 사람은 다른 브라우저에 로그인해 있다.
+    const target = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    const login = await target.request.post('/api/v1/auth/login', {
+      data: { email, password: PASSWORD },
+      headers: await csrf(target.request),
+    });
+    expect(login.ok()).toBeTruthy();
+
+    await page.goto('/login');
+    await page.getByRole('button', { name: '홍길동 (결제원 · 현업)로 로그인' }).click();
+    await expect(page).toHaveURL(/\/account-info\/home$/);
+    await page.goto('/account-info/admin/sign-ups');
+    await page
+      .getByRole('group', { name: '상태' })
+      .getByText(/^승인 \d+$/)
+      .click();
+    await row(page, name).click();
+    const detail = page.getByTestId('sign-up-detail');
+    await expect(detail).toContainText(email);
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: 'screenshots/withdrawal-staff-drawer.png', fullPage: true });
+
+    await page.getByRole('button', { name: '탈퇴 처리', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: '탈퇴 처리' });
+    await expect(dialog).toContainText(`가나은행 ${name} 님의 계정을 탈퇴 처리합니다.`);
+    const submit = dialog.getByRole('button', { name: '탈퇴 처리' });
+    await expect(submit).toBeEnabled();
+    const reason = '인사이동으로 계좌통합관리 담당이 끝났다고 가나은행에서 알려 왔습니다.';
+    await dialog.getByLabel(/탈퇴 처리 사유/).fill(reason);
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: 'screenshots/withdrawal-staff-confirm.png', fullPage: true });
+    await submit.click();
+    await closeToast(page, `${name} 님을 탈퇴 처리했습니다.`);
+    await expect(row(page, name)).toHaveCount(0);
+
+    // 탈퇴 처리된 사람에게 사유를 담은 메일이 가고, 그 사람의 세션은 끝났다.
+    const mail = (await mailbox(request, email))[0];
+    expect(mail.subject).toBe('[연결고리] 계정이 탈퇴 처리되었습니다');
+    expect(mail.body).toContain('결제원 담당자 홍길동 님이 탈퇴 처리했습니다');
+    expect(mail.body).toContain(`사유: ${reason}`);
+    expect((await target.request.get('/api/v1/me')).status()).toBe(401);
+    await target.close();
   });
 });

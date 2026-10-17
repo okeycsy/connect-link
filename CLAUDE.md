@@ -62,7 +62,7 @@
 | 계정 | `UserAccount` | 로그인 주체. 식별 키는 회사 이메일(소문자). 상태 `AccountStatus` = `PENDING_APPROVAL`(승인 대기), `ACTIVE`(사용 중), `REJECTED`(반려), `WITHDRAWN`(탈퇴). 담당 업무는 `UserAccountBusiness`, 전산 세부 직무는 `UserAccountItRole` |
 | 회사 이메일 인증 | `EmailVerification` | 가입 때 숫자 6자리 코드 확인 한 건. 맞으면 가입 신청에 한 번 쓰는 인증 토큰을 준다. 설정 `app.account.verification.*`. 가입 신청은 `SignUpService` 가 계정을 승인 대기로 만든다 |
 | 가입 승인 | `SignUpReviewService`, `SignUpReviewAccessPolicy` | 승인 대기 계정을 승인(`ACTIVE`)하거나 사유를 적어 반려(`REJECTED`)한다. 처리할 수 있는 사람은 관리자와 신청 업무를 맡은 결제원 담당자. API `/api/v1/sign-ups`(목록·건수·상세, `/{id}/approval`, `/{id}/rejection`), 화면 `/{업무}/admin/sign-ups` |
-| 탈퇴 | `WithdrawalService`, `WithdrawalCheck`, `WithdrawalBlocker`, `AccountWithdrawnEvent` | 본인이 비밀번호를 다시 넣어 탈퇴한다(API `/api/v1/me/withdrawal`, 화면 내 정보). 계정은 `WITHDRAWN` 으로 남고 개인 정보는 지운다. 막는 규칙은 기능 모듈이 `WithdrawalCheck` 빈 하나로 더하고(예: 후임자 규칙), 탈퇴 뒤 자기 데이터는 `AccountWithdrawnEvent` 를 받아 지운다 |
+| 탈퇴 | `WithdrawalService`, `WithdrawalAccessPolicy`, `WithdrawalCheck`, `WithdrawalBlocker`, `AccountWithdrawnEvent` | 본인이 비밀번호를 다시 넣어 탈퇴한다(API `/api/v1/me/withdrawal`, 화면 내 정보). 결제원 담당자는 맡은 업무의 참가기관 담당자를 사유를 적어 탈퇴 처리한다(API `/api/v1/accounts/{id}/withdrawal`, 화면 가입 승인 상세). 계정은 `WITHDRAWN` 으로 남고 개인 정보는 지운다. 막는 규칙은 기능 모듈이 `WithdrawalCheck` 빈 하나로 더하고(예: 후임자 규칙), 탈퇴 뒤 자기 데이터는 `AccountWithdrawnEvent` 를 받아 지운다 |
 | 담당자 연락처 | `Contact` | 계정이 없는 담당자(후임자 등)도 존재 가능 |
 | 기관 업무 참여 | `OrganizationBusiness` | 기관이 참여하는 업무 영역 한 건. 레일별 조회 범위의 기준. 테이블 `organization_business` |
 | 업무 | `Business` | `ACCOUNT_INFO`(계좌통합관리), `AUTO_TRANSFER`(자동이체통합관리), `LOAN_TRANSFER`(대출이동), `CMS` |

@@ -272,6 +272,30 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/accounts/{id}/withdrawal': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 탈퇴 처리 가능 여부 조회
+     * @description 이 계정을 지금 탈퇴 처리할 수 있는지와, 막혀 있으면 그 까닭을 돌려준다. 사용 중 계정이 아니면 409 ACCOUNT_NOT_ACTIVE.
+     */
+    get: operations['check_1'];
+    put?: never;
+    /**
+     * 탈퇴 처리
+     * @description 사유를 받아 참가기관 담당자의 계정을 탈퇴시키고, 그 담당자에게 사유를 담은 메일을 보낸다. 그 담당자의 세션은 다음 요청에서 끝난다. 사용 중 계정이 아니면 409 ACCOUNT_NOT_ACTIVE, 막는 까닭이 있으면 409 WITHDRAWAL_BLOCKED.
+     */
+    post: operations['withdraw_1'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/sign-ups/{id}': {
     parameters: {
       query?: never;
@@ -802,6 +826,9 @@ export interface components {
       uploadedBy: string;
       /** Format: date-time */
       uploadedAt: string;
+    };
+    AccountWithdrawalRequest: {
+      reason: string;
     };
     PageResponseSignUpApplicationResponse: {
       content: components['schemas']['SignUpApplicationResponse'][];
@@ -1473,6 +1500,52 @@ export interface operations {
         content: {
           '*/*': components['schemas']['AttachmentResponse'];
         };
+      };
+    };
+  };
+  check_1: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['WithdrawalCheckResponse'];
+        };
+      };
+    };
+  };
+  withdraw_1: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AccountWithdrawalRequest'];
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
     };
   };

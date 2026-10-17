@@ -261,7 +261,7 @@ class WithdrawalControllerTest {
     // 기능 모듈이 자기 데이터를 지우도록 탈퇴 전 이메일과 담당 업무를 알린다.
     assertThat(events.stream(AccountWithdrawnEvent.class))
         .containsExactly(
-            new AccountWithdrawnEvent(id, email, "GANA", Set.of(Business.ACCOUNT_INFO)));
+            new AccountWithdrawnEvent(id, email, "GANA", Set.of(Business.ACCOUNT_INFO), null));
 
     // 같은 회사 이메일로 다시 가입할 수 있다(인증 코드를 새로 받는다).
     mockMvc
@@ -287,5 +287,120 @@ class WithdrawalControllerTest {
         .perform(get("/api/v1/me").with(TestUsers.as(member)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.email").value(member.email()));
+  }
+
+  // 결제원 담당자의 탈퇴 처리
+
+  private Long idOf(String email) {
+    return accountRepository.findByEmail(email).orElseThrow().getId();
+  }
+
+  private ResultActions withdrawByStaff(Long id, String reason, CurrentUser actor)
+      throws Exception {
+    return mockMvc.perform(
+        postJson("/api/v1/accounts/" + id + "/withdrawal", Map.of("reason", reason))
+            .with(TestUsers.as(actor)));
+  }
+
+  @Test
+  void 결제원_담당자는_맡은_업무의_참가기관_담당자를_사유와_함께_탈퇴_처리한다() throws Exception {
+    String email = activeAccount("staff");
+    Long id = idOf(email);
+    MockHttpSession target = login(email);
+    mockMvc
+        .perform(
+            get("/api/v1/accounts/" + id + "/withdrawal")
+                .with(TestUsers.as(TestUsers.KFTC_ACCOUNT_INFO)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.allowed").value(true));
+
+    withdrawByStaff(id, "  인사이동으로 담당이 끝났습니다.  ", TestUsers.KFTC_ACCOUNT_INFO)
+        .andExpect(status().isNoContent());
+
+    // 탈퇴 처리된 사람의 세션은 다음 요청에서 끝난다.
+    perform(get("/api/v1/me"), target).andExpect(status().isUnauthorized());
+    UserAccount withdrawn = accountRepository.findById(id).orElseThrow();
+    assertThat(withdrawn.getStatus()).isEqualTo(AccountStatus.WITHDRAWN);
+    assertThat(withdrawn.getName()).isEqualTo(UserAccount.WITHDRAWN_NAME);
+    assertThat(withdrawn.getWithdrawnByName()).isEqualTo("홍길동");
+    assertThat(withdrawn.getWithdrawnByEmail()).isEqualTo(TestUsers.KFTC_ACCOUNT_INFO.email());
+    assertThat(withdrawn.getWithdrawalReason()).isEqualTo("인사이동으로 담당이 끝났습니다.");
+    NotificationOutbox mail =
+        outboxRepository
+            .findTop5ByChannelAndRecipientOrderByIdDesc(NotificationChannel.EMAIL, email)
+            .get(0);
+    assertThat(mail.getSubject()).isEqualTo("[연결고리] 계정이 탈퇴 처리되었습니다");
+    assertThat(mail.getBody())
+        .contains("결제원 담당자 홍길동 님이 탈퇴 처리했습니다")
+        .contains("사유: 인사이동으로 담당이 끝났습니다.");
+    assertThat(events.stream(AccountWithdrawnEvent.class))
+        .containsExactly(
+            new AccountWithdrawnEvent(
+                id,
+                email,
+                "GANA",
+                Set.of(Business.ACCOUNT_INFO),
+                TestUsers.KFTC_ACCOUNT_INFO.email()));
+
+    // 이미 탈퇴한 계정은 다시 처리하지 않는다.
+    withdrawByStaff(id, "다시", TestUsers.KFTC_ACCOUNT_INFO)
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("ACCOUNT_NOT_ACTIVE"));
+  }
+
+  @Test
+  void 다른_업무만_맡은_결제원_담당자와_참가기관_담당자는_탈퇴_처리하지_못한다() throws Exception {
+    Long id = idOf(activeAccount("deny"));
+    withdrawByStaff(id, "사유", TestUsers.KFTC_CMS).andExpect(status().isForbidden());
+    withdrawByStaff(id, "사유", TestUsers.GANA_MEMBER).andExpect(status().isForbidden());
+    mockMvc
+        .perform(
+            get("/api/v1/accounts/" + id + "/withdrawal").with(TestUsers.as(TestUsers.KFTC_CMS)))
+        .andExpect(status().isForbidden());
+    assertThat(accountRepository.findById(id).orElseThrow().getStatus())
+        .isEqualTo(AccountStatus.ACTIVE);
+  }
+
+  @Test
+  void 관리자는_업무와_상관없이_탈퇴_처리하고_결제원_계정은_처리하지_못한다() throws Exception {
+    Long id = idOf(activeAccount("admin"));
+    withdrawByStaff(id, "퇴사", TestUsers.ADMIN).andExpect(status().isNoContent());
+    withdrawByStaff(idOf(TestUsers.KFTC_CMS.email()), "사유", TestUsers.ADMIN)
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void 탈퇴_처리_사유가_없거나_승인_대기_계정이면_처리하지_않는다() throws Exception {
+    Long id = idOf(activeAccount("reason"));
+    withdrawByStaff(id, " ", TestUsers.KFTC_ACCOUNT_INFO)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.fieldErrors[0].field").value("reason"))
+        .andExpect(jsonPath("$.fieldErrors[0].message").value("탈퇴 처리 사유를 적어 주세요."));
+    withdrawByStaff(idOf("han.gana@gana.example.com"), "사유", TestUsers.KFTC_ACCOUNT_INFO)
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("ACCOUNT_NOT_ACTIVE"));
+    mockMvc
+        .perform(
+            post("/api/v1/accounts/999999/withdrawal")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"reason\":\"사유\"}")
+                .with(csrf())
+                .with(TestUsers.as(TestUsers.KFTC_ACCOUNT_INFO)))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void 기능_모듈의_확인은_탈퇴_처리도_막는다() throws Exception {
+    Long id = idOf(activeAccount("blocked"));
+    mockMvc
+        .perform(
+            get("/api/v1/accounts/" + id + "/withdrawal")
+                .with(TestUsers.as(TestUsers.KFTC_ACCOUNT_INFO)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.allowed").value(false))
+        .andExpect(jsonPath("$.blockers[0].code").value("SUCCESSOR_REQUIRED"));
+    withdrawByStaff(id, "사유", TestUsers.KFTC_ACCOUNT_INFO)
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("WITHDRAWAL_BLOCKED"));
   }
 }

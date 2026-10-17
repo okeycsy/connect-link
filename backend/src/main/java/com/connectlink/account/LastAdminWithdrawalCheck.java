@@ -15,8 +15,8 @@ class LastAdminWithdrawalCheck implements WithdrawalCheck {
   }
 
   @Override
-  public List<WithdrawalBlocker> check(CurrentUser user) {
-    if (!user.admin() || repository.countByAdminTrueAndStatus(AccountStatus.ACTIVE) > 1) {
+  public List<WithdrawalBlocker> check(CurrentUser account) {
+    if (!account.admin() || repository.countByAdminTrueAndStatus(AccountStatus.ACTIVE) > 1) {
       return List.of();
     }
     return List.of(

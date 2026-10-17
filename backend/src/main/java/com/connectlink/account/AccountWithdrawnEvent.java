@@ -11,6 +11,11 @@ import java.util.Set;
  * @param email 탈퇴 전 회사 이메일. 계정 행에서는 이미 지웠다
  * @param organizationCode 소속 기관 코드
  * @param businesses 탈퇴 전 담당 업무
+ * @param withdrawnByEmail 탈퇴 처리한 결제원 담당자의 이메일. 본인이 탈퇴했으면 null
  */
 public record AccountWithdrawnEvent(
-    Long accountId, String email, String organizationCode, Set<Business> businesses) {}
+    Long accountId,
+    String email,
+    String organizationCode,
+    Set<Business> businesses,
+    String withdrawnByEmail) {}

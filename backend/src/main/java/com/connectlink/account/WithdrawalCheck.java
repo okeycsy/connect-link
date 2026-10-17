@@ -10,6 +10,10 @@ import java.util.List;
  */
 public interface WithdrawalCheck {
 
-  /** 이 사용자의 탈퇴를 막는 까닭. 막을 까닭이 없으면 빈 목록이다. */
-  List<WithdrawalBlocker> check(CurrentUser user);
+  /**
+   * 이 계정의 탈퇴를 막는 까닭. 막을 까닭이 없으면 빈 목록이다.
+   *
+   * @param account 탈퇴할 계정의 사용자(결제원 담당자가 탈퇴 처리할 때도 처리하는 사람이 아니라 탈퇴할 사람이다)
+   */
+  List<WithdrawalBlocker> check(CurrentUser account);
 }

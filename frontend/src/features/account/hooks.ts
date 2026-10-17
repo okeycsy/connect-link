@@ -48,6 +48,7 @@ export const signUpKeys = {
   list: (params: SignUpApplicationParams) => ['sign-ups', 'list', params] as const,
   counts: (business: string) => ['sign-ups', 'counts', business] as const,
   detail: (id: number) => ['sign-ups', 'detail', id] as const,
+  withdrawalCheck: (accountId: number) => ['sign-ups', 'withdrawal-check', accountId] as const,
 };
 
 /** 로그인하지 않았거나 세션이 끝났다는 서버 응답(401)인지. */
@@ -247,6 +248,36 @@ export function useApproveSignUp() {
   return useMutation({
     mutationFn: async (id: number) =>
       unwrap(await api.POST('/api/v1/sign-ups/{id}/approval', { params: { path: { id } } })),
+    onSuccess: () => invalidateAfterReview(queryClient),
+  });
+}
+
+/** 탈퇴 처리: 이 계정을 지금 탈퇴 처리할 수 있는지와 막는 까닭. 확인 창을 열 때만 읽는다. */
+export function useAccountWithdrawalCheck(accountId: number, enabled: boolean) {
+  return useQuery({
+    queryKey: signUpKeys.withdrawalCheck(accountId),
+    queryFn: async () =>
+      unwrap(
+        await api.GET('/api/v1/accounts/{id}/withdrawal', { params: { path: { id: accountId } } }),
+      ),
+    enabled,
+  });
+}
+
+/**
+ * 결제원 담당자의 탈퇴 처리. 사유가 탈퇴 처리된 담당자에게 가는 메일에 그대로 들어간다. 사유가 비면 400 과 reason 필드 오류, 막는 까닭이 생겼으면
+ * 409 WITHDRAWAL_BLOCKED.
+ */
+export function useWithdrawAccount() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, reason }: { id: number; reason: string }) => {
+      const result = await api.POST('/api/v1/accounts/{id}/withdrawal', {
+        params: { path: { id } },
+        body: { reason },
+      });
+      if (!result.response.ok) throw new ApiError(result.response.status, result.error);
+    },
     onSuccess: () => invalidateAfterReview(queryClient),
   });
 }
