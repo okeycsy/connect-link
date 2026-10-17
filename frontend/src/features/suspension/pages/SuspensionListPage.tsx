@@ -248,7 +248,7 @@ function SuspensionTable({
       <Table.Thead>
         <Table.Tr>
           <Table.Th w={150}>기관</Table.Th>
-          <Table.Th w={230}>중단 일시</Table.Th>
+          <Table.Th w={290}>중단 일시</Table.Th>
           <Table.Th>중단 이유</Table.Th>
           <Table.Th w={110}>상태</Table.Th>
           <Table.Th w={110}>등록</Table.Th>
@@ -282,7 +282,7 @@ function SuspensionTable({
             </Table.Td>
             <Table.Td>
               <Group gap={6} wrap="nowrap">
-                <Text size="sm" className={classes.numeric}>
+                <Text size="sm" className={classes.when}>
                   {formatDateTimeRange(r.startAt, r.endAt)}
                 </Text>
                 <SuspensionPeriodBadge period={r.period} size="xs" />

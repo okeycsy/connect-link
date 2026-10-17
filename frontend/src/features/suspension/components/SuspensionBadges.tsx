@@ -43,7 +43,7 @@ export function SuspensionPeriodBadge({
 }) {
   if (period !== 'CURRENT') return null;
   return (
-    <Badge size={size} color="amber">
+    <Badge size={size} color="amber" style={{ flexShrink: 0 }}>
       중단 중
     </Badge>
   );

@@ -11,6 +11,11 @@
   font-variant-numeric: tabular-nums;
 }
 
+.when {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .content {
   white-space: pre-wrap;
   word-break: break-word;
