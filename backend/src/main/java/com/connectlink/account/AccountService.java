@@ -2,6 +2,7 @@ package com.connectlink.account;
 
 import com.connectlink.auth.CurrentUser;
 import com.connectlink.common.BusinessException;
+import com.connectlink.organization.Business;
 import com.connectlink.organization.Organization;
 import java.util.Comparator;
 import java.util.List;
@@ -76,6 +77,35 @@ public class AccountService {
                 .thenComparing(a -> a.getOrganization().getType().ordinal())
                 .thenComparing(UserAccount::getName))
         .map(AccountService::toCurrentUser)
+        .toList();
+  }
+
+  /**
+   * 한 업무를 맡은 사용 중 계정. 사람 이름순이고 기관으로 묶는 것은 쓰는 쪽이 한다. 다른 모듈이 기관 담당자를 고를 때 쓴다(연락처 모듈이 생기면 그쪽으로 옮길 수
+   * 있다).
+   */
+  public List<BusinessMember> listActiveMembers(Business business) {
+    return repository.findByStatus(AccountStatus.ACTIVE).stream()
+        .filter(a -> a.getBusinesses().contains(business))
+        .sorted(Comparator.comparing(UserAccount::getName))
+        .map(
+            a ->
+                new BusinessMember(
+                    a.getId(),
+                    a.getEmail(),
+                    a.getName(),
+                    a.getOrganization().getId(),
+                    a.getOrganization().getCode(),
+                    a.getDepartment(),
+                    a.getTeam(),
+                    a.getJobTitle(),
+                    a.getJobRole(),
+                    a.getJobRole().describe(a.getItRoles()),
+                    a.getBusinessDetails().stream()
+                        .filter(b -> b.getBusiness() == business)
+                        .findFirst()
+                        .map(UserAccountBusiness::getSubBusiness)
+                        .orElse(null)))
         .toList();
   }
 

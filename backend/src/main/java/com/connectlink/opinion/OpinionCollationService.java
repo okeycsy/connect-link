@@ -1,0 +1,185 @@
+package com.connectlink.opinion;
+
+import com.connectlink.auth.CurrentUser;
+import com.connectlink.common.BusinessException;
+import com.connectlink.common.NetworkZoneResolver;
+import com.connectlink.opinion.dto.OpinionCollationResponse;
+import com.connectlink.opinion.dto.OpinionCollationResponse.Row;
+import com.connectlink.opinion.dto.OpinionCollationResponse.Summary;
+import com.connectlink.opinion.dto.OpinionCollationResponse.TypeCount;
+import com.connectlink.opinion.dto.OpinionReminderResponse;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * 회신 관리와 취합. 회신 여부 자동 구분, 의견 유형별 기관 수·목록, 회신율, 미회신 기관 리마인드 메일과 그 이력, 기관별 취합표와 엑셀을 맡는다. 모두 그 업무를 맡은
+ * 결제원 담당자와 관리자만 쓴다. 엑셀은 내부망 전용이다.
+ */
+@Service
+@Transactional(readOnly = true)
+public class OpinionCollationService {
+
+  private final OpinionRequestService requestService;
+  private final OpinionReplyRepository replyRepository;
+  private final OpinionReminderRepository reminderRepository;
+  private final OpinionNotifier notifier;
+  private final NetworkZoneResolver networkZoneResolver;
+
+  public OpinionCollationService(
+      OpinionRequestService requestService,
+      OpinionReplyRepository replyRepository,
+      OpinionReminderRepository reminderRepository,
+      OpinionNotifier notifier,
+      NetworkZoneResolver networkZoneResolver) {
+    this.requestService = requestService;
+    this.replyRepository = replyRepository;
+    this.reminderRepository = reminderRepository;
+    this.notifier = notifier;
+    this.networkZoneResolver = networkZoneResolver;
+  }
+
+  /** 회신 현황과 기관별 취합표. 대상 기관마다 한 줄이고 대상에 넣은 순서다. */
+  public OpinionCollationResponse collation(CurrentUser user, Long requestId) {
+    return build(requestService.loadManaged(user, requestId));
+  }
+
+  /** 취합표 엑셀(결과 요약 + 기관별 취합표 두 장). 내부망에서만 내려받는다. */
+  public OpinionExcel excel(CurrentUser user, Long requestId) {
+    OpinionRequest request = requestService.loadManaged(user, requestId);
+    networkZoneResolver.ensureInternal("엑셀 다운로드");
+    return OpinionExcel.of(request, build(request), requestService.now());
+  }
+
+  /**
+   * 미회신 기관의 회신 담당자에게 리마인드 메일을 보내고 이력을 남긴다. 기관을 고르지 않으면 미회신 기관 전부이고, 회신한 기관은 골라도 빠진다. 받을 담당자가 한 명도
+   * 없으면 400 이다.
+   */
+  @Transactional
+  public OpinionReminderResponse remind(
+      CurrentUser user, Long requestId, List<Long> organizationIds) {
+    OpinionRequest request = requestService.loadManaged(user, requestId);
+    if (request.getStatus() != OpinionRequestStatus.OPEN) {
+      throw BusinessException.conflict("OPINION_REQUEST_STATUS", "회신중 요청에만 리마인드 메일을 보냅니다.");
+    }
+    Set<Long> replied =
+        replyRepository.findByTarget_Request_Id(request.getId()).stream()
+            .filter(OpinionReply::isReplied)
+            .map(r -> r.getTarget().getId())
+            .collect(Collectors.toSet());
+    Set<Long> chosen =
+        organizationIds == null || organizationIds.isEmpty() ? null : Set.copyOf(organizationIds);
+    List<String> organizations = new ArrayList<>();
+    Set<String> emails = new LinkedHashSet<>();
+    for (OpinionTarget target : request.getTargets()) {
+      if (replied.contains(target.getId())
+          || (chosen != null && !chosen.contains(target.getOrganization().getId()))
+          || target.getRecipients().isEmpty()) {
+        continue;
+      }
+      organizations.add(target.getOrganization().getName());
+      target.getRecipients().forEach(r -> emails.add(r.getEmail()));
+    }
+    if (emails.isEmpty()) {
+      throw new BusinessException(
+          HttpStatus.BAD_REQUEST,
+          "OPINION_REMINDER_NO_RECIPIENT",
+          "리마인드 메일을 받을 미회신 기관 담당자가 없습니다. 대상 기관의 회신 담당자를 확인해 주세요.");
+    }
+    notifier.remind(
+        request, emails, ChronoUnit.DAYS.between(requestService.today(), request.getDueDate()));
+    OpinionReminder reminder =
+        reminderRepository.saveAndFlush(
+            new OpinionReminder(
+                request,
+                user.name(),
+                organizations.size(),
+                emails.size(),
+                String.join(", ", organizations)));
+    return toResponse(reminder);
+  }
+
+  /** 리마인드 메일 발송 이력, 최신순. */
+  public List<OpinionReminderResponse> reminders(CurrentUser user, Long requestId) {
+    OpinionRequest request = requestService.loadManaged(user, requestId);
+    return reminderRepository.findByRequest_IdOrderByCreatedAtDescIdDesc(request.getId()).stream()
+        .map(OpinionCollationService::toResponse)
+        .toList();
+  }
+
+  OpinionCollationResponse build(OpinionRequest request) {
+    Map<Long, OpinionReply> replies =
+        replyRepository.findByTarget_Request_Id(request.getId()).stream()
+            .collect(Collectors.toMap(r -> r.getTarget().getId(), Function.identity()));
+    List<Row> rows = new ArrayList<>();
+    for (OpinionTarget target : request.getTargets()) {
+      OpinionReply reply = replies.get(target.getId());
+      boolean replied = reply != null && reply.isReplied();
+      rows.add(
+          new Row(
+              target.getId(),
+              target.getOrganization().getId(),
+              target.getOrganization().getCode(),
+              target.getOrganization().getName(),
+              target.getForm() == null ? null : target.getForm().getName(),
+              target.getRecipients().stream().map(OpinionTargetRecipient::getName).toList(),
+              replied,
+              reply == null ? null : reply.getId(),
+              reply == null ? null : reply.getStatus(),
+              reply == null ? null : reply.getStatus().getLabel(),
+              replied ? reply.getType() : null,
+              replied ? reply.getType().getLabel() : null,
+              replied ? reply.getContent() : null,
+              reply == null ? null : reply.getReplierName(),
+              replied ? reply.getSubmittedAt() : null,
+              reply == null ? null : reply.getRevisionReason(),
+              reply == null ? null : reply.getRevisionRequestedAt()));
+    }
+    int total = rows.size();
+    int repliedCount = (int) rows.stream().filter(Row::replied).count();
+    List<TypeCount> byType =
+        Arrays.stream(OpinionReplyType.values())
+            .map(
+                type -> {
+                  List<String> names =
+                      rows.stream()
+                          .filter(r -> r.type() == type)
+                          .map(Row::organizationName)
+                          .toList();
+                  return new TypeCount(type, type.getLabel(), names.size(), names);
+                })
+            .toList();
+    List<String> notReplied =
+        rows.stream().filter(r -> !r.replied()).map(Row::organizationName).toList();
+    return new OpinionCollationResponse(
+        new Summary(
+            total,
+            repliedCount,
+            total - repliedCount,
+            total == 0 ? 0 : Math.round(repliedCount * 100f / total),
+            byType,
+            notReplied),
+        rows);
+  }
+
+  private static OpinionReminderResponse toResponse(OpinionReminder reminder) {
+    return new OpinionReminderResponse(
+        reminder.getId(),
+        reminder.getCreatedAt(),
+        reminder.getSenderName(),
+        reminder.getOrganizationCount(),
+        reminder.getRecipientCount(),
+        reminder.getOrganizationNames().isBlank()
+            ? List.of()
+            : List.of(reminder.getOrganizationNames().split(", ")));
+  }
+}

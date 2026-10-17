@@ -28,6 +28,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.flywaydb:flyway-core")
     implementation("org.springdoc:springdoc-openapi-ui:1.8.0")
+    // 엑셀(xlsx) 생성. Spring Boot 가 버전을 관리하지 않아 직접 적는다. 5.2.x 는 Java 8 이상에서 돈다.
+    implementation("org.apache.poi:poi-ooxml:5.2.5")
     runtimeOnly("com.h2database:h2")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")

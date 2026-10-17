@@ -149,39 +149,6 @@ public final class SampleHomeCards {
     }
   }
 
-  /** 나. 회신 대기 의견 요청. */
-  @Component
-  @Profile({"local", "demo", "test"})
-  public static class OpinionReplies implements HomeCardContributor {
-    @Override
-    public HomeCardKey key() {
-      return HomeCardKey.OPINION_REPLIES;
-    }
-
-    @Override
-    public HomeContribution contribute(CurrentUser user, Business business) {
-      LocalDate today = LocalDate.now();
-      int open = 2 + (shift(business) % 2);
-      String link = link(business, key());
-      String label = business.getLabel();
-      return card(
-          key(),
-          business,
-          Urgency.SOON,
-          "회신중인 요청 " + open + "건. 기한이 가까운 요청에 리마인드를 보낼 수 있습니다.",
-          List.of(
-              new HomeCardMetric("회신중", open, "건"),
-              new HomeCardMetric("회신율", 67 - shift(business) * 5, "%")),
-          new HomeCardProgress(12 - shift(business), 18, "기관 회신"),
-          List.of(
-              new HomeCardItem(
-                  label + " 수수료 체계 개편 의견", "회신 12/18 기관", today.plusDays(2), Urgency.SOON, link),
-              new HomeCardItem(
-                  label + " 전문 항목 추가 검토", "회신 4/18 기관", today.plusDays(9), Urgency.NONE, link)),
-          new HomeCardKpi("회신 대기 의견 요청", open, "건", false));
-    }
-  }
-
   /** 다. 진행 중 기관 테스트. */
   @Component
   @Profile({"local", "demo", "test"})

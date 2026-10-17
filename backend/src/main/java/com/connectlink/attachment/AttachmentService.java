@@ -99,6 +99,23 @@ public class AttachmentService {
     }
   }
 
+  /**
+   * 대상 하나의 첨부를 모두 지운다. 기능 모듈이 자기 대상(예: 작성중 의견 요청)을 지울 때 같은 트랜잭션에서 부른다. 권한은 대상을 지우는 쪽이 이미 확인했으므로 여기서
+   * 다시 보지 않는다.
+   */
+  @Transactional
+  public void deleteAllOf(AttachmentOwnerType ownerType, Long ownerId) {
+    for (Attachment attachment :
+        repository.findByOwnerTypeAndOwnerIdOrderByCreatedAtAscIdAsc(ownerType, ownerId)) {
+      repository.delete(attachment);
+      try {
+        fileStorage.delete(attachment.getStorageKey());
+      } catch (IOException e) {
+        log.warn("첨부파일 내용을 지우지 못했습니다: {}", attachment.getStorageKey(), e);
+      }
+    }
+  }
+
   private Attachment load(Long id) {
     return repository
         .findById(id)
