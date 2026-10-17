@@ -83,17 +83,4 @@ public final class SampleSearchProviders {
               new String[] {"재해복구 전환 테스트", "미수행 · 다음 달 시작"}));
     }
   }
-
-  @Component
-  @Profile({"local", "demo", "test"})
-  static class Suspensions extends SampleProvider {
-    Suspensions() {
-      super(
-          SearchCategory.SUSPENSION,
-          "suspensions",
-          List.of(
-              new String[] {"다라은행 정기 점검 일시중단", "확정 · 오늘 23:00~02:00"},
-              new String[] {"하하통신 시스템 교체 일시중단", "검토 중 · 다음 주 토요일"}));
-    }
-  }
 }
