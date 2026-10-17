@@ -72,18 +72,22 @@
 | 주/부담당 | `ContactRank` | `PRIMARY`, `SECONDARY` |
 | 최근 확인일 | `lastConfirmedAt` | 수정·확인 시 갱신 |
 | 정기 변경(현행화) 주간 | `UpdateCampaign` | |
-| 의견 요청 | `OpinionRequest` | 상태 `DRAFT`(작성중), `OPEN`(회신중), `CLOSED`(마감) |
-| 기관 회신 | `OpinionReply` | 유형 `AGREE`, `CONDITIONAL`, `DISAGREE` |
+| 의견 요청 | `OpinionRequest` | 상태 `OpinionRequestStatus` = `DRAFT`(작성중), `OPEN`(회신중), `CLOSED`(마감). 회신중 요청을 취소하면 `CLOSED` + `cancelled`. 권한 `OpinionAccessPolicy`. API `/api/v1/opinion-requests`, 화면 `/{업무}/opinions` |
+| 업권별 회신 양식 | `OpinionReplyForm` | 요청마다 정하는 양식(이름, 작성 안내). 파일은 첨부 `OPINION_REPLY_FORM` |
+| 대상 기관 | `OpinionTarget` | 요청의 대상 기관 한 곳과 고른 양식. 회신 담당자는 `OpinionTargetRecipient`(고를 때의 이름·이메일·세부업무를 남긴다) |
+| 리마인드 이력 | `OpinionReminder` | 미회신 기관에 보낸 리마인드 메일 한 번 |
+| 회신 현황·취합표 | `OpinionCollationService` | 회신율, 유형별 기관, 기관별 취합표와 엑셀(`OpinionExcel`, 내부망 전용) |
+| 기관 회신 | `OpinionReply` | 대상 기관 하나에 하나. 유형 `OpinionReplyType` = `AGREE`(동의), `CONDITIONAL`(조건부 동의), `DISAGREE`(이견). 상태 `OpinionReplyStatus` = `DRAFT`(임시저장), `SUBMITTED`(제출), `REVISION_REQUESTED`(수정 요청), `REVISING`(수정 중) |
 | 기관 테스트(페이지) | `TestPlan` | 단위업무/개발 건별 |
 | 테스트 요구사항 | `TestItem` | |
 | 테스트 결과 | `TestResult` | `PASSED`(정상), `FAILED`(오류), `IN_PROGRESS`(수행중), `NOT_STARTED`(미수행) |
 | 일시중단 | `Suspension` | 상태 `CONFIRMED`(확정), `PENDING_REVIEW`(검토 대기), `IN_REVIEW`(검토 중), `COMPLETED`(완료) |
-| 알림 | `Notification` | 알림 센터 항목. 종류 `NotificationType` (`SIGNUP_REQUESTED`, `SIGNUP_APPROVED`, `CONTACT_CHANGE_REQUESTED`, `CONTACT_RECONFIRM_DUE`, `OPINION_REQUEST_OPENED`, `OPINION_REPLY_DUE`, `TEST_PLAN_OPENED`, `SUSPENSION_CHANGED`, `SYSTEM`) |
+| 알림 | `Notification` | 알림 센터 항목. 종류 `NotificationType` (`SIGNUP_REQUESTED`, `SIGNUP_APPROVED`, `CONTACT_CHANGE_REQUESTED`, `CONTACT_RECONFIRM_DUE`, `OPINION_REQUEST_OPENED`, `OPINION_REQUEST_CHANGED`, `OPINION_REPLY_DUE`, `OPINION_REPLY_REVISION`, `TEST_PLAN_OPENED`, `SUSPENSION_CHANGED`, `SYSTEM`) |
 | 알림 채널 | `NotificationChannel` | `EMAIL`, `MATTERMOST` |
 | 발송함 | `NotificationOutbox` | 프로토타입에서 실제 발송 대신 기록. 상태 `OutboxStatus` = `PENDING`(발송 대기), `SENT`, `FAILED` |
 | 로그인 사용자 | `CurrentUser` | Service 권한 판단에 넘기는 값. 로그인할 때 계정에서 만들어 세션에 둔다. 업무 영역(레일) 조회 범위는 `BusinessAccessPolicy`(관리자는 전 업무, 그 밖에는 담당 업무). 테스트는 `TestUsers` |
 | 내부망/인터넷망 | `NetworkZone` | `INTERNAL`, `EXTERNAL`. 판단은 `NetworkZoneResolver`(헤더 `X-Network-Zone` 은 local·demo 만, 운영은 `app.network.internal-cidrs`). 내부망 전용 위반은 403 `INTERNAL_ONLY` |
-| 첨부파일 | `Attachment` | 대상은 `AttachmentOwnerType`(`OPINION_REQUEST`, `OPINION_REPLY`, `SUSPENSION`, `DEMO`) + `ownerId`. 파일 저장소 `FileStorage` |
+| 첨부파일 | `Attachment` | 대상은 `AttachmentOwnerType`(`OPINION_REQUEST`, `OPINION_REPLY`, `OPINION_REPLY_FORM`, `SUSPENSION`, `DEMO`) + `ownerId`. 파일 저장소 `FileStorage` |
 | 변경 이력 | `ChangeHistory` | 대상은 `HistoryTargetType`(`ORGANIZATION`, `CONTACT`, `OPINION_REQUEST`, `OPINION_REPLY`, `TEST_PLAN`, `SUSPENSION`) + `targetId`. 종류 `ChangeAction` = `CREATED`/`UPDATED`/`DELETED`, 항목 `FieldChange`(field, label, before, after) |
 | 전역 검색 묶음 | `SearchCategory` | `ORGANIZATION`, `CONTACT`, `OPINION_REQUEST`, `TEST_PLAN`, `SUSPENSION`. 기능 모듈은 `SearchProvider` 빈 하나로 자기 묶음을 채운다 |
 
