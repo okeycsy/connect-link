@@ -374,7 +374,7 @@ function saveBlob(blob: Blob, fileName: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1_000);
 }
 
-/** 첨부를 올리거나 지운 뒤 다른 대상(양식 파일 등) 목록도 새로 읽게 할 때. */
+/** 첨부를 올리거나 지운 뒤 다른 대상(기관 회신 등) 목록도 새로 읽게 할 때. */
 export function invalidateOpinionAttachments(queryClient: QueryClient) {
   void queryClient.invalidateQueries({ queryKey: attachmentKeys.all });
 }

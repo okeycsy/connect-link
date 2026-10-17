@@ -39,7 +39,7 @@ const TABS: Tab[] = ['content', 'replies', 'collation', 'reminders', 'history'];
 
 /**
  * 의견 요청 상세. 결제원 담당자는 요청 내용·회신 현황·취합표·리마인드 이력·변경 이력을 탭으로 보고 상태를 바꾼다. 기관 담당자는 요청
- * 내용과 자기 기관 양식을 보고 그 아래에서 회신을 쓴다.
+ * 내용과 질문을 보고 그 아래에서 답을 쓴다.
  */
 export function OpinionDetailPage() {
   const { business: slug = '', id } = useParams<{ business: string; id: string }>();
@@ -235,7 +235,7 @@ function OpinionDetail({ slug, request }: { slug: string; request: OpinionReques
   );
 }
 
-/** 요청 내용: 목적·내용, 첨부자료, 회신 양식(파일), 대상 기관. 기관 담당자에게는 서버가 자기 기관 양식과 대상만 내려 준다. */
+/** 요청 내용: 목적·내용, 첨부자료, 질문, 대상 기관. 기관 담당자에게는 서버가 자기 기관 대상만 내려 준다. */
 function RequestContent({ request }: { request: OpinionRequestDetail }) {
   const p = request.permissions;
   return (

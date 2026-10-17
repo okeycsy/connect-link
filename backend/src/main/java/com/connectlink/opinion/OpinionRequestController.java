@@ -90,7 +90,7 @@ public class OpinionRequestController {
   @GetMapping("/{id}")
   @Operation(
       summary = "의견 요청 상세 조회",
-      description = "결제원 담당자는 대상 전부를, 기관 담당자는 자기 기관의 대상 행과 양식만 본다. permissions 가 지금 할 수 있는 일이다.")
+      description = "결제원 담당자는 대상 전부를, 기관 담당자는 자기 기관의 대상 행만 본다. permissions 가 지금 할 수 있는 일이다.")
   public OpinionRequestDetailResponse get(@PathVariable Long id) {
     return requestService.get(currentUserProvider.require(), id);
   }
@@ -99,7 +99,7 @@ public class OpinionRequestController {
   @Operation(
       summary = "의견 요청 수정",
       description =
-          "작성중·회신중에 고친다. 양식·대상은 보낸 목록으로 바뀐다. 회신중이면 새 회신 담당자에게 요청 메일, 남은 담당자에게 변경 알림이 간다. 회신을 저장한 기관을 빼면 409 OPINION_TARGET_HAS_REPLY.")
+          "작성중·회신중에 고친다. 질문(작성중일 때만)·대상은 보낸 목록으로 바뀐다. 회신중이면 새 회신 담당자에게 요청 메일, 남은 담당자에게 변경 알림이 간다. 회신을 저장한 기관을 빼면 409 OPINION_TARGET_HAS_REPLY.")
   public OpinionRequestDetailResponse update(
       @PathVariable Long id, @Valid @RequestBody OpinionRequestUpdateRequest request) {
     return requestService.update(currentUserProvider.require(), id, request);
