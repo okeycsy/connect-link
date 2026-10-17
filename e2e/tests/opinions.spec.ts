@@ -170,6 +170,15 @@ test.describe('나. 의견 요청', () => {
     await page.getByRole('textbox', { name: '은행 업권 회신 양식', exact: true }).click();
     await page.getByRole('option', { name: '은행권' }).click();
     await expect(page.getByRole('textbox', { name: '가나은행 회신 양식' })).toHaveValue('은행권');
+    // 업권을 고르면 그 업권 기관이 모두 대상이 된다(담당자 계정이 없는 기관도).
+    await page
+      .getByRole('group', { name: '업권으로 고르기' })
+      .getByText(/^서민금융기관 \d+곳$/)
+      .click();
+    await expect(page.getByRole('checkbox', { name: '마바저축은행 대상' })).toBeChecked();
+    await expect(page.getByRole('checkbox', { name: '나다상호금융 대상' })).toBeChecked();
+    await expect(page.getByRole('checkbox', { name: '나다상호금융 정나다' })).toBeChecked();
+    await expect(page.getByTestId('target-summary')).toHaveText('대상 5곳 · 회신 담당자 4명');
     await shot(page, 'opinion-editor');
     await page.getByRole('button', { name: '저장', exact: true }).click();
 

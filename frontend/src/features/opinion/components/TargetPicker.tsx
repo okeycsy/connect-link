@@ -239,7 +239,13 @@ export function TargetPicker({
           <Stack key={group.key} gap={6} data-testid={`sector-${group.key}`}>
             <Group justify="space-between" wrap="nowrap" mt={4}>
               <Group gap="xs">
-                <Text fw={700}>{group.label}</Text>
+                <Checkbox
+                  checked={pickedInGroup === group.orgs.length}
+                  indeterminate={pickedInGroup > 0 && pickedInGroup < group.orgs.length}
+                  onChange={(e) => setOrgs(group.orgs, e.currentTarget.checked)}
+                  aria-label={`${group.label} 기관 모두`}
+                  label={<Text fw={700}>{group.label}</Text>}
+                />
                 <Text size="sm" c="dimmed">
                   {pickedInGroup}/{group.orgs.length}곳
                 </Text>

@@ -74,6 +74,11 @@ describe('TargetPicker', () => {
     expect(summary()).toBe('대상 1곳 · 회신 담당자 2명');
     expect(screen.getByRole('textbox', { name: '은행 업권 회신 양식' })).toBeInTheDocument();
     expect(screen.queryByRole('textbox', { name: '증권사 업권 회신 양식' })).toBeNull();
+
+    // 업권 묶음 머리의 체크로도 그 업권 기관을 모두 고른다.
+    fireEvent.click(screen.getByRole('checkbox', { name: '증권사 기관 모두' }));
+    expect(screen.getByRole('checkbox', { name: '사아증권 대상' })).toBeChecked();
+    expect(summary()).toBe('대상 2곳 · 회신 담당자 3명');
   });
 
   it('업무 전체를 고른 뒤 한 명만 뺄 수 있다', () => {
