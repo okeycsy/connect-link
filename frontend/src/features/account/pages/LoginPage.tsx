@@ -85,7 +85,7 @@ export function LoginPage() {
 
       <Box className={classes.panel}>
         <Stack gap="xl" justify="space-between" h="100%">
-          <BrandMark size={32} textSize="18px" />
+          <BrandMark height={72} />
           <Stack gap="lg" align="flex-start">
             <Box className={classes.tag}>참가기관 · 금융결제원 협업 포털</Box>
             <Title order={1} className={classes.headline}>

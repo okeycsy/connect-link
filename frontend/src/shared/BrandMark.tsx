@@ -1,27 +1,16 @@
-import { Group, Text } from '@mantine/core';
+import { Image } from '@mantine/core';
+
+import logo from '../assets/brand/logo.png';
 
 interface Props {
-  /** 표시 크기(높이 px). 상단 바 24, 로그인 32. */
-  size?: number;
-  /** 글자 크기. */
-  textSize?: string;
+  /** 표시 높이(px). 상단 바 40, 로그인 72. 너비는 비율대로 따라간다. */
+  height?: number;
 }
 
-/** 연결고리 로고: 오른쪽이 뾰족한 클레이 선 오각형 + "연결고리". 상단 바와 로그인에서만 쓴다. */
-export function BrandMark({ size = 24, textSize = '15px' }: Props) {
-  return (
-    <Group gap={10} wrap="nowrap">
-      <svg aria-hidden width={(size * 124) / 84} height={size} viewBox="0 0 124 84">
-        <path
-          d="M2 2 H92 L120 42 L92 82 H2 Z"
-          fill="none"
-          stroke="var(--mantine-color-clay-6)"
-          strokeWidth={size >= 32 ? 5 : 7}
-        />
-      </svg>
-      <Text fw={700} fz={textSize} lts="0.02em">
-        연결고리
-      </Text>
-    </Group>
-  );
+/**
+ * 서비스 로고(금융결제원 연결고리 CONTACT HUB). 파일은 `assets/brand/logo.png` 하나이고 빌드 결과에 들어가 외부에서 불러오지
+ * 않는다. 상단 바, 로그인, 회원가입·승인 대기 머리에서 쓴다. 파비콘은 고리 모양만 잘라 둔 `public/favicon.png` 다.
+ */
+export function BrandMark({ height = 40 }: Props) {
+  return <Image src={logo} h={height} w="auto" fit="contain" alt="금융결제원 연결고리" />;
 }

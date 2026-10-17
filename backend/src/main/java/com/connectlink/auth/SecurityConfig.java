@@ -47,7 +47,7 @@ public class SecurityConfig {
             auth ->
                 auth
                     // 화면 자원과 화면 라우트
-                    .antMatchers("/", "/index.html", "/assets/**", "/favicon.svg")
+                    .antMatchers("/", "/index.html", "/assets/**", "/favicon.png")
                     .permitAll()
                     .regexMatchers("/(?!api/)[^.]*")
                     .permitAll()
