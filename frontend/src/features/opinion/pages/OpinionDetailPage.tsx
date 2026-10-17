@@ -1,4 +1,15 @@
-import { Alert, Button, Card, Group, Skeleton, Stack, Table, Tabs, Text } from '@mantine/core';
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  Group,
+  Skeleton,
+  Stack,
+  Table,
+  Tabs,
+  Text,
+} from '@mantine/core';
 import { IconPencil } from '@tabler/icons-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -252,42 +263,32 @@ function RequestContent({ request }: { request: OpinionRequestDetail }) {
         </Stack>
       </Card>
 
-      {(request.forms.length > 0 || p.manage) && (
-        <Card>
+      {p.manage && request.questions.length > 0 && (
+        <Card data-testid="question-list">
           <Stack gap="sm">
             <Text fw={700} size="xl">
-              {p.manage ? '업권별 회신 양식' : '회신 양식'}
+              질문 {request.questions.length}개
             </Text>
-            {request.forms.length === 0 && (
-              <Text size="sm" c="dimmed">
-                정한 양식이 없습니다. 기관은 의견만 적어 회신합니다.
-              </Text>
-            )}
-            {request.forms.map((f) => (
-              <Stack key={f.id} gap={4} data-testid={`form-${f.name}`}>
+            {request.questions.map((q, index) => (
+              <Stack key={q.id} gap={2}>
                 <Group gap="xs">
-                  <Text fw={600}>{f.name}</Text>
-                  {p.manage && (
-                    <Text size="sm" c="dimmed">
-                      {request.targets
-                        .filter((t) => t.formId === f.id)
-                        .map((t) => t.organizationName)
-                        .join(', ') || '고른 기관 없음'}
-                    </Text>
+                  <Text fw={600}>
+                    {index + 1}. {q.title}
+                  </Text>
+                  <Badge size="sm" color="gray" variant="outline">
+                    {q.typeLabel}
+                  </Badge>
+                  {q.required && (
+                    <Badge size="sm" color="amber">
+                      필수
+                    </Badge>
                   )}
                 </Group>
-                {f.description && (
+                {q.options.length > 0 && (
                   <Text size="sm" c="dimmed">
-                    {f.description}
+                    {q.options.map((o) => o.label).join(' / ')}
                   </Text>
                 )}
-                <AttachmentPanel
-                  ownerType="OPINION_REPLY_FORM"
-                  ownerId={f.id}
-                  editable={p.edit}
-                  uploadLabel="양식 파일 올리기"
-                  emptyMessage="양식 파일이 없습니다."
-                />
               </Stack>
             ))}
           </Stack>
@@ -303,7 +304,6 @@ function RequestContent({ request }: { request: OpinionRequestDetail }) {
             <Table.Thead>
               <Table.Tr>
                 <Table.Th w={180}>기관</Table.Th>
-                <Table.Th w={120}>회신 양식</Table.Th>
                 <Table.Th>회신 담당자</Table.Th>
                 <Table.Th w={110}>회신</Table.Th>
               </Table.Tr>
@@ -313,9 +313,6 @@ function RequestContent({ request }: { request: OpinionRequestDetail }) {
                 <Table.Tr key={t.id}>
                   <Table.Td>
                     <Text fw={600}>{t.organizationName}</Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size="sm">{t.formName ?? '-'}</Text>
                   </Table.Td>
                   <Table.Td>
                     <Text size="sm" c={t.recipients.length ? undefined : 'dimmed'}>

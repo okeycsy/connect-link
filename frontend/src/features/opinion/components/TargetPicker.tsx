@@ -1,15 +1,4 @@
-import {
-  Badge,
-  Button,
-  Checkbox,
-  Chip,
-  Group,
-  Paper,
-  Select,
-  Skeleton,
-  Stack,
-  Text,
-} from '@mantine/core';
+import { Badge, Button, Checkbox, Chip, Group, Paper, Skeleton, Stack, Text } from '@mantine/core';
 import { useMemo } from 'react';
 
 import { OrgMonogram } from '../../../shared/OrgMonogram';
@@ -17,10 +6,9 @@ import { StateView } from '../../../shared/state/StateView';
 import { stateKindOf } from '../../../shared/state/stateKind';
 import type { OpinionRecipientCandidate } from '../hooks';
 
-/** 화면에서 고른 대상 기관 한 곳. 양식은 화면 안 키로 잡고 저장할 때 이름으로 바꾼다. */
+/** 화면에서 고른 대상 기관 한 곳. */
 export interface TargetValue {
   organizationId: number;
-  formKey: string | null;
   recipientAccountIds: number[];
 }
 
@@ -30,8 +18,6 @@ interface Props {
   error: unknown;
   value: TargetValue[];
   onChange: (value: TargetValue[]) => void;
-  /** 고를 수 있는 회신 양식(키, 이름). 비어 있으면 양식 칸을 숨긴다. */
-  forms: { key: string; name: string }[];
   /** 이미 회신을 저장해 뺄 수 없는 기관. */
   lockedOrganizationIds: Set<number>;
 }
@@ -66,8 +52,7 @@ const subBusinessOf = (subBusiness: string | null | undefined) => (subBusiness ?
 
 /**
  * 대상 기관과 회신 담당자 고르기. 후보는 이 업무에 참여하는 참가기관과 그 기관의 같은 업무 담당자(사용 중 계정)다. 업무 전체, 세부업무,
- * 업권으로 한 번에 고르고 한 명씩 더하거나 뺄 수 있다. 담당자를 고르면 그 기관도 대상이 된다. 업권 묶음에서 양식을 정하면 그 업권의
- * 대상 기관에 같은 양식이 들어간다.
+ * 업권으로 한 번에 고르고 한 명씩 더하거나 뺄 수 있다. 담당자를 고르면 그 기관도 대상이 된다.
  */
 export function TargetPicker({
   candidates,
@@ -75,7 +60,6 @@ export function TargetPicker({
   error,
   value,
   onChange,
-  forms,
   lockedOrganizationIds,
 }: Props) {
   const byOrg = useMemo(() => new Map(value.map((t) => [t.organizationId, t])), [value]);
@@ -107,7 +91,6 @@ export function TargetPicker({
 
   const empty = (organizationId: number): TargetValue => ({
     organizationId,
-    formKey: null,
     recipientAccountIds: [],
   });
   const isPicked = (orgId: number, accountId: number) =>
@@ -124,7 +107,7 @@ export function TargetPicker({
     const rest = value.filter((t) => t.organizationId !== organizationId);
     onChange(next ? [...rest, next] : rest);
   };
-  /** 기관들을 담당자 전부와 함께 넣거나(이미 고른 양식은 둔다), 뺀다(회신이 있는 기관은 남긴다). */
+  /** 기관들을 담당자 전부와 함께 넣거나, 뺀다(회신이 있는 기관은 남긴다). */
   const setOrgs = (orgs: OpinionRecipientCandidate[], checked: boolean) => {
     const next = new Map(byOrg);
     for (const org of orgs) {
@@ -166,19 +149,6 @@ export function TargetPicker({
         .filter((m) => subBusinessOf(m.subBusiness) === name)
         .every((m) => isPicked(org.organizationId, m.accountId)),
     );
-  /** 업권 묶음의 양식을 정하면 그 묶음의 대상 기관 양식이 모두 바뀐다. */
-  const setGroupForm = (group: SectorGroup, formKey: string | null) => {
-    const ids = new Set(group.orgs.map((o) => o.organizationId));
-    onChange(value.map((t) => (ids.has(t.organizationId) ? { ...t, formKey } : t)));
-  };
-  const groupForm = (group: SectorGroup) => {
-    const keys = new Set(
-      group.orgs
-        .filter((o) => byOrg.has(o.organizationId))
-        .map((o) => byOrg.get(o.organizationId)!.formKey),
-    );
-    return keys.size === 1 ? [...keys][0] : null;
-  };
   const toggleMember = (org: OpinionRecipientCandidate, accountId: number, checked: boolean) => {
     const current = byOrg.get(org.organizationId) ?? empty(org.organizationId);
     const ids = checked
@@ -250,18 +220,6 @@ export function TargetPicker({
                   {pickedInGroup}/{group.orgs.length}곳
                 </Text>
               </Group>
-              {forms.length > 0 && pickedInGroup > 0 && (
-                <Select
-                  size="xs"
-                  w={200}
-                  placeholder="업권 양식 한 번에 정하기"
-                  aria-label={`${group.label} 업권 회신 양식`}
-                  data={forms.map((f) => ({ value: f.key, label: f.name || '(이름 없음)' }))}
-                  value={groupForm(group)}
-                  clearable
-                  onChange={(v) => setGroupForm(group, v)}
-                />
-              )}
             </Group>
             {group.orgs.map((org) => {
               const target = byOrg.get(org.organizationId);
@@ -298,21 +256,6 @@ export function TargetPicker({
                         }
                         aria-label={`${org.organizationName} 대상`}
                       />
-                      {target && forms.length > 0 && (
-                        <Select
-                          size="xs"
-                          w={180}
-                          placeholder="회신 양식 없음"
-                          aria-label={`${org.organizationName} 회신 양식`}
-                          data={forms.map((f) => ({
-                            value: f.key,
-                            label: f.name || '(이름 없음)',
-                          }))}
-                          value={target.formKey}
-                          clearable
-                          onChange={(v) => setTarget(org.organizationId, { ...target, formKey: v })}
-                        />
-                      )}
                     </Group>
                     {org.members.length === 0 ? (
                       <Text size="sm" c="dimmed" pl={30}>

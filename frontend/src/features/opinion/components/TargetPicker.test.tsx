@@ -45,7 +45,6 @@ function Harness({ initial = [] }: { initial?: TargetValue[] }) {
       error={null}
       value={value}
       onChange={setValue}
-      forms={[{ key: 'n0', name: '은행권' }]}
       lockedOrganizationIds={new Set()}
     />
   );
@@ -66,14 +65,12 @@ describe('TargetPicker', () => {
     expect(summary()).toBe('대상 0곳 · 회신 담당자 0명');
   });
 
-  it('업권 칩은 그 업권 기관을 담당자 전부와 함께 고르고, 업권 양식을 한 번에 정한다', () => {
+  it('업권 칩은 그 업권 기관을 담당자 전부와 함께 고른다', () => {
     renderWithProviders(<Harness />);
     fireEvent.click(screen.getByRole('checkbox', { name: '은행 1곳' }));
     expect(screen.getByRole('checkbox', { name: '가나은행 대상' })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: '사아증권 대상' })).not.toBeChecked();
     expect(summary()).toBe('대상 1곳 · 회신 담당자 2명');
-    expect(screen.getByRole('textbox', { name: '은행 업권 회신 양식' })).toBeInTheDocument();
-    expect(screen.queryByRole('textbox', { name: '증권사 업권 회신 양식' })).toBeNull();
 
     // 업권 묶음 머리의 체크로도 그 업권 기관을 모두 고른다.
     fireEvent.click(screen.getByRole('checkbox', { name: '증권사 기관 모두' }));

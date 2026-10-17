@@ -15,14 +15,17 @@ import {
 import { ReplyTypeBadge } from './OpinionBadges';
 import classes from './OpinionTable.module.css';
 
-/** 기관별 취합표. 대상 기관마다 한 줄로 의견 유형과 세부의견을 모으고, 엑셀(결과 요약 + 기관별 취합표)로 내려받는다. */
+/**
+ * 기관별 취합표. 대상 기관마다 한 줄로 의견 유형, 세부의견, 질문별 답을 모으고, 엑셀(결과 요약, 질문별 답, 기관별 취합표)로
+ * 내려받는다.
+ */
 export function CollationPanel({ request }: { request: OpinionRequestDetail }) {
   const { data, isPending, error } = useOpinionCollation(request.id);
   const excel = useDownloadOpinionExcel(request.id);
 
   if (error) return <StateView kind={stateKindOf(error)} compact />;
   if (isPending || !data) return <Skeleton h={320} />;
-  const { summary } = data;
+  const { summary, questions } = data;
 
   return (
     <Card>
@@ -58,53 +61,65 @@ export function CollationPanel({ request }: { request: OpinionRequestDetail }) {
             : excel.error.message}
         </Alert>
       )}
-      <Table verticalSpacing="sm" data-testid="collation-table">
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th w={150}>기관</Table.Th>
-            <Table.Th w={100}>회신 양식</Table.Th>
-            <Table.Th w={120}>의견 유형</Table.Th>
-            <Table.Th>세부의견</Table.Th>
-            <Table.Th w={150}>회신자 · 제출</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {data.rows.map((r) => (
-            <Table.Tr key={r.targetId}>
-              <Table.Td>
-                <Text fw={600}>{r.organizationName}</Text>
-              </Table.Td>
-              <Table.Td>
-                <Text size="sm">{r.formName ?? '-'}</Text>
-              </Table.Td>
-              <Table.Td>
-                {r.replied ? (
-                  <ReplyTypeBadge type={r.type} size="xs" />
-                ) : (
-                  <Text size="sm" c="dimmed">
-                    미회신
-                  </Text>
-                )}
-              </Table.Td>
-              <Table.Td>
-                <Text size="sm" className={classes.content}>
-                  {r.content ?? ''}
-                </Text>
-              </Table.Td>
-              <Table.Td>
-                {r.replied && (
-                  <Text size="sm" className={classes.numeric}>
-                    {r.replierName}
-                    <br />
-                    {formatDateTime(r.submittedAt)}
-                  </Text>
-                )}
-              </Table.Td>
+      <Table.ScrollContainer minWidth={760 + questions.length * 160}>
+        <Table verticalSpacing="sm" data-testid="collation-table">
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th w={150}>기관</Table.Th>
+              <Table.Th w={120}>의견 유형</Table.Th>
+              <Table.Th>세부의견</Table.Th>
+              {questions.map((q, index) => (
+                <Table.Th key={q.questionId} w={160}>
+                  {index + 1}. {q.title}
+                </Table.Th>
+              ))}
+              <Table.Th w={150}>회신자 · 제출</Table.Th>
             </Table.Tr>
-          ))}
-          {data.rows.length === 0 && <TableEmpty colSpan={5} message="대상 기관이 없습니다." />}
-        </Table.Tbody>
-      </Table>
+          </Table.Thead>
+          <Table.Tbody>
+            {data.rows.map((r) => (
+              <Table.Tr key={r.targetId}>
+                <Table.Td>
+                  <Text fw={600}>{r.organizationName}</Text>
+                </Table.Td>
+                <Table.Td>
+                  {r.replied ? (
+                    <ReplyTypeBadge type={r.type} size="xs" />
+                  ) : (
+                    <Text size="sm" c="dimmed">
+                      미회신
+                    </Text>
+                  )}
+                </Table.Td>
+                <Table.Td>
+                  <Text size="sm" className={classes.content}>
+                    {r.content ?? ''}
+                  </Text>
+                </Table.Td>
+                {questions.map((q) => (
+                  <Table.Td key={q.questionId}>
+                    <Text size="sm" className={classes.content}>
+                      {r.answers.find((a) => a.questionId === q.questionId)?.value ?? ''}
+                    </Text>
+                  </Table.Td>
+                ))}
+                <Table.Td>
+                  {r.replied && (
+                    <Text size="sm" className={classes.numeric}>
+                      {r.replierName}
+                      <br />
+                      {formatDateTime(r.submittedAt)}
+                    </Text>
+                  )}
+                </Table.Td>
+              </Table.Tr>
+            ))}
+            {data.rows.length === 0 && (
+              <TableEmpty colSpan={4 + questions.length} message="대상 기관이 없습니다." />
+            )}
+          </Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
     </Card>
   );
 }

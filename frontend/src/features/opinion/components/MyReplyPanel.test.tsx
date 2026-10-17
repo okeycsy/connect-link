@@ -23,7 +23,7 @@ const request = {
   closedAt: null,
   createdAt: '2026-10-09T09:00:00',
   updatedAt: '2026-10-10T09:00:00',
-  forms: [],
+  questions: [],
   targets: [],
   permissions: {
     manage: false,
@@ -36,11 +36,52 @@ const request = {
   },
 } as OpinionRequestDetail;
 
+const withQuestions = {
+  ...request,
+  questions: [
+    {
+      id: 21,
+      type: 'SINGLE_CHOICE',
+      typeLabel: '객관식',
+      title: '적용 시기',
+      required: true,
+      options: [
+        { id: 31, label: '1월' },
+        { id: 32, label: '7월' },
+      ],
+    },
+    {
+      id: 22,
+      type: 'MULTIPLE_CHOICE',
+      typeLabel: '체크박스',
+      title: '영향받는 업무',
+      required: false,
+      options: [
+        { id: 33, label: '정산' },
+        { id: 34, label: '안내' },
+      ],
+    },
+    {
+      id: 23,
+      type: 'TEXT',
+      typeLabel: '주관식',
+      title: '월 조회 건수',
+      required: false,
+      options: [],
+    },
+  ],
+} as OpinionRequestDetail;
+
+type Body = {
+  type: string | null;
+  content: string;
+  answers?: { questionId: number; optionIds?: number[]; text?: string }[];
+};
+
 const empty = {
   requestId: 7,
   targetId: 3,
   organizationName: '가나은행',
-  formName: null,
   replyId: null,
   status: null,
   statusLabel: '미작성',
@@ -49,6 +90,8 @@ const empty = {
   content: null,
   draftType: null,
   draftContent: null,
+  answers: [],
+  draftAnswers: [],
   replierName: null,
   submittedAt: null,
   revisionReason: null,
@@ -74,53 +117,69 @@ vi.mock('../../../api/client', async (importOriginal) => {
         if (path === '/api/v1/attachments') return { data: [], response: new Response() };
         throw new Error(`unexpected GET ${path}`);
       }),
-      PUT: vi.fn(
-        async (path: string, options: { body: { type: string | null; content: string } }) => {
-          calls.writes.push({ method: 'PUT', path, body: options.body });
+      PUT: vi.fn(async (path: string, options: { body: Body }) => {
+        calls.writes.push({ method: 'PUT', path, body: options.body });
+        return {
+          data: {
+            ...empty,
+            replyId: 11,
+            status: 'DRAFT',
+            statusLabel: '임시저장',
+            draftType: options.body.type,
+            draftContent: options.body.content,
+          },
+          response: new Response(),
+        };
+      }),
+      POST: vi.fn(async (path: string, options: { body: Body }) => {
+        calls.writes.push({ method: 'POST', path, body: options.body });
+        if (
+          options.body.type === 'AGREE' &&
+          options.body.answers?.length &&
+          !options.body.answers.some((a) => a.questionId === 21)
+        ) {
           return {
-            data: {
-              ...empty,
-              replyId: 11,
-              status: 'DRAFT',
-              statusLabel: '임시저장',
-              draftType: options.body.type,
-              draftContent: options.body.content,
+            error: {
+              status: 400,
+              code: 'OPINION_ANSWER_REQUIRED',
+              detail: '필수 질문입니다. 답해 주세요.',
+              fieldErrors: [{ field: 'answers.21', message: '필수 질문입니다. 답해 주세요.' }],
             },
-            response: new Response(),
+            response: new Response(null, { status: 400 }),
           };
-        },
-      ),
-      POST: vi.fn(
-        async (path: string, options: { body: { type: string | null; content: string } }) => {
-          calls.writes.push({ method: 'POST', path, body: options.body });
-          if (!options.body.content) {
-            return {
-              error: {
-                status: 400,
-                code: 'OPINION_REPLY_CONTENT_REQUIRED',
-                detail: '입력값을 확인해 주세요.',
-                fieldErrors: [{ field: 'content', message: '이견은(는) 세부의견을 적어 주세요.' }],
-              },
-              response: new Response(null, { status: 400 }),
-            };
-          }
+        }
+        if (options.body.type === 'DISAGREE' && !options.body.content) {
           return {
-            data: {
-              ...empty,
-              replyId: 11,
-              status: 'SUBMITTED',
-              statusLabel: '제출',
-              type: options.body.type,
-              content: options.body.content,
-              replierName: '김가나',
-              submittedAt: '2026-10-17T10:00:00',
-              editable: false,
-              revisionRequestable: true,
+            error: {
+              status: 400,
+              code: 'OPINION_REPLY_CONTENT_REQUIRED',
+              detail: '입력값을 확인해 주세요.',
+              fieldErrors: [{ field: 'content', message: '이견은(는) 세부의견을 적어 주세요.' }],
             },
-            response: new Response(),
+            response: new Response(null, { status: 400 }),
           };
-        },
-      ),
+        }
+        return {
+          data: {
+            ...empty,
+            replyId: 11,
+            status: 'SUBMITTED',
+            statusLabel: '제출',
+            type: options.body.type,
+            content: options.body.content,
+            answers: (options.body.answers ?? []).map((a) => ({
+              questionId: a.questionId,
+              optionIds: a.optionIds ?? [],
+              text: a.text ?? null,
+            })),
+            replierName: '김가나',
+            submittedAt: '2026-10-17T10:00:00',
+            editable: false,
+            revisionRequestable: true,
+          },
+          response: new Response(),
+        };
+      }),
     },
   };
 });
@@ -151,7 +210,7 @@ describe('MyReplyPanel', () => {
     expect(calls.writes.at(-1)).toEqual({
       method: 'POST',
       path: '/api/v1/opinion-requests/{requestId}/my-reply/submission',
-      body: { type: 'DISAGREE', content: '시행 시기를 늦춰 주세요.' },
+      body: { type: 'DISAGREE', content: '시행 시기를 늦춰 주세요.', answers: [] },
     });
   });
 
@@ -169,5 +228,39 @@ describe('MyReplyPanel', () => {
     expect(await screen.findByTestId('reply-notice')).toHaveTextContent('임시저장했습니다');
     await waitFor(() => expect(screen.getByText('근거자료 올리기')).toBeInTheDocument());
     expect(calls.writes[0]).toMatchObject({ method: 'PUT', body: { type: 'AGREE', content: '' } });
+  });
+
+  it('질문에 답해 제출하고, 필수 질문을 비우면 그 질문 아래에 서버 메시지를 보인다', async () => {
+    renderWithProviders(<MyReplyPanel request={withQuestions} />, {
+      route: '/account-info/opinions/7',
+      path: '/:business/opinions/:id',
+    });
+
+    fireEvent.click(await screen.findByRole('radio', { name: '동의' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: '정산' }));
+    fireEvent.click(screen.getByRole('button', { name: '최종제출' }));
+    expect(await screen.findByText('필수 질문입니다. 답해 주세요.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('radio', { name: '7월' }));
+    expect(screen.queryByText('필수 질문입니다. 답해 주세요.')).toBeNull();
+    fireEvent.click(screen.getByRole('checkbox', { name: '안내' }));
+    fireEvent.change(screen.getByRole('textbox', { name: '3. 월 조회 건수' }), {
+      target: { value: '약 1만 건' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '최종제출' }));
+
+    const submitted = await screen.findByTestId('submitted-answers');
+    expect(submitted).toHaveTextContent('1. 적용 시기7월');
+    expect(submitted).toHaveTextContent('2. 영향받는 업무정산, 안내');
+    expect(submitted).toHaveTextContent('3. 월 조회 건수약 1만 건');
+    expect(calls.writes.at(-1)?.body).toEqual({
+      type: 'AGREE',
+      content: '',
+      answers: [
+        { questionId: 21, optionIds: [32] },
+        { questionId: 22, optionIds: [33, 34] },
+        { questionId: 23, text: '약 1만 건' },
+      ],
+    });
   });
 });

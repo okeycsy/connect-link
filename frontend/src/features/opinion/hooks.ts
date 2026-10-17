@@ -19,7 +19,11 @@ export type OpinionRequestCounts = components['schemas']['OpinionRequestCountsRe
 export type OpinionRequestCreateRequest = components['schemas']['OpinionRequestCreateRequest'];
 export type OpinionRequestUpdateRequest = components['schemas']['OpinionRequestUpdateRequest'];
 export type OpinionTarget = components['schemas']['OpinionTargetResponse'];
-export type OpinionReplyForm = components['schemas']['OpinionReplyFormResponse'];
+export type OpinionQuestion = components['schemas']['OpinionQuestionResponse'];
+export type OpinionQuestionRequest = components['schemas']['OpinionQuestionRequest'];
+export type OpinionQuestionType = OpinionQuestion['type'];
+export type OpinionAnswer = components['schemas']['OpinionAnswerResponse'];
+export type OpinionAnswerRequest = components['schemas']['OpinionAnswerRequest'];
 export type OpinionRecipientCandidate = components['schemas']['OpinionRecipientCandidateResponse'];
 export type OpinionRecipientCandidateMember =
   components['schemas']['OpinionRecipientCandidateMember'];

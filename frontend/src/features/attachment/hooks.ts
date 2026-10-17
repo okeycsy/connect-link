@@ -28,22 +28,26 @@ export function useAttachments(owner: AttachmentOwner) {
   });
 }
 
+/** 파일 하나를 올린다. 대상이 저장 뒤에야 정해지는 화면(새 의견 요청)은 이 함수를 직접 부른다. */
+export async function uploadAttachmentFile(owner: AttachmentOwner, file: File) {
+  return unwrap(
+    await api.POST('/api/v1/attachments', {
+      params: { query: owner },
+      // OpenAPI 는 파일을 string(binary) 으로 적는다. 실제 전송은 아래 serializer 가 FormData 로 만든다.
+      body: { file: file as unknown as string },
+      bodySerializer: () => {
+        const form = new FormData();
+        form.append('file', file);
+        return form;
+      },
+    }),
+  );
+}
+
 export function useUploadAttachment(owner: AttachmentOwner) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (file: File) =>
-      unwrap(
-        await api.POST('/api/v1/attachments', {
-          params: { query: owner },
-          // OpenAPI 는 파일을 string(binary) 으로 적는다. 실제 전송은 아래 serializer 가 FormData 로 만든다.
-          body: { file: file as unknown as string },
-          bodySerializer: () => {
-            const form = new FormData();
-            form.append('file', file);
-            return form;
-          },
-        }),
-      ),
+    mutationFn: (file: File) => uploadAttachmentFile(owner, file),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: attachmentKeys.list(owner) }),
   });
 }

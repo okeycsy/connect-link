@@ -28,7 +28,7 @@ async function apiLogin(request: APIRequestContext, email: string) {
   expect(login.ok()).toBeTruthy();
 }
 
-/** 홍길동으로 가나은행(김가나)만 대상인 계좌통합관리 의견 요청을 만들어 회신중으로 연다. */
+/** 홍길동으로 가나은행(김가나)만 대상인 계좌통합관리 의견 요청을 만들어 회신중으로 연다. 객관식(필수)·주관식 질문이 하나씩 있다. */
 async function openRequestForGana(request: APIRequestContext, title: string): Promise<number> {
   await apiLogin(request, 'hong.gildong@kftc.example.com');
   const candidates = (await (
@@ -46,7 +46,15 @@ async function openRequestForGana(request: APIRequestContext, title: string): Pr
       title,
       content: '변경안에 대한 의견을 주세요.',
       dueDate: new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10),
-      forms: [],
+      questions: [
+        {
+          type: 'SINGLE_CHOICE',
+          title: '전환 시점으로 어느 때가 좋습니까?',
+          required: true,
+          options: ['다음 달', '다음 분기'],
+        },
+        { type: 'TEXT', title: '준비에 필요한 기간을 적어 주세요.', required: false },
+      ],
       targets: [
         {
           organizationId: gana.organizationId,
@@ -89,6 +97,11 @@ test.describe('나. 의견 요청', () => {
     await expect(page.getByTestId('reply-rate')).toHaveText('67%');
     await expect(page.getByTestId('type-AGREE')).toContainText('동의 2');
     await expect(page.getByTestId('type-DISAGREE')).toContainText('이견 1');
+    // 질문별 답: 선택지마다 고른 기관 수와 이름, 주관식 답.
+    const questionSummary = page.getByTestId('question-summary');
+    await expect(questionSummary).toContainText('개편안을 언제부터 적용하는 것이 좋습니까?');
+    await expect(questionSummary).toContainText('마바저축은행, 차카저축은행');
+    await expect(questionSummary).toContainText('약 12만 건');
     await shot(page, 'opinion-replies');
 
     // 미회신만 걸러 보기
@@ -127,6 +140,7 @@ test.describe('나. 의견 요청', () => {
     // 취합표와 엑셀(내부망)
     await page.getByRole('tab', { name: '취합표' }).click();
     await expect(page.getByTestId('collation-table')).toContainText('다라은행');
+    await expect(page.getByTestId('collation-table')).toContainText('수수료 정산, 고객 안내');
     await shot(page, 'opinion-collation');
     const [download] = await Promise.all([
       page.waitForEvent('download'),
@@ -146,7 +160,7 @@ test.describe('나. 의견 요청', () => {
       /filename\*=UTF-8''의견취합_.+\.xlsx$/,
     );
 
-    // 새 요청: 양식을 만들고, 세부업무 칩·한 명씩 체크로 담당자를 고르고, 업권 묶음에서 양식을 정한다.
+    // 새 요청: 질문(객관식·주관식)과 첨부자료를 넣고, 세부업무 칩·한 명씩 체크·업권 칩으로 담당자를 고른다.
     const title = `연동 일정 의견 요청 ${Date.now().toString(36).slice(-5)}`;
     await page
       .getByRole('navigation')
@@ -156,8 +170,31 @@ test.describe('나. 의견 요청', () => {
     await expect(page).toHaveURL(/\/account-info\/opinions\/new$/);
     await page.getByLabel('요청명').fill(title);
     await page.getByLabel('요청 목적·내용').fill('다음 분기 연동 일정 초안에 대한 의견을 주세요.');
-    await page.getByRole('button', { name: '양식 추가' }).click();
-    await page.getByRole('textbox', { name: '양식 이름' }).fill('은행권');
+    await page.getByRole('button', { name: '질문 추가' }).click();
+    await page
+      .getByRole('textbox', { name: '1번 질문', exact: true })
+      .fill('연동 시작 시기를 골라 주세요.');
+    await page.getByRole('textbox', { name: '1번 질문 선택지 1', exact: true }).fill('1분기');
+    await page.getByRole('textbox', { name: '1번 질문 선택지 2', exact: true }).fill('2분기');
+    await page.getByRole('button', { name: '선택지 추가' }).click();
+    await page.getByRole('textbox', { name: '1번 질문 선택지 3', exact: true }).fill('하반기');
+    await page.getByRole('switch', { name: '1번 질문 필수' }).check({ force: true });
+    await page.getByRole('button', { name: '질문 추가' }).click();
+    await page
+      .getByRole('textbox', { name: '2번 질문', exact: true })
+      .fill('연동 담당 부서를 적어 주세요.');
+    await page.getByRole('textbox', { name: '2번 질문 유형' }).click();
+    await page.getByRole('option', { name: '주관식' }).click();
+    await expect(page.getByTestId('question-card').nth(1)).toContainText('기관이 글로 답합니다.');
+    await page
+      .getByTestId('pending-attachments')
+      .locator('input[type=file]')
+      .setInputFiles({
+        name: '연동일정안.pdf',
+        mimeType: 'application/pdf',
+        buffer: Buffer.from('%PDF-1.4 sample'),
+      });
+    await expect(page.getByTestId('pending-attachments')).toContainText('연동일정안.pdf');
     await page
       .getByRole('group', { name: '세부업무로 고르기' })
       .getByText('오픈뱅킹 안심차단', { exact: true })
@@ -167,9 +204,6 @@ test.describe('나. 의견 요청', () => {
     await expect(page.getByRole('checkbox', { name: '다라은행 박다라' })).not.toBeChecked();
     await page.getByRole('checkbox', { name: '가나은행 김가나' }).check();
     await expect(page.getByTestId('target-summary')).toHaveText('대상 3곳 · 회신 담당자 3명');
-    await page.getByRole('textbox', { name: '은행 업권 회신 양식', exact: true }).click();
-    await page.getByRole('option', { name: '은행권' }).click();
-    await expect(page.getByRole('textbox', { name: '가나은행 회신 양식' })).toHaveValue('은행권');
     // 업권을 고르면 그 업권 기관이 모두 대상이 된다(담당자 계정이 없는 기관도).
     await page
       .getByRole('group', { name: '업권으로 고르기' })
@@ -184,6 +218,11 @@ test.describe('나. 의견 요청', () => {
 
     await expect(page.getByRole('heading', { name: title })).toBeVisible();
     await expect(page.getByText('작성중', { exact: true })).toBeVisible();
+    await expect(page.getByTestId('question-list')).toContainText(
+      '1. 연동 시작 시기를 골라 주세요.',
+    );
+    await expect(page.getByTestId('question-list')).toContainText('1분기 / 2분기 / 하반기');
+    await expect(page.getByTestId('attachment-panel').first()).toContainText('연동일정안.pdf');
     await page.getByRole('button', { name: '회신 요청 시작' }).click();
     await page
       .getByRole('dialog', { name: '회신 요청 시작' })
@@ -215,6 +254,15 @@ test.describe('나. 의견 요청', () => {
     await expect(page).toHaveURL(new RegExp(`/account-info/opinions/${id}$`));
     const reply = page.getByTestId('my-reply');
 
+    // 필수 질문에 답하지 않으면 그 질문 아래에 서버 메시지가 뜬다.
+    await reply.getByRole('radio', { name: '동의', exact: true }).check();
+    await reply.getByRole('button', { name: '최종제출' }).click();
+    await expect(reply).toContainText('필수 질문입니다. 답해 주세요.');
+    await reply.getByRole('radio', { name: '다음 분기' }).check();
+    await reply
+      .getByRole('textbox', { name: '2. 준비에 필요한 기간을 적어 주세요.' })
+      .fill('약 6주');
+
     // 이견은 세부의견이 있어야 제출된다(서버 검증 메시지를 그대로 보인다).
     await reply.getByRole('radio', { name: '이견' }).check();
     await reply.getByRole('button', { name: '최종제출' }).click();
@@ -228,6 +276,8 @@ test.describe('나. 의견 요청', () => {
 
     await reply.getByRole('button', { name: '최종제출' }).click();
     await expect(page.getByTestId('submitted-reply')).toContainText('전환 기간을 한 달 더');
+    await expect(page.getByTestId('submitted-answers')).toContainText('다음 분기');
+    await expect(page.getByTestId('submitted-answers')).toContainText('약 6주');
     await expect(reply).toContainText('제출');
 
     // 제출한 뒤 고치려면 수정 요청을 한다.
@@ -253,6 +303,7 @@ test.describe('나. 의견 요청', () => {
     await page.reload();
     await expect(reply).toContainText('수정 요청이 승인되었습니다');
     await expect(reply.getByLabel('세부의견')).toHaveValue('전환 기간을 한 달 더 주셨으면 합니다.');
+    await expect(reply.getByRole('radio', { name: '다음 분기' })).toBeChecked();
     await reply
       .getByLabel('세부의견')
       .fill('전환 기간을 한 달 더 주셨으면 합니다. 근거는 첨부 일정표입니다.');

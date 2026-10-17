@@ -3,24 +3,32 @@ import {
   Alert,
   Button,
   Card,
+  FileButton,
   Group,
   Skeleton,
   Stack,
   Text,
   Textarea,
   TextInput,
+  ThemeIcon,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
-import { IconPlus, IconTrash } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
+import { IconFile, IconTrash, IconUpload } from '@tabler/icons-react';
+import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
-import { fieldErrorsOf } from '../../../api/client';
+import { ApiError, fieldErrorsOf } from '../../../api/client';
+import { formatBytes } from '../../../shared/format';
 import { PageHeader } from '../../../shared/PageHeader';
 import { ErrorState, StateView } from '../../../shared/state/StateView';
+import { AttachmentPanel } from '../../attachment/components/AttachmentPanel';
+import { attachmentKeys, uploadAttachmentFile } from '../../attachment/hooks';
 import { useCurrentBusiness } from '../../organization/hooks';
+import { QuestionBuilder } from '../components/QuestionBuilder';
 import { type TargetValue, TargetPicker } from '../components/TargetPicker';
 import {
   type OpinionRequestDetail,
@@ -29,23 +37,19 @@ import {
   useRecipientCandidates,
   useUpdateOpinionRequest,
 } from '../hooks';
-
-interface FormRow {
-  /** 화면 안 키. 저장한 양식은 f{id}, 새 양식은 n{번호}. */
-  key: string;
-  id: number | null;
-  name: string;
-  description: string;
-}
+import { isChoice, type QuestionDraft } from '../questions';
 
 interface Values {
   title: string;
   content: string;
   dueDate: string;
-  forms: FormRow[];
+  questions: QuestionDraft[];
 }
 
-/** 새 의견 요청과 요청 고치기. 주소에 :id 가 있으면 고치기다. 첨부자료와 양식 파일은 저장한 뒤 상세에서 올린다. */
+/**
+ * 새 의견 요청과 요청 고치기. 주소에 :id 가 있으면 고치기다. 첨부자료는 여기서 고르고, 새 요청이면 저장한 뒤 바로 올린다.
+ * 질문은 작성중일 때만 고친다(회신을 받기 시작하면 답과 어긋나지 않게 서버가 막는다).
+ */
 export function OpinionEditorPage() {
   const { business: slug = '', id } = useParams<{ business: string; id?: string }>();
   const requestId = id ? Number(id) : null;
@@ -90,19 +94,26 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
   const create = useCreateOpinionRequest();
   const update = useUpdateOpinionRequest(existing?.id ?? 0);
   const mutation = existing ? update : create;
+  const queryClient = useQueryClient();
   const nextKey = useRef(0);
+  const newKey = () => `n${nextKey.current++}`;
+  const questionsLocked = existing != null && existing.status !== 'DRAFT';
+  // 새 요청의 첨부자료. 요청을 저장해 번호가 생긴 뒤 올린다.
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   const form = useForm<Values>({
     initialValues: {
       title: existing?.title ?? '',
       content: existing?.content ?? '',
       dueDate: existing?.dueDate ?? dayjs().add(7, 'day').format('YYYY-MM-DD'),
-      forms:
-        existing?.forms.map((f) => ({
-          key: `f${f.id}`,
-          id: f.id,
-          name: f.name,
-          description: f.description ?? '',
+      questions:
+        existing?.questions.map((q) => ({
+          key: `q${q.id}`,
+          type: q.type,
+          title: q.title,
+          required: q.required,
+          options: q.options.map((o) => o.label),
         })) ?? [],
     },
   });
@@ -110,7 +121,6 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
     () =>
       existing?.targets.map((t) => ({
         organizationId: t.organizationId,
-        formKey: t.formId == null ? null : `f${t.formId}`,
         recipientAccountIds: t.recipients.map((r) => r.accountId),
       })) ?? [],
   );
@@ -132,30 +142,47 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
   const generalError =
     mutation.isError &&
     (Object.keys(fieldErrors).length === 0 ||
-      Object.keys(fieldErrors).some((k) => !knownFields.includes(k) && !k.startsWith('forms.')))
+      Object.keys(fieldErrors).some((k) => !knownFields.includes(k) && !k.startsWith('questions.')))
       ? mutation.error.message
       : undefined;
 
-  const removeForm = (index: number) => {
-    const key = form.values.forms[index].key;
-    form.removeListItem('forms', index);
-    setTargets((ts) => ts.map((t) => (t.formKey === key ? { ...t, formKey: null } : t)));
+  // 새 요청을 저장한 뒤 고른 첨부자료를 올린다. 못 올린 파일은 알리고 상세에서 다시 올리게 한다.
+  const uploadPending = async (requestId: number) => {
+    if (pendingFiles.length === 0) return;
+    const owner = { ownerType: 'OPINION_REQUEST' as const, ownerId: requestId };
+    setUploading(true);
+    const failed: string[] = [];
+    for (const file of pendingFiles) {
+      try {
+        await uploadAttachmentFile(owner, file);
+      } catch (e) {
+        failed.push(`${file.name}${e instanceof ApiError ? `(${e.message})` : ''}`);
+      }
+    }
+    setUploading(false);
+    await queryClient.invalidateQueries({ queryKey: attachmentKeys.list(owner) });
+    if (failed.length > 0) {
+      notifications.show({
+        title: '첨부자료 일부를 올리지 못했습니다',
+        message: `${failed.join(', ')}. 상세 화면에서 다시 올려 주세요.`,
+        color: 'red',
+      });
+    }
   };
 
   const submit = (values: Values) => {
-    const names = new Map(values.forms.map((f) => [f.key, f.name.trim()]));
     const body = {
       title: values.title,
       content: values.content,
       dueDate: values.dueDate,
-      forms: values.forms.map((f) => ({
-        id: f.id,
-        name: f.name,
-        description: f.description.trim() || null,
+      questions: values.questions.map((q) => ({
+        type: q.type,
+        title: q.title,
+        required: q.required,
+        options: isChoice(q.type) ? q.options : [],
       })),
       targets: targets.map((t) => ({
         organizationId: t.organizationId,
-        formName: t.formKey ? (names.get(t.formKey) ?? null) : null,
         recipientAccountIds: t.recipientAccountIds,
       })),
     };
@@ -164,7 +191,12 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
     } else {
       create.mutate(
         { ...body, business: current?.code ?? 'ACCOUNT_INFO' },
-        { onSuccess: (d) => navigate(`/${slug}/opinions/${d.id}`) },
+        {
+          onSuccess: async (d) => {
+            await uploadPending(d.id);
+            navigate(`/${slug}/opinions/${d.id}`);
+          },
+        },
       );
     }
   };
@@ -178,7 +210,7 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
           description={
             existing?.status === 'OPEN'
               ? '회신중인 요청입니다. 저장하면 새로 넣은 담당자에게 요청 메일이, 남은 담당자에게 변경 알림이 갑니다.'
-              : `${current?.label ?? '이 업무'} 참가기관에 보낼 의견 요청입니다. 저장하면 작성중으로 남고, 상세에서 첨부자료를 올린 뒤 회신 요청을 시작합니다.`
+              : `${current?.label ?? '이 업무'} 참가기관에 보낼 의견 요청입니다. 저장하면 작성중으로 남고, 상세에서 회신 요청을 시작합니다.`
           }
           actions={
             <>
@@ -189,7 +221,7 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
               >
                 취소
               </Button>
-              <Button type="submit" loading={mutation.isPending}>
+              <Button type="submit" loading={mutation.isPending || uploading}>
                 저장
               </Button>
             </>
@@ -244,65 +276,42 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
 
         <Card>
           <Stack gap="sm">
-            <Group justify="space-between">
-              <div>
-                <Text fw={700} size="xl">
-                  업권별 회신 양식
-                </Text>
-                <Text size="sm" c="dimmed">
-                  양식을 만들고, 아래 업권 묶음에서 한 번에 정하거나 기관마다 고릅니다. 양식 파일은
-                  저장한 뒤 상세에서 올립니다. 양식이 없으면 기관은 의견만 적어 회신합니다.
-                </Text>
-              </div>
-              <Button
-                variant="light"
-                leftSection={<IconPlus size={16} stroke={1.8} />}
-                onClick={() =>
-                  form.insertListItem('forms', {
-                    key: `n${nextKey.current++}`,
-                    id: null,
-                    name: '',
-                    description: '',
-                  })
-                }
-              >
-                양식 추가
-              </Button>
-            </Group>
-            {form.values.forms.length === 0 && (
-              <Text size="sm" c="dimmed">
-                정한 양식이 없습니다.
+            <div>
+              <Text fw={700} size="xl">
+                첨부자료
               </Text>
+              <Text size="sm" c="dimmed">
+                개편안, 회신 양식 파일처럼 기관이 보고 회신할 자료입니다. 대상 기관 담당자가
+                내려받습니다.
+              </Text>
+            </div>
+            {existing ? (
+              <AttachmentPanel
+                ownerType="OPINION_REQUEST"
+                ownerId={existing.id}
+                editable
+                uploadLabel="첨부자료 올리기"
+                emptyMessage="올린 첨부자료가 없습니다."
+              />
+            ) : (
+              <PendingFiles files={pendingFiles} onChange={setPendingFiles} />
             )}
-            {form.values.forms.map((f, index) => (
-              <Group key={f.key} gap="sm" align="flex-start" wrap="nowrap">
-                <TextInput
-                  label={index === 0 ? '양식 이름' : undefined}
-                  aria-label="양식 이름"
-                  placeholder="예: 은행권"
-                  w={200}
-                  maxLength={50}
-                  {...form.getInputProps(`forms.${index}.name`)}
-                />
-                <TextInput
-                  label={index === 0 ? '작성 안내' : undefined}
-                  aria-label="작성 안내"
-                  placeholder="예: 시트 2의 항목을 모두 채워 주세요."
-                  flex={1}
-                  maxLength={500}
-                  {...form.getInputProps(`forms.${index}.description`)}
-                />
-                <ActionIcon
-                  variant="subtle"
-                  color="red"
-                  mt={index === 0 ? 26 : 4}
-                  aria-label={`${f.name || '양식'} 빼기`}
-                  onClick={() => removeForm(index)}
-                >
-                  <IconTrash size={18} stroke={1.8} />
-                </ActionIcon>
-              </Group>
-            ))}
+          </Stack>
+        </Card>
+
+        <Card>
+          <Stack gap="sm">
+            <div>
+              <Text fw={700} size="xl">
+                질문
+              </Text>
+              <Text size="sm" c="dimmed">
+                {questionsLocked
+                  ? '회신을 받기 시작한 요청이라 질문은 고칠 수 없습니다.'
+                  : '기관에 물을 내용을 질문으로 나눠 넣습니다. 객관식(하나 고르기), 체크박스(여러 개 고르기), 주관식(글로 답하기) 중에서 고릅니다. 기관은 의견 유형·세부의견과 함께 답합니다.'}
+              </Text>
+            </div>
+            <QuestionBuilder form={form} locked={questionsLocked} newKey={newKey} />
           </Stack>
         </Card>
 
@@ -324,12 +333,69 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
               error={candidates.error}
               value={targets}
               onChange={setTargets}
-              forms={form.values.forms.map((f) => ({ key: f.key, name: f.name }))}
               lockedOrganizationIds={locked}
             />
           </Stack>
         </Card>
       </Stack>
     </form>
+  );
+}
+
+/** 새 요청에서 저장 전에 고른 첨부자료. 저장하면 이 순서대로 올린다. */
+function PendingFiles({ files, onChange }: { files: File[]; onChange: (files: File[]) => void }) {
+  return (
+    <Stack gap="sm" data-testid="pending-attachments">
+      <Group justify="space-between" align="center">
+        <Text size="sm" c="dimmed">
+          {files.length > 0 ? `${files.length}개, 저장하면 올립니다.` : '저장하면 함께 올립니다.'}
+        </Text>
+        <FileButton multiple onChange={(picked) => onChange([...files, ...picked])}>
+          {(props) => (
+            <Button {...props} size="xs" variant="light" leftSection={<IconUpload size={14} />}>
+              첨부자료 고르기
+            </Button>
+          )}
+        </FileButton>
+      </Group>
+      {files.length > 0 && (
+        <Stack gap={6} role="list" aria-label="올릴 첨부자료">
+          {files.map((file, index) => (
+            <Group
+              key={`${file.name}-${index}`}
+              gap="sm"
+              wrap="nowrap"
+              role="listitem"
+              px="sm"
+              py={6}
+              style={{
+                border: '1px solid var(--mantine-color-default-border)',
+                borderRadius: 'var(--mantine-radius-sm)',
+              }}
+            >
+              <ThemeIcon variant="light" color="clay" size={32} radius="sm">
+                <IconFile size={18} stroke={1.6} />
+              </ThemeIcon>
+              <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
+                <Text size="sm" fw={600} truncate="end">
+                  {file.name}
+                </Text>
+                <Text size="xs" c="dimmed">
+                  {formatBytes(file.size)}
+                </Text>
+              </Stack>
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                aria-label={`${file.name} 빼기`}
+                onClick={() => onChange(files.filter((_, i) => i !== index))}
+              >
+                <IconTrash size={16} />
+              </ActionIcon>
+            </Group>
+          ))}
+        </Stack>
+      )}
+    </Stack>
   );
 }

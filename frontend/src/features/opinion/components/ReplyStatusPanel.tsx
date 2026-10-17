@@ -31,6 +31,7 @@ import {
 } from '../hooks';
 import { ReplyStatusBadge, ReplyTypeBadge } from './OpinionBadges';
 import { RemindModal, ReasonModal } from './OpinionModals';
+import { QuestionSummary } from './QuestionSummary';
 import classes from './OpinionTable.module.css';
 
 type ReplyFilter = 'ALL' | 'REPLIED' | 'NOT_REPLIED';
@@ -66,6 +67,7 @@ export function ReplyStatusPanel({ request }: { request: OpinionRequestDetail })
   return (
     <Stack gap="md">
       <SummaryCards collation={data} />
+      <QuestionSummary collation={data} />
 
       <Card>
         <Group justify="space-between" mb="sm" gap="sm">
@@ -109,7 +111,6 @@ export function ReplyStatusPanel({ request }: { request: OpinionRequestDetail })
           <Table.Thead>
             <Table.Tr>
               <Table.Th>기관</Table.Th>
-              <Table.Th w={120}>회신 양식</Table.Th>
               <Table.Th w={180}>회신 담당자</Table.Th>
               <Table.Th w={110}>상태</Table.Th>
               <Table.Th w={120}>의견 유형</Table.Th>
@@ -144,9 +145,6 @@ export function ReplyStatusPanel({ request }: { request: OpinionRequestDetail })
                   </Group>
                 </Table.Td>
                 <Table.Td>
-                  <Text size="sm">{r.formName ?? '-'}</Text>
-                </Table.Td>
-                <Table.Td>
                   <Text size="sm" c={r.recipientNames.length ? undefined : 'dimmed'}>
                     {r.recipientNames.length ? r.recipientNames.join(', ') : '지정 안 함'}
                   </Text>
@@ -164,7 +162,7 @@ export function ReplyStatusPanel({ request }: { request: OpinionRequestDetail })
                 </Table.Td>
               </Table.Tr>
             ))}
-            {rows.length === 0 && <TableEmpty colSpan={6} message="해당하는 기관이 없습니다." />}
+            {rows.length === 0 && <TableEmpty colSpan={5} message="해당하는 기관이 없습니다." />}
           </Table.Tbody>
         </Table>
       </Card>
@@ -289,7 +287,11 @@ function ReplyDrawer({
           onClose();
         }}
         title={row?.organizationName ?? ''}
-        subtitle={row?.formName ? `회신 양식 ${row.formName}` : '회신 양식 없음'}
+        subtitle={
+          row && row.recipientNames.length > 0
+            ? `회신 담당자 ${row.recipientNames.join(', ')}`
+            : '회신 담당자 지정 안 함'
+        }
         footer={
           revision && row?.replyId != null ? (
             <>
@@ -337,6 +339,23 @@ function ReplyDrawer({
                     {row.content ?? '(적지 않음)'}
                   </Text>
                 </div>
+                {request.questions.length > 0 && (
+                  <Stack gap="xs" data-testid="drawer-answers">
+                    <Text size="sm" c="dimmed" fw={600}>
+                      질문 답
+                    </Text>
+                    {request.questions.map((q, index) => (
+                      <div key={q.id}>
+                        <Text size="sm" fw={600}>
+                          {index + 1}. {q.title}
+                        </Text>
+                        <Text size="md" className={classes.content}>
+                          {row.answers.find((a) => a.questionId === q.id)?.value ?? '(답하지 않음)'}
+                        </Text>
+                      </div>
+                    ))}
+                  </Stack>
+                )}
                 <Text size="sm" c="dimmed">
                   {row.replierName} · {formatDateTime(row.submittedAt)} 제출
                 </Text>
