@@ -105,3 +105,7 @@ docs/      기획·설계 문서
 ```
 
 주소 구조는 `/{업무 영역}/{기능}` 이다. 왼쪽 레일이 업무 영역(조회 범위)을, 보조 메뉴가 기능을 고른다.
+
+### PR 테스트 링크 (병합 전)
+
+병합 전에 PR 내용을 계정 없이 브라우저로 보려면 PR 에 `preview` 라벨을 붙인다. GitHub Actions 의 "PR 테스트 링크" 실행이 그 PR 의 app.jar(demo 프로필)를 띄우고 Cloudflare 무료 임시 주소(`https://….trycloudflare.com`, 계정 없음)로 연다. 주소는 실행 요약과 로그에 나온다. push 하면 앞 실행을 끄고 새 주소로 다시 띄우며, 한 번 띄우면 최대 약 5시간 30분 열려 있다. 공개 저장소라 Actions 비용은 없고, 기존 Render 사이트와 main 은 건드리지 않는다. 설정은 `.github/workflows/preview.yml` 이다.

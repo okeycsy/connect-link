@@ -1,0 +1,81 @@
+# PR 테스트 링크. 병합 전에 계정 없이 브라우저로 PR 내용을 보려고 쓴다.
+# PR 에 `preview` 라벨이 붙어 있으면, 그 PR 의 app.jar(demo 프로필, 샘플 데이터)를 이 실행기에서 띄우고
+# Cloudflare 무료 임시 주소(trycloudflare.com, 계정 없음)로 연다. 주소는 실행 로그와 요약에 나온다.
+# push 할 때마다 앞 실행을 끄고 새로 띄우며(주소가 바뀐다), 최대 6시간 뒤에 꺼진다. 기존 Render 사이트와는 따로다.
+name: PR 테스트 링크
+
+on:
+  pull_request:
+    types: [labeled, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    name: 테스트 링크 띄우기
+    if: contains(github.event.pull_request.labels.*.name, 'preview')
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: app.jar 만들기
+        run: ./gradlew :backend:bootJar
+
+      - name: 앱 띄우기 (demo 프로필)
+        run: |
+          nohup java -jar backend/build/libs/app.jar > app.log 2>&1 &
+          for i in $(seq 1 90); do
+            if curl -fs http://localhost:8080/api/v1/health > /dev/null; then echo "앱이 떴습니다"; exit 0; fi
+            sleep 2
+          done
+          cat app.log; echo "::error::앱이 뜨지 않았습니다"; exit 1
+
+      - name: 임시 주소 열기
+        run: |
+          curl -fsSL -o cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+          chmod +x cloudflared
+          nohup ./cloudflared tunnel --no-autoupdate --url http://localhost:8080 > tunnel.log 2>&1 &
+          for i in $(seq 1 60); do
+            URL=$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' tunnel.log | head -1 || true)
+            if [ -n "$URL" ]; then break; fi
+            sleep 2
+          done
+          if [ -z "$URL" ]; then cat tunnel.log; echo "::error::임시 주소를 받지 못했습니다"; exit 1; fi
+          echo "PREVIEW_URL=$URL"
+          echo "::notice title=테스트 링크::$URL"
+          {
+            echo "## 테스트 링크"
+            echo ""
+            echo "$URL"
+            echo ""
+            echo "PR #${{ github.event.pull_request.number }} · ${{ github.event.pull_request.head.sha }} · 데모 비밀번호 demo1234!"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 열어 두기 (최대 약 5시간 30분)
+        run: |
+          for i in $(seq 1 330); do
+            sleep 60
+            curl -fs http://localhost:8080/api/v1/health > /dev/null || { tail -50 app.log; exit 1; }
+          done
