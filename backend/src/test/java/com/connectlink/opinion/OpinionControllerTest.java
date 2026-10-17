@@ -316,7 +316,7 @@ class OpinionControllerTest {
     send(get(BASE + "/" + id + "/my-reply"), null, kim())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.replyId").isEmpty())
-        .andExpect(jsonPath("$.form.name").value("은행권"))
+        .andExpect(jsonPath("$.formName").value("은행권"))
         .andExpect(jsonPath("$.editable").value(true));
 
     send(put(BASE + "/" + id + "/my-reply"), Map.of("content", "검토 중"), kim())

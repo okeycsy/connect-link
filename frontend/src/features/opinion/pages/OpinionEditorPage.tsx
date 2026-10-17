@@ -10,6 +10,7 @@ import {
   Textarea,
   TextInput,
 } from '@mantine/core';
+import { DatePickerInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { IconPlus, IconTrash } from '@tabler/icons-react';
 import dayjs from 'dayjs';
@@ -229,11 +230,12 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
                 readOnly
                 w={220}
               />
-              <TextInput
-                type="date"
+              <DatePickerInput
                 label="회신 기한"
                 required
                 w={220}
+                valueFormat="YYYY-MM-DD"
+                minDate={dayjs().format('YYYY-MM-DD')}
                 {...form.getInputProps('dueDate')}
               />
             </Group>

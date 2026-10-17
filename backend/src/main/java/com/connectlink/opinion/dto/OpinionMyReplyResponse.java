@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
  * 기관 담당자의 회신 화면. 제출한 내용과 임시저장한 내용을 따로 준다.
  *
  * @param replyId 회신 ID. 아직 저장한 적이 없으면 null. 근거자료는 첨부 API(ownerType=OPINION_REPLY, ownerId=replyId)
- * @param form 이 기관의 회신 양식. 없으면 null
+ * @param formName 이 기관의 회신 양식 이름. 없으면 null. 양식 안내와 파일은 요청 상세의 forms 에 있다
  * @param status 회신 상태. 저장한 적이 없으면 null
  * @param type 제출한 의견 유형
  * @param draftType 임시저장한 의견 유형. 처음 쓰는 중이거나 수정 중일 때 있다
@@ -20,7 +20,7 @@ public record OpinionMyReplyResponse(
     Long requestId,
     Long targetId,
     String organizationName,
-    @Schema(nullable = true) OpinionReplyFormResponse form,
+    @Schema(nullable = true) String formName,
     @Schema(nullable = true) Long replyId,
     @Schema(nullable = true) OpinionReplyStatus status,
     String statusLabel,

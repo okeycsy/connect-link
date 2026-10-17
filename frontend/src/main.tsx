@@ -1,9 +1,12 @@
 import '@mantine/core/styles.css';
+import '@mantine/dates/styles.css';
 import '@mantine/notifications/styles.css';
 import './app/fonts.css';
 import './app/global.css';
+import 'dayjs/locale/ko';
 
 import { MantineProvider } from '@mantine/core';
+import { DatesProvider } from '@mantine/dates';
 import { Notifications } from '@mantine/notifications';
 import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode } from 'react';
@@ -34,10 +37,12 @@ const queryClient: QueryClient = new QueryClient({
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <MantineProvider theme={theme} defaultColorScheme="light">
-      <Notifications position="top-right" />
-      <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
-      </QueryClientProvider>
+      <DatesProvider settings={{ locale: 'ko' }}>
+        <Notifications position="top-right" />
+        <QueryClientProvider client={queryClient}>
+          <RouterProvider router={router} />
+        </QueryClientProvider>
+      </DatesProvider>
     </MantineProvider>
   </StrictMode>,
 );

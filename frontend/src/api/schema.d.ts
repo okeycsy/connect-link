@@ -981,7 +981,7 @@ export interface components {
       /** Format: int64 */
       targetId: number;
       organizationName: string;
-      form: components['schemas']['OpinionReplyFormResponse'];
+      formName?: string | null;
       /** Format: int64 */
       replyId?: number | null;
       /** @enum {string|null} */
@@ -1004,12 +1004,6 @@ export interface components {
       editable: boolean;
       revisionRequestable: boolean;
     };
-    OpinionReplyFormResponse: {
-      /** Format: int64 */
-      id: number;
-      name: string;
-      description?: string | null;
-    } | null;
     OpinionReplyFormRequest: {
       /** Format: int64 */
       id?: number | null;
@@ -1036,6 +1030,12 @@ export interface components {
       name: string;
       email: string;
       subBusiness?: string | null;
+    };
+    OpinionReplyFormResponse: {
+      /** Format: int64 */
+      id: number;
+      name: string;
+      description?: string | null;
     };
     OpinionRequestDetailResponse: {
       /** Format: int64 */
