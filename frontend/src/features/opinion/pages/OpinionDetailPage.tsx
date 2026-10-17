@@ -22,7 +22,8 @@ import { ChangeHistoryList } from '../../history/components/ChangeHistoryList';
 import { CollationPanel, ReminderHistory } from '../components/CollationPanel';
 import { MyReplyPanel } from '../components/MyReplyPanel';
 import { DueBadge, OpinionStatusBadge, ReplyStatusBadge } from '../components/OpinionBadges';
-import { ConfirmModal, ReasonModal } from '../components/OpinionModals';
+import { ConfirmModal } from '../../../shared/ConfirmModal';
+import { ReasonModal } from '../components/OpinionModals';
 import classes from '../components/OpinionTable.module.css';
 import { ReplyStatusPanel } from '../components/ReplyStatusPanel';
 import {

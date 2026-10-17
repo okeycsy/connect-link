@@ -12,6 +12,14 @@ export function formatDateTime(value: string | Date | null | undefined): string 
   return dayjs(value).format('YYYY-MM-DD HH:mm');
 }
 
+/** 일시 구간 "2026-10-18 02:00 ~ 04:00". 날짜가 다르면 끝에도 날짜를 붙인다. */
+export function formatDateTimeRange(start: string | Date, end: string | Date): string {
+  const from = dayjs(start);
+  const to = dayjs(end);
+  const tail = from.isSame(to, 'day') ? to.format('HH:mm') : to.format('YYYY-MM-DD HH:mm');
+  return `${from.format('YYYY-MM-DD HH:mm')} ~ ${tail}`;
+}
+
 /**
  * 전화번호 표기. 숫자만 남겨 02-1234-5678, 031-123-4567, 010-1234-5678 꼴로 붙인다.
  * 마스킹된 값(010-****-1234)은 서버가 이미 만든 것이므로 그대로 둔다.
