@@ -180,7 +180,7 @@ export interface paths {
     put?: never;
     /**
      * 의견 요청 작성
-     * @description 작성중으로 저장한다. 첨부자료(OPINION_REQUEST)와 양식 파일(OPINION_REPLY_FORM)은 저장한 뒤 첨부 API 로 올린다.
+     * @description 작성중으로 저장한다. 첨부자료(OPINION_REQUEST)는 저장한 뒤 첨부 API 로 올린다.
      */
     post: operations['create_1'];
     delete?: never;
@@ -998,10 +998,23 @@ export interface components {
       updatedAt: string;
       updatedBy: string;
     };
+    OpinionAnswerRequest: {
+      /** Format: int64 */
+      questionId: number;
+      optionIds?: (number | null)[] | null;
+      text?: string | null;
+    } | null;
     OpinionReplySaveRequest: {
       /** @enum {string|null} */
       type?: 'AGREE' | 'CONDITIONAL' | 'DISAGREE' | null;
       content?: string | null;
+      answers?: components['schemas']['OpinionAnswerRequest'][] | null;
+    };
+    OpinionAnswerResponse: {
+      /** Format: int64 */
+      questionId: number;
+      optionIds: number[];
+      text?: string | null;
     };
     OpinionMyReplyResponse: {
       /** Format: int64 */
@@ -1009,7 +1022,6 @@ export interface components {
       /** Format: int64 */
       targetId: number;
       organizationName: string;
-      formName?: string | null;
       /** Format: int64 */
       replyId?: number | null;
       /** @enum {string|null} */
@@ -1022,6 +1034,8 @@ export interface components {
       /** @enum {string|null} */
       draftType?: 'AGREE' | 'CONDITIONAL' | 'DISAGREE' | null;
       draftContent?: string | null;
+      answers: components['schemas']['OpinionAnswerResponse'][];
+      draftAnswers: components['schemas']['OpinionAnswerResponse'][];
       replierName?: string | null;
       /** Format: date-time */
       submittedAt?: string | null;
@@ -1032,25 +1046,40 @@ export interface components {
       editable: boolean;
       revisionRequestable: boolean;
     };
-    OpinionReplyFormRequest: {
-      /** Format: int64 */
-      id?: number | null;
-      name: string;
-      description?: string | null;
+    OpinionQuestionRequest: {
+      /** @enum {string} */
+      type: 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TEXT';
+      title: string;
+      required: boolean;
+      options?: (string | null)[] | null;
     };
     OpinionRequestUpdateRequest: {
       title: string;
       content: string;
       /** Format: date */
       dueDate: string;
-      forms: components['schemas']['OpinionReplyFormRequest'][];
+      questions: components['schemas']['OpinionQuestionRequest'][];
       targets: components['schemas']['OpinionTargetRequest'][];
     };
     OpinionTargetRequest: {
       /** Format: int64 */
       organizationId: number;
-      formName?: string | null;
       recipientAccountIds: number[];
+    };
+    OpinionQuestionOption: {
+      /** Format: int64 */
+      id: number;
+      label: string;
+    };
+    OpinionQuestionResponse: {
+      /** Format: int64 */
+      id: number;
+      /** @enum {string} */
+      type: 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TEXT';
+      typeLabel: string;
+      title: string;
+      required: boolean;
+      options: components['schemas']['OpinionQuestionOption'][];
     };
     OpinionRecipientResponse: {
       /** Format: int64 */
@@ -1058,12 +1087,6 @@ export interface components {
       name: string;
       email: string;
       subBusiness?: string | null;
-    };
-    OpinionReplyFormResponse: {
-      /** Format: int64 */
-      id: number;
-      name: string;
-      description?: string | null;
     };
     OpinionRequestDetailResponse: {
       /** Format: int64 */
@@ -1092,7 +1115,7 @@ export interface components {
       createdAt: string;
       /** Format: date-time */
       updatedAt: string;
-      forms: components['schemas']['OpinionReplyFormResponse'][];
+      questions: components['schemas']['OpinionQuestionResponse'][];
       targets: components['schemas']['OpinionTargetResponse'][];
       permissions: components['schemas']['OpinionRequestPermissions'];
     };
@@ -1112,9 +1135,6 @@ export interface components {
       organizationId: number;
       organizationCode: string;
       organizationName: string;
-      /** Format: int64 */
-      formId?: number | null;
-      formName?: string | null;
       recipients: components['schemas']['OpinionRecipientResponse'][];
       replied: boolean;
       /** @enum {string|null} */
@@ -1219,7 +1239,7 @@ export interface components {
       content: string;
       /** Format: date */
       dueDate: string;
-      forms: components['schemas']['OpinionReplyFormRequest'][];
+      questions: components['schemas']['OpinionQuestionRequest'][];
       targets: components['schemas']['OpinionTargetRequest'][];
     };
     OpinionReasonRequest: {
@@ -1321,7 +1341,7 @@ export interface components {
       /** Format: int64 */
       id: number;
       /** @enum {string} */
-      ownerType: 'OPINION_REQUEST' | 'OPINION_REPLY' | 'OPINION_REPLY_FORM' | 'SUSPENSION' | 'DEMO';
+      ownerType: 'OPINION_REQUEST' | 'OPINION_REPLY' | 'SUSPENSION' | 'DEMO';
       /** Format: int64 */
       ownerId: number;
       name: string;
@@ -1436,8 +1456,30 @@ export interface components {
       totalPages: number;
       last: boolean;
     };
+    OpinionCollationOptionCount: {
+      /** Format: int64 */
+      optionId: number;
+      label: string;
+      /** Format: int32 */
+      count: number;
+      organizations: string[];
+    };
+    OpinionCollationQuestion: {
+      /** Format: int64 */
+      questionId: number;
+      title: string;
+      /** @enum {string} */
+      type: 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TEXT';
+      typeLabel: string;
+      required: boolean;
+      /** Format: int32 */
+      answeredCount: number;
+      options: components['schemas']['OpinionCollationOptionCount'][];
+      textAnswers: components['schemas']['OpinionCollationTextAnswer'][];
+    };
     OpinionCollationResponse: {
       summary: components['schemas']['OpinionCollationSummary'];
+      questions: components['schemas']['OpinionCollationQuestion'][];
       rows: components['schemas']['OpinionCollationRow'][];
     };
     OpinionCollationRow: {
@@ -1447,7 +1489,6 @@ export interface components {
       organizationId: number;
       organizationCode: string;
       organizationName: string;
-      formName?: string | null;
       recipientNames: string[];
       replied: boolean;
       /** Format: int64 */
@@ -1465,6 +1506,12 @@ export interface components {
       revisionReason?: string | null;
       /** Format: date-time */
       revisionRequestedAt?: string | null;
+      answers: components['schemas']['OpinionCollationRowAnswer'][];
+    };
+    OpinionCollationRowAnswer: {
+      /** Format: int64 */
+      questionId: number;
+      value?: string | null;
     };
     OpinionCollationSummary: {
       /** Format: int32 */
@@ -1477,6 +1524,10 @@ export interface components {
       replyRate: number;
       byType: components['schemas']['OpinionCollationTypeCount'][];
       notRepliedOrganizations: string[];
+    };
+    OpinionCollationTextAnswer: {
+      organizationName: string;
+      text: string;
     };
     OpinionCollationTypeCount: {
       /** @enum {string} */
@@ -2465,8 +2516,7 @@ export interface operations {
   list_7: {
     parameters: {
       query: {
-        ownerType:
-          'OPINION_REQUEST' | 'OPINION_REPLY' | 'OPINION_REPLY_FORM' | 'SUSPENSION' | 'DEMO';
+        ownerType: 'OPINION_REQUEST' | 'OPINION_REPLY' | 'SUSPENSION' | 'DEMO';
         ownerId: number;
       };
       header?: never;
@@ -2489,8 +2539,7 @@ export interface operations {
   upload: {
     parameters: {
       query: {
-        ownerType:
-          'OPINION_REQUEST' | 'OPINION_REPLY' | 'OPINION_REPLY_FORM' | 'SUSPENSION' | 'DEMO';
+        ownerType: 'OPINION_REQUEST' | 'OPINION_REPLY' | 'SUSPENSION' | 'DEMO';
         ownerId: number;
       };
       header?: never;

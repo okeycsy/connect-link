@@ -7,8 +7,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 의견 요청 모듈의 첨부 권한. 요청 첨부자료·업권별 회신 양식 파일·기관 회신 근거자료 세 대상이다. 보기는 대상을 볼 수 있는 사람, 올리기·지우기는 고칠 수 있는
- * 사람(요청·양식은 그 업무의 결제원 담당자가 마감 전까지, 근거자료는 그 기관 담당자가 회신을 고칠 수 있을 때)이다.
+ * 의견 요청 모듈의 첨부 권한. 요청 첨부자료와 기관 회신 근거자료 두 대상이다. 보기는 대상을 볼 수 있는 사람, 올리기·지우기는 고칠 수 있는 사람(요청은 그 업무의 결제원
+ * 담당자가 마감 전까지, 근거자료는 그 기관 담당자가 회신을 고칠 수 있을 때)이다.
  */
 final class OpinionAttachmentAccess {
 
@@ -42,51 +42,6 @@ final class OpinionAttachmentAccess {
       return repository
           .findById(ownerId)
           .map(r -> canEditRequest(accessPolicy, user, r))
-          .orElse(false);
-    }
-  }
-
-  /** 업권별 회신 양식 파일. 기관 담당자는 자기 기관에 고른 양식만 내려받는다. */
-  @Component
-  @Transactional(readOnly = true)
-  static class FormFiles implements AttachmentOwnerAccess {
-
-    private final OpinionReplyFormRepository repository;
-    private final OpinionAccessPolicy accessPolicy;
-
-    FormFiles(OpinionReplyFormRepository repository, OpinionAccessPolicy accessPolicy) {
-      this.repository = repository;
-      this.accessPolicy = accessPolicy;
-    }
-
-    @Override
-    public AttachmentOwnerType ownerType() {
-      return AttachmentOwnerType.OPINION_REPLY_FORM;
-    }
-
-    @Override
-    public boolean canView(CurrentUser user, Long ownerId) {
-      return repository
-          .findById(ownerId)
-          .map(
-              form -> {
-                OpinionRequest request = form.getRequest();
-                if (accessPolicy.canManage(user, request.getBusiness())) {
-                  return true;
-                }
-                return accessPolicy.isTargetMember(user, request)
-                    && OpinionRequestService.ownTarget(user, request)
-                        .map(t -> t.getForm() != null && t.getForm().getId().equals(form.getId()))
-                        .orElse(false);
-              })
-          .orElse(false);
-    }
-
-    @Override
-    public boolean canEdit(CurrentUser user, Long ownerId) {
-      return repository
-          .findById(ownerId)
-          .map(form -> canEditRequest(accessPolicy, user, form.getRequest()))
           .orElse(false);
     }
   }

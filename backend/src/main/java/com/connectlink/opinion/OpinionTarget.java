@@ -18,7 +18,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import org.hibernate.annotations.BatchSize;
 
-/** 의견 요청의 대상 기관 한 곳. 회신 담당자({@link OpinionTargetRecipient})와 고른 회신 양식을 가진다. */
+/** 의견 요청의 대상 기관 한 곳. 회신 담당자({@link OpinionTargetRecipient})를 가진다. */
 @Entity
 @Table(name = "opinion_target")
 public class OpinionTarget extends AuditedEntity {
@@ -35,11 +35,6 @@ public class OpinionTarget extends AuditedEntity {
   @JoinColumn(name = "organization_id", nullable = false)
   private Organization organization;
 
-  /** 이 기관이 쓸 회신 양식. 없으면 양식 없이 회신한다. */
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "form_id")
-  private OpinionReplyForm form;
-
   @OneToMany(mappedBy = "target", cascade = CascadeType.ALL, orphanRemoval = true)
   @BatchSize(size = 50)
   private List<OpinionTargetRecipient> recipients = new ArrayList<>();
@@ -49,10 +44,6 @@ public class OpinionTarget extends AuditedEntity {
   OpinionTarget(OpinionRequest request, Organization organization) {
     this.request = request;
     this.organization = organization;
-  }
-
-  void changeForm(OpinionReplyForm form) {
-    this.form = form;
   }
 
   /**
@@ -85,10 +76,6 @@ public class OpinionTarget extends AuditedEntity {
 
   public Organization getOrganization() {
     return organization;
-  }
-
-  public OpinionReplyForm getForm() {
-    return form;
   }
 
   /** 회신 담당자. 이름순이다. */

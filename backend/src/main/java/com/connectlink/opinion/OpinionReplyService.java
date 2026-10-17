@@ -6,8 +6,21 @@ import com.connectlink.history.ChangeHistoryCommand;
 import com.connectlink.history.ChangeHistoryService;
 import com.connectlink.history.FieldChanges;
 import com.connectlink.history.HistoryTargetType;
+import com.connectlink.opinion.OpinionReply.Answer;
+import com.connectlink.opinion.OpinionReplyAnswer.Stage;
+import com.connectlink.opinion.dto.OpinionAnswerRequest;
+import com.connectlink.opinion.dto.OpinionAnswerResponse;
 import com.connectlink.opinion.dto.OpinionMyReplyResponse;
 import com.connectlink.opinion.dto.OpinionReplySaveRequest;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,20 +61,24 @@ public class OpinionReplyService {
         request, target, replyRepository.findByTarget_Id(target.getId()).orElse(null));
   }
 
-  /** 임시저장. 처음 쓰는 중이거나 수정 요청이 승인된 뒤에만 된다. 제출한 내용은 그대로 둔다. */
+  /** 임시저장. 처음 쓰는 중이거나 수정 요청이 승인된 뒤에만 된다. 제출한 내용은 그대로 둔다. 빈 질문이 있어도 된다. */
   public OpinionMyReplyResponse saveDraft(
       CurrentUser user, Long requestId, OpinionReplySaveRequest body) {
     OpinionRequest request = requestService.load(requestId);
     OpinionTarget target = ownTarget(user, request);
     ensureOpen(request);
+    List<Answer> answers = toAnswers(request, body.answers(), false);
     OpinionReply reply = findOrStart(target);
     ensureEditable(reply);
-    reply.saveDraft(body.type(), trimToNull(body.content()), user.email(), user.name());
+    reply.saveDraft(body.type(), trimToNull(body.content()), answers, user.email(), user.name());
     replyRepository.saveAndFlush(reply);
     return toResponse(request, target, reply);
   }
 
-  /** 최종제출. 의견 유형이 있어야 하고, 조건부 동의·이견은 세부의견도 있어야 한다. 처음 제출이면 등록 이력을, 수정 뒤 다시 제출이면 바뀐 항목을 이력으로 남긴다. */
+  /**
+   * 최종제출. 의견 유형이 있어야 하고, 조건부 동의·이견은 세부의견도 있어야 하며, 필수 질문에는 모두 답해야 한다. 처음 제출이면 등록 이력을, 수정 뒤 다시 제출이면
+   * 바뀐 항목을 이력으로 남긴다.
+   */
   public OpinionMyReplyResponse submit(
       CurrentUser user, Long requestId, OpinionReplySaveRequest body) {
     OpinionRequest request = requestService.load(requestId);
@@ -79,12 +96,15 @@ public class OpinionReplyService {
           "content",
           body.type().getLabel() + "은(는) 세부의견을 적어 주세요.");
     }
+    List<Answer> answers = toAnswers(request, body.answers(), true);
     OpinionReply reply = findOrStart(target);
     ensureEditable(reply);
     boolean resubmit = reply.isReplied();
     OpinionReplyType beforeType = reply.getType();
     String beforeContent = reply.getContent();
-    reply.submit(body.type(), content, user.email(), user.name(), requestService.now());
+    String beforeAnswers = answerSummary(request, reply.getAnswers(Stage.SUBMITTED));
+    reply.submit(body.type(), content, answers, user.email(), user.name(), requestService.now());
+    String afterAnswers = answerSummary(request, answers);
     replyRepository.saveAndFlush(reply);
     String organization = target.getOrganization().getName();
     changeHistoryService.record(
@@ -98,6 +118,7 @@ public class OpinionReplyService {
                 FieldChanges.compare()
                     .field("type", "의견 유형", beforeType, reply.getType())
                     .field("content", "세부의견", beforeContent, reply.getContent())
+                    .field("answers", "질문 답", beforeAnswers, afterAnswers)
                     .toList())
             : ChangeHistoryCommand.created(
                 HistoryTargetType.OPINION_REPLY,
@@ -107,6 +128,7 @@ public class OpinionReplyService {
                 FieldChanges.compare()
                     .value("type", "의견 유형", null, reply.getType())
                     .value("content", "세부의견", null, reply.getContent())
+                    .value("answers", "질문 답", null, afterAnswers)
                     .toList()));
     return toResponse(request, target, reply);
   }
@@ -143,6 +165,111 @@ public class OpinionReplyService {
     OpinionReply reply = loadRevisionRequested(request, replyId);
     reply.rejectRevision(reason.trim());
     notifier.revisionReviewed(request, reply, false);
+  }
+
+  /**
+   * 보낸 답을 저장할 칸으로 바꾼다. 이 요청의 질문·선택지여야 하고, 하나 고르기는 한 개까지다. 제출이면 필수 질문에 모두 답했는지도 본다. 오류는 그 질문
+   * 칸({@code answers.{질문 ID}})에 붙는다.
+   */
+  static List<Answer> toAnswers(
+      OpinionRequest request, List<OpinionAnswerRequest> body, boolean submit) {
+    Map<Long, OpinionQuestion> questions =
+        request.getQuestions().stream()
+            .collect(Collectors.toMap(OpinionQuestion::getId, Function.identity()));
+    Set<Long> seen = new HashSet<>();
+    Set<Long> answered = new HashSet<>();
+    List<Answer> answers = new ArrayList<>();
+    for (OpinionAnswerRequest a : body) {
+      OpinionQuestion question = questions.get(a.questionId());
+      if (question == null || !seen.add(a.questionId())) {
+        throw BusinessException.onField(
+            HttpStatus.BAD_REQUEST, "OPINION_ANSWER_INVALID", "answers", "이 요청의 질문이 아닌 답이 있습니다.");
+      }
+      String field = "answers." + question.getId();
+      if (question.getType().isChoice()) {
+        Set<Long> optionIds = new LinkedHashSet<>(a.optionIds());
+        if (question.getType() == OpinionQuestionType.SINGLE_CHOICE && optionIds.size() > 1) {
+          throw BusinessException.onField(
+              HttpStatus.BAD_REQUEST, "OPINION_ANSWER_INVALID", field, "하나만 골라 주세요.");
+        }
+        for (Long optionId : optionIds) {
+          if (question.findOption(optionId).isEmpty()) {
+            throw BusinessException.onField(
+                HttpStatus.BAD_REQUEST, "OPINION_ANSWER_INVALID", field, "이 질문의 선택지가 아닙니다.");
+          }
+          answers.add(new Answer(question.getId(), optionId, null));
+        }
+        if (!optionIds.isEmpty()) {
+          answered.add(question.getId());
+        }
+      } else {
+        String text = trimToNull(a.text());
+        if (text != null) {
+          answers.add(new Answer(question.getId(), null, text));
+          answered.add(question.getId());
+        }
+      }
+    }
+    if (submit) {
+      for (OpinionQuestion question : request.getQuestions()) {
+        if (question.isRequired() && !answered.contains(question.getId())) {
+          throw BusinessException.onField(
+              HttpStatus.BAD_REQUEST,
+              "OPINION_ANSWER_REQUIRED",
+              "answers." + question.getId(),
+              "필수 질문입니다. 답해 주세요.");
+        }
+      }
+    }
+    return answers;
+  }
+
+  /** 답을 "1. 질문: 답" 꼴로 한 줄씩(이력·엑셀용). 답이 없으면 null. */
+  static String answerSummary(OpinionRequest request, List<Answer> answers) {
+    List<String> lines = new ArrayList<>();
+    for (OpinionQuestion question : request.getQuestions()) {
+      String value = answerText(question, answers);
+      if (value != null) {
+        lines.add((question.getSortOrder() + 1) + ". " + question.getTitle() + ": " + value);
+      }
+    }
+    return lines.isEmpty() ? null : String.join("\n", lines);
+  }
+
+  /** 한 질문의 답을 글로. 객관식은 고른 선택지를 ", " 로 잇는다. 답이 없으면 null. */
+  static String answerText(OpinionQuestion question, List<Answer> answers) {
+    List<Answer> mine =
+        answers.stream().filter(a -> a.questionId().equals(question.getId())).toList();
+    if (mine.isEmpty()) {
+      return null;
+    }
+    if (!question.getType().isChoice()) {
+      return mine.get(0).text();
+    }
+    Set<Long> chosen = mine.stream().map(Answer::optionId).collect(Collectors.toSet());
+    return question.getOptions().stream()
+        .filter(o -> chosen.contains(o.getId()))
+        .map(OpinionQuestionOption::getLabel)
+        .collect(Collectors.joining(", "));
+  }
+
+  /** 저장한 답을 질문별 응답으로. 질문 순서다. */
+  static List<OpinionAnswerResponse> toAnswerResponses(
+      OpinionRequest request, List<Answer> answers) {
+    List<OpinionAnswerResponse> result = new ArrayList<>();
+    for (OpinionQuestion question : request.getQuestions()) {
+      List<Answer> mine =
+          answers.stream().filter(a -> a.questionId().equals(question.getId())).toList();
+      if (mine.isEmpty()) {
+        continue;
+      }
+      result.add(
+          new OpinionAnswerResponse(
+              question.getId(),
+              mine.stream().map(Answer::optionId).filter(Objects::nonNull).toList(),
+              question.getType().isChoice() ? null : mine.get(0).text()));
+    }
+    return result;
   }
 
   private OpinionReply loadRevisionRequested(OpinionRequest request, Long replyId) {
@@ -189,14 +316,12 @@ public class OpinionReplyService {
 
   static OpinionMyReplyResponse toResponse(
       OpinionRequest request, OpinionTarget target, OpinionReply reply) {
-    OpinionReplyForm form = target.getForm();
     boolean open = request.getStatus() == OpinionRequestStatus.OPEN;
     if (reply == null) {
       return new OpinionMyReplyResponse(
           request.getId(),
           target.getId(),
           target.getOrganization().getName(),
-          form == null ? null : form.getName(),
           null,
           null,
           "미작성",
@@ -205,6 +330,8 @@ public class OpinionReplyService {
           null,
           null,
           null,
+          List.of(),
+          List.of(),
           null,
           null,
           null,
@@ -217,7 +344,6 @@ public class OpinionReplyService {
         request.getId(),
         target.getId(),
         target.getOrganization().getName(),
-        form == null ? null : form.getName(),
         reply.getId(),
         reply.getStatus(),
         reply.getStatus().getLabel(),
@@ -226,6 +352,8 @@ public class OpinionReplyService {
         reply.getContent(),
         reply.getDraftType(),
         reply.getDraftContent(),
+        toAnswerResponses(request, reply.getAnswers(Stage.SUBMITTED)),
+        toAnswerResponses(request, reply.getAnswers(Stage.DRAFT)),
         reply.getReplierName(),
         reply.getSubmittedAt(),
         reply.getRevisionReason(),

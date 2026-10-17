@@ -3,14 +3,21 @@ package com.connectlink.opinion;
 import com.connectlink.auth.CurrentUser;
 import com.connectlink.common.BusinessException;
 import com.connectlink.common.NetworkZoneResolver;
+import com.connectlink.opinion.OpinionReply.Answer;
+import com.connectlink.opinion.OpinionReplyAnswer.Stage;
 import com.connectlink.opinion.dto.OpinionCollationResponse;
+import com.connectlink.opinion.dto.OpinionCollationResponse.OptionCount;
+import com.connectlink.opinion.dto.OpinionCollationResponse.QuestionSummary;
 import com.connectlink.opinion.dto.OpinionCollationResponse.Row;
+import com.connectlink.opinion.dto.OpinionCollationResponse.RowAnswer;
 import com.connectlink.opinion.dto.OpinionCollationResponse.Summary;
+import com.connectlink.opinion.dto.OpinionCollationResponse.TextAnswer;
 import com.connectlink.opinion.dto.OpinionCollationResponse.TypeCount;
 import com.connectlink.opinion.dto.OpinionReminderResponse;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -22,8 +29,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 회신 관리와 취합. 회신 여부 자동 구분, 의견 유형별 기관 수·목록, 회신율, 미회신 기관 리마인드 메일과 그 이력, 기관별 취합표와 엑셀을 맡는다. 모두 그 업무를 맡은
- * 결제원 담당자와 관리자만 쓴다. 엑셀은 내부망 전용이다.
+ * 회신 관리와 취합. 회신 여부 자동 구분, 의견 유형별 기관 수·목록, 질문별 답 모음, 회신율, 미회신 기관 리마인드 메일과 그 이력, 기관별 취합표와 엑셀을 맡는다. 모두
+ * 그 업무를 맡은 결제원 담당자와 관리자만 쓴다. 엑셀은 내부망 전용이다.
  */
 @Service
 @Transactional(readOnly = true)
@@ -53,7 +60,7 @@ public class OpinionCollationService {
     return build(requestService.loadManaged(user, requestId));
   }
 
-  /** 취합표 엑셀(결과 요약 + 기관별 취합표 두 장). 내부망에서만 내려받는다. */
+  /** 취합표 엑셀(결과 요약, 질문별 답, 기관별 취합표). 내부망에서만 내려받는다. */
   public OpinionExcel excel(CurrentUser user, Long requestId) {
     OpinionRequest request = requestService.loadManaged(user, requestId);
     networkZoneResolver.ensureInternal("엑셀 다운로드");
@@ -130,7 +137,6 @@ public class OpinionCollationService {
               target.getOrganization().getId(),
               target.getOrganization().getCode(),
               target.getOrganization().getName(),
-              target.getForm() == null ? null : target.getForm().getName(),
               target.getRecipients().stream().map(OpinionTargetRecipient::getName).toList(),
               replied,
               reply == null ? null : reply.getId(),
@@ -142,7 +148,8 @@ public class OpinionCollationService {
               reply == null ? null : reply.getReplierName(),
               replied ? reply.getSubmittedAt() : null,
               reply == null ? null : reply.getRevisionReason(),
-              reply == null ? null : reply.getRevisionRequestedAt()));
+              reply == null ? null : reply.getRevisionRequestedAt(),
+              rowAnswers(request, replied ? reply.getAnswers(Stage.SUBMITTED) : List.of())));
     }
     int total = rows.size();
     int repliedCount = (int) rows.stream().filter(Row::replied).count();
@@ -160,6 +167,10 @@ public class OpinionCollationService {
             .toList();
     List<String> notReplied =
         rows.stream().filter(r -> !r.replied()).map(Row::organizationName).toList();
+    List<QuestionSummary> questions = new ArrayList<>();
+    for (OpinionQuestion question : request.getQuestions()) {
+      questions.add(questionSummary(request, question, replies));
+    }
     return new OpinionCollationResponse(
         new Summary(
             total,
@@ -168,7 +179,60 @@ public class OpinionCollationService {
             total == 0 ? 0 : Math.round(repliedCount * 100f / total),
             byType,
             notReplied),
+        questions,
         rows);
+  }
+
+  private static List<RowAnswer> rowAnswers(OpinionRequest request, List<Answer> answers) {
+    return request.getQuestions().stream()
+        .map(q -> new RowAnswer(q.getId(), OpinionReplyService.answerText(q, answers)))
+        .toList();
+  }
+
+  /** 질문 하나에 대한 회신 기관들의 제출한 답. 기관은 대상에 넣은 순서다. */
+  private static QuestionSummary questionSummary(
+      OpinionRequest request, OpinionQuestion question, Map<Long, OpinionReply> replies) {
+    Map<Long, List<String>> byOption = new LinkedHashMap<>();
+    question.getOptions().forEach(o -> byOption.put(o.getId(), new ArrayList<>()));
+    List<TextAnswer> texts = new ArrayList<>();
+    int answered = 0;
+    for (OpinionTarget target : request.getTargets()) {
+      OpinionReply reply = replies.get(target.getId());
+      if (reply == null || !reply.isReplied()) {
+        continue;
+      }
+      String organization = target.getOrganization().getName();
+      List<Answer> mine =
+          reply.getAnswers(Stage.SUBMITTED).stream()
+              .filter(a -> a.questionId().equals(question.getId()))
+              .toList();
+      if (mine.isEmpty()) {
+        continue;
+      }
+      answered++;
+      for (Answer a : mine) {
+        if (a.optionId() != null && byOption.containsKey(a.optionId())) {
+          byOption.get(a.optionId()).add(organization);
+        } else if (a.text() != null) {
+          texts.add(new TextAnswer(organization, a.text()));
+        }
+      }
+    }
+    return new QuestionSummary(
+        question.getId(),
+        question.getTitle(),
+        question.getType(),
+        question.getType().getLabel(),
+        question.isRequired(),
+        answered,
+        question.getOptions().stream()
+            .map(
+                o -> {
+                  List<String> names = byOption.get(o.getId());
+                  return new OptionCount(o.getId(), o.getLabel(), names.size(), names);
+                })
+            .toList(),
+        texts);
   }
 
   private static OpinionReminderResponse toResponse(OpinionReminder reminder) {

@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -39,7 +40,10 @@ public record OpinionExcel(String fileName, byte[] content) {
         ByteArrayOutputStream out = new ByteArrayOutputStream()) {
       Styles styles = new Styles(workbook);
       writeSummary(workbook.createSheet("결과 요약"), styles, request, collation, now);
-      writeRows(workbook.createSheet("기관별 취합표"), styles, collation.rows());
+      if (!collation.questions().isEmpty()) {
+        writeQuestions(workbook.createSheet("질문별 답"), styles, collation.questions());
+      }
+      writeRows(workbook.createSheet("기관별 취합표"), styles, collation);
       workbook.write(out);
       return new OpinionExcel(fileName(request, now), out.toByteArray());
     } catch (IOException e) {
@@ -95,34 +99,79 @@ public record OpinionExcel(String fileName, byte[] content) {
     sheet.setColumnWidth(2, 60 * 256);
   }
 
-  private static void writeRows(Sheet sheet, Styles styles, List<Row> rows) {
-    String[] headers = {
-      "순번", "기관", "회신 양식", "회신 담당자", "회신 여부", "의견 유형", "세부의견", "작성자", "제출 일시", "상태"
-    };
-    int[] widths = {6, 18, 14, 18, 10, 12, 60, 10, 18, 10};
+  /** 질문마다 한 묶음. 객관식은 선택지별 기관 수와 기관, 주관식은 기관별 답이다. */
+  private static void writeQuestions(
+      Sheet sheet, Styles styles, List<OpinionCollationResponse.QuestionSummary> questions) {
+    int r = 0;
+    int n = 1;
+    for (OpinionCollationResponse.QuestionSummary q : questions) {
+      var title = sheet.createRow(r++);
+      cell(title, 0, n++ + ". " + q.title(), styles.header);
+      cell(
+          title,
+          1,
+          q.typeLabel() + (q.required() ? " · 필수" : "") + " · 답한 기관 " + q.answeredCount() + "곳",
+          styles.header);
+      cell(title, 2, null, styles.header);
+      if (q.type().isChoice()) {
+        for (OpinionCollationResponse.OptionCount option : q.options()) {
+          var row = sheet.createRow(r++);
+          cell(row, 0, option.label(), styles.body);
+          row.createCell(1).setCellValue(option.count());
+          row.getCell(1).setCellStyle(styles.body);
+          cell(row, 2, String.join(", ", option.organizations()), styles.body);
+        }
+      } else {
+        for (OpinionCollationResponse.TextAnswer answer : q.textAnswers()) {
+          var row = sheet.createRow(r++);
+          cell(row, 0, answer.organizationName(), styles.body);
+          cell(row, 1, answer.text(), styles.wrap);
+          cell(row, 2, null, styles.body);
+        }
+      }
+      r++;
+    }
+    sheet.setColumnWidth(0, 40 * 256);
+    sheet.setColumnWidth(1, 60 * 256);
+    sheet.setColumnWidth(2, 60 * 256);
+  }
+
+  private static void writeRows(Sheet sheet, Styles styles, OpinionCollationResponse collation) {
+    List<String> headers = new ArrayList<>(List.of("순번", "기관", "회신 담당자", "회신 여부", "의견 유형", "세부의견"));
+    List<Integer> widths = new ArrayList<>(List.of(6, 18, 18, 10, 12, 60));
+    int n = 1;
+    for (OpinionCollationResponse.QuestionSummary q : collation.questions()) {
+      headers.add(n++ + ". " + q.title());
+      widths.add(q.type().isChoice() ? 20 : 40);
+    }
+    headers.addAll(List.of("작성자", "제출 일시", "상태"));
+    widths.addAll(List.of(10, 18, 10));
     var head = sheet.createRow(0);
-    for (int i = 0; i < headers.length; i++) {
-      cell(head, i, headers[i], styles.header);
-      sheet.setColumnWidth(i, widths[i] * 256);
+    for (int i = 0; i < headers.size(); i++) {
+      cell(head, i, headers.get(i), styles.header);
+      sheet.setColumnWidth(i, widths.get(i) * 256);
     }
     int r = 1;
-    for (Row row : rows) {
+    for (Row row : collation.rows()) {
       var line = sheet.createRow(r);
       line.createCell(0).setCellValue(r);
       line.getCell(0).setCellStyle(styles.body);
       cell(line, 1, row.organizationName(), styles.body);
-      cell(line, 2, row.formName(), styles.body);
-      cell(line, 3, String.join(", ", row.recipientNames()), styles.body);
-      cell(line, 4, row.replied() ? "회신" : "미회신", styles.body);
-      cell(line, 5, row.typeLabel(), styles.body);
-      cell(line, 6, row.content(), styles.wrap);
-      cell(line, 7, row.replied() ? row.replierName() : null, styles.body);
+      cell(line, 2, String.join(", ", row.recipientNames()), styles.body);
+      cell(line, 3, row.replied() ? "회신" : "미회신", styles.body);
+      cell(line, 4, row.typeLabel(), styles.body);
+      cell(line, 5, row.content(), styles.wrap);
+      int c = 6;
+      for (OpinionCollationResponse.RowAnswer answer : row.answers()) {
+        cell(line, c++, answer.value(), styles.wrap);
+      }
+      cell(line, c++, row.replied() ? row.replierName() : null, styles.body);
       cell(
           line,
-          8,
+          c++,
           row.submittedAt() == null ? null : row.submittedAt().format(DATE_TIME),
           styles.body);
-      cell(line, 9, row.replyStatusLabel() == null ? "미작성" : row.replyStatusLabel(), styles.body);
+      cell(line, c, row.replyStatusLabel() == null ? "미작성" : row.replyStatusLabel(), styles.body);
       r++;
     }
     sheet.createFreezePane(0, 1);

@@ -10,7 +10,6 @@ import com.connectlink.common.Labeled;
 public enum AttachmentOwnerType implements Labeled {
   OPINION_REQUEST("의견 요청"),
   OPINION_REPLY("기관 회신"),
-  OPINION_REPLY_FORM("회신 양식"),
   SUSPENSION("일시중단"),
   DEMO("데모");
 

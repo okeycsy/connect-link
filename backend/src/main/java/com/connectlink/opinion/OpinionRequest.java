@@ -72,10 +72,9 @@ public class OpinionRequest extends AuditedEntity {
   @Column(name = "cancel_reason", length = 500)
   private String cancelReason;
 
-  // 양식을 대상보다 먼저 둔다. 새 양식을 고른 대상이 저장될 때 양식이 먼저 저장되어 있어야 한다.
   @OneToMany(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true)
   @BatchSize(size = 50)
-  private List<OpinionReplyForm> forms = new ArrayList<>();
+  private List<OpinionQuestion> questions = new ArrayList<>();
 
   @OneToMany(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true)
   @BatchSize(size = 50)
@@ -145,14 +144,16 @@ public class OpinionRequest extends AuditedEntity {
     }
   }
 
-  OpinionReplyForm addForm(String name, String description, int sortOrder) {
-    OpinionReplyForm form = new OpinionReplyForm(this, name, description, sortOrder);
-    forms.add(form);
-    return form;
-  }
-
-  void removeForm(OpinionReplyForm form) {
-    forms.remove(form);
+  /** 질문을 통째로 바꾼다. 작성중에만 부른다(회신중에는 답이 질문을 가리킨다). */
+  void replaceQuestions(List<OpinionQuestion.Draft> drafts) {
+    if (status != OpinionRequestStatus.DRAFT) {
+      throw new IllegalStateException("작성중 요청만 질문을 바꿀 수 있습니다: " + status);
+    }
+    questions.clear();
+    for (int i = 0; i < drafts.size(); i++) {
+      OpinionQuestion.Draft d = drafts.get(i);
+      questions.add(new OpinionQuestion(this, i, d.type(), d.title(), d.required(), d.options()));
+    }
   }
 
   OpinionTarget addTarget(Organization organization) {
@@ -223,9 +224,11 @@ public class OpinionRequest extends AuditedEntity {
     return cancelReason;
   }
 
-  /** 양식. 정한 순서다. */
-  public List<OpinionReplyForm> getForms() {
-    return forms.stream().sorted(Comparator.comparingInt(OpinionReplyForm::getSortOrder)).toList();
+  /** 질문. 정한 순서다. */
+  public List<OpinionQuestion> getQuestions() {
+    return questions.stream()
+        .sorted(Comparator.comparingInt(OpinionQuestion::getSortOrder))
+        .toList();
   }
 
   /** 대상 기관. 넣은 순서다. */

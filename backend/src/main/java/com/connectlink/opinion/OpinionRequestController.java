@@ -81,8 +81,7 @@ public class OpinionRequestController {
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
       summary = "의견 요청 작성",
-      description =
-          "작성중으로 저장한다. 첨부자료(OPINION_REQUEST)와 양식 파일(OPINION_REPLY_FORM)은 저장한 뒤 첨부 API 로 올린다.")
+      description = "작성중으로 저장한다. 첨부자료(OPINION_REQUEST)는 저장한 뒤 첨부 API 로 올린다.")
   public OpinionRequestDetailResponse create(
       @Valid @RequestBody OpinionRequestCreateRequest request) {
     return requestService.create(currentUserProvider.require(), request);

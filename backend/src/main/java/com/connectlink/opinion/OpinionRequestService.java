@@ -13,10 +13,10 @@ import com.connectlink.history.FieldChanges;
 import com.connectlink.history.HistoryTargetType;
 import com.connectlink.history.dto.FieldChange;
 import com.connectlink.opinion.OpinionTarget.RecipientSnapshot;
+import com.connectlink.opinion.dto.OpinionQuestionRequest;
+import com.connectlink.opinion.dto.OpinionQuestionResponse;
 import com.connectlink.opinion.dto.OpinionRecipientCandidateResponse;
 import com.connectlink.opinion.dto.OpinionRecipientResponse;
-import com.connectlink.opinion.dto.OpinionReplyFormRequest;
-import com.connectlink.opinion.dto.OpinionReplyFormResponse;
 import com.connectlink.opinion.dto.OpinionRequestCountsResponse;
 import com.connectlink.opinion.dto.OpinionRequestCreateRequest;
 import com.connectlink.opinion.dto.OpinionRequestDetailResponse;
@@ -143,7 +143,7 @@ public class OpinionRequestService {
     return toDetail(user, request);
   }
 
-  /** 요청을 작성중으로 만든다. 첨부자료와 양식 파일은 저장한 뒤 첨부 API 로 올린다. */
+  /** 요청을 작성중으로 만든다. 첨부자료는 저장한 뒤 첨부 API 로 올린다. */
   public OpinionRequestDetailResponse create(CurrentUser user, OpinionRequestCreateRequest body) {
     accessPolicy.ensureCanManage(user, body.business());
     ensureDueDateNotPast(body.dueDate());
@@ -156,7 +156,7 @@ public class OpinionRequestService {
                 body.dueDate(),
                 user.email(),
                 user.name()));
-    applyForms(request, body.forms());
+    applyQuestions(request, body.questions());
     applyTargets(request, body.targets());
     repository.flush();
     Snapshot after = Snapshot.of(request);
@@ -172,8 +172,8 @@ public class OpinionRequestService {
   }
 
   /**
-   * 요청명·내용·기한·양식·대상을 고친다. 작성중과 회신중에 고친다. 회신중이면 새로 들어간 회신 담당자에게 의견 요청 메일이, 남은 담당자에게는 바뀐 내용 알림이 간다.
-   * 회신을 저장한 기관은 대상에서 뺄 수 없다.
+   * 요청명·내용·기한·질문·대상을 고친다. 작성중과 회신중에 고친다. 회신중이면 새로 들어간 회신 담당자에게 의견 요청 메일이, 남은 담당자에게는 바뀐 내용 알림이 간다.
+   * 회신을 저장한 기관은 대상에서 뺄 수 없고, 질문은 작성중에만 바꾼다(회신중에 바꾸면 이미 받은 답과 어긋난다).
    */
   public OpinionRequestDetailResponse update(
       CurrentUser user, Long id, OpinionRequestUpdateRequest body) {
@@ -185,7 +185,12 @@ public class OpinionRequestService {
     Snapshot before = Snapshot.of(request);
     Set<String> recipientsBefore = recipientEmails(request);
     request.change(body.title().trim(), body.content().trim(), body.dueDate());
-    applyForms(request, body.forms());
+    if (request.getStatus() == OpinionRequestStatus.DRAFT) {
+      applyQuestions(request, body.questions());
+    } else if (!drafts(body.questions())
+        .equals(request.getQuestions().stream().map(OpinionQuestion.Draft::of).toList())) {
+      throw BusinessException.conflict("OPINION_QUESTIONS_LOCKED", "회신을 받기 시작한 요청은 질문을 고칠 수 없습니다.");
+    }
     applyTargets(request, body.targets());
     repository.flush();
     Snapshot after = Snapshot.of(request);
@@ -248,15 +253,11 @@ public class OpinionRequestService {
     return toDetail(user, request);
   }
 
-  /** 작성중 요청을 지운다. 첨부자료와 양식 파일도 함께 지운다. 아직 대상 기관에 보이지 않았으므로 알림은 없다. */
+  /** 작성중 요청을 지운다. 첨부자료도 함께 지운다. 아직 대상 기관에 보이지 않았으므로 알림은 없다. */
   public void delete(CurrentUser user, Long id) {
     OpinionRequest request = loadManaged(user, id);
     ensureStatus(request, OpinionRequestStatus.DRAFT, "작성중 요청만 지울 수 있습니다. 회신중 요청은 취소합니다.");
     attachmentService.deleteAllOf(AttachmentOwnerType.OPINION_REQUEST, request.getId());
-    request
-        .getForms()
-        .forEach(
-            f -> attachmentService.deleteAllOf(AttachmentOwnerType.OPINION_REPLY_FORM, f.getId()));
     changeHistoryService.record(
         user,
         ChangeHistoryCommand.deleted(
@@ -305,58 +306,39 @@ public class OpinionRequestService {
         .toList();
   }
 
-  // ---- 양식·대상 반영 ----
+  // ---- 질문·대상 반영 ----
 
-  /**
-   * 양식을 요청 목록대로 맞춘다. 빠진 양식은 그 양식을 고른 대상에서 먼저 떼고 파일과 함께 지운다. 이름은 요청 안에서 겹치지 않는다. 지운 뒤 바꾸고 더하는 순서라 지울
-   * 양식의 이름을 다른 양식이 받아도 유일 제약에 걸리지 않는다.
-   */
-  private void applyForms(OpinionRequest request, List<OpinionReplyFormRequest> forms) {
-    Set<String> names = new HashSet<>();
-    for (OpinionReplyFormRequest form : forms) {
-      if (!names.add(form.name().trim())) {
+  /** 질문을 요청 목록대로 통째로 바꾼다(작성중이라 답이 없다). 객관식은 선택지가 둘 이상이고 겹치지 않아야 한다. */
+  private void applyQuestions(OpinionRequest request, List<OpinionQuestionRequest> questions) {
+    List<OpinionQuestion.Draft> drafts = drafts(questions);
+    for (int i = 0; i < drafts.size(); i++) {
+      OpinionQuestion.Draft d = drafts.get(i);
+      if (d.type().isChoice()
+          && (d.options().size() < 2 || new HashSet<>(d.options()).size() != d.options().size())) {
         throw BusinessException.onField(
             HttpStatus.BAD_REQUEST,
-            "OPINION_FORM_DUPLICATE",
-            "forms",
-            "양식 이름이 겹칩니다: " + form.name().trim());
+            "OPINION_QUESTION_OPTIONS",
+            "questions[" + i + "].options",
+            "객관식 질문은 서로 다른 선택지를 둘 이상 넣어 주세요.");
       }
     }
-    Map<Long, OpinionReplyForm> existing =
-        request.getForms().stream()
-            .collect(Collectors.toMap(OpinionReplyForm::getId, Function.identity()));
-    Set<Long> keep =
-        forms.stream()
-            .map(OpinionReplyFormRequest::id)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toSet());
-    for (Long id : keep) {
-      if (!existing.containsKey(id)) {
-        throw BusinessException.onField(
-            HttpStatus.BAD_REQUEST, "OPINION_FORM_NOT_FOUND", "forms", "이 요청의 양식이 아닙니다: " + id);
-      }
-    }
-    for (OpinionReplyForm form : existing.values()) {
-      if (!keep.contains(form.getId())) {
-        request.getTargets().stream()
-            .filter(t -> t.getForm() == form)
-            .forEach(t -> t.changeForm(null));
-        request.removeForm(form);
-        attachmentService.deleteAllOf(AttachmentOwnerType.OPINION_REPLY_FORM, form.getId());
-      }
-    }
+    request.replaceQuestions(drafts);
     repository.flush();
-    int order = 0;
-    for (OpinionReplyFormRequest form : forms) {
-      String description = blankToNull(form.description());
-      if (form.id() != null) {
-        existing.get(form.id()).change(form.name().trim(), description, order);
-      } else {
-        request.addForm(form.name().trim(), description, order);
-      }
-      order++;
-    }
-    repository.flush();
+  }
+
+  /** 요청 본문의 질문을 저장할 모양으로. 글은 앞뒤 공백을 떼고, 주관식의 선택지는 버린다. */
+  private static List<OpinionQuestion.Draft> drafts(List<OpinionQuestionRequest> questions) {
+    return questions.stream()
+        .map(
+            q ->
+                new OpinionQuestion.Draft(
+                    q.type(),
+                    q.title().trim(),
+                    q.required(),
+                    q.type().isChoice()
+                        ? q.options().stream().map(String::trim).toList()
+                        : List.of()))
+        .toList();
   }
 
   /**
@@ -382,9 +364,6 @@ public class OpinionRequestService {
         request.removeTarget(target);
       }
     }
-    Map<String, OpinionReplyForm> formsByName =
-        request.getForms().stream()
-            .collect(Collectors.toMap(OpinionReplyForm::getName, Function.identity()));
     Map<Long, Map<Long, BusinessMember>> members = new HashMap<>();
     accountService
         .listActiveMembers(business)
@@ -395,17 +374,6 @@ public class OpinionRequestService {
                     .put(m.accountId(), m));
     for (OpinionTargetRequest body : targets) {
       Organization organization = loadTargetOrganization(body.organizationId(), business);
-      OpinionReplyForm form = null;
-      if (body.formName() != null && !body.formName().isBlank()) {
-        form = formsByName.get(body.formName().trim());
-        if (form == null) {
-          throw BusinessException.onField(
-              HttpStatus.BAD_REQUEST,
-              "OPINION_FORM_NOT_FOUND",
-              "targets",
-              organization.getName() + " 의 회신 양식이 없습니다: " + body.formName());
-        }
-      }
       Map<Long, BusinessMember> candidates = members.getOrDefault(organization.getId(), Map.of());
       Map<Long, RecipientSnapshot> recipients = new LinkedHashMap<>();
       for (Long accountId : body.recipientAccountIds()) {
@@ -422,7 +390,6 @@ public class OpinionRequestService {
       }
       OpinionTarget target =
           request.findTarget(organization.getId()).orElseGet(() -> request.addTarget(organization));
-      target.changeForm(form);
       target.replaceRecipients(recipients);
     }
   }
@@ -497,10 +464,6 @@ public class OpinionRequestService {
             .collect(Collectors.toMap(r -> r.getTarget().getId(), Function.identity()));
     List<OpinionTarget> targets =
         manage ? request.getTargets() : ownTarget(user, request).stream().toList();
-    List<OpinionReplyForm> forms =
-        manage
-            ? request.getForms()
-            : targets.stream().map(OpinionTarget::getForm).filter(Objects::nonNull).toList();
     return new OpinionRequestDetailResponse(
         request.getId(),
         request.getBusiness(),
@@ -519,7 +482,7 @@ public class OpinionRequestService {
         request.getClosedAt(),
         request.getCreatedAt(),
         request.getUpdatedAt(),
-        forms.stream().map(OpinionRequestService::toFormResponse).toList(),
+        request.getQuestions().stream().map(OpinionRequestService::toQuestionResponse).toList(),
         targets.stream().map(t -> toTargetResponse(t, replies.get(t.getId()))).toList(),
         new OpinionRequestPermissions(
             manage,
@@ -531,20 +494,25 @@ public class OpinionRequestService {
             member));
   }
 
-  static OpinionReplyFormResponse toFormResponse(OpinionReplyForm form) {
-    return new OpinionReplyFormResponse(form.getId(), form.getName(), form.getDescription());
+  static OpinionQuestionResponse toQuestionResponse(OpinionQuestion question) {
+    return new OpinionQuestionResponse(
+        question.getId(),
+        question.getType(),
+        question.getType().getLabel(),
+        question.getTitle(),
+        question.isRequired(),
+        question.getOptions().stream()
+            .map(o -> new OpinionQuestionResponse.Option(o.getId(), o.getLabel()))
+            .toList());
   }
 
   private static OpinionTargetResponse toTargetResponse(OpinionTarget target, OpinionReply reply) {
     Organization organization = target.getOrganization();
-    OpinionReplyForm form = target.getForm();
     return new OpinionTargetResponse(
         target.getId(),
         organization.getId(),
         organization.getCode(),
         organization.getName(),
-        form == null ? null : form.getId(),
-        form == null ? null : form.getName(),
         target.getRecipients().stream()
             .map(
                 r ->
@@ -633,10 +601,6 @@ public class OpinionRequestService {
     };
   }
 
-  private static String blankToNull(String value) {
-    return value == null || value.isBlank() ? null : value.trim();
-  }
-
   LocalDate today() {
     return LocalDate.now(clock);
   }
@@ -651,7 +615,7 @@ public class OpinionRequestService {
       String title,
       String content,
       LocalDate dueDate,
-      String forms,
+      String questions,
       String targets,
       String recipients) {
 
@@ -662,8 +626,7 @@ public class OpinionRequestService {
       List<String> recipientLines = new ArrayList<>();
       for (OpinionTarget target : request.getTargets()) {
         String name = target.getOrganization().getName();
-        targetNames.add(
-            target.getForm() == null ? name : name + "(" + target.getForm().getName() + ")");
+        targetNames.add(name);
         if (!target.getRecipients().isEmpty()) {
           recipientLines.add(
               name
@@ -677,9 +640,33 @@ public class OpinionRequestService {
           request.getTitle(),
           request.getContent(),
           request.getDueDate(),
-          FieldChanges.join(request.getForms().stream().map(OpinionReplyForm::getName).toList()),
+          questionLines(request.getQuestions()),
           FieldChanges.join(targetNames),
           recipientLines.isEmpty() ? null : String.join(" / ", recipientLines));
+    }
+
+    /** 질문을 "1. 질문(객관식: 가 / 나)" 꼴로 한 줄씩. 없으면 null. */
+    private static String questionLines(List<OpinionQuestion> questions) {
+      if (questions.isEmpty()) {
+        return null;
+      }
+      List<String> lines = new ArrayList<>();
+      for (OpinionQuestion q : questions) {
+        String options =
+            q.getOptions().stream()
+                .map(OpinionQuestionOption::getLabel)
+                .collect(Collectors.joining(" / "));
+        lines.add(
+            (q.getSortOrder() + 1)
+                + ". "
+                + q.getTitle()
+                + "("
+                + q.getType().getLabel()
+                + (options.isEmpty() ? "" : ": " + options)
+                + (q.isRequired() ? ", 필수" : "")
+                + ")");
+      }
+      return String.join("\n", lines);
     }
 
     /** {@code before} 에서 이것으로 바뀐 항목. {@code all} 이면 같은 값도 남긴다(작성 이력). */
@@ -688,7 +675,7 @@ public class OpinionRequestService {
       add(changes, all, "title", "요청명", before.title, title);
       add(changes, all, "content", "요청 내용", before.content, content);
       add(changes, all, "dueDate", "회신 기한", before.dueDate, dueDate);
-      add(changes, all, "forms", "회신 양식", before.forms, forms);
+      add(changes, all, "questions", "질문", before.questions, questions);
       add(changes, all, "targets", "대상 기관", before.targets, targets);
       add(changes, all, "recipients", "회신 담당자", before.recipients, recipients);
       return changes.toList();

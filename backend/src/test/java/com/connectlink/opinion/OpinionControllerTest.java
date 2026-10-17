@@ -104,22 +104,19 @@ class OpinionControllerTest {
         .orElseThrow();
   }
 
-  /** 가나은행(김가나, 은행권 양식)과 사아증권(최사아)이 대상인 새 요청. */
+  /** 가나은행(김가나)과 사아증권(최사아)이 대상인 새 요청. 질문은 없다. */
   private Map<String, Object> newRequest(String title) {
     Map<String, Object> body = new HashMap<>();
     body.put("business", "ACCOUNT_INFO");
     body.put("title", title);
     body.put("content", "의견을 회신해 주세요.");
     body.put("dueDate", LocalDate.now().plusDays(5).toString());
-    body.put("forms", List.of(Map.of("name", "은행권", "description", "은행용 양식")));
     body.put(
         "targets",
         List.of(
             Map.of(
                 "organizationId",
                 orgId("GANA"),
-                "formName",
-                "은행권",
                 "recipientAccountIds",
                 List.of(accountId("kim.gana@gana.example.com"))),
             Map.of(
@@ -128,6 +125,44 @@ class OpinionControllerTest {
                 "recipientAccountIds",
                 List.of(accountId("choi.saa@saa.example.com")))));
     return body;
+  }
+
+  /** 객관식(필수)·체크박스·주관식 질문 세 개가 있는 새 요청. */
+  private Map<String, Object> newRequestWithQuestions(String title) {
+    Map<String, Object> body = newRequest(title);
+    body.put(
+        "questions",
+        List.of(
+            Map.of(
+                "type",
+                "SINGLE_CHOICE",
+                "title",
+                "언제부터 적용할까요?",
+                "required",
+                true,
+                "options",
+                List.of("1월", "7월")),
+            Map.of(
+                "type",
+                "MULTIPLE_CHOICE",
+                "title",
+                "영향받는 업무",
+                "required",
+                false,
+                "options",
+                List.of("정산", "안내", "개발")),
+            Map.of("type", "TEXT", "title", "월 조회 건수", "required", false)));
+    return body;
+  }
+
+  private Long createOpenWithQuestions(String title) throws Exception {
+    Long id =
+        json(send(post(BASE), newRequestWithQuestions(title), hong())
+                .andExpect(status().isCreated()))
+            .get("id")
+            .asLong();
+    send(post(BASE + "/" + id + "/opening"), null, hong()).andExpect(status().isOk());
+    return id;
   }
 
   private Long create(String title) throws Exception {
@@ -179,10 +214,8 @@ class OpinionControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.targets.length()").value(1))
         .andExpect(jsonPath("$.targets[0].organizationCode").value("GANA"))
-        .andExpect(jsonPath("$.forms[0].name").value("은행권"))
         .andExpect(jsonPath("$.permissions.reply").value(true))
         .andExpect(jsonPath("$.permissions.manage").value(false));
-    send(get(BASE + "/" + id), null, choi()).andExpect(jsonPath("$.forms.length()").value(0));
   }
 
   @Test
@@ -318,7 +351,6 @@ class OpinionControllerTest {
     send(get(BASE + "/" + id + "/my-reply"), null, kim())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.replyId").isEmpty())
-        .andExpect(jsonPath("$.formName").value("은행권"))
         .andExpect(jsonPath("$.editable").value(true));
 
     send(put(BASE + "/" + id + "/my-reply"), Map.of("content", "검토 중"), kim())
@@ -352,7 +384,6 @@ class OpinionControllerTest {
     body.put(
         "targets",
         List.of(Map.of("organizationId", orgId("GANA"), "recipientAccountIds", List.of())));
-    body.put("forms", List.of());
     Long id =
         json(send(post(BASE), body, hong()).andExpect(status().isCreated())).get("id").asLong();
     send(post(BASE + "/" + id + "/opening"), null, hong()).andExpect(status().isOk());
@@ -442,6 +473,149 @@ class OpinionControllerTest {
         .andExpect(jsonPath("$.revisionRejectionReason").value("마감이 가까워 그대로 둡니다."));
   }
 
+  // ---- 질문 ----
+
+  @Test
+  void 요청에_객관식과_주관식_질문을_넣는다() throws Exception {
+    Long id = createOpenWithQuestions("질문 만들기");
+    send(get(BASE + "/" + id), null, kim())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.questions.length()").value(3))
+        .andExpect(jsonPath("$.questions[0].type").value("SINGLE_CHOICE"))
+        .andExpect(jsonPath("$.questions[0].typeLabel").value("객관식"))
+        .andExpect(jsonPath("$.questions[0].required").value(true))
+        .andExpect(jsonPath("$.questions[0].options[1].label").value("7월"))
+        .andExpect(jsonPath("$.questions[1].options.length()").value(3))
+        .andExpect(jsonPath("$.questions[2].options.length()").value(0));
+  }
+
+  @Test
+  void 객관식_질문은_선택지가_둘_이상이어야_한다() throws Exception {
+    Map<String, Object> body = newRequest("선택지 하나");
+    body.put(
+        "questions",
+        List.of(
+            Map.of(
+                "type",
+                "SINGLE_CHOICE",
+                "title",
+                "고르세요",
+                "required",
+                true,
+                "options",
+                List.of("하나"))));
+    send(post(BASE), body, hong())
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("OPINION_QUESTION_OPTIONS"))
+        .andExpect(jsonPath("$.fieldErrors[0].field").value("questions[0].options"));
+  }
+
+  @Test
+  void 회신중_요청의_질문은_고치지_못한다() throws Exception {
+    Long id = createOpenWithQuestions("질문 잠금");
+    Map<String, Object> same = newRequestWithQuestions("질문 잠금");
+    same.remove("business");
+    send(put(BASE + "/" + id), same, hong()).andExpect(status().isOk());
+
+    Map<String, Object> changed = newRequestWithQuestions("질문 잠금");
+    changed.remove("business");
+    changed.put("questions", List.of(Map.of("type", "TEXT", "title", "새 질문", "required", false)));
+    send(put(BASE + "/" + id), changed, hong())
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("OPINION_QUESTIONS_LOCKED"));
+  }
+
+  @Test
+  void 기관은_질문에_답하고_필수_질문을_비우면_제출하지_못한다() throws Exception {
+    Long id = createOpenWithQuestions("질문 답하기");
+    JsonNode questions = json(send(get(BASE + "/" + id), null, kim())).get("questions");
+    long single = questions.get(0).get("id").asLong();
+    long july = questions.get(0).get("options").get(1).get("id").asLong();
+    long january = questions.get(0).get("options").get(0).get("id").asLong();
+    long multi = questions.get(1).get("id").asLong();
+    long settle = questions.get(1).get("options").get(0).get("id").asLong();
+    long notice = questions.get(1).get("options").get(1).get("id").asLong();
+    long text = questions.get(2).get("id").asLong();
+
+    send(
+            put(BASE + "/" + id + "/my-reply"),
+            Map.of("answers", List.of(Map.of("questionId", text, "text", "약 1만 건"))),
+            kim())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.draftAnswers[0].questionId").value(text))
+        .andExpect(jsonPath("$.draftAnswers[0].text").value("약 1만 건"))
+        .andExpect(jsonPath("$.answers.length()").value(0));
+
+    send(post(BASE + "/" + id + "/my-reply/submission"), Map.of("type", "AGREE"), kim())
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("OPINION_ANSWER_REQUIRED"))
+        .andExpect(jsonPath("$.fieldErrors[0].field").value("answers." + single));
+    send(
+            post(BASE + "/" + id + "/my-reply/submission"),
+            Map.of(
+                "type",
+                "AGREE",
+                "answers",
+                List.of(Map.of("questionId", single, "optionIds", List.of(january, july)))),
+            kim())
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.fieldErrors[0].field").value("answers." + single));
+    send(
+            post(BASE + "/" + id + "/my-reply/submission"),
+            Map.of(
+                "type",
+                "AGREE",
+                "answers",
+                List.of(Map.of("questionId", single, "optionIds", List.of(settle)))),
+            kim())
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("OPINION_ANSWER_INVALID"));
+
+    send(
+            post(BASE + "/" + id + "/my-reply/submission"),
+            Map.of(
+                "type",
+                "AGREE",
+                "answers",
+                List.of(
+                    Map.of("questionId", single, "optionIds", List.of(july)),
+                    Map.of("questionId", multi, "optionIds", List.of(settle, notice)),
+                    Map.of("questionId", text, "text", "약 1만 건"))),
+            kim())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("SUBMITTED"))
+        .andExpect(jsonPath("$.answers.length()").value(3))
+        .andExpect(jsonPath("$.answers[1].optionIds.length()").value(2))
+        .andExpect(jsonPath("$.draftAnswers.length()").value(0));
+
+    send(get(BASE + "/" + id + "/collation"), null, hong())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.questions.length()").value(3))
+        .andExpect(jsonPath("$.questions[0].answeredCount").value(1))
+        .andExpect(jsonPath("$.questions[0].options[1].count").value(1))
+        .andExpect(jsonPath("$.questions[0].options[1].organizations[0]").value("가나은행"))
+        .andExpect(jsonPath("$.questions[0].options[0].count").value(0))
+        .andExpect(jsonPath("$.questions[2].textAnswers[0].organizationName").value("가나은행"))
+        .andExpect(jsonPath("$.questions[2].textAnswers[0].text").value("약 1만 건"))
+        .andExpect(jsonPath("$.rows[0].answers[0].value").value("7월"))
+        .andExpect(jsonPath("$.rows[0].answers[1].value").value("정산, 안내"))
+        .andExpect(jsonPath("$.rows[1].answers[0].value").isEmpty());
+
+    byte[] content =
+        send(get(BASE + "/" + id + "/collation/excel"), null, hong())
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsByteArray();
+    try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(content))) {
+      assertThat(workbook.getSheet("질문별 답")).isNotNull();
+      assertThat(workbook.getSheet("기관별 취합표").getRow(0).getCell(6).getStringCellValue())
+          .isEqualTo("1. 언제부터 적용할까요?");
+      assertThat(workbook.getSheet("기관별 취합표").getRow(1).getCell(6).getStringCellValue())
+          .isEqualTo("7월");
+    }
+  }
+
   // ---- 회신 현황·취합 ----
 
   @Test
@@ -509,7 +683,7 @@ class OpinionControllerTest {
       assertThat(workbook.getSheetName(0)).isEqualTo("결과 요약");
       assertThat(workbook.getSheet("기관별 취합표").getRow(1).getCell(1).getStringCellValue())
           .isEqualTo("가나은행");
-      assertThat(workbook.getSheet("기관별 취합표").getRow(1).getCell(5).getStringCellValue())
+      assertThat(workbook.getSheet("기관별 취합표").getRow(1).getCell(4).getStringCellValue())
           .isEqualTo("동의");
     }
     send(
@@ -532,39 +706,6 @@ class OpinionControllerTest {
   }
 
   // ---- 첨부 권한 ----
-
-  @Test
-  void 회신_양식_파일은_그_양식을_고른_기관만_내려받는다() throws Exception {
-    Long id = createOpen("양식 권한");
-    Long formId =
-        json(send(get(BASE + "/" + id), null, hong())).get("forms").get(0).get("id").asLong();
-    MockMultipartFile file =
-        new MockMultipartFile("file", "양식.xlsx", "application/octet-stream", new byte[] {1, 2, 3});
-    mockMvc
-        .perform(
-            multipart("/api/v1/attachments")
-                .file(file)
-                .param("ownerType", "OPINION_REPLY_FORM")
-                .param("ownerId", formId.toString())
-                .with(csrf())
-                .with(hong()))
-        .andExpect(status().isCreated());
-    send(
-            get("/api/v1/attachments")
-                .param("ownerType", "OPINION_REPLY_FORM")
-                .param("ownerId", formId.toString()),
-            null,
-            kim())
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$[0].name").value("양식.xlsx"));
-    send(
-            get("/api/v1/attachments")
-                .param("ownerType", "OPINION_REPLY_FORM")
-                .param("ownerId", formId.toString()),
-            null,
-            choi())
-        .andExpect(status().isForbidden());
-  }
 
   @Test
   void 요청_첨부자료는_결제원만_올리고_대상_기관은_내려받는다() throws Exception {

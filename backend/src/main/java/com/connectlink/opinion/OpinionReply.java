@@ -1,7 +1,12 @@
 package com.connectlink.opinion;
 
 import com.connectlink.common.AuditedEntity;
+import com.connectlink.opinion.OpinionReplyAnswer.Stage;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -11,12 +16,15 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+import org.hibernate.annotations.BatchSize;
 
 /**
  * 기관 회신. 대상 기관 한 곳에 하나다. 제출한 내용({@code type}, {@code content})과 임시저장한 내용({@code draftType}, {@code
- * draftContent})을 따로 둔다. 그래서 수정 중에 임시저장해도 결제원이 보는 제출 내용은 다시 제출할 때까지 그대로다. 한 번이라도 제출했으면 회신한 기관이다.
+ * draftContent})을 따로 둔다. 질문 답({@link OpinionReplyAnswer})도 제출한 답과 임시저장한 답을 나눈다. 그래서 수정 중에 임시저장해도
+ * 결제원이 보는 제출 내용은 다시 제출할 때까지 그대로다. 한 번이라도 제출했으면 회신한 기관이다.
  */
 @Entity
 @Table(name = "opinion_reply")
@@ -70,6 +78,10 @@ public class OpinionReply extends AuditedEntity {
   @Column(name = "revision_rejection_reason", length = 500)
   private String revisionRejectionReason;
 
+  @OneToMany(mappedBy = "reply", cascade = CascadeType.ALL, orphanRemoval = true)
+  @BatchSize(size = 50)
+  private List<OpinionReplyAnswer> answers = new ArrayList<>();
+
   protected OpinionReply() {}
 
   OpinionReply(OpinionTarget target) {
@@ -92,21 +104,31 @@ public class OpinionReply extends AuditedEntity {
    *
    * @throws IllegalStateException 고칠 수 없는 상태면
    */
-  void saveDraft(OpinionReplyType type, String content, String email, String name) {
+  void saveDraft(
+      OpinionReplyType type, String content, List<Answer> answers, String email, String name) {
     ensureEditable();
     this.draftType = type;
     this.draftContent = content;
+    replaceAnswers(Stage.DRAFT, answers);
     this.replierEmail = email;
     this.replierName = name;
   }
 
   /** 최종제출. 임시저장한 내용은 비운다. */
-  void submit(OpinionReplyType type, String content, String email, String name, LocalDateTime now) {
+  void submit(
+      OpinionReplyType type,
+      String content,
+      List<Answer> answers,
+      String email,
+      String name,
+      LocalDateTime now) {
     ensureEditable();
     this.type = type;
     this.content = content;
     this.draftType = null;
     this.draftContent = null;
+    replaceAnswers(Stage.SUBMITTED, answers);
+    replaceAnswers(Stage.DRAFT, List.of());
     this.replierEmail = email;
     this.replierName = name;
     this.submittedAt = now;
@@ -135,6 +157,7 @@ public class OpinionReply extends AuditedEntity {
     this.status = OpinionReplyStatus.REVISING;
     this.draftType = type;
     this.draftContent = content;
+    replaceAnswers(Stage.DRAFT, getAnswers(Stage.SUBMITTED));
   }
 
   /** 수정 요청을 받아들이지 않는다. 제출 상태로 돌아간다. */
@@ -150,6 +173,46 @@ public class OpinionReply extends AuditedEntity {
       this.status = OpinionReplyStatus.SUBMITTED;
       this.draftType = null;
       this.draftContent = null;
+      replaceAnswers(Stage.DRAFT, List.of());
+    }
+  }
+
+  /** 한 단계의 답을 보낸 목록대로 맞춘다. 같은 칸(질문·선택지)은 행을 그대로 두고 주관식 글만 바꾼다(지우고 다시 넣지 않는다). */
+  private void replaceAnswers(Stage stage, List<Answer> values) {
+    answers.removeIf(
+        a ->
+            a.getStage() == stage
+                && values.stream().noneMatch(v -> v.sameCell(a.getQuestionId(), a.getOptionId())));
+    for (Answer value : values) {
+      answers.stream()
+          .filter(a -> a.getStage() == stage && value.sameCell(a.getQuestionId(), a.getOptionId()))
+          .findFirst()
+          .ifPresentOrElse(
+              a -> a.changeText(value.text()),
+              () ->
+                  answers.add(
+                      new OpinionReplyAnswer(
+                          this, stage, value.questionId(), value.optionId(), value.text())));
+    }
+  }
+
+  /** 한 단계의 답. */
+  public List<Answer> getAnswers(Stage stage) {
+    return answers.stream()
+        .filter(a -> a.getStage() == stage)
+        .map(a -> new Answer(a.getQuestionId(), a.getOptionId(), a.getTextValue()))
+        .toList();
+  }
+
+  /**
+   * 답 한 칸의 값.
+   *
+   * @param optionId 객관식이면 고른 선택지, 주관식이면 null
+   * @param text 주관식이면 답, 객관식이면 null
+   */
+  public record Answer(Long questionId, Long optionId, String text) {
+    boolean sameCell(Long questionId, Long optionId) {
+      return this.questionId.equals(questionId) && Objects.equals(this.optionId, optionId);
     }
   }
 
