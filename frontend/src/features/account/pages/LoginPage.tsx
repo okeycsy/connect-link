@@ -85,12 +85,12 @@ export function LoginPage() {
 
       <Box className={classes.panel}>
         <Stack gap="xl" justify="space-between" h="100%">
-          <BrandMark size={32} textSize="18px" />
+          <Box aria-hidden />
           <Stack gap="lg" align="flex-start">
             <Box className={classes.tag}>참가기관 · 금융결제원 협업 포털</Box>
             <Title order={1} className={classes.headline}>
               <span className={classes.headlineSub}>참가기관과 결제원을 잇는</span>
-              연결고리
+              <BrandMark className={classes.headlineLogo} />
             </Title>
             <Text size="xl" c="var(--cl-ink-soft)" maw={460} lh={1.75}>
               담당자 연락처, 의견 요청, 기관 테스트, 일시중단을 한곳에서 관리합니다.

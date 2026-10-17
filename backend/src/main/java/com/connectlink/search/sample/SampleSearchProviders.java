@@ -73,20 +73,6 @@ public final class SampleSearchProviders {
 
   @Component
   @Profile({"local", "demo", "test"})
-  static class OpinionRequests extends SampleProvider {
-    OpinionRequests() {
-      super(
-          SearchCategory.OPINION_REQUEST,
-          "opinions",
-          List.of(
-              new String[] {"수수료 체계 개편 의견 요청", "회신중 · 회신 기한 3일 남음"},
-              new String[] {"전문 규격 v2.1 변경 의견 요청", "회신중 · 회신 기한 10일 남음"},
-              new String[] {"야간 배치 시간 조정 의견 요청", "마감 · 12곳 회신"}));
-    }
-  }
-
-  @Component
-  @Profile({"local", "demo", "test"})
   static class TestPlans extends SampleProvider {
     TestPlans() {
       super(

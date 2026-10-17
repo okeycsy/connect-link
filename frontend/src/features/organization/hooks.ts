@@ -13,6 +13,8 @@ export type OrganizationUpdateRequest = components['schemas']['OrganizationUpdat
 export type OrganizationType = OrganizationDetail['type'];
 export type BusinessCode = BusinessResponse['code'];
 export type JobRoleResponse = components['schemas']['JobRoleResponse'];
+export type FinanceSectorResponse = components['schemas']['FinanceSectorResponse'];
+export type FinanceSector = FinanceSectorResponse['code'];
 
 export interface OrganizationSearchParams {
   keyword?: string;
@@ -27,6 +29,7 @@ export interface OrganizationSearchParams {
 export const organizationKeys = {
   businesses: ['businesses'] as const,
   jobRoles: ['job-roles'] as const,
+  financeSectors: ['finance-sectors'] as const,
   organizations: ['organizations'] as const,
   search: (params: OrganizationSearchParams) => ['organizations', 'search', params] as const,
   detail: (id: number) => ['organizations', 'detail', id] as const,
@@ -46,6 +49,15 @@ export function useJobRoles() {
   return useQuery({
     queryKey: organizationKeys.jobRoles,
     queryFn: async () => unwrap(await api.GET('/api/v1/job-roles')),
+    staleTime: Infinity,
+  });
+}
+
+/** 참가기관 업권 선택지. 기관 관리 폼이 쓴다. */
+export function useFinanceSectors() {
+  return useQuery({
+    queryKey: organizationKeys.financeSectors,
+    queryFn: async () => unwrap(await api.GET('/api/v1/finance-sectors')),
     staleTime: Infinity,
   });
 }

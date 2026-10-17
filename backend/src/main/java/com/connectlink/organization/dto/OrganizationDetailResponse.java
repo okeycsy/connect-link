@@ -1,5 +1,6 @@
 package com.connectlink.organization.dto;
 
+import com.connectlink.organization.FinanceSector;
 import com.connectlink.organization.Organization;
 import com.connectlink.organization.OrganizationType;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -15,6 +16,8 @@ public record OrganizationDetailResponse(
     String typeLabel,
     @Schema(nullable = true) String emailDomain,
     boolean active,
+    @Schema(nullable = true) FinanceSector sector,
+    @Schema(nullable = true) String sectorLabel,
     List<BusinessResponse> businesses,
     LocalDateTime createdAt,
     String createdBy,
@@ -30,6 +33,8 @@ public record OrganizationDetailResponse(
         organization.getType().getLabel(),
         organization.getEmailDomain(),
         organization.isActive(),
+        organization.getSector(),
+        organization.getSector() == null ? null : organization.getSector().getLabel(),
         organization.getBusinesses().stream().map(BusinessResponse::from).toList(),
         organization.getCreatedAt(),
         organization.getCreatedBy(),

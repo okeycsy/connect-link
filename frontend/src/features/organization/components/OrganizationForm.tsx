@@ -6,8 +6,10 @@ import { ApiError, fieldErrorsOf } from '../../../api/client';
 import {
   useBusinesses,
   useCreateOrganization,
+  useFinanceSectors,
   useUpdateOrganization,
   type BusinessCode,
+  type FinanceSector,
   type OrganizationDetail,
   type OrganizationType,
 } from '../hooks';
@@ -25,6 +27,8 @@ interface FormValues {
   emailDomain: string;
   active: boolean;
   businesses: BusinessCode[];
+  /** 업권. 참가기관만 쓴다. */
+  sector: FinanceSector | null;
 }
 
 interface Props {
@@ -39,6 +43,7 @@ interface Props {
 /** 기관 등록·수정 폼. 검증 메시지는 서버의 필드 오류를 그대로 보여 준다. 코드와 구분은 등록 때만 입력한다. */
 export function OrganizationForm({ organization, defaultBusiness, onSaved, onCancel }: Props) {
   const { data: businesses } = useBusinesses();
+  const { data: sectors } = useFinanceSectors();
   const create = useCreateOrganization();
   const update = useUpdateOrganization();
   const editing = organization != null;
@@ -52,6 +57,7 @@ export function OrganizationForm({ organization, defaultBusiness, onSaved, onCan
           emailDomain: organization.emailDomain ?? '',
           active: organization.active,
           businesses: organization.businesses.map((b) => b.code),
+          sector: organization.sector ?? null,
         }
       : {
           code: '',
@@ -60,6 +66,7 @@ export function OrganizationForm({ organization, defaultBusiness, onSaved, onCan
           emailDomain: '',
           active: true,
           businesses: defaultBusiness ? [defaultBusiness] : [],
+          sector: null,
         },
   });
 
@@ -73,6 +80,7 @@ export function OrganizationForm({ organization, defaultBusiness, onSaved, onCan
               emailDomain: values.emailDomain || null,
               active: values.active,
               businesses: values.businesses,
+              sector: values.sector,
             },
           })
         : await create.mutateAsync({
@@ -81,6 +89,7 @@ export function OrganizationForm({ organization, defaultBusiness, onSaved, onCan
             type: values.type,
             emailDomain: values.emailDomain || null,
             businesses: values.businesses,
+            sector: values.type === 'FINANCE_ORGANIZATION' ? values.sector : null,
           });
       notifications.show({
         message: organization ? '기관 정보를 저장했습니다.' : '기관을 등록했습니다.',
@@ -102,6 +111,7 @@ export function OrganizationForm({ organization, defaultBusiness, onSaved, onCan
   });
 
   const saving = create.isPending || update.isPending;
+  const finance = (organization?.type ?? form.values.type) === 'FINANCE_ORGANIZATION';
 
   return (
     <form onSubmit={submit} noValidate>
@@ -131,6 +141,16 @@ export function OrganizationForm({ organization, defaultBusiness, onSaved, onCan
           required
           {...form.getInputProps('name')}
         />
+        {finance && (
+          <Select
+            label="업권"
+            description="의견 요청 대상을 업권별로 고를 때 씁니다."
+            placeholder="업권 고르기"
+            data={sectors?.map((s) => ({ value: s.code, label: s.label })) ?? []}
+            clearable
+            {...form.getInputProps('sector')}
+          />
+        )}
         <TextInput
           label="회사 이메일 도메인"
           description="가입 승인 때 신청자 이메일이 이 기관과 맞는지 볼 때 씁니다."

@@ -59,7 +59,9 @@ export function OrganizationDrawer({
           '기관 상세'
         )
       }
-      subtitle={data ? `${data.code} · ${data.typeLabel}` : undefined}
+      subtitle={
+        data ? [data.code, data.typeLabel, data.sectorLabel].filter(Boolean).join(' · ') : undefined
+      }
     >
       {isError && <Alert color="red">기관 정보를 불러오지 못했습니다.</Alert>}
       {isPending || !data ? (

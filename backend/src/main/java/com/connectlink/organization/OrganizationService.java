@@ -111,6 +111,7 @@ public class OrganizationService {
             request.name().trim(),
             request.type(),
             normalizeDomain(request.emailDomain()));
+    organization.changeSector(request.sector());
     organization.replaceBusinesses(orEmpty(request.businesses()));
     // 감사 컬럼(등록자·등록 일시)이 응답에 실리도록 바로 flush 한다.
     Organization saved = organizationRepository.saveAndFlush(organization);
@@ -126,6 +127,7 @@ public class OrganizationService {
                 .value("name", "기관명", null, saved.getName())
                 .value("type", "기관 구분", null, saved.getType())
                 .value("emailDomain", "이메일 도메인", null, saved.getEmailDomain())
+                .value("sector", "업권", null, saved.getSector())
                 .value("businesses", "참여 업무", null, FieldChanges.join(saved.getBusinesses()))
                 .toList()));
     return OrganizationDetailResponse.from(saved);
@@ -146,12 +148,22 @@ public class OrganizationService {
                 normalizeDomain(request.emailDomain()))
             .field("active", "사용 여부", organization.isActive(), request.active())
             .field(
+                "sector",
+                "업권",
+                organization.getSector(),
+                organization.getType() == OrganizationType.FINANCE_ORGANIZATION
+                    ? request.sector()
+                    : null)
+            .field(
                 "businesses",
                 "참여 업무",
                 FieldChanges.join(organization.getBusinesses()),
                 FieldChanges.join(orEmpty(request.businesses())));
     organization.update(
-        request.name().trim(), normalizeDomain(request.emailDomain()), request.active());
+        request.name().trim(),
+        normalizeDomain(request.emailDomain()),
+        request.active(),
+        request.sector());
     organization.replaceBusinesses(orEmpty(request.businesses()));
     // 수정자·수정 일시가 응답에 실리도록 바로 flush 한다.
     Organization saved = organizationRepository.saveAndFlush(organization);

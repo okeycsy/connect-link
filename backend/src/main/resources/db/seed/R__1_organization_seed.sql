@@ -22,6 +22,19 @@ INSERT INTO organization (code, name, type, email_domain, active, created_at, cr
   ('HAHA',   '하하통신',       'USE_ORGANIZATION',     'haha.example.com',    TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
   ('OLD',    '옛날은행',       'FINANCE_ORGANIZATION', 'old.example.com',     FALSE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed');
 
+-- 업권. 의견 요청에서 대상 기관을 업권별로 고를 때 쓴다(참가기관만).
+UPDATE organization SET sector = CASE code
+  WHEN 'GANA'  THEN 'BANK'
+  WHEN 'DARA'  THEN 'BANK'
+  WHEN 'OLD'   THEN 'BANK'
+  WHEN 'MABA'  THEN 'MICROFINANCE'
+  WHEN 'CHAKA' THEN 'MICROFINANCE'
+  WHEN 'SAA'   THEN 'SECURITIES'
+  WHEN 'TAPA'  THEN 'INSURANCE'
+  WHEN 'NADA'  THEN 'MICROFINANCE'
+END
+WHERE type = 'FINANCE_ORGANIZATION';
+
 -- 업무 참여. 업무마다 참여 기관 수가 다르게 해서 레일을 바꾸면 목록이 달라지도록 한다.
 INSERT INTO organization_business (organization_id, business, created_at, created_by, updated_at, updated_by)
 SELECT o.id, p.business, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'

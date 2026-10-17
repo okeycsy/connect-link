@@ -25,6 +25,58 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/opinion-requests/{requestId}/my-reply': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 내 기관 회신 조회
+     * @description 제출한 내용과 임시저장한 내용을 함께 준다. 아직 저장한 적이 없으면 replyId·status 가 null 이다. 대상 기관 담당자만 본다.
+     */
+    get: operations['getMine'];
+    /**
+     * 회신 임시저장
+     * @description 처음 쓰는 중이거나 수정 요청이 승인된 뒤에만 저장한다. 제출한 내용은 바뀌지 않는다. 회신중 요청에만 된다.
+     */
+    put: operations['saveDraft'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/opinion-requests/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 의견 요청 상세 조회
+     * @description 결제원 담당자는 대상 전부를, 기관 담당자는 자기 기관의 대상 행만 본다. permissions 가 지금 할 수 있는 일이다.
+     */
+    get: operations['get_2'];
+    /**
+     * 의견 요청 수정
+     * @description 작성중·회신중에 고친다. 질문(작성중일 때만)·대상은 보낸 목록으로 바뀐다. 회신중이면 새 회신 담당자에게 요청 메일, 남은 담당자에게 변경 알림이 간다. 회신을 저장한 기관을 빼면 409 OPINION_TARGET_HAS_REPLY.
+     */
+    put: operations['update_1'];
+    post?: never;
+    /**
+     * 작성중 의견 요청 삭제
+     * @description 작성중만 지운다. 회신중이면 409 이고 취소를 쓴다.
+     */
+    delete: operations['delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/sign-ups': {
     parameters: {
       query?: never;
@@ -107,6 +159,194 @@ export interface paths {
      * @description 같은 코드가 이미 있으면 409.
      */
     post: operations['create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/opinion-requests': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 의견 요청 목록 조회
+     * @description 한 업무 영역의 요청 중 한 상태. 결제원 담당자는 그 업무의 모든 요청을, 기관 담당자는 자기 기관이 대상인 회신중·마감 요청만 본다(작성중은 빈 목록).
+     */
+    get: operations['list_1'];
+    put?: never;
+    /**
+     * 의견 요청 작성
+     * @description 작성중으로 저장한다. 첨부자료(OPINION_REQUEST)는 저장한 뒤 첨부 API 로 올린다.
+     */
+    post: operations['create_1'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/opinion-requests/{requestId}/replies/{replyId}/revision-rejection': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 회신 수정 요청 반려
+     * @description 사유를 적어 받아들이지 않는다. 회신은 제출 상태로 돌아간다.
+     */
+    post: operations['rejectRevision'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/opinion-requests/{requestId}/replies/{replyId}/revision-approval': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 회신 수정 요청 승인
+     * @description 그 업무의 결제원 담당자가 승인한다. 기관 담당자에게 알림이 간다.
+     */
+    post: operations['approveRevision'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/opinion-requests/{requestId}/reminders': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 리마인드 메일 발송 이력 조회
+     * @description 최신순.
+     */
+    get: operations['reminders'];
+    put?: never;
+    /**
+     * 미회신 기관에 리마인드 메일 보내기
+     * @description 고른 미회신 기관(비우면 전부)의 회신 담당자에게 알림과 메일을 보내고 이력을 남긴다. 받을 사람이 없으면 400 OPINION_REMINDER_NO_RECIPIENT.
+     */
+    post: operations['remind'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/opinion-requests/{requestId}/my-reply/submission': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 회신 최종제출
+     * @description 필수 질문에 모두 답해야 한다(400). 제출한 뒤 고치려면 수정 요청을 한다.
+     */
+    post: operations['submit'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/opinion-requests/{requestId}/my-reply/revision-request': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 제출한 회신 수정 요청
+     * @description 사유를 적어 요청한다. 요청을 만든 결제원 담당자에게 알림이 가고, 승인하면 고쳐서 다시 제출한다.
+     */
+    post: operations['requestRevision'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/opinion-requests/{id}/opening': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 회신 요청 보내기
+     * @description 작성중 요청을 회신중으로 열고 회신 담당자에게 알림과 메일을 보낸다. 대상이 없으면 400 OPINION_TARGETS_REQUIRED.
+     */
+    post: operations['open'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/opinion-requests/{id}/closing': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 의견 요청 마감
+     * @description 회신중 요청을 마감한다. 더는 회신을 받지 않는다.
+     */
+    post: operations['close'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/opinion-requests/{id}/cancellation': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 의견 요청 취소
+     * @description 회신중 요청을 사유와 함께 취소한다. 마감 상태가 되고 회신 담당자에게 알림과 메일이 간다.
+     */
+    post: operations['cancel'];
     delete?: never;
     options?: never;
     head?: never;
@@ -262,7 +502,7 @@ export interface paths {
       cookie?: never;
     };
     /** 대상 하나의 첨부파일 목록(올린 순) */
-    get: operations['list_6'];
+    get: operations['list_7'];
     put?: never;
     /** 첨부파일 올리기 (multipart: file) */
     post: operations['upload'];
@@ -376,6 +616,86 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/opinion-requests/{requestId}/collation': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 회신 현황·취합표 조회
+     * @description 회신/미회신 구분, 회신율, 질문별 답 모음, 대상 기관마다 한 줄의 취합표.
+     */
+    get: operations['collation'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/opinion-requests/{requestId}/collation/excel': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 취합표 엑셀 다운로드
+     * @description 결과 요약과 기관별 취합표 두 장의 xlsx. 내부망 전용이라 인터넷망이면 403 INTERNAL_ONLY.
+     */
+    get: operations['excel'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/opinion-requests/recipient-candidates': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 대상 기관·회신 담당자 후보 조회
+     * @description 그 업무에 참여하는 사용 중 참가기관과 기관마다 같은 업무 담당자(세부업무 포함). 그 업무의 결제원 담당자만 본다.
+     */
+    get: operations['candidates'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/opinion-requests/counts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 의견 요청 상태별 건수 조회
+     * @description 목록의 필터 칩이 쓴다. 기관 담당자의 작성중은 0 이다.
+     */
+    get: operations['counts_1'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/notifications': {
     parameters: {
       query?: never;
@@ -387,7 +707,7 @@ export interface paths {
      * 내 알림 목록 조회
      * @description 최신순. unreadOnly=true 면 읽지 않은 알림만 돌려준다.
      */
-    get: operations['list_1'];
+    get: operations['list_2'];
     put?: never;
     post?: never;
     delete?: never;
@@ -424,7 +744,7 @@ export interface paths {
      * 발송함 조회
      * @description 최신순. 관리자만 볼 수 있다.
      */
-    get: operations['list_2'];
+    get: operations['list_3'];
     put?: never;
     post?: never;
     delete?: never;
@@ -510,6 +830,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/finance-sectors': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 업권 목록 조회
+     * @description 참가기관의 업권(은행, 저축은행, 증권 …) 고정 목록이다.
+     */
+    get: operations['listFinanceSectors'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/demo/mailbox': {
     parameters: {
       query?: never;
@@ -518,7 +858,7 @@ export interface paths {
       cookie?: never;
     };
     /** 받은 메일함 (받는 사람별 최근 메일 5건, 로그인 전에도 열림) */
-    get: operations['list_3'];
+    get: operations['list_4'];
     put?: never;
     post?: never;
     delete?: never;
@@ -535,7 +875,7 @@ export interface paths {
       cookie?: never;
     };
     /** 데모 계정 목록 (역할별, 로그인 전에도 열림) */
-    get: operations['list_4'];
+    get: operations['list_5'];
     put?: never;
     post?: never;
     delete?: never;
@@ -552,7 +892,7 @@ export interface paths {
       cookie?: never;
     };
     /** 대상 하나의 변경 이력(최신순) */
-    get: operations['list_5'];
+    get: operations['list_6'];
     put?: never;
     post?: never;
     delete?: never;
@@ -609,7 +949,7 @@ export interface paths {
     put?: never;
     post?: never;
     /** 첨부파일 지우기 */
-    delete: operations['delete'];
+    delete: operations['delete_1'];
     options?: never;
     head?: never;
     patch?: never;
@@ -624,6 +964,11 @@ export interface components {
       emailDomain?: string | null;
       active: boolean;
       businesses: ('ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS')[];
+      /**
+       * @description 업권. 참가기관만 쓰고 그 밖의 기관은 무시한다
+       * @enum {string|null}
+       */
+      sector?: 'BANK' | 'SECURITIES' | 'MICROFINANCE' | 'INSURANCE' | null;
     };
     BusinessResponse: {
       /** @enum {string} */
@@ -642,6 +987,9 @@ export interface components {
       typeLabel: string;
       emailDomain?: string | null;
       active: boolean;
+      /** @enum {string|null} */
+      sector?: 'BANK' | 'SECURITIES' | 'MICROFINANCE' | 'INSURANCE' | null;
+      sectorLabel?: string | null;
       businesses: components['schemas']['BusinessResponse'][];
       /** Format: date-time */
       createdAt: string;
@@ -649,6 +997,138 @@ export interface components {
       /** Format: date-time */
       updatedAt: string;
       updatedBy: string;
+    };
+    OpinionAnswerRequest: {
+      /** Format: int64 */
+      questionId: number;
+      optionIds?: (number | null)[] | null;
+      text?: string | null;
+    } | null;
+    OpinionReplySaveRequest: {
+      answers?: components['schemas']['OpinionAnswerRequest'][] | null;
+    };
+    OpinionAnswerResponse: {
+      /** Format: int64 */
+      questionId: number;
+      optionIds: number[];
+      text?: string | null;
+    };
+    OpinionMyReplyResponse: {
+      /** Format: int64 */
+      requestId: number;
+      /** Format: int64 */
+      targetId: number;
+      organizationName: string;
+      /** Format: int64 */
+      replyId?: number | null;
+      /** @enum {string|null} */
+      status?: 'DRAFT' | 'SUBMITTED' | 'REVISION_REQUESTED' | 'REVISING' | null;
+      statusLabel: string;
+      answers: components['schemas']['OpinionAnswerResponse'][];
+      draftAnswers: components['schemas']['OpinionAnswerResponse'][];
+      replierName?: string | null;
+      /** Format: date-time */
+      submittedAt?: string | null;
+      revisionReason?: string | null;
+      /** Format: date-time */
+      revisionRequestedAt?: string | null;
+      revisionRejectionReason?: string | null;
+      editable: boolean;
+      revisionRequestable: boolean;
+    };
+    OpinionQuestionRequest: {
+      /** @enum {string} */
+      type: 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TEXT';
+      title: string;
+      required: boolean;
+      options?: (string | null)[] | null;
+    };
+    OpinionRequestUpdateRequest: {
+      title: string;
+      content: string;
+      /** Format: date */
+      dueDate: string;
+      questions: components['schemas']['OpinionQuestionRequest'][];
+      targets: components['schemas']['OpinionTargetRequest'][];
+    };
+    OpinionTargetRequest: {
+      /** Format: int64 */
+      organizationId: number;
+      recipientAccountIds: number[];
+    };
+    OpinionQuestionOption: {
+      /** Format: int64 */
+      id: number;
+      label: string;
+    };
+    OpinionQuestionResponse: {
+      /** Format: int64 */
+      id: number;
+      /** @enum {string} */
+      type: 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TEXT';
+      typeLabel: string;
+      title: string;
+      required: boolean;
+      options: components['schemas']['OpinionQuestionOption'][];
+    };
+    OpinionRecipientResponse: {
+      /** Format: int64 */
+      accountId: number;
+      name: string;
+      email: string;
+      subBusiness?: string | null;
+    };
+    OpinionRequestDetailResponse: {
+      /** Format: int64 */
+      id: number;
+      /** @enum {string} */
+      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
+      businessSlug: string;
+      businessLabel: string;
+      title: string;
+      content: string;
+      /** Format: date */
+      dueDate: string;
+      /** Format: int64 */
+      daysLeft: number;
+      /** @enum {string} */
+      status: 'DRAFT' | 'OPEN' | 'CLOSED';
+      statusLabel: string;
+      cancelled: boolean;
+      cancelReason?: string | null;
+      ownerName: string;
+      /** Format: date-time */
+      openedAt?: string | null;
+      /** Format: date-time */
+      closedAt?: string | null;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+      questions: components['schemas']['OpinionQuestionResponse'][];
+      targets: components['schemas']['OpinionTargetResponse'][];
+      permissions: components['schemas']['OpinionRequestPermissions'];
+    };
+    OpinionRequestPermissions: {
+      manage: boolean;
+      edit: boolean;
+      open: boolean;
+      close: boolean;
+      cancel: boolean;
+      delete: boolean;
+      reply: boolean;
+    };
+    OpinionTargetResponse: {
+      /** Format: int64 */
+      id: number;
+      /** Format: int64 */
+      organizationId: number;
+      organizationCode: string;
+      organizationName: string;
+      recipients: components['schemas']['OpinionRecipientResponse'][];
+      replied: boolean;
+      /** @enum {string|null} */
+      replyStatus?: 'DRAFT' | 'SUBMITTED' | 'REVISION_REQUESTED' | 'REVISING' | null;
     };
     SignUpBusinessRequest: {
       /** @enum {string} */
@@ -736,6 +1216,39 @@ export interface components {
       type: 'KFTC' | 'FINANCE_ORGANIZATION' | 'USE_ORGANIZATION';
       emailDomain?: string | null;
       businesses: ('ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS')[];
+      /**
+       * @description 업권. 참가기관만 쓰고 그 밖의 기관은 무시한다
+       * @enum {string|null}
+       */
+      sector?: 'BANK' | 'SECURITIES' | 'MICROFINANCE' | 'INSURANCE' | null;
+    };
+    OpinionRequestCreateRequest: {
+      /** @enum {string} */
+      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
+      title: string;
+      content: string;
+      /** Format: date */
+      dueDate: string;
+      questions: components['schemas']['OpinionQuestionRequest'][];
+      targets: components['schemas']['OpinionTargetRequest'][];
+    };
+    OpinionReasonRequest: {
+      reason: string;
+    };
+    OpinionReminderSendRequest: {
+      organizationIds?: (number | null)[] | null;
+    };
+    OpinionReminderResponse: {
+      /** Format: int64 */
+      id: number;
+      /** Format: date-time */
+      sentAt: string;
+      senderName: string;
+      /** Format: int32 */
+      organizationCount: number;
+      /** Format: int32 */
+      recipientCount: number;
+      organizationNames: string[];
     };
     NotificationResponse: {
       /** Format: int64 */
@@ -747,7 +1260,9 @@ export interface components {
         | 'CONTACT_CHANGE_REQUESTED'
         | 'CONTACT_RECONFIRM_DUE'
         | 'OPINION_REQUEST_OPENED'
+        | 'OPINION_REQUEST_CHANGED'
         | 'OPINION_REPLY_DUE'
+        | 'OPINION_REPLY_REVISION'
         | 'TEST_PLAN_OPENED'
         | 'SUSPENSION_CHANGED'
         | 'SYSTEM';
@@ -877,6 +1392,9 @@ export interface components {
       /** @enum {string} */
       type: 'KFTC' | 'FINANCE_ORGANIZATION' | 'USE_ORGANIZATION';
       typeLabel: string;
+      /** @enum {string|null} */
+      sector?: 'BANK' | 'SECURITIES' | 'MICROFINANCE' | 'INSURANCE' | null;
+      sectorLabel?: string | null;
       businesses: ('ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS')[];
     };
     PageResponseOrganizationDetailResponse: {
@@ -890,6 +1408,140 @@ export interface components {
       /** Format: int32 */
       totalPages: number;
       last: boolean;
+    };
+    OpinionRequestSummaryResponse: {
+      /** Format: int64 */
+      id: number;
+      title: string;
+      /** @enum {string} */
+      status: 'DRAFT' | 'OPEN' | 'CLOSED';
+      statusLabel: string;
+      cancelled: boolean;
+      /** Format: date */
+      dueDate: string;
+      /** Format: int64 */
+      daysLeft: number;
+      ownerName: string;
+      /** Format: int32 */
+      targetCount?: number | null;
+      /** Format: int32 */
+      repliedCount?: number | null;
+      /** @enum {string|null} */
+      myReplyStatus?: 'DRAFT' | 'SUBMITTED' | 'REVISION_REQUESTED' | 'REVISING' | null;
+      myReplyStatusLabel?: string | null;
+      /** Format: date-time */
+      openedAt?: string | null;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    PageResponseOpinionRequestSummaryResponse: {
+      content: components['schemas']['OpinionRequestSummaryResponse'][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+      last: boolean;
+    };
+    OpinionCollationOptionCount: {
+      /** Format: int64 */
+      optionId: number;
+      label: string;
+      /** Format: int32 */
+      count: number;
+      organizations: string[];
+    };
+    OpinionCollationQuestion: {
+      /** Format: int64 */
+      questionId: number;
+      title: string;
+      /** @enum {string} */
+      type: 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TEXT';
+      typeLabel: string;
+      required: boolean;
+      /** Format: int32 */
+      answeredCount: number;
+      options: components['schemas']['OpinionCollationOptionCount'][];
+      textAnswers: components['schemas']['OpinionCollationTextAnswer'][];
+    };
+    OpinionCollationResponse: {
+      summary: components['schemas']['OpinionCollationSummary'];
+      questions: components['schemas']['OpinionCollationQuestion'][];
+      rows: components['schemas']['OpinionCollationRow'][];
+    };
+    OpinionCollationRow: {
+      /** Format: int64 */
+      targetId: number;
+      /** Format: int64 */
+      organizationId: number;
+      organizationCode: string;
+      organizationName: string;
+      recipientNames: string[];
+      replied: boolean;
+      /** Format: int64 */
+      replyId?: number | null;
+      /** @enum {string|null} */
+      replyStatus?: 'DRAFT' | 'SUBMITTED' | 'REVISION_REQUESTED' | 'REVISING' | null;
+      replyStatusLabel?: string | null;
+      replierName?: string | null;
+      /** Format: date-time */
+      submittedAt?: string | null;
+      revisionReason?: string | null;
+      /** Format: date-time */
+      revisionRequestedAt?: string | null;
+      answers: components['schemas']['OpinionCollationRowAnswer'][];
+    };
+    OpinionCollationRowAnswer: {
+      /** Format: int64 */
+      questionId: number;
+      value?: string | null;
+    };
+    OpinionCollationSummary: {
+      /** Format: int32 */
+      targetCount: number;
+      /** Format: int32 */
+      repliedCount: number;
+      /** Format: int32 */
+      notRepliedCount: number;
+      /** Format: int32 */
+      replyRate: number;
+      notRepliedOrganizations: string[];
+    };
+    OpinionCollationTextAnswer: {
+      organizationName: string;
+      text: string;
+    };
+    OpinionRecipientCandidateMember: {
+      /** Format: int64 */
+      accountId: number;
+      name: string;
+      email: string;
+      subBusiness?: string | null;
+      jobRoleLabel: string;
+      department: string;
+      team: string;
+      jobTitle: string;
+    };
+    OpinionRecipientCandidateResponse: {
+      /** Format: int64 */
+      organizationId: number;
+      organizationCode: string;
+      organizationName: string;
+      /** @enum {string|null} */
+      sector?: 'BANK' | 'SECURITIES' | 'MICROFINANCE' | 'INSURANCE' | null;
+      sectorLabel?: string | null;
+      members: components['schemas']['OpinionRecipientCandidateMember'][];
+    };
+    OpinionRequestCountsResponse: {
+      /** Format: int64 */
+      draft: number;
+      /** Format: int64 */
+      open: number;
+      /** Format: int64 */
+      closed: number;
     };
     PageResponseNotificationResponse: {
       content: components['schemas']['NotificationResponse'][];
@@ -1021,6 +1673,11 @@ export interface components {
       /** Format: date-time */
       serverTime: string;
     };
+    FinanceSectorResponse: {
+      /** @enum {string} */
+      code: 'BANK' | 'SECURITIES' | 'MICROFINANCE' | 'INSURANCE';
+      label: string;
+    };
     DemoAccountResponse: {
       email: string;
       name: string;
@@ -1132,6 +1789,122 @@ export interface operations {
         content: {
           '*/*': components['schemas']['OrganizationDetailResponse'];
         };
+      };
+    };
+  };
+  getMine: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        requestId: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['OpinionMyReplyResponse'];
+        };
+      };
+    };
+  };
+  saveDraft: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        requestId: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['OpinionReplySaveRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['OpinionMyReplyResponse'];
+        };
+      };
+    };
+  };
+  get_2: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['OpinionRequestDetailResponse'];
+        };
+      };
+    };
+  };
+  update_1: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['OpinionRequestUpdateRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['OpinionRequestDetailResponse'];
+        };
+      };
+    };
+  };
+  delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
     };
   };
@@ -1274,6 +2047,273 @@ export interface operations {
         };
         content: {
           '*/*': components['schemas']['OrganizationDetailResponse'];
+        };
+      };
+    };
+  };
+  list_1: {
+    parameters: {
+      query: {
+        /** @description 업무 영역 slug (예: account-info) */
+        business: string;
+        status?: 'DRAFT' | 'OPEN' | 'CLOSED';
+        /** @description 0부터 시작 */
+        page?: number;
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['PageResponseOpinionRequestSummaryResponse'];
+        };
+      };
+    };
+  };
+  create_1: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['OpinionRequestCreateRequest'];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['OpinionRequestDetailResponse'];
+        };
+      };
+    };
+  };
+  rejectRevision: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        requestId: number;
+        replyId: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['OpinionReasonRequest'];
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  approveRevision: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        requestId: number;
+        replyId: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  reminders: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        requestId: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['OpinionReminderResponse'][];
+        };
+      };
+    };
+  };
+  remind: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        requestId: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['OpinionReminderSendRequest'];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['OpinionReminderResponse'];
+        };
+      };
+    };
+  };
+  submit: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        requestId: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['OpinionReplySaveRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['OpinionMyReplyResponse'];
+        };
+      };
+    };
+  };
+  requestRevision: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        requestId: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['OpinionReasonRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['OpinionMyReplyResponse'];
+        };
+      };
+    };
+  };
+  open: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['OpinionRequestDetailResponse'];
+        };
+      };
+    };
+  };
+  close: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['OpinionRequestDetailResponse'];
+        };
+      };
+    };
+  };
+  cancel: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['OpinionReasonRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['OpinionRequestDetailResponse'];
         };
       };
     };
@@ -1450,7 +2490,7 @@ export interface operations {
       };
     };
   };
-  list_6: {
+  list_7: {
     parameters: {
       query: {
         ownerType: 'OPINION_REQUEST' | 'OPINION_REPLY' | 'SUSPENSION' | 'DEMO';
@@ -1648,7 +2688,97 @@ export interface operations {
       };
     };
   };
-  list_1: {
+  collation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        requestId: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['OpinionCollationResponse'];
+        };
+      };
+    };
+  };
+  excel: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        requestId: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string[];
+        };
+      };
+    };
+  };
+  candidates: {
+    parameters: {
+      query: {
+        /** @description 업무 영역 slug (예: account-info) */
+        business: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['OpinionRecipientCandidateResponse'][];
+        };
+      };
+    };
+  };
+  counts_1: {
+    parameters: {
+      query: {
+        /** @description 업무 영역 slug (예: account-info) */
+        business: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['OpinionRequestCountsResponse'];
+        };
+      };
+    };
+  };
+  list_2: {
     parameters: {
       query?: {
         /** @description 0부터 시작 */
@@ -1693,7 +2823,7 @@ export interface operations {
       };
     };
   };
-  list_2: {
+  list_3: {
     parameters: {
       query?: {
         /** @description 0부터 시작 */
@@ -1800,7 +2930,27 @@ export interface operations {
       };
     };
   };
-  list_3: {
+  listFinanceSectors: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['FinanceSectorResponse'][];
+        };
+      };
+    };
+  };
+  list_4: {
     parameters: {
       query: {
         /** @description 받는 사람 이메일. 대소문자를 가리지 않는다 */
@@ -1823,7 +2973,7 @@ export interface operations {
       };
     };
   };
-  list_4: {
+  list_5: {
     parameters: {
       query?: never;
       header?: never;
@@ -1843,7 +2993,7 @@ export interface operations {
       };
     };
   };
-  list_5: {
+  list_6: {
     parameters: {
       query: {
         targetType:
@@ -1916,7 +3066,7 @@ export interface operations {
       };
     };
   };
-  delete: {
+  delete_1: {
     parameters: {
       query?: never;
       header?: never;

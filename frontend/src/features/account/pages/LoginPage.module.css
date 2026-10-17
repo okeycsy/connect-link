@@ -170,6 +170,15 @@
   letter-spacing: 0;
 }
 
+.headlineLogo {
+  height: 150px;
+  margin-top: 8px;
+
+  @media (max-width: $mantine-breakpoint-md) {
+    height: 104px;
+  }
+}
+
 .chip {
   padding: 6px 12px;
   border-radius: 999px;

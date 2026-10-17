@@ -8,6 +8,9 @@ import { SignUpPendingPage } from '../features/account/pages/SignUpPendingPage';
 import { HomePage } from '../features/home/pages/HomePage';
 import { NotificationCenterPage } from '../features/notification/pages/NotificationCenterPage';
 import { NotificationOutboxPage } from '../features/notification/pages/NotificationOutboxPage';
+import { OpinionDetailPage } from '../features/opinion/pages/OpinionDetailPage';
+import { OpinionEditorPage } from '../features/opinion/pages/OpinionEditorPage';
+import { OpinionListPage } from '../features/opinion/pages/OpinionListPage';
 import { OrganizationAdminPage } from '../features/organization/pages/OrganizationAdminPage';
 import { AdminGuard } from './layout/AdminGuard';
 import { AdminHubPage } from './layout/AdminHubPage';
@@ -18,7 +21,10 @@ import { RouteErrorPage } from './layout/RouteErrorPage';
 import { AppShellLayout } from './layout/AppShellLayout';
 import { BusinessGuard } from './layout/BusinessGuard';
 import { PlaceholderPage } from './layout/PlaceholderPage';
-import { DEFAULT_BUSINESS_SLUG, FEATURE_MENU } from './navigation';
+import { DEFAULT_BUSINESS_SLUG, FEATURE_MENU, type FeatureMenuItem } from './navigation';
+
+/** 화면이 있는 기능. 나머지 기능은 "준비 중" 자리를 보인다. */
+const BUILT_FEATURES: FeatureMenuItem['key'][] = ['home', 'admin', 'opinions'];
 
 /**
  * 주소 구조: /{업무 영역 slug}/{기능}.
@@ -61,7 +67,12 @@ export const router = createBrowserRouter([
               },
             ],
           },
-          ...FEATURE_MENU.filter((m) => m.key !== 'home' && m.key !== 'admin').map((m) => ({
+          // 나. 의견 요청: 목록, 작성, 상세(회신 현황·취합표 탭, 기관 회신), 고치기.
+          { path: 'opinions', element: <OpinionListPage /> },
+          { path: 'opinions/new', element: <OpinionEditorPage /> },
+          { path: 'opinions/:id', element: <OpinionDetailPage /> },
+          { path: 'opinions/:id/edit', element: <OpinionEditorPage /> },
+          ...FEATURE_MENU.filter((m) => !BUILT_FEATURES.includes(m.key)).map((m) => ({
             path: m.path,
             element: <PlaceholderPage title={m.label} description={m.description} />,
           })),

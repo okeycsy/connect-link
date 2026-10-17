@@ -67,18 +67,24 @@
 | 기관 업무 참여 | `OrganizationBusiness` | 기관이 참여하는 업무 영역 한 건. 레일별 조회 범위의 기준. 테이블 `organization_business` |
 | 업무 | `Business` | `ACCOUNT_INFO`(계좌통합관리), `AUTO_TRANSFER`(자동이체통합관리), `LOAN_TRANSFER`(대출이동), `CMS` |
 | 세부업무 | `subBusiness` | 자유 텍스트 |
+| 업권 | `FinanceSector` | 참가기관의 금융 업권. `BANK`(은행), `SECURITIES`(증권사), `MICROFINANCE`(서민금융기관: 저축은행·상호금융 등), `INSURANCE`(보험사). 넷에 들지 않는 참가기관(카드사 등)은 비워 둔다. 이용기관에는 없다. 기관 기준정보 칼럼 `organization.sector`, 선택지 API `/api/v1/finance-sectors`. 의견 요청 대상을 업권별로 고를 때 쓴다 |
 | 직무 | `JobRole` | `BUSINESS`(현업), `IT`(전산) |
 | 전산 세부 직무 | `ItRole` (복수 선택) | `DEV`, `OPS`, `INFRA`, `EXTERNAL_LINK`(대외계), `CONTROL_ROOM`(상황실) |
 | 주/부담당 | `ContactRank` | `PRIMARY`, `SECONDARY` |
 | 최근 확인일 | `lastConfirmedAt` | 수정·확인 시 갱신 |
 | 정기 변경(현행화) 주간 | `UpdateCampaign` | |
-| 의견 요청 | `OpinionRequest` | 상태 `DRAFT`(작성중), `OPEN`(회신중), `CLOSED`(마감) |
-| 기관 회신 | `OpinionReply` | 유형 `AGREE`, `CONDITIONAL`, `DISAGREE` |
+| 의견 요청 | `OpinionRequest` | 상태 `OpinionRequestStatus` = `DRAFT`(작성중), `OPEN`(회신중), `CLOSED`(마감). 회신중 요청을 취소하면 `CLOSED` + `cancelled`. 권한 `OpinionAccessPolicy`. API `/api/v1/opinion-requests`, 화면 `/{업무}/opinions` |
+| 질문 | `OpinionQuestion` | 의견 요청에 넣는 질문 하나. 유형 `OpinionQuestionType` = `SINGLE_CHOICE`(객관식), `MULTIPLE_CHOICE`(체크박스), `TEXT`(주관식), 필수 여부. 선택지는 `OpinionQuestionOption`. 작성중일 때만 고치고, 하나 이상 있어야 회신 요청을 시작한다 |
+| 질문 답 | `OpinionReplyAnswer` | 기관 회신의 답 한 칸. 회신처럼 제출한 답(`SUBMITTED`)과 임시저장한 답(`DRAFT`)을 따로 둔다. 객관식은 고른 선택지마다, 주관식은 질문마다 한 행 |
+| 대상 기관 | `OpinionTarget` | 요청의 대상 기관 한 곳. 회신 담당자는 `OpinionTargetRecipient`(고를 때의 이름·이메일·세부업무를 남긴다) |
+| 리마인드 이력 | `OpinionReminder` | 미회신 기관에 보낸 리마인드 메일 한 번 |
+| 회신 현황·취합표 | `OpinionCollationService` | 회신율, 질문별 답 집계, 기관별 취합표와 엑셀(`OpinionExcel`, 내부망 전용) |
+| 기관 회신 | `OpinionReply` | 대상 기관 하나에 하나. 내용은 요청 질문에 대한 답(`OpinionReplyAnswer`)뿐이다(의견 유형·세부의견 칸 없음). 상태 `OpinionReplyStatus` = `DRAFT`(임시저장), `SUBMITTED`(제출), `REVISION_REQUESTED`(수정 요청), `REVISING`(수정 중) |
 | 기관 테스트(페이지) | `TestPlan` | 단위업무/개발 건별 |
 | 테스트 요구사항 | `TestItem` | |
 | 테스트 결과 | `TestResult` | `PASSED`(정상), `FAILED`(오류), `IN_PROGRESS`(수행중), `NOT_STARTED`(미수행) |
 | 일시중단 | `Suspension` | 상태 `CONFIRMED`(확정), `PENDING_REVIEW`(검토 대기), `IN_REVIEW`(검토 중), `COMPLETED`(완료) |
-| 알림 | `Notification` | 알림 센터 항목. 종류 `NotificationType` (`SIGNUP_REQUESTED`, `SIGNUP_APPROVED`, `CONTACT_CHANGE_REQUESTED`, `CONTACT_RECONFIRM_DUE`, `OPINION_REQUEST_OPENED`, `OPINION_REPLY_DUE`, `TEST_PLAN_OPENED`, `SUSPENSION_CHANGED`, `SYSTEM`) |
+| 알림 | `Notification` | 알림 센터 항목. 종류 `NotificationType` (`SIGNUP_REQUESTED`, `SIGNUP_APPROVED`, `CONTACT_CHANGE_REQUESTED`, `CONTACT_RECONFIRM_DUE`, `OPINION_REQUEST_OPENED`, `OPINION_REQUEST_CHANGED`, `OPINION_REPLY_DUE`, `OPINION_REPLY_REVISION`, `TEST_PLAN_OPENED`, `SUSPENSION_CHANGED`, `SYSTEM`) |
 | 알림 채널 | `NotificationChannel` | `EMAIL`, `MATTERMOST` |
 | 발송함 | `NotificationOutbox` | 프로토타입에서 실제 발송 대신 기록. 상태 `OutboxStatus` = `PENDING`(발송 대기), `SENT`, `FAILED` |
 | 로그인 사용자 | `CurrentUser` | Service 권한 판단에 넘기는 값. 로그인할 때 계정에서 만들어 세션에 둔다. 업무 영역(레일) 조회 범위는 `BusinessAccessPolicy`(관리자는 전 업무, 그 밖에는 담당 업무). 테스트는 `TestUsers` |

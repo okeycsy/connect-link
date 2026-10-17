@@ -70,7 +70,10 @@ export function OrganizationTable({ rows, loading, selectedId, currentBusiness, 
               </Group>
             </Table.Td>
             <Table.Td>
-              <Text size="sm">{o.typeLabel}</Text>
+              <Text size="sm">
+                {o.typeLabel}
+                {o.sectorLabel ? ` · ${o.sectorLabel}` : ''}
+              </Text>
             </Table.Td>
             <Table.Td>
               <Group gap={4}>
