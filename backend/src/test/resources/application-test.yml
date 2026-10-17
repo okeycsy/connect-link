@@ -4,6 +4,9 @@ spring:
     locations: classpath:db/migration,classpath:db/seed
 
 app:
+  scheduling:
+    # 정기 작업은 테스트에서 끈다. 작업 자체는 서비스를 직접 불러 확인한다.
+    enabled: false
   network:
     # 시연·개발·테스트는 내부망이 기본이고, 화면의 망 전환 토글(X-Network-Zone 헤더)을 믿는다.
     header-override: true

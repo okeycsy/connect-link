@@ -65,6 +65,15 @@ app:
     # 프로토타입 저장소(임시 디렉터리). 운영은 공유 스토리지 경로나 다른 FileStorage 구현으로 바꾼다.
     dir: ${java.io.tmpdir}/connect-link-files
     max-size: 20MB
+  suspension:
+    # 끝난 확정 일시중단을 완료로 바꾸는 주기(ms).
+    completion-interval: 60000
+    digest:
+      # 전 영업일 취합. 전달 양식은 명세 미결이라 임시 양식이다(SuspensionDigestFormatter 빈을 바꿔 끼운다).
+      cron: "0 0 17 * * MON-FRI"
+      channels: ["~kftc-ops", "~kftc-control-room"]
+      # 주말 말고 쉬는 날(예: 2026-12-25). 영업일 계산에 쓴다.
+      holidays: []
 
 logging:
   level:

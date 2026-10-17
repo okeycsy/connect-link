@@ -106,14 +106,15 @@ class AttachmentControllerTest {
         .andExpect(jsonPath("$.code").value("FILE_EMPTY"));
   }
 
+  /** 없는 일시중단에 붙이려 하면 일시중단 권한 빈이 거부한다. */
   @Test
-  void 권한_빈이_아직_없는_대상에는_관리자도_올리거나_볼_수_없다() throws Exception {
+  void 권한_빈이_허락하지_않는_대상에는_관리자도_올리거나_볼_수_없다() throws Exception {
     mockMvc
         .perform(
             multipart("/api/v1/attachments")
                 .file(new MockMultipartFile("file", "a.txt", "text/plain", CONTENT))
                 .param("ownerType", "SUSPENSION")
-                .param("ownerId", "1")
+                .param("ownerId", "999999")
                 .with(TestUsers.admin())
                 .with(csrf()))
         .andExpect(status().isForbidden())
@@ -122,7 +123,7 @@ class AttachmentControllerTest {
         .perform(
             get("/api/v1/attachments")
                 .param("ownerType", "SUSPENSION")
-                .param("ownerId", "1")
+                .param("ownerId", "999999")
                 .with(TestUsers.admin()))
         .andExpect(status().isForbidden());
   }

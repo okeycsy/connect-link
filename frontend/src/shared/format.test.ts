@@ -1,12 +1,27 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatDate, formatDateTime, formatPhone, formatBytes } from './format';
+import {
+  formatBytes,
+  formatDate,
+  formatDateTime,
+  formatDateTimeRange,
+  formatPhone,
+} from './format';
 
 describe('format', () => {
   it('날짜와 일시를 정해진 형식으로 보여 준다', () => {
     expect(formatDate('2026-10-15T10:05:00+09:00')).toBe('2026-10-15');
     expect(formatDateTime(new Date(2026, 9, 15, 9, 5))).toBe('2026-10-15 09:05');
     expect(formatDate(null)).toBe('');
+  });
+
+  it('일시 구간은 같은 날이면 끝에 시각만 붙인다', () => {
+    expect(formatDateTimeRange('2026-10-18T02:00:00', '2026-10-18T04:00:00')).toBe(
+      '2026-10-18 02:00 ~ 04:00',
+    );
+    expect(formatDateTimeRange('2026-10-18T23:00:00', '2026-10-19T01:30:00')).toBe(
+      '2026-10-18 23:00 ~ 2026-10-19 01:30',
+    );
   });
 
   it('전화번호를 하이픈으로 붙이고 마스킹된 값은 그대로 둔다', () => {

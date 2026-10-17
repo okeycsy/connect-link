@@ -75,10 +75,14 @@ test.describe('첨부파일과 변경 이력', () => {
     await expect(page.getByTestId('organization-table').getByText('나다상호금융')).toBeVisible();
   });
 
-  test('변경 이력·첨부 API 는 권한 빈이 없는 대상을 거부한다', async ({ request }) => {
+  test('변경 이력 API 는 권한 빈이 없는 대상을, 첨부 API 는 없는 일시중단을 거부한다', async ({
+    request,
+  }) => {
     const history = await request.get('/api/v1/change-histories?targetType=CONTACT&targetId=1');
     expect(history.status()).toBe(403);
-    const attachments = await request.get('/api/v1/attachments?ownerType=SUSPENSION&ownerId=1');
+    const attachments = await request.get(
+      '/api/v1/attachments?ownerType=SUSPENSION&ownerId=999999',
+    );
     expect(attachments.status()).toBe(403);
   });
 });
