@@ -254,7 +254,7 @@ class OrganizationControllerTest {
                 .with(csrf()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.sector").value("INSURANCE"))
-        .andExpect(jsonPath("$.sectorLabel").value("보험"));
+        .andExpect(jsonPath("$.sectorLabel").value("보험사"));
     mockMvc
         .perform(
             get("/api/v1/change-histories")
@@ -262,8 +262,8 @@ class OrganizationControllerTest {
                 .param("targetId", String.valueOf(id))
                 .with(TestUsers.admin()))
         .andExpect(jsonPath("$.content[0].changes[0].label").value("업권"))
-        .andExpect(jsonPath("$.content[0].changes[0].before").value("증권"))
-        .andExpect(jsonPath("$.content[0].changes[0].after").value("보험"));
+        .andExpect(jsonPath("$.content[0].changes[0].before").value("증권사"))
+        .andExpect(jsonPath("$.content[0].changes[0].after").value("보험사"));
 
     // 결제원은 업권을 보내도 두지 않는다.
     Long kftc = organizationRepository.findByCode("KFTC").orElseThrow().getId();

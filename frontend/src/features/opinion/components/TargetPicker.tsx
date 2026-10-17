@@ -39,16 +39,7 @@ interface Props {
 type Sector = NonNullable<OpinionRecipientCandidate['sector']>;
 
 /** 업권 묶음 순서. 서버 FinanceSector 선언 순서와 같다. 업권이 없는 기관은 맨 뒤 "업권 미지정"에 둔다. */
-const SECTOR_ORDER: Sector[] = [
-  'BANK',
-  'SAVINGS_BANK',
-  'SECURITIES',
-  'CARD',
-  'INSURANCE',
-  'CAPITAL',
-  'MUTUAL_FINANCE',
-  'ETC',
-];
+const SECTOR_ORDER: Sector[] = ['BANK', 'SECURITIES', 'MICROFINANCE', 'INSURANCE'];
 
 interface SectorGroup {
   key: string;

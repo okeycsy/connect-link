@@ -31,7 +31,7 @@ const candidates: OpinionRecipientCandidate[] = [
     organizationCode: 'SAA',
     organizationName: '사아증권',
     sector: 'SECURITIES',
-    sectorLabel: '증권',
+    sectorLabel: '증권사',
     members: [member(21, '최사아', '오픈뱅킹 안심차단')],
   },
 ];
@@ -73,7 +73,7 @@ describe('TargetPicker', () => {
     expect(screen.getByRole('checkbox', { name: '사아증권 대상' })).not.toBeChecked();
     expect(summary()).toBe('대상 1곳 · 회신 담당자 2명');
     expect(screen.getByRole('textbox', { name: '은행 업권 회신 양식' })).toBeInTheDocument();
-    expect(screen.queryByRole('textbox', { name: '증권 업권 회신 양식' })).toBeNull();
+    expect(screen.queryByRole('textbox', { name: '증권사 업권 회신 양식' })).toBeNull();
   });
 
   it('업무 전체를 고른 뒤 한 명만 뺄 수 있다', () => {

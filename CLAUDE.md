@@ -67,7 +67,7 @@
 | 기관 업무 참여 | `OrganizationBusiness` | 기관이 참여하는 업무 영역 한 건. 레일별 조회 범위의 기준. 테이블 `organization_business` |
 | 업무 | `Business` | `ACCOUNT_INFO`(계좌통합관리), `AUTO_TRANSFER`(자동이체통합관리), `LOAN_TRANSFER`(대출이동), `CMS` |
 | 세부업무 | `subBusiness` | 자유 텍스트 |
-| 업권 | `FinanceSector` | 참가기관의 금융 업권. `BANK`(은행), `SAVINGS_BANK`(저축은행), `SECURITIES`(증권), `CARD`(카드), `INSURANCE`(보험), `CAPITAL`(캐피탈), `MUTUAL_FINANCE`(상호금융), `ETC`(기타). 기관 기준정보 칼럼 `organization.sector`, 선택지 API `/api/v1/finance-sectors`. 의견 요청 대상을 업권별로 고를 때 쓴다 |
+| 업권 | `FinanceSector` | 참가기관의 금융 업권. `BANK`(은행), `SECURITIES`(증권사), `MICROFINANCE`(서민금융기관: 저축은행·상호금융 등), `INSURANCE`(보험사). 넷에 들지 않는 참가기관(카드사 등)은 비워 둔다. 이용기관에는 없다. 기관 기준정보 칼럼 `organization.sector`, 선택지 API `/api/v1/finance-sectors`. 의견 요청 대상을 업권별로 고를 때 쓴다 |
 | 직무 | `JobRole` | `BUSINESS`(현업), `IT`(전산) |
 | 전산 세부 직무 | `ItRole` (복수 선택) | `DEV`, `OPS`, `INFRA`, `EXTERNAL_LINK`(대외계), `CONTROL_ROOM`(상황실) |
 | 주/부담당 | `ContactRank` | `PRIMARY`, `SECONDARY` |

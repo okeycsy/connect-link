@@ -968,16 +968,7 @@ export interface components {
        * @description 업권. 참가기관만 쓰고 그 밖의 기관은 무시한다
        * @enum {string|null}
        */
-      sector?:
-        | 'BANK'
-        | 'SAVINGS_BANK'
-        | 'SECURITIES'
-        | 'CARD'
-        | 'INSURANCE'
-        | 'CAPITAL'
-        | 'MUTUAL_FINANCE'
-        | 'ETC'
-        | null;
+      sector?: 'BANK' | 'SECURITIES' | 'MICROFINANCE' | 'INSURANCE' | null;
     };
     BusinessResponse: {
       /** @enum {string} */
@@ -997,16 +988,7 @@ export interface components {
       emailDomain?: string | null;
       active: boolean;
       /** @enum {string|null} */
-      sector?:
-        | 'BANK'
-        | 'SAVINGS_BANK'
-        | 'SECURITIES'
-        | 'CARD'
-        | 'INSURANCE'
-        | 'CAPITAL'
-        | 'MUTUAL_FINANCE'
-        | 'ETC'
-        | null;
+      sector?: 'BANK' | 'SECURITIES' | 'MICROFINANCE' | 'INSURANCE' | null;
       sectorLabel?: string | null;
       businesses: components['schemas']['BusinessResponse'][];
       /** Format: date-time */
@@ -1228,16 +1210,7 @@ export interface components {
        * @description 업권. 참가기관만 쓰고 그 밖의 기관은 무시한다
        * @enum {string|null}
        */
-      sector?:
-        | 'BANK'
-        | 'SAVINGS_BANK'
-        | 'SECURITIES'
-        | 'CARD'
-        | 'INSURANCE'
-        | 'CAPITAL'
-        | 'MUTUAL_FINANCE'
-        | 'ETC'
-        | null;
+      sector?: 'BANK' | 'SECURITIES' | 'MICROFINANCE' | 'INSURANCE' | null;
     };
     OpinionRequestCreateRequest: {
       /** @enum {string} */
@@ -1410,16 +1383,7 @@ export interface components {
       type: 'KFTC' | 'FINANCE_ORGANIZATION' | 'USE_ORGANIZATION';
       typeLabel: string;
       /** @enum {string|null} */
-      sector?:
-        | 'BANK'
-        | 'SAVINGS_BANK'
-        | 'SECURITIES'
-        | 'CARD'
-        | 'INSURANCE'
-        | 'CAPITAL'
-        | 'MUTUAL_FINANCE'
-        | 'ETC'
-        | null;
+      sector?: 'BANK' | 'SECURITIES' | 'MICROFINANCE' | 'INSURANCE' | null;
       sectorLabel?: string | null;
       businesses: ('ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS')[];
     };
@@ -1539,16 +1503,7 @@ export interface components {
       organizationCode: string;
       organizationName: string;
       /** @enum {string|null} */
-      sector?:
-        | 'BANK'
-        | 'SAVINGS_BANK'
-        | 'SECURITIES'
-        | 'CARD'
-        | 'INSURANCE'
-        | 'CAPITAL'
-        | 'MUTUAL_FINANCE'
-        | 'ETC'
-        | null;
+      sector?: 'BANK' | 'SECURITIES' | 'MICROFINANCE' | 'INSURANCE' | null;
       sectorLabel?: string | null;
       members: components['schemas']['OpinionRecipientCandidateMember'][];
     };
@@ -1692,15 +1647,7 @@ export interface components {
     };
     FinanceSectorResponse: {
       /** @enum {string} */
-      code:
-        | 'BANK'
-        | 'SAVINGS_BANK'
-        | 'SECURITIES'
-        | 'CARD'
-        | 'INSURANCE'
-        | 'CAPITAL'
-        | 'MUTUAL_FINANCE'
-        | 'ETC';
+      code: 'BANK' | 'SECURITIES' | 'MICROFINANCE' | 'INSURANCE';
       label: string;
     };
     DemoAccountResponse: {
