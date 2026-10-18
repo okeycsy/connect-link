@@ -107,7 +107,7 @@ export function SuspensionListPage() {
                 loading={sendDigest.isPending}
                 onClick={() => sendDigest.mutate(undefined, { onSuccess: setDigest })}
               >
-                전 영업일 취합 보내기
+                수동으로 보내기
               </Button>
             )}
             {register && (

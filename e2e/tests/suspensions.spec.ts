@@ -218,7 +218,7 @@ test.describe('라. 일시중단', () => {
     await shot(page, 'suspension-organization-history');
 
     // 데모 도구: 전 영업일 취합을 운영·관제 채널로 보낸다.
-    await page.getByRole('button', { name: '전 영업일 취합 보내기' }).click();
+    await page.getByRole('button', { name: '수동으로 보내기' }).click();
     const digest = page.getByRole('dialog', {
       name: '전 영업일 취합을 보냈습니다',
     });

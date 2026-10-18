@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-/** 전 영업일 취합 전달 예약 작업. 때는 {@code app.suspension.digest.cron}(기본 평일 17시, 서버 시간대)이다. */
+/** 전 영업일 취합 전달 예약 작업. 때는 {@code app.suspension.digest.cron}(기본 평일 16시, 서버 시간대)이다. */
 @Component
 class SuspensionDigestJob {
 
@@ -17,7 +17,7 @@ class SuspensionDigestJob {
     this.digestService = digestService;
   }
 
-  @Scheduled(cron = "${app.suspension.digest.cron:0 0 17 * * MON-FRI}", zone = "Asia/Seoul")
+  @Scheduled(cron = "${app.suspension.digest.cron:0 0 16 * * MON-FRI}", zone = "Asia/Seoul")
   void run() {
     digestService
         .sendScheduled()
