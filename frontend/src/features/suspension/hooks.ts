@@ -172,9 +172,9 @@ export function useConfirmSuspension(id: number) {
   });
 }
 
-/** 데모 도구: 전 영업일 취합을 지금 운영·관제 채널로 보낸다. 보낸 글은 발송함에 남는다. */
+/** 전 영업일 취합을 수동으로 운영·관제 매터모스트 채널에 보낸다. 결제원 담당자만 부른다. */
 export function useSendSuspensionDigest() {
   return useMutation({
-    mutationFn: async () => unwrap(await api.POST('/api/v1/demo/suspension-digest')),
+    mutationFn: async () => unwrap(await api.POST('/api/v1/suspension-digests')),
   });
 }

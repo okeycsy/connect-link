@@ -479,7 +479,7 @@ class SuspensionControllerTest {
   @Test
   void 전_영업일_취합은_확정_건을_운영_관제_채널로_보낸다() throws Exception {
     JsonNode digest =
-        json(send(post("/api/v1/demo/suspension-digest"), null, hong()).andExpect(status().isOk()));
+        json(send(post("/api/v1/suspension-digests"), null, hong()).andExpect(status().isOk()));
     assertThat(digest.get("recipients").get(0).asText()).isEqualTo("~kftc-ops");
     assertThat(digest.get("body").asText()).contains("확정 일시중단");
     assertThat(
@@ -487,6 +487,6 @@ class SuspensionControllerTest {
                 .filter(o -> o.getRecipient().equals("~kftc-control-room"))
                 .map(NotificationOutbox::getChannel))
         .contains(NotificationChannel.MATTERMOST);
-    send(post("/api/v1/demo/suspension-digest"), null, kim()).andExpect(status().isForbidden());
+    send(post("/api/v1/suspension-digests"), null, kim()).andExpect(status().isForbidden());
   }
 }

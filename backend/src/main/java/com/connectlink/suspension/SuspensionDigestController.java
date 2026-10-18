@@ -4,22 +4,20 @@ import com.connectlink.auth.CurrentUserProvider;
 import com.connectlink.suspension.dto.SuspensionDigestResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 데모 도구: 전 영업일 취합 전달을 예약 시각을 기다리지 않고 바로 보낸다. 보낸 글은 발송함(매터모스트)에 남는다. local·demo·test 프로필에만 있다. */
+/** 전 영업일 취합. 정해진 때는 예약 작업이 보내고, 결제원 담당자는 이 API 로 바로 보낸다. */
 @RestController
-@RequestMapping("/api/v1/demo/suspension-digest")
-@Profile({"local", "demo", "test"})
-@Tag(name = "데모 도구", description = "시연용 도구 (demo·local 프로필 전용)")
-public class SuspensionDigestDemoController {
+@RequestMapping("/api/v1/suspension-digests")
+@Tag(name = "일시중단", description = "참가기관 일시중단 등록과 검토·확정")
+public class SuspensionDigestController {
 
   private final SuspensionDigestService digestService;
   private final CurrentUserProvider currentUserProvider;
 
-  public SuspensionDigestDemoController(
+  public SuspensionDigestController(
       SuspensionDigestService digestService, CurrentUserProvider currentUserProvider) {
     this.digestService = digestService;
     this.currentUserProvider = currentUserProvider;
@@ -27,9 +25,10 @@ public class SuspensionDigestDemoController {
 
   @PostMapping
   @Operation(
-      summary = "일시중단 전 영업일 취합 지금 보내기",
-      description = "오늘을 보내는 영업일로 보고 다음 영업일까지 시작하는 확정 건을 운영·관제 채널로 보낸다. 결제원 담당자만 부른다.")
-  public SuspensionDigestResponse sendNow() {
+      summary = "전 영업일 취합 수동으로 보내기",
+      description =
+          "오늘을 보내는 영업일로 보고 다음 영업일까지 시작하는 확정 일시중단을 운영·관제 매터모스트 채널로 바로 보낸다. 결제원 담당자와 관리자만 부른다.")
+  public SuspensionDigestResponse send() {
     return digestService.sendNow(currentUserProvider.require());
   }
 }

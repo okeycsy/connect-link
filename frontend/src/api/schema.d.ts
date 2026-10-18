@@ -169,6 +169,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/suspension-digests': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 전 영업일 취합 수동으로 보내기
+     * @description 오늘을 보내는 영업일로 보고 다음 영업일까지 시작하는 확정 일시중단을 운영·관제 매터모스트 채널로 바로 보낸다. 결제원 담당자와 관리자만 부른다.
+     */
+    post: operations['send'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/sign-ups': {
     parameters: {
       query?: never;
@@ -540,26 +560,6 @@ export interface paths {
      * @description 맞으면 가입 신청에 쓸 인증 토큰을 준다. 틀리면 400 VERIFICATION_CODE_MISMATCH, 정해진 횟수를 넘기면 VERIFICATION_ATTEMPTS_EXCEEDED, 유효 시간이 지나면 VERIFICATION_EXPIRED.
      */
     post: operations['confirm_1'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/demo/suspension-digest': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * 일시중단 전 영업일 취합 지금 보내기
-     * @description 오늘을 보내는 영업일로 보고 다음 영업일까지 시작하는 확정 건을 운영·관제 채널로 보낸다. 결제원 담당자만 부른다.
-     */
-    post: operations['sendNow'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1357,6 +1357,20 @@ export interface components {
     SuspensionHandoverRequest: {
       handover: string;
     };
+    SuspensionDigestResponse: {
+      /** Format: date */
+      sentOn: string;
+      /** Format: date */
+      fromDate: string;
+      /** Format: date */
+      toDate: string;
+      /** Format: int32 */
+      itemCount: number;
+      recipients: string[];
+      body: string;
+      /** Format: date-time */
+      sentAt: string;
+    };
     SignUpBusinessRequest: {
       /** @enum {string} */
       business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
@@ -1530,20 +1544,6 @@ export interface components {
       /** Format: date-time */
       tokenExpiresAt: string;
       suggestedOrganizationIds: number[];
-    };
-    SuspensionDigestResponse: {
-      /** Format: date */
-      sentOn: string;
-      /** Format: date */
-      fromDate: string;
-      /** Format: date */
-      toDate: string;
-      /** Format: int32 */
-      itemCount: number;
-      recipients: string[];
-      body: string;
-      /** Format: date-time */
-      sentAt: string;
     };
     LoginRequest: {
       email: string;
@@ -2373,6 +2373,26 @@ export interface operations {
       };
     };
   };
+  send: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['SuspensionDigestResponse'];
+        };
+      };
+    };
+  };
   list_1: {
     parameters: {
       query: {
@@ -2909,26 +2929,6 @@ export interface operations {
         };
         content: {
           '*/*': components['schemas']['EmailVerificationConfirmResponse'];
-        };
-      };
-    };
-  };
-  sendNow: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          '*/*': components['schemas']['SuspensionDigestResponse'];
         };
       };
     };

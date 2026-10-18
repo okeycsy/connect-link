@@ -25,6 +25,7 @@ public class SuspensionAccessPolicy {
   static final String EDIT_DENIED = "일시중단은 등록한 기관 담당자나 그 업무의 결제원 담당자만 고칩니다.";
   static final String DELETE_DENIED = "일시중단은 등록한 본인만 지웁니다.";
   static final String REVIEW_DENIED = "그 업무의 결제원 담당자만 확인하고 확정합니다.";
+  static final String DIGEST_DENIED = "전 영업일 취합은 결제원 담당자만 보냅니다.";
 
   /** 이 업무의 일시중단을 결제원 담당자로서 다루는지(전 기관 조회, 수정, 확인·확정). */
   public boolean canManage(CurrentUser user, Business business) {
@@ -70,6 +71,11 @@ public class SuspensionAccessPolicy {
         && canManage(user, suspension.getBusiness());
   }
 
+  /** 전 영업일 취합을 수동으로 보낼 수 있는지. 취합은 전 업무를 묶으므로 결제원 담당자 누구나와 관리자다. */
+  public boolean canSendDigest(CurrentUser user) {
+    return user.admin() || user.organizationType() == OrganizationType.KFTC;
+  }
+
   private boolean isOwnOrganization(CurrentUser user, Suspension suspension) {
     return isOrganizationMember(user, suspension.getBusiness())
         && suspension.getOrganization().getCode().equals(user.organizationCode());
@@ -106,6 +112,12 @@ public class SuspensionAccessPolicy {
   public void ensureCanReview(CurrentUser user, Suspension suspension) {
     if (!canReview(user, suspension)) {
       throw new AccessDeniedException(REVIEW_DENIED);
+    }
+  }
+
+  public void ensureCanSendDigest(CurrentUser user) {
+    if (!canSendDigest(user)) {
+      throw new AccessDeniedException(DIGEST_DENIED);
     }
   }
 }

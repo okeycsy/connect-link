@@ -1,5 +1,4 @@
 import {
-  Alert,
   Button,
   Card,
   Group,
@@ -15,7 +14,7 @@ import { IconPlus, IconSend } from '@tabler/icons-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
-import { isDemoProfile, useServerInfo } from '../../../app/hooks';
+import { ConfirmModal } from '../../../shared/ConfirmModal';
 import { formatDateTime, formatDateTimeRange } from '../../../shared/format';
 import { ChipFilter } from '../../../shared/list/ChipFilter';
 import { TableEmpty } from '../../../shared/list/TableEmpty';
@@ -51,8 +50,6 @@ export function SuspensionListPage() {
   const { data: me } = useMe();
   const manager = canManageSuspensions(me, slug);
   const register = canRegisterSuspensions(me, slug);
-  const { data: serverInfo } = useServerInfo();
-  const demo = isDemoProfile(serverInfo?.profile);
   const [searchParams, setSearchParams] = useSearchParams();
   const periodParam = searchParams.get('period') as SuspensionPeriod | null;
   const period: SuspensionPeriod =
@@ -60,6 +57,7 @@ export function SuspensionListPage() {
   const orgParam = Number(searchParams.get('org'));
   const organizationId = manager && orgParam > 0 ? orgParam : undefined;
   const [page, setPage] = useState(0);
+  const [confirmDigest, setConfirmDigest] = useState(false);
   const [digest, setDigest] = useState<SuspensionDigest | null>(null);
   const sendDigest = useSendSuspensionDigest();
 
@@ -100,12 +98,14 @@ export function SuspensionListPage() {
         }
         actions={
           <>
-            {demo && manager && (
+            {manager && (
               <Button
                 variant="light"
                 leftSection={<IconSend size={16} stroke={1.8} />}
-                loading={sendDigest.isPending}
-                onClick={() => sendDigest.mutate(undefined, { onSuccess: setDigest })}
+                onClick={() => {
+                  sendDigest.reset();
+                  setConfirmDigest(true);
+                }}
               >
                 수동으로 보내기
               </Button>
@@ -122,12 +122,6 @@ export function SuspensionListPage() {
           </>
         }
       />
-
-      {sendDigest.isError && (
-        <Alert variant="light" color="red">
-          {sendDigest.error.message}
-        </Alert>
-      )}
 
       <Card>
         <Group justify="space-between" align="center" mb="sm" gap="sm">
@@ -192,6 +186,23 @@ export function SuspensionListPage() {
         )}
       </Card>
 
+      <ConfirmModal
+        opened={confirmDigest}
+        onClose={() => setConfirmDigest(false)}
+        title="전 영업일 취합 수동으로 보내기"
+        message="오늘까지 확정된 일시중단 중 다음 날부터 다음 영업일까지 시작하는 건을 운영·관제 매터모스트 채널로 지금 보냅니다. 오늘 오후 4시 자동 발송은 건너뜁니다."
+        confirmLabel="보내기"
+        pending={sendDigest.isPending}
+        error={sendDigest.error}
+        onConfirm={() =>
+          sendDigest.mutate(undefined, {
+            onSuccess: (d) => {
+              setConfirmDigest(false);
+              setDigest(d);
+            },
+          })
+        }
+      />
       <Modal
         opened={digest != null}
         onClose={() => setDigest(null)}
@@ -203,7 +214,7 @@ export function SuspensionListPage() {
           <Stack gap="sm">
             <Text size="sm" c="dimmed">
               {digest.recipients.join(', ')} · {formatDateTime(digest.sentAt)} · 확정{' '}
-              {digest.itemCount}건. 데모에서는 발송함에 매터모스트로 남습니다.
+              {digest.itemCount}건
             </Text>
             <Card bg="var(--cl-sunken)" data-testid="digest-body">
               <Text size="sm" className={classes.content}>

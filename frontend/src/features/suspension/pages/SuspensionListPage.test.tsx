@@ -70,7 +70,6 @@ vi.mock('../../../api/client', async (importOriginal) => {
           const ok = (data: unknown) => ({ data, response: new Response() });
           if (path === '/api/v1/me') return ok(state.me);
           if (path === '/api/v1/businesses') return ok([cms]);
-          if (path === '/api/v1/health') return ok({ status: 'UP', profile: 'demo' });
           if (path === '/api/v1/suspensions/counts') {
             return ok({ current: 1, upcoming: 3, past: 5, pendingReview: 2 });
           }

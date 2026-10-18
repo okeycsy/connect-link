@@ -3,7 +3,6 @@ package com.connectlink.suspension;
 import com.connectlink.auth.CurrentUser;
 import com.connectlink.notification.NotificationChannel;
 import com.connectlink.notification.NotificationService;
-import com.connectlink.organization.OrganizationType;
 import com.connectlink.suspension.dto.SuspensionDigestResponse;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -11,7 +10,6 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +28,7 @@ public class SuspensionDigestService {
   private final SuspensionDigestProperties properties;
   private final BusinessDayCalendar calendar;
   private final NotificationService notificationService;
+  private final SuspensionAccessPolicy accessPolicy;
   private final Clock clock;
 
   public SuspensionDigestService(
@@ -39,6 +38,7 @@ public class SuspensionDigestService {
       SuspensionDigestProperties properties,
       BusinessDayCalendar calendar,
       NotificationService notificationService,
+      SuspensionAccessPolicy accessPolicy,
       Clock clock) {
     this.suspensionRepository = suspensionRepository;
     this.digestRepository = digestRepository;
@@ -46,6 +46,7 @@ public class SuspensionDigestService {
     this.properties = properties;
     this.calendar = calendar;
     this.notificationService = notificationService;
+    this.accessPolicy = accessPolicy;
     this.clock = clock;
   }
 
@@ -59,13 +60,11 @@ public class SuspensionDigestService {
   }
 
   /**
-   * 시연용 즉시 실행: 오늘을 보내는 날로 보고 취합을 바로 보낸다(영업일이 아니어도 보낸다). 오늘 보낸 기록이 있으면 새 기록으로 바꾼다. 결제원 담당자와 관리자만
-   * 부른다.
+   * 수동으로 보내기: 오늘을 보내는 날로 보고 취합을 바로 보낸다(영업일이 아니어도 보낸다). 예약 발송 전에 보내면 그날 예약 발송은 건너뛰고, 오늘 보낸 기록이 있으면 새
+   * 기록으로 바꾼다. 결제원 담당자와 관리자만 부른다.
    */
   public SuspensionDigestResponse sendNow(CurrentUser user) {
-    if (!user.admin() && user.organizationType() != OrganizationType.KFTC) {
-      throw new AccessDeniedException("전 영업일 취합은 결제원 담당자만 보냅니다.");
-    }
+    accessPolicy.ensureCanSendDigest(user);
     LocalDate today = LocalDate.now(clock);
     digestRepository
         .findBySentOn(today)

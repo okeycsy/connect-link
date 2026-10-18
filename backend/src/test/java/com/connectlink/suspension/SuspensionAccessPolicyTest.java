@@ -170,4 +170,17 @@ class SuspensionAccessPolicyTest {
     assertThat(s.getStatus()).isEqualTo(SuspensionStatus.PENDING_REVIEW);
     assertThat(s.getReviewers()).isEmpty();
   }
+
+  @Test
+  void 결제원_담당자와_관리자는_전_영업일_취합을_수동으로_보낸다() {
+    assertThat(policy.canSendDigest(TestUsers.KFTC_CMS)).isTrue();
+    assertThat(policy.canSendDigest(TestUsers.ADMIN)).isTrue();
+  }
+
+  @Test
+  void 기관_담당자는_전_영업일_취합을_보내지_못한다() {
+    assertThat(policy.canSendDigest(TestUsers.GANA_MEMBER)).isFalse();
+    assertThatThrownBy(() -> policy.ensureCanSendDigest(TestUsers.GANA_MEMBER))
+        .isInstanceOf(AccessDeniedException.class);
+  }
 }

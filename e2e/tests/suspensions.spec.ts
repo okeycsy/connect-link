@@ -217,8 +217,11 @@ test.describe('라. 일시중단', () => {
     await expect(history).not.toContainText('마바저축은행');
     await shot(page, 'suspension-organization-history');
 
-    // 데모 도구: 전 영업일 취합을 운영·관제 채널로 보낸다.
+    // 전 영업일 취합을 확인 뒤 운영·관제 채널로 수동으로 보낸다.
     await page.getByRole('button', { name: '수동으로 보내기' }).click();
+    const confirmSend = page.getByRole('dialog', { name: '전 영업일 취합 수동으로 보내기' });
+    await expect(confirmSend).toContainText('오후 4시 자동 발송');
+    await confirmSend.getByRole('button', { name: '보내기' }).click();
     const digest = page.getByRole('dialog', {
       name: '전 영업일 취합을 보냈습니다',
     });
