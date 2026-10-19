@@ -28,7 +28,7 @@ function seoulDate(days: number) {
   return new Date(Date.now() + 9 * 3_600_000 + days * 86_400_000).toISOString().slice(0, 10);
 }
 
-/** 홍길동으로 KB국민은행 대상 계좌통합관리 기관 테스트를 API 로 만든다. request 의 세션은 홍길동으로 바뀐다. */
+/** 홍성민으로 KB국민은행 대상 계좌통합관리 기관 테스트를 API 로 만든다. request 의 세션은 홍성민으로 바뀐다. */
 async function createAsHong(request: APIRequestContext, title: string): Promise<number> {
   const login = await request.post('/api/v1/auth/login', {
     data: { email: 'hong.sungmin@kftc.example.com', password: DEMO_PASSWORD },
@@ -111,7 +111,7 @@ test.describe('다. 기관 테스트', () => {
     await expect(targets).toContainText('삼성증권');
     await shot(page, 'test-plan-detail');
 
-    // 알림 설정: 만든 사람(홍성민)에 김운영을 더한다.
+    // 알림 설정: 만든 사람(홍성민)에 김태호을 더한다.
     await page.getByRole('link', { name: '알림 설정' }).click();
     await expect(page.getByRole('heading', { name: '결과 등록 알림 설정' })).toBeVisible();
     await expect(page.getByRole('checkbox', { name: '홍성민 알림 받기' })).toBeChecked();

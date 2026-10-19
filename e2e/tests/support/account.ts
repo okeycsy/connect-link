@@ -62,7 +62,7 @@ export async function applyForGana(request: APIRequestContext, email: string, na
   expect(signUp.ok(), await signUp.text()).toBeTruthy();
 }
 
-/** 계좌통합관리 결제원 담당자(홍성민)로 로그인해 이 이메일의 가입 신청을 승인한다. request 의 세션은 홍길동으로 바뀐다. */
+/** 계좌통합관리 결제원 담당자(홍성민)로 로그인해 이 이메일의 가입 신청을 승인한다. request 의 세션은 홍성민으로 바뀐다. */
 export async function approveAsHong(request: APIRequestContext, email: string) {
   const login = await request.post('/api/v1/auth/login', {
     data: { email: 'hong.sungmin@kftc.example.com', password: 'demo1234!' },

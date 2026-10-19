@@ -63,7 +63,7 @@ async function pickDateTime(
   await expect(dropdown).toBeHidden();
 }
 
-/** 김가나로 KB국민은행 계좌통합관리 일시중단을 API 로 등록한다. request 의 세션은 김가나로 바뀐다. */
+/** 김민준으로 KB국민은행 계좌통합관리 일시중단을 API 로 등록한다. request 의 세션은 김민준으로 바뀐다. */
 async function registerAsGana(request: APIRequestContext, reason: string): Promise<number> {
   const login = await request.post('/api/v1/auth/login', {
     data: { email: 'kim.minjun@kb.example.com', password: DEMO_PASSWORD },

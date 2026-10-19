@@ -108,7 +108,7 @@ class TestResultControllerTest {
     return organizationService.getByCode(code).getId();
   }
 
-  /** KB국민은행·삼성증권 대상 계좌통합관리 기관 테스트를 홍길동이 만든다. */
+  /** KB국민은행·삼성증권 대상 계좌통합관리 기관 테스트를 홍성민이 만든다. */
   private Plan create(String title, String... items) throws Exception {
     Map<String, Object> body = new HashMap<>();
     body.put("business", "ACCOUNT_INFO");
@@ -269,7 +269,7 @@ class TestResultControllerTest {
     send(get(BASE + "/" + plan.id()), null, hong())
         .andExpect(jsonPath("$.state").value("IN_PROGRESS"))
         .andExpect(jsonPath("$.progressRate").value(50));
-    // 결과를 등록한 김가나에게 알림 센터로만 알린다.
+    // 결과를 등록한 김민준에게 알림 센터로만 알린다.
     assertThat(count(NotificationType.TEST_RESULT_FEEDBACK, "수행 완료 흐름")).isEqualTo(1);
     assertThat(outboxRepository.findAll())
         .filteredOn(o -> o.getSubject() != null && o.getSubject().contains("결제원 의견"))

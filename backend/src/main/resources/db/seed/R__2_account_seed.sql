@@ -35,7 +35,7 @@ FROM (VALUES
    CURRENT_TIMESTAMP - INTERVAL '60' DAY, NULL, NULL, NULL, NULL),
   ('jung.hyunwoo@cu.example.com',    '정현우',      '048', 'ACTIVE',           FALSE, 'IT',       '전산정보부',   '채널개발팀',   '대리', '7101', NULL,
    CURRENT_TIMESTAMP - INTERVAL '60' DAY, NULL, NULL, NULL, NULL),
-  -- 승인 대기 신청. 오다라는 회사 이메일 도메인이 기관과 다르다.
+  -- 승인 대기 신청. 오승현은 회사 이메일 도메인이 기관과 다르다.
   ('jung.daeun@sbi.example.com',    '정다은',      '103', 'PENDING_APPROVAL', FALSE, 'IT',       '전산부',       '개발팀',       '주임', '5101', '010-0000-5101',
    CURRENT_TIMESTAMP - INTERVAL '1' HOUR, NULL, NULL, NULL, NULL),
   ('han.yerin@kb.example.com',     '한예린',      '004', 'PENDING_APPROVAL', FALSE, 'BUSINESS', '디지털금융부', '오픈뱅킹팀',   '주임', '2102', NULL,

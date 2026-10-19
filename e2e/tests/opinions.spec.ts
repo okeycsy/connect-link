@@ -28,7 +28,7 @@ async function apiLogin(request: APIRequestContext, email: string) {
   expect(login.ok()).toBeTruthy();
 }
 
-/** 홍길동으로 KB국민은행(김민준)만 대상인 계좌통합관리 의견 요청을 만들어 회신중으로 연다. 객관식(필수)·주관식 질문이 하나씩 있다. */
+/** 홍성민으로 KB국민은행(김민준)만 대상인 계좌통합관리 의견 요청을 만들어 회신중으로 연다. 객관식(필수)·주관식 질문이 하나씩 있다. */
 async function openRequestForGana(request: APIRequestContext, title: string): Promise<number> {
   await apiLogin(request, 'hong.sungmin@kftc.example.com');
   const candidates = (await (

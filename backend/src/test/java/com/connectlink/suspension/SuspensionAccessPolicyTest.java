@@ -44,7 +44,7 @@ class SuspensionAccessPolicyTest {
           JobRole.BUSINESS,
           Set.of());
 
-  /** 김가나가 올린 KB국민은행 계좌통합관리 일시중단. */
+  /** 김민준이 올린 KB국민은행 계좌통합관리 일시중단. */
   private static Suspension ganaSuspension() {
     LocalDateTime start = LocalDateTime.now().plusDays(1);
     return Suspension.register(
