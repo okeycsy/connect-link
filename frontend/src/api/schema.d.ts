@@ -4,6 +4,34 @@
  */
 
 export interface paths {
+  '/api/v1/suspensions/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 일시중단 상세 조회
+     * @description permissions 가 지금 할 수 있는 일이다.
+     */
+    get: operations['get'];
+    /**
+     * 일시중단 수정
+     * @description 등록한 기관 담당자나 그 업무 결제원 담당자가 고친다. 기관 담당자가 확인이 시작된 건을 고치면 검토 대기로 돌아간다. 결제원 담당자에게 매터모스트 알림이 간다. 완료한 건이면 409 SUSPENSION_COMPLETED.
+     */
+    put: operations['update'];
+    post?: never;
+    /**
+     * 일시중단 삭제
+     * @description 등록한 본인만 지운다. 결제원 담당자에게 매터모스트 알림이 간다.
+     */
+    delete: operations['delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/organizations/{id}': {
     parameters: {
       query?: never;
@@ -12,12 +40,12 @@ export interface paths {
       cookie?: never;
     };
     /** 기관 기준정보 상세 조회 (관리자) */
-    get: operations['get_1'];
+    get: operations['get_2'];
     /**
      * 기관 수정 (관리자)
      * @description 이름, 이메일 도메인, 사용 여부, 참여 업무를 통째로 바꾼다.
      */
-    put: operations['update'];
+    put: operations['update_1'];
     post?: never;
     delete?: never;
     options?: never;
@@ -60,18 +88,102 @@ export interface paths {
      * 의견 요청 상세 조회
      * @description 결제원 담당자는 대상 전부를, 기관 담당자는 자기 기관의 대상 행만 본다. permissions 가 지금 할 수 있는 일이다.
      */
-    get: operations['get_2'];
+    get: operations['get_3'];
     /**
      * 의견 요청 수정
      * @description 작성중·회신중에 고친다. 질문(작성중일 때만)·대상은 보낸 목록으로 바뀐다. 회신중이면 새 회신 담당자에게 요청 메일, 남은 담당자에게 변경 알림이 간다. 회신을 저장한 기관을 빼면 409 OPINION_TARGET_HAS_REPLY.
      */
-    put: operations['update_1'];
+    put: operations['update_2'];
     post?: never;
     /**
      * 작성중 의견 요청 삭제
      * @description 작성중만 지운다. 회신중이면 409 이고 취소를 쓴다.
      */
-    delete: operations['delete'];
+    delete: operations['delete_1'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/suspensions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 일시중단 목록 조회
+     * @description 한 업무 영역의 일시중단. period 가 없으면 전부(최근 시작 순)다. 결제원 담당자는 전 기관을, 기관 담당자는 자기 기관만 본다. organizationId 는 결제원 담당자의 기관별 이력 보기다.
+     */
+    get: operations['list'];
+    put?: never;
+    /**
+     * 일시중단 등록
+     * @description 검토 대기로 등록하고 그 업무 결제원 담당자에게 메일·매터모스트 알림을 보낸다. 공문(SUSPENSION)은 저장한 뒤 첨부 API 로 올린다.
+     */
+    post: operations['create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/suspensions/{id}/review': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 일시중단 확인 시작
+     * @description 그 업무 결제원 담당자가 확인을 시작한다. 검토 대기면 검토 중이 된다.
+     */
+    post: operations['startReview'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/suspensions/{id}/confirmation': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 일시중단 확정
+     * @description 그 업무 결제원 담당자가 조치 및 인수인계 사항을 쓰고 확정한다. 이미 확정한 건이면 사항만 고친다.
+     */
+    post: operations['confirm'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/suspension-digests': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 전 영업일 취합 수동으로 보내기
+     * @description 오늘을 보내는 영업일로 보고 다음 영업일까지 시작하는 확정 일시중단을 운영·관제 매터모스트 채널로 바로 보낸다. 결제원 담당자와 관리자만 부른다.
+     */
+    post: operations['send'];
+    delete?: never;
     options?: never;
     head?: never;
     patch?: never;
@@ -88,7 +200,7 @@ export interface paths {
      * 가입 신청 목록 조회
      * @description 한 업무 영역을 신청에 넣은 계정을 상태별로 최근 신청 순서로 돌려준다. 승인(ACTIVE)·반려(REJECTED)는 가입 승인을 거친 계정만 나온다.
      */
-    get: operations['list'];
+    get: operations['list_1'];
     put?: never;
     /**
      * 가입 신청
@@ -158,7 +270,7 @@ export interface paths {
      * 기관 등록 (관리자)
      * @description 같은 코드가 이미 있으면 409.
      */
-    post: operations['create'];
+    post: operations['create_1'];
     delete?: never;
     options?: never;
     head?: never;
@@ -176,13 +288,13 @@ export interface paths {
      * 의견 요청 목록 조회
      * @description 한 업무 영역의 요청 중 한 상태. 결제원 담당자는 그 업무의 모든 요청을, 기관 담당자는 자기 기관이 대상인 회신중·마감 요청만 본다(작성중은 빈 목록).
      */
-    get: operations['list_1'];
+    get: operations['list_2'];
     put?: never;
     /**
      * 의견 요청 작성
      * @description 작성중으로 저장한다. 첨부자료(OPINION_REQUEST)는 저장한 뒤 첨부 API 로 올린다.
      */
-    post: operations['create_1'];
+    post: operations['create_2'];
     delete?: never;
     options?: never;
     head?: never;
@@ -447,7 +559,7 @@ export interface paths {
      * 회사 이메일 인증 코드 확인
      * @description 맞으면 가입 신청에 쓸 인증 토큰을 준다. 틀리면 400 VERIFICATION_CODE_MISMATCH, 정해진 횟수를 넘기면 VERIFICATION_ATTEMPTS_EXCEEDED, 유효 시간이 지나면 VERIFICATION_EXPIRED.
      */
-    post: operations['confirm'];
+    post: operations['confirm_1'];
     delete?: never;
     options?: never;
     head?: never;
@@ -502,7 +614,7 @@ export interface paths {
       cookie?: never;
     };
     /** 대상 하나의 첨부파일 목록(올린 순) */
-    get: operations['list_7'];
+    get: operations['list_8'];
     put?: never;
     /** 첨부파일 올리기 (multipart: file) */
     post: operations['upload'];
@@ -536,6 +648,46 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/suspensions/organizations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 일시중단 대상 기관 조회
+     * @description 결제원 담당자는 그 업무에 참여하는 사용 중 참가기관 전부, 기관 담당자는 자기 기관 하나를 받는다. 등록 양식과 기관별 이력이 쓴다.
+     */
+    get: operations['organizations'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/suspensions/counts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 일시중단 시간 구분별 건수 조회
+     * @description 목록의 필터 칩이 쓴다. pendingReview 는 아직 확정되지 않은 진행 중·예정 건이다.
+     */
+    get: operations['counts'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/sign-ups/{id}': {
     parameters: {
       query?: never;
@@ -547,7 +699,7 @@ export interface paths {
      * 가입 신청 상세 조회
      * @description 신청한 업무 중 하나라도 맡은 결제원 담당자나 관리자만 본다.
      */
-    get: operations['get'];
+    get: operations['get_1'];
     put?: never;
     post?: never;
     delete?: never;
@@ -567,7 +719,7 @@ export interface paths {
      * 가입 신청 건수 조회
      * @description 한 업무 영역의 승인 대기·승인·반려 건수. 목록의 필터 칩과 관리 화면이 쓴다.
      */
-    get: operations['counts'];
+    get: operations['counts_1'];
     put?: never;
     post?: never;
     delete?: never;
@@ -687,7 +839,7 @@ export interface paths {
      * 의견 요청 상태별 건수 조회
      * @description 목록의 필터 칩이 쓴다. 기관 담당자의 작성중은 0 이다.
      */
-    get: operations['counts_1'];
+    get: operations['counts_2'];
     put?: never;
     post?: never;
     delete?: never;
@@ -707,7 +859,7 @@ export interface paths {
      * 내 알림 목록 조회
      * @description 최신순. unreadOnly=true 면 읽지 않은 알림만 돌려준다.
      */
-    get: operations['list_2'];
+    get: operations['list_3'];
     put?: never;
     post?: never;
     delete?: never;
@@ -744,7 +896,7 @@ export interface paths {
      * 발송함 조회
      * @description 최신순. 관리자만 볼 수 있다.
      */
-    get: operations['list_3'];
+    get: operations['list_4'];
     put?: never;
     post?: never;
     delete?: never;
@@ -858,7 +1010,7 @@ export interface paths {
       cookie?: never;
     };
     /** 받은 메일함 (받는 사람별 최근 메일 5건, 로그인 전에도 열림) */
-    get: operations['list_4'];
+    get: operations['list_5'];
     put?: never;
     post?: never;
     delete?: never;
@@ -875,7 +1027,7 @@ export interface paths {
       cookie?: never;
     };
     /** 데모 계정 목록 (역할별, 로그인 전에도 열림) */
-    get: operations['list_5'];
+    get: operations['list_6'];
     put?: never;
     post?: never;
     delete?: never;
@@ -892,7 +1044,7 @@ export interface paths {
       cookie?: never;
     };
     /** 대상 하나의 변경 이력(최신순) */
-    get: operations['list_6'];
+    get: operations['list_7'];
     put?: never;
     post?: never;
     delete?: never;
@@ -949,7 +1101,7 @@ export interface paths {
     put?: never;
     post?: never;
     /** 첨부파일 지우기 */
-    delete: operations['delete_1'];
+    delete: operations['delete_2'];
     options?: never;
     head?: never;
     patch?: never;
@@ -959,6 +1111,78 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    SuspensionSaveRequest: {
+      /** @enum {string} */
+      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
+      /** Format: int64 */
+      organizationId?: number | null;
+      subBusiness?: string | null;
+      /** Format: date-time */
+      startAt: string;
+      /** Format: date-time */
+      endAt: string;
+      reason: string;
+      kftcAction?: string | null;
+      contactName: string;
+      contactPhone: string;
+      contactEmail?: string | null;
+      extraNote?: string | null;
+    };
+    SuspensionDetailResponse: {
+      /** Format: int64 */
+      id: number;
+      /** @enum {string} */
+      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
+      businessSlug: string;
+      businessLabel: string;
+      subBusiness?: string | null;
+      /** Format: int64 */
+      organizationId: number;
+      organizationName: string;
+      /** Format: date-time */
+      startAt: string;
+      /** Format: date-time */
+      endAt: string;
+      /** @enum {string} */
+      period: 'CURRENT' | 'UPCOMING' | 'PAST';
+      periodLabel: string;
+      /** @enum {string} */
+      status: 'PENDING_REVIEW' | 'IN_REVIEW' | 'CONFIRMED' | 'COMPLETED';
+      statusLabel: string;
+      reason: string;
+      kftcAction?: string | null;
+      contactName: string;
+      contactPhone: string;
+      contactEmail?: string | null;
+      extraNote?: string | null;
+      registrantName: string;
+      registrantKftc: boolean;
+      handover?: string | null;
+      /** Format: date-time */
+      confirmedAt?: string | null;
+      confirmedByName?: string | null;
+      /** Format: date-time */
+      completedAt?: string | null;
+      reviewers: components['schemas']['SuspensionReviewerResponse'][];
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+      permissions: components['schemas']['SuspensionPermissions'];
+    };
+    SuspensionPermissions: {
+      manage: boolean;
+      edit: boolean;
+      delete: boolean;
+      startReview: boolean;
+      confirm: boolean;
+    };
+    SuspensionReviewerResponse: {
+      name: string;
+      roleLabel: string;
+      /** Format: date-time */
+      startedAt: string;
+    };
     OrganizationUpdateRequest: {
       name: string;
       emailDomain?: string | null;
@@ -1129,6 +1353,23 @@ export interface components {
       replied: boolean;
       /** @enum {string|null} */
       replyStatus?: 'DRAFT' | 'SUBMITTED' | 'REVISION_REQUESTED' | 'REVISING' | null;
+    };
+    SuspensionHandoverRequest: {
+      handover: string;
+    };
+    SuspensionDigestResponse: {
+      /** Format: date */
+      sentOn: string;
+      /** Format: date */
+      fromDate: string;
+      /** Format: date */
+      toDate: string;
+      /** Format: int32 */
+      itemCount: number;
+      recipients: string[];
+      body: string;
+      /** Format: date-time */
+      sentAt: string;
     };
     SignUpBusinessRequest: {
       /** @enum {string} */
@@ -1344,6 +1585,60 @@ export interface components {
     };
     AccountWithdrawalRequest: {
       reason: string;
+    };
+    PageResponseSuspensionSummaryResponse: {
+      content: components['schemas']['SuspensionSummaryResponse'][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+      last: boolean;
+    };
+    SuspensionSummaryResponse: {
+      /** Format: int64 */
+      id: number;
+      /** @enum {string} */
+      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
+      businessLabel: string;
+      subBusiness?: string | null;
+      /** Format: int64 */
+      organizationId: number;
+      organizationName: string;
+      /** Format: date-time */
+      startAt: string;
+      /** Format: date-time */
+      endAt: string;
+      /** @enum {string} */
+      period: 'CURRENT' | 'UPCOMING' | 'PAST';
+      periodLabel: string;
+      /** @enum {string} */
+      status: 'PENDING_REVIEW' | 'IN_REVIEW' | 'CONFIRMED' | 'COMPLETED';
+      statusLabel: string;
+      reason: string;
+      registrantName: string;
+      registrantKftc: boolean;
+      /** Format: int32 */
+      reviewerCount: number;
+    };
+    SuspensionOrganizationResponse: {
+      /** Format: int64 */
+      id: number;
+      code: string;
+      name: string;
+    };
+    SuspensionCountsResponse: {
+      /** Format: int64 */
+      current: number;
+      /** Format: int64 */
+      upcoming: number;
+      /** Format: int64 */
+      past: number;
+      /** Format: int64 */
+      pendingReview: number;
     };
     PageResponseSignUpApplicationResponse: {
       content: components['schemas']['SignUpApplicationResponse'][];
@@ -1744,7 +2039,75 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-  get_1: {
+  get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['SuspensionDetailResponse'];
+        };
+      };
+    };
+  };
+  update: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SuspensionSaveRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['SuspensionDetailResponse'];
+        };
+      };
+    };
+  };
+  delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_2: {
     parameters: {
       query?: never;
       header?: never;
@@ -1766,7 +2129,7 @@ export interface operations {
       };
     };
   };
-  update: {
+  update_1: {
     parameters: {
       query?: never;
       header?: never;
@@ -1840,7 +2203,7 @@ export interface operations {
       };
     };
   };
-  get_2: {
+  get_3: {
     parameters: {
       query?: never;
       header?: never;
@@ -1862,7 +2225,7 @@ export interface operations {
       };
     };
   };
-  update_1: {
+  update_2: {
     parameters: {
       query?: never;
       header?: never;
@@ -1888,7 +2251,7 @@ export interface operations {
       };
     };
   };
-  delete: {
+  delete_1: {
     parameters: {
       query?: never;
       header?: never;
@@ -1909,6 +2272,128 @@ export interface operations {
     };
   };
   list: {
+    parameters: {
+      query: {
+        /** @description 업무 영역 slug (예: account-info) */
+        business: string;
+        /** @description CURRENT(진행 중), UPCOMING(예정), PAST(지난). 없으면 전부 */
+        period?: 'CURRENT' | 'UPCOMING' | 'PAST';
+        /** @description 이 기관만(결제원 담당자 전용) */
+        organizationId?: number;
+        /** @description 0부터 시작 */
+        page?: number;
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['PageResponseSuspensionSummaryResponse'];
+        };
+      };
+    };
+  };
+  create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SuspensionSaveRequest'];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['SuspensionDetailResponse'];
+        };
+      };
+    };
+  };
+  startReview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['SuspensionDetailResponse'];
+        };
+      };
+    };
+  };
+  confirm: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SuspensionHandoverRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['SuspensionDetailResponse'];
+        };
+      };
+    };
+  };
+  send: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['SuspensionDigestResponse'];
+        };
+      };
+    };
+  };
+  list_1: {
     parameters: {
       query: {
         /** @description 업무 영역 slug (예: account-info) */
@@ -2027,7 +2512,7 @@ export interface operations {
       };
     };
   };
-  create: {
+  create_1: {
     parameters: {
       query?: never;
       header?: never;
@@ -2051,7 +2536,7 @@ export interface operations {
       };
     };
   };
-  list_1: {
+  list_2: {
     parameters: {
       query: {
         /** @description 업무 영역 slug (예: account-info) */
@@ -2078,7 +2563,7 @@ export interface operations {
       };
     };
   };
-  create_1: {
+  create_2: {
     parameters: {
       query?: never;
       header?: never;
@@ -2424,7 +2909,7 @@ export interface operations {
       };
     };
   };
-  confirm: {
+  confirm_1: {
     parameters: {
       query?: never;
       header?: never;
@@ -2490,7 +2975,7 @@ export interface operations {
       };
     };
   };
-  list_7: {
+  list_8: {
     parameters: {
       query: {
         ownerType: 'OPINION_REQUEST' | 'OPINION_REPLY' | 'SUSPENSION' | 'DEMO';
@@ -2589,7 +3074,55 @@ export interface operations {
       };
     };
   };
-  get: {
+  organizations: {
+    parameters: {
+      query: {
+        /** @description 업무 영역 slug (예: account-info) */
+        business: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['SuspensionOrganizationResponse'][];
+        };
+      };
+    };
+  };
+  counts: {
+    parameters: {
+      query: {
+        /** @description 업무 영역 slug (예: account-info) */
+        business: string;
+        /** @description 이 기관만(결제원 담당자 전용) */
+        organizationId?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['SuspensionCountsResponse'];
+        };
+      };
+    };
+  };
+  get_1: {
     parameters: {
       query?: never;
       header?: never;
@@ -2611,7 +3144,7 @@ export interface operations {
       };
     };
   };
-  counts: {
+  counts_1: {
     parameters: {
       query: {
         /** @description 업무 영역 slug (예: account-info) */
@@ -2755,7 +3288,7 @@ export interface operations {
       };
     };
   };
-  counts_1: {
+  counts_2: {
     parameters: {
       query: {
         /** @description 업무 영역 slug (예: account-info) */
@@ -2778,7 +3311,7 @@ export interface operations {
       };
     };
   };
-  list_2: {
+  list_3: {
     parameters: {
       query?: {
         /** @description 0부터 시작 */
@@ -2823,7 +3356,7 @@ export interface operations {
       };
     };
   };
-  list_3: {
+  list_4: {
     parameters: {
       query?: {
         /** @description 0부터 시작 */
@@ -2950,7 +3483,7 @@ export interface operations {
       };
     };
   };
-  list_4: {
+  list_5: {
     parameters: {
       query: {
         /** @description 받는 사람 이메일. 대소문자를 가리지 않는다 */
@@ -2973,7 +3506,7 @@ export interface operations {
       };
     };
   };
-  list_5: {
+  list_6: {
     parameters: {
       query?: never;
       header?: never;
@@ -2993,7 +3526,7 @@ export interface operations {
       };
     };
   };
-  list_6: {
+  list_7: {
     parameters: {
       query: {
         targetType:
@@ -3066,7 +3599,7 @@ export interface operations {
       };
     };
   };
-  delete_1: {
+  delete_2: {
     parameters: {
       query?: never;
       header?: never;

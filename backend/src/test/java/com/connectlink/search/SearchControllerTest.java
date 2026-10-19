@@ -21,7 +21,7 @@ class SearchControllerTest {
   @Autowired private MockMvc mockMvc;
 
   @Test
-  void 기관은_실제_데이터로_나머지는_샘플로_묶여_돌아온다() throws Exception {
+  void 기관과_일시중단은_실제_데이터로_연락처는_샘플로_묶여_돌아온다() throws Exception {
     mockMvc
         .perform(
             get("/api/v1/search").param("business", "cms").param("q", "다라").with(TestUsers.admin()))
@@ -41,7 +41,10 @@ class SearchControllerTest {
         .andExpect(jsonPath("$.groups[1].source").value("SAMPLE"))
         .andExpect(jsonPath("$.groups[1].hits[0].title").value("이다라"))
         .andExpect(jsonPath("$.groups[2].category").value("SUSPENSION"))
-        .andExpect(jsonPath("$.groups[2].hits[0].link").value("/cms/suspensions"));
+        .andExpect(jsonPath("$.groups[2].source").value("LIVE"))
+        .andExpect(
+            jsonPath("$.groups[2].hits[0].link")
+                .value(org.hamcrest.Matchers.startsWith("/cms/suspensions/")));
   }
 
   @Test

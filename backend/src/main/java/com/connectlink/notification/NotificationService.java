@@ -59,6 +59,16 @@ public class NotificationService {
     return NotificationResponse.from(saved);
   }
 
+  /**
+   * 사람이 아닌 받는 곳(예: 매터모스트 운영팀 채널)으로 바로 보낸다. 알림 센터에는 남지 않는다. 일시중단 전 영업일 취합처럼 팀 채널로 가는 전달에 쓴다.
+   *
+   * @param recipient 채널 주소(예: 매터모스트 {@code ~채널이름})
+   */
+  public void sendToChannel(
+      NotificationChannel channel, String recipient, String subject, String body) {
+    notificationSender.send(new OutboundMessage(channel, recipient, subject, body, null));
+  }
+
   /** 매터모스트 대상은 알림 대상 설정(기능 프로젝트 몫)이 생기기 전까지 이메일 앞부분을 @handle 로 쓴다. */
   private static String recipientFor(NotificationChannel channel, String email) {
     if (channel == NotificationChannel.MATTERMOST) {

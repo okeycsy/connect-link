@@ -12,7 +12,6 @@ import com.connectlink.home.dto.HomeCard.HomeCardKpi;
 import com.connectlink.home.dto.HomeCard.HomeCardMetric;
 import com.connectlink.home.dto.HomeCard.HomeCardProgress;
 import com.connectlink.organization.Business;
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.context.annotation.Profile;
@@ -179,52 +178,6 @@ public final class SampleHomeCards {
                   link),
               new HomeCardItem("자차카드 오류 2건 피드백 대기", "요구사항 #7, #12", null, Urgency.NONE, link)),
           new HomeCardKpi("진행 중 기관 테스트", running, "건", false));
-    }
-  }
-
-  /** 라. 이번 주(월~금) 일시중단. 홈은 요일 칸으로 펼쳐 보인다. */
-  @Component
-  @Profile({"local", "demo", "test"})
-  public static class Suspensions implements HomeCardContributor {
-    @Override
-    public HomeCardKey key() {
-      return HomeCardKey.SUSPENSIONS;
-    }
-
-    @Override
-    public HomeContribution contribute(CurrentUser user, Business business) {
-      LocalDate today = LocalDate.now();
-      LocalDate monday = today.with(DayOfWeek.MONDAY);
-      String link = link(business, key());
-      List<HomeCardItem> all =
-          List.of(
-              item("나나카드 01:00", "정기 점검 · 완료", monday.plusDays(1), today, link),
-              item("다라은행 23:00", "코어뱅킹 점검 · 확정", monday.plusDays(3), today, link),
-              item("가나은행 02:00", "시스템 작업 · 검토 중", monday.plusDays(4), today, link),
-              item("사아증권 22:00", "DR 전환 훈련 · 확정", monday.plusDays(4), today, link));
-      // 업무 영역마다 건수가 달라 보이도록 홀수 영역은 첫 건을 뺀다.
-      List<HomeCardItem> items = shift(business) % 2 == 0 ? all : all.subList(1, all.size());
-      long todayCount = items.stream().filter(i -> today.equals(i.dueAt())).count();
-      return card(
-          key(),
-          business,
-          todayCount > 0 ? Urgency.SOON : Urgency.NONE,
-          todayCount > 0
-              ? "오늘 일시중단이 " + todayCount + "건 있습니다."
-              : "이번 주 일시중단 " + items.size() + "건입니다.",
-          List.of(
-              new HomeCardMetric("오늘", (int) todayCount, "건"),
-              new HomeCardMetric("이번 주", items.size(), "건")),
-          null,
-          items,
-          new HomeCardKpi("이번 주 일시중단", items.size(), "건", todayCount > 0));
-    }
-
-    /** 오늘 건은 임박(SOON)이다. */
-    private static HomeCardItem item(
-        String title, String subtitle, LocalDate date, LocalDate today, String link) {
-      return new HomeCardItem(
-          title, subtitle, date, date.equals(today) ? Urgency.SOON : Urgency.NONE, link);
     }
   }
 }

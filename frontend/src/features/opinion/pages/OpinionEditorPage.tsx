@@ -1,31 +1,27 @@
 import {
-  ActionIcon,
   Alert,
   Button,
   Card,
-  FileButton,
   Group,
   Skeleton,
   Stack,
   Text,
   Textarea,
   TextInput,
-  ThemeIcon,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { IconFile, IconTrash, IconUpload } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import { ApiError, fieldErrorsOf } from '../../../api/client';
-import { formatBytes } from '../../../shared/format';
 import { PageHeader } from '../../../shared/PageHeader';
 import { ErrorState, StateView } from '../../../shared/state/StateView';
 import { AttachmentPanel } from '../../attachment/components/AttachmentPanel';
+import { PendingAttachments } from '../../attachment/components/PendingAttachments';
 import { attachmentKeys, uploadAttachmentFile } from '../../attachment/hooks';
 import { useCurrentBusiness } from '../../organization/hooks';
 import { QuestionBuilder } from '../components/QuestionBuilder';
@@ -296,7 +292,7 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
                 emptyMessage="올린 첨부자료가 없습니다."
               />
             ) : (
-              <PendingFiles files={pendingFiles} onChange={setPendingFiles} />
+              <PendingAttachments files={pendingFiles} onChange={setPendingFiles} />
             )}
           </Stack>
         </Card>
@@ -341,63 +337,5 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
         </Card>
       </Stack>
     </form>
-  );
-}
-
-/** 새 요청에서 저장 전에 고른 첨부자료. 저장하면 이 순서대로 올린다. */
-function PendingFiles({ files, onChange }: { files: File[]; onChange: (files: File[]) => void }) {
-  return (
-    <Stack gap="sm" data-testid="pending-attachments">
-      <Group justify="space-between" align="center">
-        <Text size="sm" c="dimmed">
-          {files.length > 0 ? `${files.length}개, 저장하면 올립니다.` : '저장하면 함께 올립니다.'}
-        </Text>
-        <FileButton multiple onChange={(picked) => onChange([...files, ...picked])}>
-          {(props) => (
-            <Button {...props} size="xs" variant="light" leftSection={<IconUpload size={14} />}>
-              첨부자료 고르기
-            </Button>
-          )}
-        </FileButton>
-      </Group>
-      {files.length > 0 && (
-        <Stack gap={6} role="list" aria-label="올릴 첨부자료">
-          {files.map((file, index) => (
-            <Group
-              key={`${file.name}-${index}`}
-              gap="sm"
-              wrap="nowrap"
-              role="listitem"
-              px="sm"
-              py={6}
-              style={{
-                border: '1px solid var(--mantine-color-default-border)',
-                borderRadius: 'var(--mantine-radius-sm)',
-              }}
-            >
-              <ThemeIcon variant="light" color="clay" size={32} radius="sm">
-                <IconFile size={18} stroke={1.6} />
-              </ThemeIcon>
-              <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
-                <Text size="sm" fw={600} truncate="end">
-                  {file.name}
-                </Text>
-                <Text size="xs" c="dimmed">
-                  {formatBytes(file.size)}
-                </Text>
-              </Stack>
-              <ActionIcon
-                variant="subtle"
-                color="gray"
-                aria-label={`${file.name} 빼기`}
-                onClick={() => onChange(files.filter((_, i) => i !== index))}
-              >
-                <IconTrash size={16} />
-              </ActionIcon>
-            </Group>
-          ))}
-        </Stack>
-      )}
-    </Stack>
   );
 }
