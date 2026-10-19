@@ -20,7 +20,7 @@ test.describe('전역 검색 (Ctrl K)', () => {
     await expect(page).toHaveURL(/\/cms\/admin\/organizations\?org=\d+$/);
     // 팔레트가 닫히는 동안에는 대화상자가 둘이라, 닫힌 뒤 상세 패널을 본다.
     await expect(palette).toBeHidden();
-    await expect(page.getByRole('dialog')).toContainText('DARA · 참가기관');
+    await expect(page.getByRole('dialog')).toContainText('088 · 참가기관');
   });
 
   test('상단 검색 상자로도 열리고, 결과가 없으면 안내가 뜬다', async ({ page }) => {

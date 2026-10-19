@@ -42,8 +42,7 @@ class OpinionAccessPolicyTest {
             LocalDate.now().plusDays(3),
             "hong.gildong@kftc.example.com",
             "홍길동");
-    request.addTarget(
-        new Organization("GANA", "가나은행", OrganizationType.FINANCE_ORGANIZATION, null));
+    request.addTarget(new Organization("004", "가나은행", OrganizationType.FINANCE_ORGANIZATION, null));
     if (open) {
       request.open(LocalDateTime.now());
     }

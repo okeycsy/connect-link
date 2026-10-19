@@ -95,7 +95,7 @@ class WithdrawalControllerTest {
             email,
             passwordEncoder.encode(PASSWORD),
             "이탈퇴",
-            organizationService.getByCode("GANA"),
+            organizationService.getByCode("004"),
             JobRole.BUSINESS,
             Set.of(),
             Map.of(Business.ACCOUNT_INFO, "계좌정보 통합조회"),
@@ -261,7 +261,7 @@ class WithdrawalControllerTest {
     // 기능 모듈이 자기 데이터를 지우도록 탈퇴 전 이메일과 담당 업무를 알린다.
     assertThat(events.stream(AccountWithdrawnEvent.class))
         .containsExactly(
-            new AccountWithdrawnEvent(id, email, "GANA", Set.of(Business.ACCOUNT_INFO), null));
+            new AccountWithdrawnEvent(id, email, "004", Set.of(Business.ACCOUNT_INFO), null));
 
     // 같은 회사 이메일로 다시 가입할 수 있다(인증 코드를 새로 받는다).
     mockMvc
@@ -338,7 +338,7 @@ class WithdrawalControllerTest {
             new AccountWithdrawnEvent(
                 id,
                 email,
-                "GANA",
+                "004",
                 Set.of(Business.ACCOUNT_INFO),
                 TestUsers.KFTC_ACCOUNT_INFO.email()));
 

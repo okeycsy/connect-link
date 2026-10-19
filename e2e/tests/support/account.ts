@@ -39,7 +39,7 @@ export async function applyForGana(request: APIRequestContext, email: string, na
     id: number;
     code: string;
   }[];
-  const gana = organizations.find((o) => o.code === 'GANA')!;
+  const gana = organizations.find((o) => o.code === '004')!;
 
   const signUp = await request.post('/api/v1/sign-ups', {
     data: {

@@ -41,8 +41,7 @@ class FieldChangesTest {
 
   @Test
   void value는_비교_없이_그대로_남긴다() {
-    List<FieldChange> changes =
-        FieldChanges.compare().value("code", "기관 코드", null, "GANA").toList();
-    assertThat(changes).containsExactly(new FieldChange("code", "기관 코드", null, "GANA"));
+    List<FieldChange> changes = FieldChanges.compare().value("code", "기관 코드", null, "004").toList();
+    assertThat(changes).containsExactly(new FieldChange("code", "기관 코드", null, "004"));
   }
 }

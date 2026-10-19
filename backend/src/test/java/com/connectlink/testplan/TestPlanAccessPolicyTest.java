@@ -24,7 +24,7 @@ class TestPlanAccessPolicyTest {
       new CurrentUser(
           "yoon.chaka@chaka.example.com",
           "윤차카",
-          "CHAKA",
+          "050",
           "차카저축은행",
           OrganizationType.FINANCE_ORGANIZATION,
           false,
@@ -54,8 +54,8 @@ class TestPlanAccessPolicyTest {
                 "계좌정보 조회·해지", "전문 개선", null, LocalDate.now(), LocalDate.now().plusDays(7)),
             "hong.gildong@kftc.example.com",
             "홍길동");
-    plan.addTarget(org("GANA", "가나은행"));
-    plan.addTarget(org("SAA", "사아증권"));
+    plan.addTarget(org("004", "가나은행"));
+    plan.addTarget(org("240", "사아증권"));
     return plan;
   }
 
@@ -101,33 +101,33 @@ class TestPlanAccessPolicyTest {
   @Test
   void 결제원_담당자는_모든_기관_결과를_기관_담당자는_자기_기관_결과를_본다() {
     TestPlan plan = plan();
-    assertThat(policy.canViewTarget(TestUsers.KFTC_ACCOUNT_INFO, target(plan, "SAA"))).isTrue();
-    assertThat(policy.canViewTarget(TestUsers.GANA_MEMBER, target(plan, "GANA"))).isTrue();
+    assertThat(policy.canViewTarget(TestUsers.KFTC_ACCOUNT_INFO, target(plan, "240"))).isTrue();
+    assertThat(policy.canViewTarget(TestUsers.GANA_MEMBER, target(plan, "004"))).isTrue();
   }
 
   @Test
   void 같은_테스트의_다른_대상_기관_결과는_보지_못한다() {
     TestPlan plan = plan();
-    assertThat(policy.canViewTarget(TestUsers.GANA_MEMBER, target(plan, "SAA"))).isFalse();
-    assertThatThrownBy(() -> policy.ensureCanViewTarget(TestUsers.SAA_MEMBER, target(plan, "GANA")))
+    assertThat(policy.canViewTarget(TestUsers.GANA_MEMBER, target(plan, "240"))).isFalse();
+    assertThatThrownBy(() -> policy.ensureCanViewTarget(TestUsers.SAA_MEMBER, target(plan, "004")))
         .isInstanceOf(AccessDeniedException.class);
   }
 
   @Test
   void 기관_담당자는_자기_기관_결과를_등록한다() {
     TestPlan plan = plan();
-    assertThat(policy.canReport(TestUsers.GANA_MEMBER, target(plan, "GANA"))).isTrue();
-    assertThat(policy.canReport(TestUsers.SAA_MEMBER, target(plan, "SAA"))).isTrue();
+    assertThat(policy.canReport(TestUsers.GANA_MEMBER, target(plan, "004"))).isTrue();
+    assertThat(policy.canReport(TestUsers.SAA_MEMBER, target(plan, "240"))).isTrue();
   }
 
   @Test
   void 다른_기관_결과와_결제원_대리_등록은_하지_못한다() {
     TestPlan plan = plan();
-    assertThat(policy.canReport(TestUsers.GANA_MEMBER, target(plan, "SAA"))).isFalse();
-    assertThat(policy.canReport(TestUsers.KFTC_ACCOUNT_INFO, target(plan, "GANA"))).isFalse();
-    assertThat(policy.canReport(TestUsers.ADMIN, target(plan, "GANA"))).isFalse();
+    assertThat(policy.canReport(TestUsers.GANA_MEMBER, target(plan, "240"))).isFalse();
+    assertThat(policy.canReport(TestUsers.KFTC_ACCOUNT_INFO, target(plan, "004"))).isFalse();
+    assertThat(policy.canReport(TestUsers.ADMIN, target(plan, "004"))).isFalse();
     assertThatThrownBy(
-            () -> policy.ensureCanReport(TestUsers.KFTC_ACCOUNT_INFO, target(plan, "GANA")))
+            () -> policy.ensureCanReport(TestUsers.KFTC_ACCOUNT_INFO, target(plan, "004")))
         .isInstanceOf(AccessDeniedException.class);
   }
 

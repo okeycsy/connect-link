@@ -28,7 +28,7 @@ const organizations = [
   },
   {
     id: 2,
-    code: 'GANA',
+    code: '004',
     name: '가나은행',
     type: 'FINANCE_ORGANIZATION',
     typeLabel: '참가기관',
@@ -134,7 +134,7 @@ describe('OrganizationAdminPage', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: '가나은행' }));
     const dialog = await screen.findByRole('dialog');
-    expect(dialog).toHaveTextContent('GANA · 참가기관');
+    expect(dialog).toHaveTextContent('004 · 참가기관');
     await waitFor(() => expect(screen.getByLabelText(/기관명/)).toHaveValue('가나은행'));
     expect(screen.getByLabelText('계좌통합관리')).toBeChecked();
     expect(screen.getByLabelText('CMS')).not.toBeChecked();

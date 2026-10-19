@@ -115,7 +115,7 @@ class SignUpControllerTest {
     Map<String, Object> body = new HashMap<>();
     body.put("verificationToken", token);
     body.put("email", email);
-    body.put("organizationId", organizationId("GANA"));
+    body.put("organizationId", organizationId("004"));
     body.put(
         "businesses",
         List.of(
@@ -147,7 +147,7 @@ class SignUpControllerTest {
         confirm(email, code)
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.verificationToken").isNotEmpty())
-            .andExpect(jsonPath("$.suggestedOrganizationIds[0]").value(organizationId("GANA")))
+            .andExpect(jsonPath("$.suggestedOrganizationIds[0]").value(organizationId("004")))
             .andReturn()
             .getResponse()
             .getContentAsString(StandardCharsets.UTF_8);
@@ -282,7 +282,7 @@ class SignUpControllerTest {
     String email = "retry@dara.example.com";
     String token = verify(email);
     Map<String, Object> body = signUpBody(token, email);
-    body.put("organizationId", organizationId("DARA"));
+    body.put("organizationId", organizationId("088"));
     body.put("businesses", List.of(Map.of("business", "LOAN_TRANSFER")));
     postJson("/api/v1/sign-ups", body)
         .andExpect(status().isBadRequest())
@@ -364,7 +364,7 @@ class SignUpControllerTest {
         .andExpect(jsonPath("$.code").value("ORGANIZATION_NOT_ALLOWED"))
         .andExpect(jsonPath("$.fieldErrors[0].field").value("organizationId"));
 
-    body.put("organizationId", organizationId("OLD"));
+    body.put("organizationId", organizationId("005"));
     body.put("businesses", List.of(Map.of("business", "ACCOUNT_INFO")));
     postJson("/api/v1/sign-ups", body)
         .andExpect(status().isBadRequest())

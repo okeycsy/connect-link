@@ -31,7 +31,7 @@ class AccountServiceTest {
 
   private void givenAccount(AccountStatus status) {
     Organization organization = mock(Organization.class);
-    when(organization.getCode()).thenReturn("GANA");
+    when(organization.getCode()).thenReturn("004");
     when(organization.getName()).thenReturn("가나은행");
     when(organization.getType()).thenReturn(OrganizationType.FINANCE_ORGANIZATION);
     UserAccount account = mock(UserAccount.class);
@@ -61,7 +61,7 @@ class AccountServiceTest {
     givenAccount(AccountStatus.ACTIVE);
     CurrentUser user = service.authenticate(EMAIL, PASSWORD);
     assertThat(user.email()).isEqualTo(EMAIL);
-    assertThat(user.organizationCode()).isEqualTo("GANA");
+    assertThat(user.organizationCode()).isEqualTo("004");
   }
 
   @Test

@@ -224,7 +224,7 @@ class SignUpReviewControllerTest {
   @Test
   void 신청하면_승인할_수_있는_사람에게만_가입_신청_알림이_간다() throws Exception {
     String email = newEmail();
-    Long id = apply(email, "GANA", "알림대상");
+    Long id = apply(email, "004", "알림대상");
     String title = "가나은행 알림대상 님이 가입을 신청했습니다";
 
     for (CurrentUser reviewer : List.of(TestUsers.ADMIN, TestUsers.KFTC_ACCOUNT_INFO)) {
@@ -246,7 +246,7 @@ class SignUpReviewControllerTest {
   @Test
   void 승인하면_로그인할_수_있고_신청자에게_승인_알림과_메일이_간다() throws Exception {
     String email = newEmail();
-    Long id = apply(email, "GANA", "승인대상");
+    Long id = apply(email, "004", "승인대상");
     login(email)
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("ACCOUNT_PENDING_APPROVAL"));
@@ -279,7 +279,7 @@ class SignUpReviewControllerTest {
 
   @Test
   void 신청한_업무를_맡지_않은_사람은_상세를_보거나_처리할_수_없다() throws Exception {
-    Long id = apply(newEmail(), "GANA", "권한확인");
+    Long id = apply(newEmail(), "004", "권한확인");
 
     mockMvc
         .perform(get("/api/v1/sign-ups/" + id).with(hong()))
@@ -301,7 +301,7 @@ class SignUpReviewControllerTest {
   @Test
   void 반려는_사유가_있어야_하고_사유가_메일로_가며_같은_이메일로_다시_신청할_수_있다() throws Exception {
     String email = newEmail();
-    Long id = apply(email, "GANA", "반려대상");
+    Long id = apply(email, "004", "반려대상");
 
     postJson("/api/v1/sign-ups/" + id + "/rejection", Map.of("reason", " "), hong())
         .andExpect(status().isBadRequest())
@@ -326,7 +326,7 @@ class SignUpReviewControllerTest {
 
     // 다시 신청하면 같은 계정이 새 신청 내용의 승인 대기가 되고 지난 반려 기록은 지워진다.
     clock.advance(Duration.ofMinutes(2));
-    Long again = apply(email, "DARA", "반려대상");
+    Long again = apply(email, "088", "반려대상");
     assertThat(again).isEqualTo(id);
     mockMvc
         .perform(get("/api/v1/sign-ups/" + id).with(hong()))

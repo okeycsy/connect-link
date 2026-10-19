@@ -20,7 +20,7 @@ const member = (accountId: number, name: string, subBusiness: string | null) => 
 const candidates: OpinionRecipientCandidate[] = [
   {
     organizationId: 1,
-    organizationCode: 'GANA',
+    organizationCode: '004',
     organizationName: '가나은행',
     sector: 'BANK',
     sectorLabel: '은행',
@@ -28,7 +28,7 @@ const candidates: OpinionRecipientCandidate[] = [
   },
   {
     organizationId: 2,
-    organizationCode: 'SAA',
+    organizationCode: '240',
     organizationName: '사아증권',
     sector: 'SECURITIES',
     sectorLabel: '증권사',

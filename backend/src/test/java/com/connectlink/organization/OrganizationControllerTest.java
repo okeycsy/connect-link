@@ -40,17 +40,17 @@ class OrganizationControllerTest {
         .andExpect(jsonPath("$[0].code").value("KFTC"))
         .andExpect(jsonPath("$[0].typeLabel").value("결제원"))
         .andExpect(jsonPath("$[0].businesses", hasSize(4)))
-        .andExpect(jsonPath("$[*].code", not(org.hamcrest.Matchers.hasItem("OLD"))));
+        .andExpect(jsonPath("$[*].code", not(org.hamcrest.Matchers.hasItem("005"))));
   }
 
   @Test
   void 기관_목록은_가입_화면이_업무를_거르도록_참여_업무를_업무_순서로_담는다() throws Exception {
     mockMvc
         .perform(get("/api/v1/organizations"))
-        .andExpect(jsonPath("$[?(@.code == 'DARA')].businesses[*]").isArray())
+        .andExpect(jsonPath("$[?(@.code == '088')].businesses[*]").isArray())
         .andExpect(
             jsonPath(
-                "$[?(@.code == 'MABA')].businesses[*]",
+                "$[?(@.code == '103')].businesses[*]",
                 org.hamcrest.Matchers.contains("ACCOUNT_INFO", "LOAN_TRANSFER")));
   }
 
@@ -101,9 +101,9 @@ class OrganizationControllerTest {
         .andExpect(jsonPath("$.totalElements").value(5));
     mockMvc
         .perform(
-            get("/api/v1/organizations/search").param("keyword", "gana").with(TestUsers.admin()))
+            get("/api/v1/organizations/search").param("keyword", "004").with(TestUsers.admin()))
         .andExpect(jsonPath("$.totalElements").value(1))
-        .andExpect(jsonPath("$.content[0].code").value("GANA"));
+        .andExpect(jsonPath("$.content[0].code").value("004"));
     mockMvc
         .perform(
             get("/api/v1/organizations/search")
@@ -118,12 +118,12 @@ class OrganizationControllerTest {
                 .param("active", "true")
                 .with(TestUsers.admin()))
         .andExpect(jsonPath("$.totalElements").value(5))
-        .andExpect(jsonPath("$.content[*].code", not(org.hamcrest.Matchers.hasItem("OLD"))));
+        .andExpect(jsonPath("$.content[*].code", not(org.hamcrest.Matchers.hasItem("005"))));
     mockMvc
         .perform(
             get("/api/v1/organizations/search").param("active", "false").with(TestUsers.admin()))
         .andExpect(jsonPath("$.totalElements").value(1))
-        .andExpect(jsonPath("$.content[0].code").value("OLD"));
+        .andExpect(jsonPath("$.content[0].code").value("005"));
     mockMvc
         .perform(
             get("/api/v1/organizations/search").param("business", "nope").with(TestUsers.admin()))
@@ -133,7 +133,7 @@ class OrganizationControllerTest {
 
   @Test
   void 상세는_이메일_도메인과_감사_정보를_담는다() throws Exception {
-    Long id = organizationRepository.findByCode("DARA").orElseThrow().getId();
+    Long id = organizationRepository.findByCode("088").orElseThrow().getId();
     mockMvc
         .perform(get("/api/v1/organizations/{id}", id).with(TestUsers.admin()))
         .andExpect(status().isOk())
@@ -241,7 +241,7 @@ class OrganizationControllerTest {
         .andExpect(jsonPath("$[0].code").value("BANK"))
         .andExpect(jsonPath("$[0].label").value("은행"));
 
-    Long id = organizationRepository.findByCode("SAA").orElseThrow().getId();
+    Long id = organizationRepository.findByCode("240").orElseThrow().getId();
     mockMvc
         .perform(
             put("/api/v1/organizations/{id}", id)
@@ -283,7 +283,7 @@ class OrganizationControllerTest {
 
   @Test
   void 참여_업무만_바꿔도_수정자와_수정_일시가_갱신된다() throws Exception {
-    Long id = organizationRepository.findByCode("SAA").orElseThrow().getId();
+    Long id = organizationRepository.findByCode("240").orElseThrow().getId();
     String body =
         """
         {"name":"사아증권","emailDomain":"saa.example.com","active":true,
@@ -303,7 +303,7 @@ class OrganizationControllerTest {
 
   @Test
   void 수정하면_바뀐_항목의_변경_전후가_이력에_남고_바뀐_것이_없으면_남지_않는다() throws Exception {
-    Long id = organizationRepository.findByCode("GANA").orElseThrow().getId();
+    Long id = organizationRepository.findByCode("004").orElseThrow().getId();
     String changed =
         """
         {"name":"가나은행(새 이름)","emailDomain":"gana.example.com","active":true,
@@ -377,7 +377,7 @@ class OrganizationControllerTest {
 
   @Test
   void 관리자가_아니면_기준정보_관리_API는_403이다() throws Exception {
-    Long id = organizationRepository.findByCode("GANA").orElseThrow().getId();
+    Long id = organizationRepository.findByCode("004").orElseThrow().getId();
     mockMvc
         .perform(get("/api/v1/organizations/search").with(TestUsers.ganaMember()))
         .andExpect(status().isForbidden())

@@ -167,7 +167,7 @@ class TestPlanControllerTest {
     send(
             put(BASE + "/" + plan.get("id").asLong() + "/targets/" + orgId(orgCode) + "/results"),
             Map.of("results", List.of(Map.of("itemId", itemId, "result", result))),
-            "GANA".equals(orgCode) ? kim() : choi())
+            "004".equals(orgCode) ? kim() : choi())
         .andExpect(status().isOk());
   }
 
@@ -190,7 +190,7 @@ class TestPlanControllerTest {
 
   @Test
   void 결제원_담당자가_만들면_바로_열리고_대상_기관_담당자에게_메일이_간다() throws Exception {
-    send(post(BASE), form("만들기 알림 확인", List.of("GANA", "SAA"), "잔액 조회 확인", "해지 요청 확인"), hong())
+    send(post(BASE), form("만들기 알림 확인", List.of("004", "240"), "잔액 조회 확인", "해지 요청 확인"), hong())
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.state").value("IN_PROGRESS"))
         .andExpect(jsonPath("$.progressRate").value(0))
@@ -216,9 +216,9 @@ class TestPlanControllerTest {
 
   @Test
   void 기관_담당자와_다른_업무_결제원은_만들지_못한다() throws Exception {
-    send(post(BASE), form("기관이 만들기", List.of("GANA"), "확인"), kim())
+    send(post(BASE), form("기관이 만들기", List.of("004"), "확인"), kim())
         .andExpect(status().isForbidden());
-    send(post(BASE), form("다른 업무 결제원", List.of("GANA"), "확인"), park())
+    send(post(BASE), form("다른 업무 결제원", List.of("004"), "확인"), park())
         .andExpect(status().isForbidden());
     send(get(BASE + "/organizations").param("business", "account-info"), null, kim())
         .andExpect(status().isForbidden());
@@ -228,21 +228,21 @@ class TestPlanControllerTest {
   void 대상_기관_후보는_그_업무에_참여하는_참가기관이다() throws Exception {
     send(get(BASE + "/organizations").param("business", "account-info"), null, hong())
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[*].code").value(hasItem("GANA")))
+        .andExpect(jsonPath("$[*].code").value(hasItem("004")))
         .andExpect(jsonPath("$[*].code").value(not(hasItem("JACHA"))))
         .andExpect(jsonPath("$[*].code").value(not(hasItem("KFTC"))))
-        .andExpect(jsonPath("$[?(@.code == 'GANA')].sector").value(hasItem("BANK")));
+        .andExpect(jsonPath("$[?(@.code == '004')].sector").value(hasItem("BANK")));
   }
 
   @Test
   void 양식이_틀리면_필드별로_알려_준다() throws Exception {
-    Map<String, Object> period = form("거꾸로 된 기간", List.of("GANA"), "확인");
+    Map<String, Object> period = form("거꾸로 된 기간", List.of("004"), "확인");
     period.put("endDate", LocalDate.now().minusDays(1).toString());
     send(post(BASE), period, hong())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("TEST_PLAN_PERIOD_INVALID"))
         .andExpect(jsonPath("$.fieldErrors[0].field").value("endDate"));
-    send(post(BASE), form("요구사항 없음", List.of("GANA")), hong())
+    send(post(BASE), form("요구사항 없음", List.of("004")), hong())
         .andExpect(jsonPath("$.code").value("TEST_PLAN_ITEMS_REQUIRED"));
     send(post(BASE), form("대상 없음", List.of(), "확인"), hong())
         .andExpect(jsonPath("$.code").value("TEST_PLAN_TARGETS_REQUIRED"));
@@ -250,7 +250,7 @@ class TestPlanControllerTest {
     send(post(BASE), form("참여 안 하는 기관", List.of("JACHA"), "확인"), hong())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("TEST_TARGET_INVALID"));
-    send(post(BASE), form(" ", List.of("GANA"), " "), hong())
+    send(post(BASE), form(" ", List.of("004"), " "), hong())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.fieldErrors[*].field").value(hasItem("title")))
         .andExpect(jsonPath("$.fieldErrors[*].field").value(hasItem("items[0].title")));
@@ -291,8 +291,8 @@ class TestPlanControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.progressRate").value(56))
         .andExpect(jsonPath("$.targets.length()").value(1))
-        .andExpect(jsonPath("$.targets[0].organizationCode").value("GANA"))
-        .andExpect(jsonPath("$.ownOrganizationId").value(orgId("GANA")))
+        .andExpect(jsonPath("$.targets[0].organizationCode").value("004"))
+        .andExpect(jsonPath("$.ownOrganizationId").value(orgId("004")))
         .andExpect(jsonPath("$.recipients.length()").value(0))
         .andExpect(jsonPath("$.permissions.manage").value(false))
         .andExpect(jsonPath("$.permissions.report").value(true))
@@ -315,31 +315,31 @@ class TestPlanControllerTest {
 
   @Test
   void 고치면_새_대상_기관에_알리고_결과가_있는_요구사항과_기관은_빼지_못한다() throws Exception {
-    JsonNode plan = create("고치기 대상", List.of("GANA"), "잔액 조회 확인", "해지 요청 확인");
+    JsonNode plan = create("고치기 대상", List.of("004"), "잔액 조회 확인", "해지 요청 확인");
     Long id = plan.get("id").asLong();
-    report(plan, "GANA", 0, "PASSED");
+    report(plan, "004", 0, "PASSED");
     List<Map<String, Object>> items = itemsOf(plan);
 
-    Map<String, Object> dropItem = form("고치기 대상", List.of("GANA"));
+    Map<String, Object> dropItem = form("고치기 대상", List.of("004"));
     dropItem.put("items", List.of(items.get(1)));
     send(put(BASE + "/" + id), dropItem, hong())
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("TEST_ITEM_HAS_RESULTS"));
 
-    Map<String, Object> dropTarget = form("고치기 대상", List.of("SAA"));
+    Map<String, Object> dropTarget = form("고치기 대상", List.of("240"));
     dropTarget.put("items", items);
     send(put(BASE + "/" + id), dropTarget, hong())
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("TEST_TARGET_HAS_RESULTS"));
 
-    Map<String, Object> business = form("고치기 대상", List.of("GANA"));
+    Map<String, Object> business = form("고치기 대상", List.of("004"));
     business.put("items", items);
     business.put("business", "AUTO_TRANSFER");
     send(put(BASE + "/" + id), business, hong())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("TEST_PLAN_BUSINESS_FIXED"));
 
-    Map<String, Object> changed = form("고치기 대상 개정", List.of("GANA", "SAA"));
+    Map<String, Object> changed = form("고치기 대상 개정", List.of("004", "240"));
     List<Map<String, Object>> newItems = new ArrayList<>(items);
     newItems.get(1).put("title", "해지 사유코드 확인");
     newItems.add(Map.of("title", "오류 응답코드 확인"));
@@ -370,12 +370,12 @@ class TestPlanControllerTest {
 
   @Test
   void 요구사항이_늘면_수행_완료가_풀린다() throws Exception {
-    JsonNode plan = create("완료 풀림 확인", List.of("GANA"), "잔액 조회 확인");
+    JsonNode plan = create("완료 풀림 확인", List.of("004"), "잔액 조회 확인");
     Long id = plan.get("id").asLong();
     Long itemId = plan.get("items").get(0).get("id").asLong();
-    report(plan, "GANA", 0, "PASSED");
+    report(plan, "004", 0, "PASSED");
     send(
-            put(BASE + "/" + id + "/targets/" + orgId("GANA") + "/items/" + itemId + "/feedback"),
+            put(BASE + "/" + id + "/targets/" + orgId("004") + "/items/" + itemId + "/feedback"),
             Map.of("rate", 100),
             hong())
         .andExpect(status().isOk());
@@ -384,7 +384,7 @@ class TestPlanControllerTest {
         .andExpect(jsonPath("$.progressRate").value(100))
         .andExpect(jsonPath("$.completedAt").isNotEmpty());
 
-    Map<String, Object> more = form("완료 풀림 확인", List.of("GANA"));
+    Map<String, Object> more = form("완료 풀림 확인", List.of("004"));
     List<Map<String, Object>> items = itemsOf(plan);
     items.add(Map.of("title", "해지 요청 확인"));
     more.put("items", items);
@@ -399,9 +399,9 @@ class TestPlanControllerTest {
 
   @Test
   void 지우기는_결제원_담당자가_하고_기관_결과도_함께_지운다() throws Exception {
-    JsonNode plan = create("지우기 대상", List.of("GANA"), "잔액 조회 확인");
+    JsonNode plan = create("지우기 대상", List.of("004"), "잔액 조회 확인");
     Long id = plan.get("id").asLong();
-    report(plan, "GANA", 0, "PASSED");
+    report(plan, "004", 0, "PASSED");
     send(delete(BASE + "/" + id), null, kim()).andExpect(status().isForbidden());
     send(delete(BASE + "/" + id), null, park()).andExpect(status().isForbidden());
     send(delete(BASE + "/" + id), null, hong()).andExpect(status().isNoContent());
@@ -412,7 +412,7 @@ class TestPlanControllerTest {
 
   @Test
   void 알림_대상은_그_업무_결제원_담당자_중에서_고른다() throws Exception {
-    Long id = create("알림 대상 설정", List.of("GANA"), "확인").get("id").asLong();
+    Long id = create("알림 대상 설정", List.of("004"), "확인").get("id").asLong();
     send(get(BASE + "/" + id + "/recipients"), null, hong())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[?(@.name == '홍길동')].selected").value(hasItem(true)))
@@ -444,7 +444,7 @@ class TestPlanControllerTest {
 
   @Test
   void 기관_담당자와_다른_업무_결제원은_알림_대상을_보거나_바꾸지_못한다() throws Exception {
-    Long id = create("알림 대상 거부", List.of("GANA"), "확인").get("id").asLong();
+    Long id = create("알림 대상 거부", List.of("004"), "확인").get("id").asLong();
     send(get(BASE + "/" + id + "/recipients"), null, kim()).andExpect(status().isForbidden());
     send(get(BASE + "/" + id + "/recipients"), null, park()).andExpect(status().isForbidden());
     send(put(BASE + "/" + id + "/recipients"), Map.of("accountIds", List.of()), kim())
@@ -455,7 +455,7 @@ class TestPlanControllerTest {
 
   @Test
   void 가이드는_결제원_담당자가_올리고_대상_기관_담당자가_내려받는다() throws Exception {
-    Long id = create("가이드 첨부", List.of("GANA"), "확인").get("id").asLong();
+    Long id = create("가이드 첨부", List.of("004"), "확인").get("id").asLong();
     MockMultipartFile file =
         new MockMultipartFile("file", "가이드.pdf", "application/pdf", "pdf".getBytes());
     mockMvc
@@ -495,7 +495,7 @@ class TestPlanControllerTest {
 
   @Test
   void 테스트_이력은_결제원_담당자만_본다() throws Exception {
-    Long id = create("이력 확인", List.of("GANA"), "확인").get("id").asLong();
+    Long id = create("이력 확인", List.of("004"), "확인").get("id").asLong();
     send(
             get("/api/v1/change-histories")
                 .param("targetType", "TEST_PLAN")

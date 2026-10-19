@@ -143,7 +143,7 @@ class SuspensionControllerTest {
   @Test
   void 기관_담당자가_등록하면_자기_기관으로_검토_대기가_되고_결제원에_메일과_매터모스트가_간다() throws Exception {
     Map<String, Object> body = form("등록 알림 확인 작업");
-    body.put("organizationId", orgId("SAA")); // 기관 담당자가 보낸 기관은 무시한다.
+    body.put("organizationId", orgId("240")); // 기관 담당자가 보낸 기관은 무시한다.
     send(post(BASE), body, kim())
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.status").value("PENDING_REVIEW"))
@@ -178,7 +178,7 @@ class SuspensionControllerTest {
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("SUSPENSION_ORGANIZATION_REQUIRED"));
     Map<String, Object> body = form("결제원 대리 등록");
-    body.put("organizationId", orgId("DARA"));
+    body.put("organizationId", orgId("088"));
     send(post(BASE), body, hong())
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.organizationName").value("다라은행"))
@@ -200,7 +200,7 @@ class SuspensionControllerTest {
     body.put("business", "CMS");
     send(post(BASE), body, kim()).andExpect(status().isForbidden());
     Map<String, Object> other = form("다른 업무 결제원");
-    other.put("organizationId", orgId("GANA"));
+    other.put("organizationId", orgId("004"));
     send(post(BASE), other, park()).andExpect(status().isForbidden());
   }
 
@@ -246,7 +246,7 @@ class SuspensionControllerTest {
             get(BASE)
                 .param("business", "account-info")
                 .param("period", "PAST")
-                .param("organizationId", String.valueOf(orgId("GANA"))),
+                .param("organizationId", String.valueOf(orgId("004"))),
             null,
             hong())
         .andExpect(status().isOk())
@@ -264,13 +264,13 @@ class SuspensionControllerTest {
     send(
             get(BASE)
                 .param("business", "account-info")
-                .param("organizationId", String.valueOf(orgId("SAA"))),
+                .param("organizationId", String.valueOf(orgId("240"))),
             null,
             kim())
         .andExpect(jsonPath("$.content[*].organizationName").value(everyItem(is("가나은행"))));
     send(get(BASE + "/organizations").param("business", "account-info"), null, kim())
         .andExpect(jsonPath("$.length()").value(1))
-        .andExpect(jsonPath("$[0].code").value("GANA"));
+        .andExpect(jsonPath("$[0].code").value("004"));
   }
 
   @Test

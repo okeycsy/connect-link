@@ -35,7 +35,7 @@ const KFTC = user({});
 const GANA = user({
   email: 'kim.gana@gana.example.com',
   name: '김가나',
-  organizationCode: 'GANA',
+  organizationCode: '004',
   organizationName: '가나은행',
   organizationType: 'FINANCE_ORGANIZATION',
 });

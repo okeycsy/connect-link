@@ -26,7 +26,7 @@ class ChangeHistoryControllerTest {
 
   @Test
   void 관리자는_기관의_변경_이력을_최신순으로_본다() throws Exception {
-    Long id = organizationRepository.findByCode("DARA").orElseThrow().getId();
+    Long id = organizationRepository.findByCode("088").orElseThrow().getId();
     mockMvc
         .perform(
             get("/api/v1/change-histories")
@@ -52,7 +52,7 @@ class ChangeHistoryControllerTest {
 
   @Test
   void 이력이_없는_대상은_빈_목록이다() throws Exception {
-    Long id = organizationRepository.findByCode("GANA").orElseThrow().getId();
+    Long id = organizationRepository.findByCode("004").orElseThrow().getId();
     mockMvc
         .perform(
             get("/api/v1/change-histories")
@@ -66,7 +66,7 @@ class ChangeHistoryControllerTest {
 
   @Test
   void 관리자가_아니면_기관_이력은_403이다() throws Exception {
-    Long id = organizationRepository.findByCode("DARA").orElseThrow().getId();
+    Long id = organizationRepository.findByCode("088").orElseThrow().getId();
     mockMvc
         .perform(
             get("/api/v1/change-histories")

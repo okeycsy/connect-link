@@ -24,7 +24,7 @@ class SuspensionAccessPolicyTest {
       new CurrentUser(
           "han.gana@gana.example.com",
           "한가나",
-          "GANA",
+          "004",
           "가나은행",
           OrganizationType.FINANCE_ORGANIZATION,
           false,
@@ -48,7 +48,7 @@ class SuspensionAccessPolicyTest {
   private static Suspension ganaSuspension() {
     LocalDateTime start = LocalDateTime.now().plusDays(1);
     return Suspension.register(
-        new Organization("GANA", "가나은행", OrganizationType.FINANCE_ORGANIZATION, null),
+        new Organization("004", "가나은행", OrganizationType.FINANCE_ORGANIZATION, null),
         new Suspension.Content(
             Business.ACCOUNT_INFO,
             null,

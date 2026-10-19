@@ -38,7 +38,7 @@ async function openRequestForGana(request: APIRequestContext, title: string): Pr
     organizationCode: string;
     members: { accountId: number; email: string }[];
   }[];
-  const gana = candidates.find((c) => c.organizationCode === 'GANA')!;
+  const gana = candidates.find((c) => c.organizationCode === '004')!;
   const kim = gana.members.find((m) => m.email === 'kim.gana@gana.example.com')!;
   const created = await request.post('/api/v1/opinion-requests', {
     data: {

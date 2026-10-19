@@ -44,7 +44,7 @@ const organizations = [
   },
   {
     id: 3,
-    code: 'DARA',
+    code: '088',
     name: '다라은행',
     type: 'FINANCE_ORGANIZATION',
     typeLabel: '참가기관',

@@ -30,7 +30,7 @@ const KFTC = user({});
 const DARA = user({
   email: 'park.dara@dara.example.com',
   name: '박다라',
-  organizationCode: 'DARA',
+  organizationCode: '088',
   organizationName: '다라은행',
   organizationType: 'FINANCE_ORGANIZATION',
 });
@@ -74,7 +74,7 @@ vi.mock('../../../api/client', async (importOriginal) => {
             return ok({ current: 1, upcoming: 3, past: 5, pendingReview: 2 });
           }
           if (path === '/api/v1/suspensions/organizations') {
-            return ok([{ id: 3, code: 'DARA', name: '다라은행' }]);
+            return ok([{ id: 3, code: '088', name: '다라은행' }]);
           }
           if (path === '/api/v1/suspensions') {
             state.queries.push(options?.params?.query ?? {});

@@ -7,7 +7,7 @@ import { TargetResultsCard } from './TargetResultsCard';
 const summary = {
   targetId: 31,
   organizationId: 3,
-  organizationCode: 'GANA',
+  organizationCode: '004',
   organizationName: '가나은행',
   progressRate: 50,
   completedCount: 0,

@@ -138,12 +138,12 @@ class OpinionControllerTest {
         List.of(
             Map.of(
                 "organizationId",
-                orgId("GANA"),
+                orgId("004"),
                 "recipientAccountIds",
                 List.of(accountId("kim.gana@gana.example.com"))),
             Map.of(
                 "organizationId",
-                orgId("SAA"),
+                orgId("240"),
                 "recipientAccountIds",
                 List.of(accountId("choi.saa@saa.example.com")))));
     return body;
@@ -215,7 +215,7 @@ class OpinionControllerTest {
     send(get(BASE + "/" + id), null, kim())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.targets.length()").value(1))
-        .andExpect(jsonPath("$.targets[0].organizationCode").value("GANA"))
+        .andExpect(jsonPath("$.targets[0].organizationCode").value("004"))
         .andExpect(jsonPath("$.permissions.reply").value(true))
         .andExpect(jsonPath("$.permissions.manage").value(false));
   }
@@ -230,9 +230,9 @@ class OpinionControllerTest {
   void 회신_담당자_후보는_그_업무의_결제원_담당자만_본다() throws Exception {
     send(get(BASE + "/recipient-candidates").param("business", "account-info"), null, hong())
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[?(@.organizationCode == 'GANA')].members[0].name").value("김가나"))
-        .andExpect(jsonPath("$[?(@.organizationCode == 'GANA')].sectorLabel").value("은행"))
-        .andExpect(jsonPath("$[?(@.organizationCode == 'SAA')].sector").value("SECURITIES"))
+        .andExpect(jsonPath("$[?(@.organizationCode == '004')].members[0].name").value("김가나"))
+        .andExpect(jsonPath("$[?(@.organizationCode == '004')].sectorLabel").value("은행"))
+        .andExpect(jsonPath("$[?(@.organizationCode == '240')].sector").value("SECURITIES"))
         .andExpect(jsonPath("$[*].organizationCode").value(not(hasItem("KFTC"))))
         .andExpect(jsonPath("$[*].organizationCode").value(not(hasItem("HAHA"))));
     send(get(BASE + "/recipient-candidates").param("business", "account-info"), null, kim())
@@ -286,7 +286,7 @@ class OpinionControllerTest {
         List.of(
             Map.of(
                 "organizationId",
-                orgId("SAA"),
+                orgId("240"),
                 "recipientAccountIds",
                 List.of(accountId("kim.gana@gana.example.com")))));
     send(post(BASE), wrong, hong())
@@ -319,7 +319,7 @@ class OpinionControllerTest {
         List.of(
             Map.of(
                 "organizationId",
-                orgId("SAA"),
+                orgId("240"),
                 "recipientAccountIds",
                 List.of(accountId("choi.saa@saa.example.com")))));
     send(put(BASE + "/" + id), body, hong())
@@ -386,7 +386,7 @@ class OpinionControllerTest {
     Map<String, Object> body = newRequest("가나만 대상");
     body.put(
         "targets",
-        List.of(Map.of("organizationId", orgId("GANA"), "recipientAccountIds", List.of())));
+        List.of(Map.of("organizationId", orgId("004"), "recipientAccountIds", List.of())));
     Long id =
         json(send(post(BASE), body, hong()).andExpect(status().isCreated())).get("id").asLong();
     send(post(BASE + "/" + id + "/opening"), null, hong()).andExpect(status().isOk());
@@ -645,7 +645,7 @@ class OpinionControllerTest {
         .andExpect(jsonPath("$[0].senderName").value("홍길동"));
     send(
             post(BASE + "/" + id + "/reminders"),
-            Map.of("organizationIds", List.of(orgId("GANA"))),
+            Map.of("organizationIds", List.of(orgId("004"))),
             hong())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("OPINION_REMINDER_NO_RECIPIENT"));

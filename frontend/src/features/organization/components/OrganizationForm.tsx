@@ -121,7 +121,7 @@ export function OrganizationForm({ organization, defaultBusiness, onSaved, onCan
             <TextInput
               label="기관 코드"
               description="영문 대문자·숫자 2~20자. 등록 뒤 바꾸지 않습니다."
-              placeholder="예: GANA"
+              placeholder="예: 004"
               required
               {...form.getInputProps('code')}
               onChange={(e) => form.setFieldValue('code', e.currentTarget.value.toUpperCase())}

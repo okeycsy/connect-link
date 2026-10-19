@@ -19,7 +19,7 @@ vi.mock('../../../api/client', () => ({
                 hits: [
                   {
                     title: '다라은행',
-                    subtitle: '참가기관 · DARA',
+                    subtitle: '참가기관 · 088',
                     link: '/cms/admin/organizations?org=3',
                   },
                 ],
@@ -52,7 +52,7 @@ describe('CommandPalette', () => {
 
     fireEvent.change(screen.getByLabelText('검색어'), { target: { value: '다라' } });
     expect(await screen.findByRole('option', { name: '다라은행' })).toBeInTheDocument();
-    expect(screen.getByText('참가기관 · DARA')).toBeInTheDocument();
+    expect(screen.getByText('참가기관 · 088')).toBeInTheDocument();
     expect(screen.getByRole('option', { name: '이다라' })).toBeInTheDocument();
     expect(screen.getByText('샘플')).toBeInTheDocument();
     // 바로 가기는 검색어에 맞는 것만 남는다.

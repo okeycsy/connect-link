@@ -117,7 +117,7 @@ class TestResultControllerTest {
     body.put("startDate", LocalDate.now().toString());
     body.put("endDate", LocalDate.now().plusDays(7).toString());
     body.put("items", Arrays.stream(items).map(t -> Map.of("title", t)).toList());
-    body.put("organizationIds", List.of(orgId("GANA"), orgId("SAA")));
+    body.put("organizationIds", List.of(orgId("004"), orgId("240")));
     JsonNode detail = json(send(post(BASE), body, hong()).andExpect(status().isCreated()));
     return new Plan(detail.get("id").asLong(), detail.get("items"));
   }
@@ -170,7 +170,7 @@ class TestResultControllerTest {
     Plan plan = create("결과 등록 알림", "잔액 조회 확인", "해지 요청 확인");
     report(
             plan,
-            "GANA",
+            "004",
             kim(),
             entry(plan.item(0), "PASSED", null),
             entry(plan.item(1), "FAILED", " "))
@@ -180,7 +180,7 @@ class TestResultControllerTest {
 
     report(
             plan,
-            "GANA",
+            "004",
             kim(),
             entry(plan.item(0), "PASSED", null),
             entry(plan.item(1), "FAILED", "해지 사유코드 09 를 처리하지 못합니다."))
@@ -211,7 +211,7 @@ class TestResultControllerTest {
     // 바뀐 것이 없으면 다시 알리지 않는다.
     report(
             plan,
-            "GANA",
+            "004",
             kim(),
             entry(plan.item(0), "PASSED", null),
             entry(plan.item(1), "FAILED", "해지 사유코드 09 를 처리하지 못합니다."))
@@ -220,17 +220,17 @@ class TestResultControllerTest {
     send(get(BASE + "/" + plan.id()), null, hong())
         .andExpect(jsonPath("$.progressRate").value(25))
         .andExpect(
-            jsonPath("$.targets[?(@.organizationCode == 'GANA')].lastReportedAt").isNotEmpty());
+            jsonPath("$.targets[?(@.organizationCode == '004')].lastReportedAt").isNotEmpty());
   }
 
   @Test
   void 다른_기관과_결제원은_기관_결과를_등록하지_못한다() throws Exception {
     Plan plan = create("등록 거부", "잔액 조회 확인");
-    report(plan, "SAA", kim(), entry(plan.item(0), "PASSED", null))
+    report(plan, "240", kim(), entry(plan.item(0), "PASSED", null))
         .andExpect(status().isForbidden());
-    report(plan, "GANA", hong(), entry(plan.item(0), "PASSED", null))
+    report(plan, "004", hong(), entry(plan.item(0), "PASSED", null))
         .andExpect(status().isForbidden());
-    report(plan, "GANA", kim(), entry(999999L, "PASSED", null))
+    report(plan, "004", kim(), entry(999999L, "PASSED", null))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("TEST_ITEM_INVALID"));
   }
@@ -238,14 +238,14 @@ class TestResultControllerTest {
   @Test
   void 기관_담당자는_자기_기관_결과만_본다() throws Exception {
     Plan plan = create("결과 조회 범위", "잔액 조회 확인");
-    send(get(target(plan, "GANA")), null, kim())
+    send(get(target(plan, "004")), null, kim())
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.summary.organizationCode").value("GANA"))
+        .andExpect(jsonPath("$.summary.organizationCode").value("004"))
         .andExpect(jsonPath("$.rows[0].result").isEmpty())
         .andExpect(jsonPath("$.summary.unreported").value(1));
-    send(get(target(plan, "SAA")), null, hong()).andExpect(status().isOk());
-    send(get(target(plan, "SAA")), null, kim()).andExpect(status().isForbidden());
-    send(get(BASE + "/" + plan.id() + "/targets/" + orgId("CHAKA")), null, hong())
+    send(get(target(plan, "240")), null, hong()).andExpect(status().isOk());
+    send(get(target(plan, "240")), null, kim()).andExpect(status().isForbidden());
+    send(get(BASE + "/" + plan.id() + "/targets/" + orgId("050")), null, hong())
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.code").value("TEST_TARGET_NOT_FOUND"));
   }
@@ -255,11 +255,11 @@ class TestResultControllerTest {
   @Test
   void 결제원_의견_100과_기관_정상이면_요구사항이_수행_완료다() throws Exception {
     Plan plan = create("수행 완료 흐름", "잔액 조회 확인");
-    feedback(plan, "GANA", 0, 100, null)
+    feedback(plan, "004", 0, 100, null)
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("TEST_RESULT_NOT_REPORTED"));
-    report(plan, "GANA", kim(), entry(plan.item(0), "PASSED", null)).andExpect(status().isOk());
-    feedback(plan, "GANA", 0, 100, null)
+    report(plan, "004", kim(), entry(plan.item(0), "PASSED", null)).andExpect(status().isOk());
+    feedback(plan, "004", 0, 100, null)
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.rows[0].completed").value(true))
         .andExpect(jsonPath("$.rows[0].feedbackByName").value("홍길동"))
@@ -275,8 +275,8 @@ class TestResultControllerTest {
         .filteredOn(o -> o.getSubject() != null && o.getSubject().contains("결제원 의견"))
         .isEmpty();
 
-    report(plan, "SAA", choi(), entry(plan.item(0), "PASSED", null)).andExpect(status().isOk());
-    feedback(plan, "SAA", 0, 100, null).andExpect(status().isOk());
+    report(plan, "240", choi(), entry(plan.item(0), "PASSED", null)).andExpect(status().isOk());
+    feedback(plan, "240", 0, 100, null).andExpect(status().isOk());
     send(get(BASE + "/" + plan.id()), null, hong())
         .andExpect(jsonPath("$.state").value("COMPLETED"))
         .andExpect(jsonPath("$.stateLabel").value("수행 완료"))
@@ -289,15 +289,15 @@ class TestResultControllerTest {
   @Test
   void 미니_수행률이_100이_아니면_그_값으로_집계하고_완료가_아니다() throws Exception {
     Plan plan = create("미니 수행률 집계", "해지 요청 확인");
-    report(plan, "GANA", kim(), entry(plan.item(0), "PASSED", null));
-    feedback(plan, "GANA", 0, 80, "003 전문에 대해 예외사항 발생")
+    report(plan, "004", kim(), entry(plan.item(0), "PASSED", null));
+    feedback(plan, "004", 0, 80, "003 전문에 대해 예외사항 발생")
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.rows[0].effectiveRate").value(80))
         .andExpect(jsonPath("$.rows[0].feedbackNote").value("003 전문에 대해 예외사항 발생"))
         .andExpect(jsonPath("$.rows[0].completed").value(false))
         .andExpect(jsonPath("$.summary.progressRate").value(80));
     // 둘 다 비우면 의견을 지우고 기관 결과(정상 100)로 돌아간다.
-    feedback(plan, "GANA", 0, null, " ")
+    feedback(plan, "004", 0, null, " ")
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.rows[0].feedbackRate").isEmpty())
         .andExpect(jsonPath("$.rows[0].effectiveRate").value(100));
@@ -306,12 +306,12 @@ class TestResultControllerTest {
   @Test
   void 결제원_의견_뒤에_기관이_결과를_바꾸면_다시_확인이다() throws Exception {
     Plan plan = create("다시 확인 흐름", "한도 초과 응답 확인");
-    report(plan, "GANA", kim(), entry(plan.item(0), "PASSED", null));
-    feedback(plan, "GANA", 0, 70, "응답코드가 표준과 다릅니다.")
+    report(plan, "004", kim(), entry(plan.item(0), "PASSED", null));
+    feedback(plan, "004", 0, 70, "응답코드가 표준과 다릅니다.")
         .andExpect(jsonPath("$.rows[0].effectiveRate").value(70));
 
     clock.advance(Duration.ofMinutes(5));
-    report(plan, "GANA", kim(), entry(plan.item(0), "PASSED", "응답코드를 고쳤습니다."))
+    report(plan, "004", kim(), entry(plan.item(0), "PASSED", "응답코드를 고쳤습니다."))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.rows[0].feedbackOutdated").value(true))
         .andExpect(jsonPath("$.rows[0].effectiveRate").value(100))
@@ -319,7 +319,7 @@ class TestResultControllerTest {
         .andExpect(jsonPath("$.summary.awaitingReview").value(1));
 
     clock.advance(Duration.ofMinutes(5));
-    feedback(plan, "GANA", 0, 100, null)
+    feedback(plan, "004", 0, 100, null)
         .andExpect(jsonPath("$.rows[0].feedbackOutdated").value(false))
         .andExpect(jsonPath("$.rows[0].completed").value(true));
   }
@@ -327,13 +327,13 @@ class TestResultControllerTest {
   @Test
   void 기관_담당자는_의견을_남기지_못하고_미니_수행률은_0에서_100이다() throws Exception {
     Plan plan = create("의견 거부", "잔액 조회 확인");
-    report(plan, "GANA", kim(), entry(plan.item(0), "PASSED", null));
+    report(plan, "004", kim(), entry(plan.item(0), "PASSED", null));
     send(
-            put(target(plan, "GANA") + "/items/" + plan.item(0) + "/feedback"),
+            put(target(plan, "004") + "/items/" + plan.item(0) + "/feedback"),
             Map.of("rate", 100),
             kim())
         .andExpect(status().isForbidden());
-    feedback(plan, "GANA", 0, 101, null)
+    feedback(plan, "004", 0, 101, null)
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.fieldErrors[0].field").value("rate"));
   }
@@ -346,11 +346,11 @@ class TestResultControllerTest {
     JsonNode detail = json(send(get(BASE + "/" + plan.id()), null, hong()));
     String gana = null;
     for (JsonNode t : detail.get("targets")) {
-      if (t.get("organizationCode").asText().equals("GANA")) {
+      if (t.get("organizationCode").asText().equals("004")) {
         gana = t.get("targetId").asText();
       }
     }
-    report(plan, "GANA", kim(), entry(plan.item(0), "FAILED", "E99 응답"));
+    report(plan, "004", kim(), entry(plan.item(0), "FAILED", "E99 응답"));
     for (RequestPostProcessor user : List.of(hong(), kim())) {
       send(
               get("/api/v1/change-histories")

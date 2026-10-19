@@ -53,7 +53,7 @@ async function createAsHong(request: APIRequestContext, title: string): Promise<
         },
         { title: '해지 결과 통보 전문 확인', description: null },
       ],
-      organizationIds: [organizations.find((o) => o.code === 'GANA')!.id],
+      organizationIds: [organizations.find((o) => o.code === '004')!.id],
     },
     headers: await csrf(request),
   });

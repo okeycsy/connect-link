@@ -20,7 +20,7 @@ class WithdrawalAccessPolicyTest {
 
   private static UserAccount account(OrganizationType type, Business business) {
     Organization organization =
-        new Organization(type == OrganizationType.KFTC ? "KFTC" : "GANA", "기관", type, null);
+        new Organization(type == OrganizationType.KFTC ? "KFTC" : "004", "기관", type, null);
     return UserAccount.apply(
         "someone@gana.example.com",
         "hash",

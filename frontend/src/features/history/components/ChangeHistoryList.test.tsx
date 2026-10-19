@@ -33,7 +33,7 @@ const histories = [
     action: 'CREATED',
     actionLabel: '등록',
     summary: '다라은행 등록',
-    changes: [{ field: 'code', label: '기관 코드', before: null, after: 'DARA' }],
+    changes: [{ field: 'code', label: '기관 코드', before: null, after: '088' }],
     changedBy: 'admin@kftc.example.com',
     changedByName: '데모 관리자',
     changedAt: '2026-03-02T09:30:00',
@@ -72,7 +72,7 @@ describe('ChangeHistoryList', () => {
       screen.getByText('데모 관리자 (admin@kftc.example.com) · 2026-07-14 14:05'),
     ).toBeInTheDocument();
     expect(screen.getByText('다라은행 등록')).toBeInTheDocument();
-    expect(screen.getByText('DARA')).toBeInTheDocument();
+    expect(screen.getByText('088')).toBeInTheDocument();
     const items = screen.getByTestId('change-history').querySelectorAll('.mantine-Timeline-item');
     expect(items[0]).toHaveTextContent('다라은행 수정');
   });

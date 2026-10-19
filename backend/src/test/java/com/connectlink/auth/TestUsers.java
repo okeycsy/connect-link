@@ -33,7 +33,7 @@ public final class TestUsers {
       new CurrentUser(
           "kim.gana@gana.example.com",
           "김가나",
-          "GANA",
+          "004",
           "가나은행",
           OrganizationType.FINANCE_ORGANIZATION,
           false,
@@ -46,7 +46,7 @@ public final class TestUsers {
       new CurrentUser(
           "choi.saa@saa.example.com",
           "최사아",
-          "SAA",
+          "240",
           "사아증권",
           OrganizationType.FINANCE_ORGANIZATION,
           false,

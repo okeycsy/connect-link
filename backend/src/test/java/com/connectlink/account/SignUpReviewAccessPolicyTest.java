@@ -21,7 +21,7 @@ class SignUpReviewAccessPolicyTest {
       new CurrentUser(
           "lee.dara@dara.example.com",
           "이다라",
-          "DARA",
+          "088",
           "다라은행",
           OrganizationType.FINANCE_ORGANIZATION,
           false,

@@ -47,7 +47,7 @@ test.describe('관리 > 기관·업무 기준정보', () => {
     await page.getByTestId('organization-table').getByRole('button', { name: '사아증권' }).click();
 
     const dialog = page.getByRole('dialog');
-    await expect(dialog).toContainText('SAA · 참가기관');
+    await expect(dialog).toContainText('240 · 참가기관');
     await expect(dialog.getByLabel(/기관명/)).toHaveValue('사아증권');
     await page.waitForTimeout(400);
     await page.screenshot({ path: 'screenshots/admin-organization-detail.png' });
@@ -74,7 +74,7 @@ test.describe('관리 > 기관·업무 기준정보', () => {
     await dialog.getByLabel(/기관 코드/).fill('gana');
     await dialog.getByLabel(/기관명/).fill('중복 코드 기관');
     await dialog.getByRole('button', { name: '등록' }).click();
-    await expect(page.getByText('이미 있는 기관 코드입니다: GANA')).toBeVisible();
+    await expect(page.getByText('이미 있는 기관 코드입니다: 004')).toBeVisible();
 
     await dialog.getByLabel(/기관 코드/).fill('e2e');
     await dialog.getByLabel(/기관명/).fill('이투이캐피탈');
