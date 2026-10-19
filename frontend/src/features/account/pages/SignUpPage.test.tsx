@@ -45,7 +45,7 @@ const organizations = [
   {
     id: 3,
     code: '088',
-    name: '다라은행',
+    name: '신한은행',
     type: 'FINANCE_ORGANIZATION',
     typeLabel: '참가기관',
     businesses: ['ACCOUNT_INFO', 'AUTO_TRANSFER', 'CMS'],
@@ -75,7 +75,7 @@ const jobRoles = [
   },
 ];
 
-const EMAIL = 'new.person@dara.example.com';
+const EMAIL = 'new.person@shinhan.example.com';
 
 beforeEach(() => {
   GET.mockReset();
@@ -143,9 +143,9 @@ describe('SignUpPage', () => {
     await verifyEmail();
     fireEvent.click(screen.getByRole('button', { name: '다음' }));
 
-    // ② 이메일 도메인이 같은 다라은행이 미리 골라져 있고, 참여하지 않는 대출이동은 못 고른다.
+    // ② 이메일 도메인이 같은 신한은행이 미리 골라져 있고, 참여하지 않는 대출이동은 못 고른다.
     await screen.findByTestId('sign-up-step-2');
-    expect(await screen.findByDisplayValue('다라은행')).toBeInTheDocument();
+    expect(await screen.findByDisplayValue('신한은행')).toBeInTheDocument();
     expect(screen.getByText('회사 이메일 도메인과 맞는 기관입니다.')).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: '대출이동' })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: '다음' }));
@@ -165,7 +165,7 @@ describe('SignUpPage', () => {
 
     // ④ 앞 단계 요약을 보고 담당자 정보를 적는다.
     const summary = await screen.findByTestId('sign-up-summary');
-    expect(summary).toHaveTextContent('다라은행');
+    expect(summary).toHaveTextContent('신한은행');
     expect(summary).toHaveTextContent('계좌통합관리');
     expect(summary).toHaveTextContent('CMS · CMS 출금이체');
     expect(summary).toHaveTextContent('전산(운영)');

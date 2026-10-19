@@ -60,13 +60,13 @@ class TestPlanControllerTest {
 
   private static final String BASE = "/api/v1/test-plans";
 
-  /** 시드: 계좌통합관리 진행 중(가나은행 56%, 다라은행 40%, 사아증권 미등록, 차카저축은행 100%, 전체 49%). */
+  /** 시드: 계좌통합관리 진행 중(KB국민은행 56%, 신한은행 40%, 삼성증권 미등록, 저축은행중앙회 100%, 전체 49%). */
   private static final String SEED_IN_PROGRESS = "계좌정보 통합조회 전문 개선 2차";
 
-  /** 시드: 계좌통합관리 수행 완료(가나은행·다라은행·나다상호금융). 사아증권은 대상이 아니다. */
+  /** 시드: 계좌통합관리 수행 완료(KB국민은행·신한은행·신협). 삼성증권은 대상이 아니다. */
   private static final String SEED_COMPLETED = "내 계좌 한눈에 연계 개선";
 
-  /** 시드: 계좌통합관리 기간 지남(사아증권·차카저축은행). 가나은행은 대상이 아니다. */
+  /** 시드: 계좌통합관리 기간 지남(삼성증권·저축은행중앙회). KB국민은행은 대상이 아니다. */
   private static final String SEED_OVERDUE = "오픈뱅킹 안심차단 등록 전문 신설";
 
   @Autowired private MockMvc mockMvc;
@@ -87,12 +87,12 @@ class TestPlanControllerTest {
     return TestUsers.as(TestUsers.KFTC_CMS);
   }
 
-  /** 가나은행 계좌통합관리 담당자. */
+  /** KB국민은행 계좌통합관리 담당자. */
   private static RequestPostProcessor kim() {
     return TestUsers.ganaMember();
   }
 
-  /** 사아증권 계좌통합관리 담당자. */
+  /** 삼성증권 계좌통합관리 담당자. */
   private static RequestPostProcessor choi() {
     return TestUsers.as(TestUsers.SAA_MEMBER);
   }
@@ -205,11 +205,11 @@ class TestPlanControllerTest {
         .andExpect(jsonPath("$.permissions.feedback").value(true));
 
     assertThat(notified(NotificationType.TEST_PLAN_OPENED, "만들기 알림 확인"))
-        .contains("kim.gana@gana.example.com", "choi.saa@saa.example.com")
-        .doesNotContain("yoon.chaka@chaka.example.com", "hong.gildong@kftc.example.com");
+        .contains("kim.gana@kb.example.com", "choi.saa@samsung.example.com")
+        .doesNotContain("yoon.chaka@fsb.example.com", "hong.gildong@kftc.example.com");
     assertThat(outboxRepository.findAll())
         .filteredOn(o -> o.getSubject() != null && o.getSubject().contains("만들기 알림 확인"))
-        .filteredOn(o -> o.getRecipient().equals("kim.gana@gana.example.com"))
+        .filteredOn(o -> o.getRecipient().equals("kim.gana@kb.example.com"))
         .extracting(NotificationOutbox::getChannel)
         .containsExactly(NotificationChannel.EMAIL);
   }
@@ -352,9 +352,9 @@ class TestPlanControllerTest {
         .andExpect(jsonPath("$.items[1].title").value("해지 사유코드 확인"))
         .andExpect(jsonPath("$.items[2].number").value("003"))
         .andExpect(jsonPath("$.targets.length()").value(2));
-    // 새로 더한 사아증권에만 열림 알림이 간다(가나은행은 만들 때 한 번).
+    // 새로 더한 삼성증권에만 열림 알림이 간다(KB국민은행은 만들 때 한 번).
     assertThat(notified(NotificationType.TEST_PLAN_OPENED, "고치기 대상 개정"))
-        .containsExactly("choi.saa@saa.example.com");
+        .containsExactly("choi.saa@samsung.example.com");
 
     send(
             get("/api/v1/change-histories")
@@ -417,7 +417,7 @@ class TestPlanControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[?(@.name == '홍길동')].selected").value(hasItem(true)))
         .andExpect(jsonPath("$[?(@.name == '김운영')].selected").value(hasItem(false)))
-        .andExpect(jsonPath("$[*].email").value(not(hasItem("kim.gana@gana.example.com"))))
+        .andExpect(jsonPath("$[*].email").value(not(hasItem("kim.gana@kb.example.com"))))
         .andExpect(jsonPath("$[*].email").value(not(hasItem("park.cms@kftc.example.com"))));
 
     send(
@@ -436,7 +436,7 @@ class TestPlanControllerTest {
 
     send(
             put(BASE + "/" + id + "/recipients"),
-            Map.of("accountIds", List.of(accountId("kim.gana@gana.example.com"))),
+            Map.of("accountIds", List.of(accountId("kim.gana@kb.example.com"))),
             hong())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("TEST_RECIPIENT_INVALID"));

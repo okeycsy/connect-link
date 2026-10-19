@@ -77,12 +77,12 @@ class TestResultControllerTest {
     return TestUsers.as(TestUsers.KFTC_ACCOUNT_INFO);
   }
 
-  /** 가나은행 계좌통합관리 담당자. */
+  /** KB국민은행 계좌통합관리 담당자. */
   private static RequestPostProcessor kim() {
     return TestUsers.ganaMember();
   }
 
-  /** 사아증권 계좌통합관리 담당자. */
+  /** 삼성증권 계좌통합관리 담당자. */
   private static RequestPostProcessor choi() {
     return TestUsers.as(TestUsers.SAA_MEMBER);
   }
@@ -108,7 +108,7 @@ class TestResultControllerTest {
     return organizationService.getByCode(code).getId();
   }
 
-  /** 가나은행·사아증권 대상 계좌통합관리 기관 테스트를 홍길동이 만든다. */
+  /** KB국민은행·삼성증권 대상 계좌통합관리 기관 테스트를 홍길동이 만든다. */
   private Plan create(String title, String... items) throws Exception {
     Map<String, Object> body = new HashMap<>();
     body.put("business", "ACCOUNT_INFO");
@@ -265,7 +265,7 @@ class TestResultControllerTest {
         .andExpect(jsonPath("$.rows[0].feedbackByName").value("홍길동"))
         .andExpect(jsonPath("$.summary.completed").value(true))
         .andExpect(jsonPath("$.summary.awaitingReview").value(0));
-    // 사아증권이 아직이라 테스트는 진행 중이다.
+    // 삼성증권이 아직이라 테스트는 진행 중이다.
     send(get(BASE + "/" + plan.id()), null, hong())
         .andExpect(jsonPath("$.state").value("IN_PROGRESS"))
         .andExpect(jsonPath("$.progressRate").value(50));
@@ -359,7 +359,7 @@ class TestResultControllerTest {
               null,
               user)
           .andExpect(status().isOk())
-          .andExpect(jsonPath("$.content[0].summary").value("가나은행 결과 등록"))
+          .andExpect(jsonPath("$.content[0].summary").value("KB국민은행 결과 등록"))
           .andExpect(jsonPath("$.content[0].changes[0].after").value("오류 · E99 응답"));
     }
     send(

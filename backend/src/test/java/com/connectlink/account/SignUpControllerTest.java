@@ -110,7 +110,7 @@ class SignUpControllerTest {
     return organizationService.getByCode(code).getId();
   }
 
-  /** 가나은행 현업 담당자의 가입 신청 본문. 테스트마다 필요한 칸만 바꾼다. */
+  /** KB국민은행 현업 담당자의 가입 신청 본문. 테스트마다 필요한 칸만 바꾼다. */
   private Map<String, Object> signUpBody(String token, String email) {
     Map<String, Object> body = new HashMap<>();
     body.put("verificationToken", token);
@@ -135,14 +135,14 @@ class SignUpControllerTest {
 
   @Test
   void 인증부터_가입_신청까지_로그인_없이_되고_승인_전에는_로그인할_수_없다() throws Exception {
-    String email = "Flow.Tester@Gana.example.com";
+    String email = "Flow.Tester@kb.example.com";
     requestCode(email)
         .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.email").value("flow.tester@gana.example.com"))
+        .andExpect(jsonPath("$.email").value("flow.tester@kb.example.com"))
         .andExpect(jsonPath("$.expiresAt").exists())
         .andExpect(jsonPath("$.resendAfterSeconds").value(60));
 
-    String code = latestCode("flow.tester@gana.example.com");
+    String code = latestCode("flow.tester@kb.example.com");
     String json =
         confirm(email, code)
             .andExpect(status().isOk())
@@ -155,8 +155,8 @@ class SignUpControllerTest {
 
     postJson("/api/v1/sign-ups", signUpBody(token, email))
         .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.email").value("flow.tester@gana.example.com"))
-        .andExpect(jsonPath("$.organizationName").value("가나은행"))
+        .andExpect(jsonPath("$.email").value("flow.tester@kb.example.com"))
+        .andExpect(jsonPath("$.organizationName").value("KB국민은행"))
         .andExpect(jsonPath("$.businesses.length()").value(2))
         .andExpect(jsonPath("$.businesses[0].code").value("ACCOUNT_INFO"))
         .andExpect(jsonPath("$.jobRoleLabel").value("현업"))
@@ -165,7 +165,7 @@ class SignUpControllerTest {
 
     postJson(
             "/api/v1/auth/login",
-            Map.of("email", "flow.tester@gana.example.com", "password", "Welcome1!"))
+            Map.of("email", "flow.tester@kb.example.com", "password", "Welcome1!"))
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("ACCOUNT_PENDING_APPROVAL"));
     // 신청이 끝난 이메일은 다시 코드를 받을 수 없다.
@@ -176,7 +176,7 @@ class SignUpControllerTest {
 
   @Test
   void 이미_가입한_이메일에는_코드를_보내지_않는다() throws Exception {
-    requestCode("kim.gana@gana.example.com")
+    requestCode("kim.gana@kb.example.com")
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("EMAIL_ALREADY_REGISTERED"))
         .andExpect(jsonPath("$.fieldErrors[0].field").value("email"));
@@ -192,7 +192,7 @@ class SignUpControllerTest {
 
   @Test
   void 재발송_간격_전에는_다시_받을_수_없고_지나면_새_코드가_간다() throws Exception {
-    String email = "resend@dara.example.com";
+    String email = "resend@shinhan.example.com";
     requestCode(email).andExpect(status().isCreated());
     String first = latestCode(email);
     clock.advance(Duration.ofSeconds(30));
@@ -215,7 +215,7 @@ class SignUpControllerTest {
 
   @Test
   void 틀린_코드는_남은_횟수를_알리고_다섯_번_틀리면_새_코드를_받아야_한다() throws Exception {
-    String email = "wrong-code@saa.example.com";
+    String email = "wrong-code@samsung.example.com";
     requestCode(email).andExpect(status().isCreated());
     String code = latestCode(email);
     String wrong = code.equals("000000") ? "111111" : "000000";
@@ -237,7 +237,7 @@ class SignUpControllerTest {
 
   @Test
   void 유효_시간이_지난_코드는_거부한다() throws Exception {
-    String email = "expired@maba.example.com";
+    String email = "expired@sbi.example.com";
     requestCode(email).andExpect(status().isCreated());
     String code = latestCode(email);
     clock.advance(Duration.ofMinutes(10));
@@ -248,21 +248,21 @@ class SignUpControllerTest {
 
   @Test
   void 코드를_받지_않은_이메일은_확인할_수_없다() throws Exception {
-    confirm("never-requested@gana.example.com", "123456")
+    confirm("never-requested@kb.example.com", "123456")
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VERIFICATION_NOT_REQUESTED"));
   }
 
   @Test
   void 인증_토큰은_그_이메일에만_한_번_쓸_수_있고_유효_시간이_있다() throws Exception {
-    String email = "token-owner@gana.example.com";
+    String email = "token-owner@kb.example.com";
     String token = verify(email);
 
     postJson("/api/v1/sign-ups", signUpBody("made-up-token", email))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VERIFICATION_REQUIRED"))
         .andExpect(jsonPath("$.fieldErrors[0].field").value("email"));
-    postJson("/api/v1/sign-ups", signUpBody(token, "someone-else@gana.example.com"))
+    postJson("/api/v1/sign-ups", signUpBody(token, "someone-else@kb.example.com"))
         .andExpect(jsonPath("$.code").value("VERIFICATION_REQUIRED"));
 
     postJson("/api/v1/sign-ups", signUpBody(token, email)).andExpect(status().isCreated());
@@ -270,7 +270,7 @@ class SignUpControllerTest {
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VERIFICATION_REQUIRED"));
 
-    String late = "token-late@gana.example.com";
+    String late = "token-late@kb.example.com";
     String lateToken = verify(late);
     clock.advance(Duration.ofMinutes(30));
     postJson("/api/v1/sign-ups", signUpBody(lateToken, late))
@@ -279,7 +279,7 @@ class SignUpControllerTest {
 
   @Test
   void 신청이_실패하면_토큰은_쓰지_않은_채로_남아_고쳐서_다시_보낼_수_있다() throws Exception {
-    String email = "retry@dara.example.com";
+    String email = "retry@shinhan.example.com";
     String token = verify(email);
     Map<String, Object> body = signUpBody(token, email);
     body.put("organizationId", organizationId("088"));
@@ -288,7 +288,7 @@ class SignUpControllerTest {
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("BUSINESS_NOT_PARTICIPATED"))
         .andExpect(jsonPath("$.fieldErrors[0].field").value("businesses"))
-        .andExpect(jsonPath("$.detail").value("다라은행 은(는) 대출이동 에 참여하지 않는 기관입니다."));
+        .andExpect(jsonPath("$.detail").value("신한은행 은(는) 대출이동 에 참여하지 않는 기관입니다."));
 
     body.put("businesses", List.of(Map.of("business", "AUTO_TRANSFER")));
     postJson("/api/v1/sign-ups", body).andExpect(status().isCreated());
@@ -324,7 +324,7 @@ class SignUpControllerTest {
 
   @Test
   void 필수_칸과_비밀번호_규칙은_칸별로_알린다() throws Exception {
-    String email = "fields@gana.example.com";
+    String email = "fields@kb.example.com";
     Map<String, Object> body = signUpBody("any-token", email);
     body.put("businesses", List.of());
     body.put("name", " ");

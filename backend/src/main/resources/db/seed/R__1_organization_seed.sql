@@ -1,5 +1,6 @@
--- 샘플 기관. 전부 가상 데이터다. local, demo 프로필에서만 읽는다.
--- 참가기관 코드는 금융기관 공동코드 체계(3자리)를 따르되 이름은 가상이다. 카드·보험·캐피탈은 공개 코드를 확인하지 못해 영문 코드를 둔다.
+-- 샘플 기관. local, demo 프로필에서만 읽는다.
+-- 참가기관은 공개된 금융기관 공동코드(3자리)와 실제 이름을 쓴다(CLAUDE.md 2절 1번). 이메일 도메인은 가상(example.com)이다.
+-- 카드·보험·캐피탈·이용기관은 공개 코드를 확인하지 못해 가상 이름과 영문 코드를 둔다.
 -- Flyway 반복 마이그레이션(R__)이라 내용이 바뀌면 다시 실행된다. 메모리 DB라 매번 새로 넣는다.
 -- 반복 마이그레이션은 설명(파일 이름) 순서로 돈다. 1 기관 → 2 계정 → 3 알림 순서이며, 계정이 기관을 참조하므로 계정부터 지운다.
 DELETE FROM user_account_it_role;
@@ -11,17 +12,17 @@ DELETE FROM organization;
 
 INSERT INTO organization (code, name, type, email_domain, active, created_at, created_by, updated_at, updated_by) VALUES
   ('KFTC',    '금융결제원',     'KFTC',                 'kftc.example.com',    TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
-  ('004',     '가나은행',       'FINANCE_ORGANIZATION', 'gana.example.com',    TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
-  ('088',     '다라은행',       'FINANCE_ORGANIZATION', 'dara.example.com',    TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
-  ('103',     '마바저축은행',   'FINANCE_ORGANIZATION', 'maba.example.com',    TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
-  ('240',     '사아증권',       'FINANCE_ORGANIZATION', 'saa.example.com',     TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
+  ('004',     'KB국민은행',       'FINANCE_ORGANIZATION', 'kb.example.com',    TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
+  ('088',     '신한은행',       'FINANCE_ORGANIZATION', 'shinhan.example.com',    TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
+  ('103',     'SBI저축은행',   'FINANCE_ORGANIZATION', 'sbi.example.com',    TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
+  ('240',     '삼성증권',       'FINANCE_ORGANIZATION', 'samsung.example.com',     TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
   ('JACHA',   '자차카드',       'FINANCE_ORGANIZATION', 'jacha.example.com',   TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
   ('TAPA',    '타파보험',       'FINANCE_ORGANIZATION', 'tapa.example.com',    TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
-  ('050',     '차카저축은행',   'FINANCE_ORGANIZATION', 'chaka.example.com',   TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
+  ('050',     '저축은행중앙회',   'FINANCE_ORGANIZATION', 'fsb.example.com',   TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
   ('PAHA',    '파하캐피탈',     'FINANCE_ORGANIZATION', 'paha.example.com',    TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
-  ('048',     '나다상호금융',   'FINANCE_ORGANIZATION', 'nada.example.com',    TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
+  ('048',     '신협',   'FINANCE_ORGANIZATION', 'cu.example.com',    TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
   ('HAHA',    '하하통신',       'USE_ORGANIZATION',     'haha.example.com',    TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
-  ('005',     '옛날은행',       'FINANCE_ORGANIZATION', 'old.example.com',     FALSE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed');
+  ('005',     '외환은행',       'FINANCE_ORGANIZATION', 'keb.example.com',     FALSE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed');
 
 -- 업권. 의견 요청에서 대상 기관을 업권별로 고를 때 쓴다(참가기관만).
 UPDATE organization SET sector = CASE code
@@ -59,13 +60,13 @@ JOIN organization o ON o.code = p.code;
 INSERT INTO change_history (target_type, target_id, business, action, summary, actor_name, changes, created_at, created_by, updated_at, updated_by)
 SELECT 'ORGANIZATION', o.id, NULL, h.action, h.summary, h.actor_name, h.changes, h.changed_at, h.changed_by, h.changed_at, h.changed_by
 FROM (VALUES
-  ('088',     'CREATED', '다라은행 등록', '데모 관리자', 'admin@kftc.example.com', TIMESTAMP '2026-03-02 09:30:00',
-   '[{"field":"code","label":"기관 코드","before":null,"after":"088"},{"field":"name","label":"기관명","before":null,"after":"다라은행"},{"field":"type","label":"기관 구분","before":null,"after":"참가기관"},{"field":"emailDomain","label":"이메일 도메인","before":null,"after":"dara.example.com"},{"field":"businesses","label":"참여 업무","before":null,"after":"계좌통합관리, 자동이체통합관리"}]'),
-  ('088',     'UPDATED', '다라은행 수정', '데모 관리자', 'admin@kftc.example.com', TIMESTAMP '2026-07-14 14:05:00',
+  ('088',     'CREATED', '신한은행 등록', '데모 관리자', 'admin@kftc.example.com', TIMESTAMP '2026-03-02 09:30:00',
+   '[{"field":"code","label":"기관 코드","before":null,"after":"088"},{"field":"name","label":"기관명","before":null,"after":"신한은행"},{"field":"type","label":"기관 구분","before":null,"after":"참가기관"},{"field":"emailDomain","label":"이메일 도메인","before":null,"after":"shinhan.example.com"},{"field":"businesses","label":"참여 업무","before":null,"after":"계좌통합관리, 자동이체통합관리"}]'),
+  ('088',     'UPDATED', '신한은행 수정', '데모 관리자', 'admin@kftc.example.com', TIMESTAMP '2026-07-14 14:05:00',
    '[{"field":"businesses","label":"참여 업무","before":"계좌통합관리, 자동이체통합관리","after":"계좌통합관리, 자동이체통합관리, CMS"}]'),
-  ('005',     'UPDATED', '옛날은행 수정', '데모 관리자', 'admin@kftc.example.com', TIMESTAMP '2026-09-01 10:00:00',
+  ('005',     'UPDATED', '외환은행 수정', '데모 관리자', 'admin@kftc.example.com', TIMESTAMP '2026-09-01 10:00:00',
    '[{"field":"active","label":"사용 여부","before":"예","after":"아니요"}]'),
-  ('048',     'UPDATED', '나다상호금융 수정', '데모 관리자', 'admin@kftc.example.com', TIMESTAMP '2026-10-02 16:40:00',
-   '[{"field":"name","label":"기관명","before":"나다신용협동조합","after":"나다상호금융"},{"field":"emailDomain","label":"이메일 도메인","before":"nada-cu.example.com","after":"nada.example.com"}]')
+  ('048',     'UPDATED', '신협 수정', '데모 관리자', 'admin@kftc.example.com', TIMESTAMP '2026-10-02 16:40:00',
+   '[{"field":"name","label":"기관명","before":"나다신용협동조합","after":"신협"},{"field":"emailDomain","label":"이메일 도메인","before":"nada-cu.example.com","after":"cu.example.com"}]')
 ) AS h (code, action, summary, actor_name, changed_by, changed_at, changes)
 JOIN organization o ON o.code = h.code;

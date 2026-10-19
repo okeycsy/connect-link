@@ -71,12 +71,12 @@ class SuspensionControllerTest {
     return TestUsers.as(TestUsers.KFTC_CMS);
   }
 
-  /** 가나은행 계좌통합관리 담당자. */
+  /** KB국민은행 계좌통합관리 담당자. */
   private static RequestPostProcessor kim() {
     return TestUsers.ganaMember();
   }
 
-  /** 사아증권 계좌통합관리 담당자(다른 기관). */
+  /** 삼성증권 계좌통합관리 담당자(다른 기관). */
   private static RequestPostProcessor choi() {
     return TestUsers.as(TestUsers.SAA_MEMBER);
   }
@@ -114,7 +114,7 @@ class SuspensionControllerTest {
     body.put("kftcAction", "조회 차단");
     body.put("contactName", "김가나");
     body.put("contactPhone", "010-0000-2101");
-    body.put("contactEmail", "kim.gana@gana.example.com");
+    body.put("contactEmail", "kim.gana@kb.example.com");
     return body;
   }
 
@@ -147,7 +147,7 @@ class SuspensionControllerTest {
     send(post(BASE), body, kim())
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.status").value("PENDING_REVIEW"))
-        .andExpect(jsonPath("$.organizationName").value("가나은행"))
+        .andExpect(jsonPath("$.organizationName").value("KB국민은행"))
         .andExpect(jsonPath("$.registrantKftc").value(false))
         .andExpect(jsonPath("$.permissions.edit").value(true))
         .andExpect(jsonPath("$.permissions.delete").value(true))
@@ -160,7 +160,7 @@ class SuspensionControllerTest {
             "kim.ops@kftc.example.com",
             "lee.control@kftc.example.com",
             "admin@kftc.example.com")
-        .doesNotContain("kim.gana@gana.example.com", "park.cms@kftc.example.com");
+        .doesNotContain("kim.gana@kb.example.com", "park.cms@kftc.example.com");
     List<NotificationOutbox> sent = outbox("등록 알림 확인 작업");
     assertThat(sent)
         .filteredOn(o -> o.getRecipient().equals("hong.gildong@kftc.example.com"))
@@ -181,7 +181,7 @@ class SuspensionControllerTest {
     body.put("organizationId", orgId("088"));
     send(post(BASE), body, hong())
         .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.organizationName").value("다라은행"))
+        .andExpect(jsonPath("$.organizationName").value("신한은행"))
         .andExpect(jsonPath("$.registrantKftc").value(true));
   }
 
@@ -230,11 +230,11 @@ class SuspensionControllerTest {
   void 결제원_담당자는_그_업무의_진행_중과_예정을_본다() throws Exception {
     send(get(BASE).param("business", "account-info").param("period", "CURRENT"), null, hong())
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.content[*].organizationName").value(hasItem("가나은행")))
+        .andExpect(jsonPath("$.content[*].organizationName").value(hasItem("KB국민은행")))
         .andExpect(jsonPath("$.content[*].period").value(everyItem(is("CURRENT"))));
     send(get(BASE).param("business", "account-info").param("period", "UPCOMING"), null, hong())
-        .andExpect(jsonPath("$.content[*].organizationName").value(hasItem("다라은행")))
-        .andExpect(jsonPath("$.content[*].organizationName").value(hasItem("사아증권")));
+        .andExpect(jsonPath("$.content[*].organizationName").value(hasItem("신한은행")))
+        .andExpect(jsonPath("$.content[*].organizationName").value(hasItem("삼성증권")));
     send(get(BASE + "/counts").param("business", "account-info"), null, hong())
         .andExpect(jsonPath("$.current").isNumber())
         .andExpect(jsonPath("$.pendingReview").isNumber());
@@ -252,14 +252,14 @@ class SuspensionControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content[*].status").value(hasItem("COMPLETED")))
         .andExpect(jsonPath("$.content[*].period").value(everyItem(is("PAST"))))
-        .andExpect(jsonPath("$.content[*].organizationName").value(everyItem(is("가나은행"))));
+        .andExpect(jsonPath("$.content[*].organizationName").value(everyItem(is("KB국민은행"))));
   }
 
   @Test
   void 기관_담당자는_자기_기관_것만_본다() throws Exception {
     send(get(BASE).param("business", "account-info"), null, kim())
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.content[*].organizationName").value(everyItem(is("가나은행"))));
+        .andExpect(jsonPath("$.content[*].organizationName").value(everyItem(is("KB국민은행"))));
     // 기관을 골라도 자기 기관 밖으로 넓어지지 않는다.
     send(
             get(BASE)
@@ -267,7 +267,7 @@ class SuspensionControllerTest {
                 .param("organizationId", String.valueOf(orgId("240"))),
             null,
             kim())
-        .andExpect(jsonPath("$.content[*].organizationName").value(everyItem(is("가나은행"))));
+        .andExpect(jsonPath("$.content[*].organizationName").value(everyItem(is("KB국민은행"))));
     send(get(BASE + "/organizations").param("business", "account-info"), null, kim())
         .andExpect(jsonPath("$.length()").value(1))
         .andExpect(jsonPath("$[0].code").value("004"));
@@ -303,7 +303,7 @@ class SuspensionControllerTest {
     // 등록한 기관 담당자에게 확정 알림이 간다.
     assertThat(
             notificationRepository.findAll().stream()
-                .filter(n -> n.getRecipientEmail().equals("kim.gana@gana.example.com"))
+                .filter(n -> n.getRecipientEmail().equals("kim.gana@kb.example.com"))
                 .filter(n -> n.getTitle().contains("확정")))
         .isNotEmpty();
   }
@@ -357,7 +357,7 @@ class SuspensionControllerTest {
         .andExpect(jsonPath("$.kftcAction").value("결제원이 고친 조치사항"));
     assertThat(
             notificationRepository.findAll().stream()
-                .filter(n -> n.getRecipientEmail().equals("kim.gana@gana.example.com"))
+                .filter(n -> n.getRecipientEmail().equals("kim.gana@kb.example.com"))
                 .filter(n -> n.getTitle().contains("결제원이 고쳤습니다")))
         .isNotEmpty();
   }
@@ -466,14 +466,14 @@ class SuspensionControllerTest {
 
   @Test
   void 검색은_기관_이름으로_찾고_기관_담당자에게는_다른_기관이_나오지_않는다() throws Exception {
-    send(get("/api/v1/search").param("business", "account-info").param("q", "사아"), null, hong())
+    send(get("/api/v1/search").param("business", "account-info").param("q", "삼성"), null, hong())
         .andExpect(
             jsonPath("$.groups[?(@.category == 'SUSPENSION')].hits[*].title")
-                .value(hasItem(org.hamcrest.Matchers.containsString("사아증권"))));
-    send(get("/api/v1/search").param("business", "account-info").param("q", "사아"), null, kim())
+                .value(hasItem(org.hamcrest.Matchers.containsString("삼성증권"))));
+    send(get("/api/v1/search").param("business", "account-info").param("q", "삼성"), null, kim())
         .andExpect(
             jsonPath("$.groups[?(@.category == 'SUSPENSION')].hits[*].title")
-                .value(not(hasItem(org.hamcrest.Matchers.containsString("사아증권")))));
+                .value(not(hasItem(org.hamcrest.Matchers.containsString("삼성증권")))));
   }
 
   @Test

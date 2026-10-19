@@ -12,7 +12,7 @@ const histories = [
     business: null,
     action: 'UPDATED',
     actionLabel: '수정',
-    summary: '다라은행 수정',
+    summary: '신한은행 수정',
     changes: [
       {
         field: 'businesses',
@@ -32,7 +32,7 @@ const histories = [
     business: null,
     action: 'CREATED',
     actionLabel: '등록',
-    summary: '다라은행 등록',
+    summary: '신한은행 등록',
     changes: [{ field: 'code', label: '기관 코드', before: null, after: '088' }],
     changedBy: 'admin@kftc.example.com',
     changedByName: '데모 관리자',
@@ -65,16 +65,16 @@ describe('ChangeHistoryList', () => {
   it('이력을 최신순 타임라인으로 보여 주고 변경 전·후 값을 적는다', async () => {
     renderWithProviders(<ChangeHistoryList targetType="ORGANIZATION" targetId={3} />);
 
-    expect(await screen.findByText('다라은행 수정')).toBeInTheDocument();
+    expect(await screen.findByText('신한은행 수정')).toBeInTheDocument();
     expect(screen.getByText('계좌통합관리, 자동이체통합관리')).toBeInTheDocument();
     expect(screen.getByText('계좌통합관리, 자동이체통합관리, CMS')).toBeInTheDocument();
     expect(
       screen.getByText('데모 관리자 (admin@kftc.example.com) · 2026-07-14 14:05'),
     ).toBeInTheDocument();
-    expect(screen.getByText('다라은행 등록')).toBeInTheDocument();
+    expect(screen.getByText('신한은행 등록')).toBeInTheDocument();
     expect(screen.getByText('088')).toBeInTheDocument();
     const items = screen.getByTestId('change-history').querySelectorAll('.mantine-Timeline-item');
-    expect(items[0]).toHaveTextContent('다라은행 수정');
+    expect(items[0]).toHaveTextContent('신한은행 수정');
   });
 
   it('이력이 없으면 빈 안내를 보여 준다', async () => {

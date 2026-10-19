@@ -19,13 +19,13 @@ class TestPlanAccessPolicyTest {
 
   private final TestPlanAccessPolicy policy = new TestPlanAccessPolicy();
 
-  /** 차카저축은행 계좌통합관리 담당자. 아래 테스트의 대상 기관이 아니다. */
+  /** 저축은행중앙회 계좌통합관리 담당자. 아래 테스트의 대상 기관이 아니다. */
   private static final CurrentUser CHAKA_MEMBER =
       new CurrentUser(
-          "yoon.chaka@chaka.example.com",
+          "yoon.chaka@fsb.example.com",
           "윤차카",
           "050",
-          "차카저축은행",
+          "저축은행중앙회",
           OrganizationType.FINANCE_ORGANIZATION,
           false,
           Set.of(Business.ACCOUNT_INFO),
@@ -45,7 +45,7 @@ class TestPlanAccessPolicyTest {
           JobRole.BUSINESS,
           Set.of());
 
-  /** 가나은행·사아증권이 대상인 계좌통합관리 기관 테스트. */
+  /** KB국민은행·삼성증권이 대상인 계좌통합관리 기관 테스트. */
   private static TestPlan plan() {
     TestPlan plan =
         TestPlan.create(
@@ -54,8 +54,8 @@ class TestPlanAccessPolicyTest {
                 "계좌정보 조회·해지", "전문 개선", null, LocalDate.now(), LocalDate.now().plusDays(7)),
             "hong.gildong@kftc.example.com",
             "홍길동");
-    plan.addTarget(org("004", "가나은행"));
-    plan.addTarget(org("240", "사아증권"));
+    plan.addTarget(org("004", "KB국민은행"));
+    plan.addTarget(org("240", "삼성증권"));
     return plan;
   }
 

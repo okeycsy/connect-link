@@ -21,8 +21,8 @@ test.describe('관리 > 가입 승인', () => {
     request,
   }) => {
     const id = Date.now().toString(36).slice(-6);
-    const approvee = { email: `approve.${id}@gana.example.com`, name: '이승인' };
-    const rejectee = { email: `reject.${id}@gana.example.com`, name: '박반려' };
+    const approvee = { email: `approve.${id}@kb.example.com`, name: '이승인' };
+    const rejectee = { email: `reject.${id}@kb.example.com`, name: '박반려' };
     await applyForGana(request, approvee.email, approvee.name);
     await applyForGana(request, rejectee.email, rejectee.name);
 
@@ -32,7 +32,7 @@ test.describe('관리 > 가입 승인', () => {
     await expect(page).toHaveURL(/\/account-info\/home$/);
     const card = page.getByTestId('home-card-SIGNUP_APPROVAL');
     await expect(card.getByText('가입 승인 대기')).toBeVisible();
-    await expect(card.getByText('가나은행 · 박반려')).toBeVisible();
+    await expect(card.getByText('KB국민은행 · 박반려')).toBeVisible();
     await page.screenshot({ path: 'screenshots/sign-up-approval-home.png', fullPage: true });
 
     await page.getByRole('navigation').getByRole('link', { name: '관리', exact: true }).click();
@@ -55,7 +55,7 @@ test.describe('관리 > 가입 승인', () => {
     // 도메인이 다른 신청은 상세 패널이 먼저 알려 준다.
     await row(page, '오다라').click();
     const detail = page.getByTestId('sign-up-detail');
-    await expect(detail).toContainText('등록된 도메인(dara.example.com)과 다릅니다');
+    await expect(detail).toContainText('등록된 도메인(shinhan.example.com)과 다릅니다');
     await expect(detail).toContainText('자동이체 전문 개발');
     await page.waitForTimeout(300);
     await page.screenshot({ path: 'screenshots/sign-up-approval-detail.png', fullPage: true });
@@ -66,7 +66,7 @@ test.describe('관리 > 가입 승인', () => {
     await row(page, approvee.name).click();
     await page.getByRole('button', { name: '승인', exact: true }).click();
     const approveDialog = page.getByRole('dialog', { name: '가입 승인' });
-    await expect(approveDialog).toContainText(`가나은행 ${approvee.name} 님의 가입을 승인합니다.`);
+    await expect(approveDialog).toContainText(`KB국민은행 ${approvee.name} 님의 가입을 승인합니다.`);
     await page.waitForTimeout(300);
     await page.screenshot({ path: 'screenshots/sign-up-approval-approve.png', fullPage: true });
     await approveDialog.getByRole('button', { name: '승인하기' }).click();
@@ -80,7 +80,7 @@ test.describe('관리 > 가입 승인', () => {
     await rejectDialog.getByRole('button', { name: '반려하기' }).click();
     await expect(rejectDialog.getByText('반려 사유를 적어 주세요.')).toBeVisible();
     const reason =
-      '가나은행 계좌통합관리 담당자 명단에서 확인되지 않습니다. 부서장 확인 뒤 다시 신청해 주세요.';
+      'KB국민은행 계좌통합관리 담당자 명단에서 확인되지 않습니다. 부서장 확인 뒤 다시 신청해 주세요.';
     await rejectDialog.getByLabel(/반려 사유/).fill(reason);
     await expect(rejectDialog.getByText('반려 사유를 적어 주세요.')).toHaveCount(0);
     await page.waitForTimeout(300);

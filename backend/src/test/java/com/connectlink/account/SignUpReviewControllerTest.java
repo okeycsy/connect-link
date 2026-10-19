@@ -138,7 +138,7 @@ class SignUpReviewControllerTest {
   }
 
   private String newEmail() {
-    return "review" + SEQ.incrementAndGet() + "." + System.nanoTime() + "@gana.example.com";
+    return "review" + SEQ.incrementAndGet() + "." + System.nanoTime() + "@kb.example.com";
   }
 
   private ResultActions login(String email) throws Exception {
@@ -156,9 +156,9 @@ class SignUpReviewControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.totalElements").value(2))
         .andExpect(jsonPath("$.content[0].name").value("오다라"))
-        .andExpect(jsonPath("$.content[0].organizationName").value("다라은행"))
+        .andExpect(jsonPath("$.content[0].organizationName").value("신한은행"))
         .andExpect(jsonPath("$.content[0].emailDomainMatches").value(false))
-        .andExpect(jsonPath("$.content[0].organizationEmailDomain").value("dara.example.com"))
+        .andExpect(jsonPath("$.content[0].organizationEmailDomain").value("shinhan.example.com"))
         .andExpect(jsonPath("$.content[0].jobRoleLabel").value("전산(개발)"))
         .andExpect(jsonPath("$.content[0].businesses[1].subBusiness").value("자동이체 전문 개발"))
         .andExpect(jsonPath("$.content[0].statusLabel").value("승인 대기"))
@@ -225,7 +225,7 @@ class SignUpReviewControllerTest {
   void 신청하면_승인할_수_있는_사람에게만_가입_신청_알림이_간다() throws Exception {
     String email = newEmail();
     Long id = apply(email, "004", "알림대상");
-    String title = "가나은행 알림대상 님이 가입을 신청했습니다";
+    String title = "KB국민은행 알림대상 님이 가입을 신청했습니다";
 
     for (CurrentUser reviewer : List.of(TestUsers.ADMIN, TestUsers.KFTC_ACCOUNT_INFO)) {
       assertThat(unreadOf(reviewer))
@@ -332,7 +332,7 @@ class SignUpReviewControllerTest {
         .perform(get("/api/v1/sign-ups/" + id).with(hong()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("PENDING_APPROVAL"))
-        .andExpect(jsonPath("$.organizationName").value("다라은행"))
+        .andExpect(jsonPath("$.organizationName").value("신한은행"))
         .andExpect(jsonPath("$.emailDomainMatches").value(false))
         .andExpect(jsonPath("$.businesses[0].subBusiness").value("출금이체"))
         .andExpect(jsonPath("$.reviewerName").doesNotExist())
@@ -358,7 +358,7 @@ class SignUpReviewControllerTest {
         .andExpect(jsonPath("$.cards[5].key").value("SIGNUP_APPROVAL"))
         .andExpect(jsonPath("$.cards[5].source").value("REAL"))
         .andExpect(jsonPath("$.cards[5].metrics[0].value").value(2))
-        .andExpect(jsonPath("$.cards[5].items[0].title").value("다라은행 · 오다라"))
+        .andExpect(jsonPath("$.cards[5].items[0].title").value("신한은행 · 오다라"))
         .andExpect(jsonPath("$.cards[5].items[0].subtitle").value("전산(개발) · 도메인 다름"))
         .andExpect(
             jsonPath("$.cards[5].items[0].link")

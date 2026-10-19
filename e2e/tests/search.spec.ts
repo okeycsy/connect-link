@@ -9,14 +9,14 @@ test.describe('전역 검색 (Ctrl K)', () => {
     // 검색어가 없으면 바로 가기만 보인다.
     await expect(palette.getByRole('option', { name: '연락처' })).toBeVisible();
 
-    await palette.getByLabel('검색어').fill('다라');
-    await expect(palette.getByRole('option', { name: '다라은행', exact: true })).toBeVisible();
+    await palette.getByLabel('검색어').fill('신한');
+    await expect(palette.getByRole('option', { name: '신한은행', exact: true })).toBeVisible();
     await expect(palette.getByRole('option', { name: '이다라' })).toBeVisible();
     await expect(palette.getByText('샘플').first()).toBeVisible();
     await page.waitForTimeout(300);
     await page.screenshot({ path: 'screenshots/search-palette.png' });
 
-    await palette.getByRole('option', { name: '다라은행', exact: true }).click();
+    await palette.getByRole('option', { name: '신한은행', exact: true }).click();
     await expect(page).toHaveURL(/\/cms\/admin\/organizations\?org=\d+$/);
     // 팔레트가 닫히는 동안에는 대화상자가 둘이라, 닫힌 뒤 상세 패널을 본다.
     await expect(palette).toBeHidden();
@@ -34,10 +34,10 @@ test.describe('전역 검색 (Ctrl K)', () => {
   });
 
   test('검색 API 는 레일의 업무 범위로 찾는다', async ({ request }) => {
-    const cms = await (await request.get('/api/v1/search?business=cms&q=다라은행')).json();
+    const cms = await (await request.get('/api/v1/search?business=cms&q=신한은행')).json();
     expect(cms.groups.some((g: { category: string }) => g.category === 'ORGANIZATION')).toBe(true);
     const loan = await (
-      await request.get('/api/v1/search?business=loan-transfer&q=다라은행')
+      await request.get('/api/v1/search?business=loan-transfer&q=신한은행')
     ).json();
     expect(loan.groups.some((g: { category: string }) => g.category === 'ORGANIZATION')).toBe(
       false,

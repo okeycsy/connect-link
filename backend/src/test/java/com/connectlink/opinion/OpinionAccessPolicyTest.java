@@ -32,7 +32,7 @@ class OpinionAccessPolicyTest {
           JobRole.BUSINESS,
           Set.of());
 
-  /** 가나은행이 대상인 계좌통합관리 요청. {@code open} 이면 회신중이다. */
+  /** KB국민은행이 대상인 계좌통합관리 요청. {@code open} 이면 회신중이다. */
   private static OpinionRequest requestForGana(boolean open) {
     OpinionRequest request =
         OpinionRequest.draft(
@@ -42,7 +42,8 @@ class OpinionAccessPolicyTest {
             LocalDate.now().plusDays(3),
             "hong.gildong@kftc.example.com",
             "홍길동");
-    request.addTarget(new Organization("004", "가나은행", OrganizationType.FINANCE_ORGANIZATION, null));
+    request.addTarget(
+        new Organization("004", "KB국민은행", OrganizationType.FINANCE_ORGANIZATION, null));
     if (open) {
       request.open(LocalDateTime.now());
     }

@@ -84,7 +84,7 @@ JOIN test_plan p ON p.title = t.plan_title
 JOIN organization o ON o.code = t.org_code;
 
 -- 기관 결과와 결제원 의견. 시각은 오늘 0시 기준 시간(reported_hour, feedback_hour)이다.
--- 출금이체 002 는 결제원 의견(70%) 뒤에 다라은행이 결과를 다시 등록해 "다시 확인" 상태다.
+-- 출금이체 002 는 결제원 의견(70%) 뒤에 신한은행이 결과를 다시 등록해 "다시 확인" 상태다.
 INSERT INTO test_item_result (test_item_id, test_plan_target_id, result, note, reported_by_email, reported_by_name, reported_at,
                               feedback_rate, feedback_note, feedback_by_email, feedback_by_name, feedback_at,
                               created_at, created_by, updated_at, updated_by)
@@ -95,56 +95,56 @@ SELECT i.id, t.id, r.result, r.note, r.reporter_email, r.reporter_name,
        CAST(CURRENT_DATE AS TIMESTAMP) + r.reported_hour * INTERVAL '1' HOUR, r.reporter_email,
        CAST(CURRENT_DATE AS TIMESTAMP) + COALESCE(r.feedback_hour, r.reported_hour) * INTERVAL '1' HOUR, COALESCE(r.feedback_email, r.reporter_email)
 FROM (VALUES
-  -- 계좌정보 통합조회 전문 개선 2차: 가나은행 56%(완료 2), 다라은행 40%(완료 1), 사아증권 미등록, 차카저축은행 100%(완료 4)
-  ('계좌정보 통합조회 전문 개선 2차', '004', 0, 'PASSED', CAST(NULL AS VARCHAR(2000)), 'kim.gana@gana.example.com', '김가나', -50,
+  -- 계좌정보 통합조회 전문 개선 2차: KB국민은행 56%(완료 2), 신한은행 40%(완료 1), 삼성증권 미등록, 저축은행중앙회 100%(완료 4)
+  ('계좌정보 통합조회 전문 개선 2차', '004', 0, 'PASSED', CAST(NULL AS VARCHAR(2000)), 'kim.gana@kb.example.com', '김가나', -50,
    100, CAST(NULL AS VARCHAR(2000)), 'hong.gildong@kftc.example.com', '홍길동', -30),
-  ('계좌정보 통합조회 전문 개선 2차', '004', 1, 'PASSED', NULL, 'kim.gana@gana.example.com', '김가나', -50,
+  ('계좌정보 통합조회 전문 개선 2차', '004', 1, 'PASSED', NULL, 'kim.gana@kb.example.com', '김가나', -50,
    100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -30),
-  ('계좌정보 통합조회 전문 개선 2차', '004', 2, 'PASSED', '사유코드 07, 08 은 확인했습니다.', 'kim.gana@gana.example.com', '김가나', -50,
+  ('계좌정보 통합조회 전문 개선 2차', '004', 2, 'PASSED', '사유코드 07, 08 은 확인했습니다.', 'kim.gana@kb.example.com', '김가나', -50,
    80, '003 전문에 대해 예외사항 발생: 해지 사유코드 09 를 처리하지 못해 재확인이 필요합니다.', 'hong.gildong@kftc.example.com', '홍길동', -30),
-  ('계좌정보 통합조회 전문 개선 2차', '004', 3, 'FAILED', '기관 오류 E31 을 표준 응답코드 대신 E99 로 내려보냅니다. 수정 배포 예정입니다.', 'kim.gana@gana.example.com', '김가나', -20,
+  ('계좌정보 통합조회 전문 개선 2차', '004', 3, 'FAILED', '기관 오류 E31 을 표준 응답코드 대신 E99 로 내려보냅니다. 수정 배포 예정입니다.', 'kim.gana@kb.example.com', '김가나', -20,
    CAST(NULL AS INT), NULL, CAST(NULL AS VARCHAR(200)), CAST(NULL AS VARCHAR(50)), CAST(NULL AS INT)),
-  ('계좌정보 통합조회 전문 개선 2차', '004', 4, 'IN_PROGRESS', NULL, 'kim.gana@gana.example.com', '김가나', -20,
+  ('계좌정보 통합조회 전문 개선 2차', '004', 4, 'IN_PROGRESS', NULL, 'kim.gana@kb.example.com', '김가나', -20,
    NULL, NULL, NULL, NULL, NULL),
-  ('계좌정보 통합조회 전문 개선 2차', '088', 0, 'PASSED', NULL, 'park.dara@dara.example.com', '박다라', -60,
+  ('계좌정보 통합조회 전문 개선 2차', '088', 0, 'PASSED', NULL, 'park.dara@shinhan.example.com', '박다라', -60,
    100, NULL, 'kim.ops@kftc.example.com', '김운영', -40),
-  ('계좌정보 통합조회 전문 개선 2차', '088', 1, 'PASSED', NULL, 'park.dara@dara.example.com', '박다라', -44,
+  ('계좌정보 통합조회 전문 개선 2차', '088', 1, 'PASSED', NULL, 'park.dara@shinhan.example.com', '박다라', -44,
    NULL, NULL, NULL, NULL, NULL),
-  ('계좌정보 통합조회 전문 개선 2차', '088', 2, 'NOT_STARTED', '테스트 서버 반영 일정 조율 중입니다.', 'park.dara@dara.example.com', '박다라', -44,
+  ('계좌정보 통합조회 전문 개선 2차', '088', 2, 'NOT_STARTED', '테스트 서버 반영 일정 조율 중입니다.', 'park.dara@shinhan.example.com', '박다라', -44,
    NULL, NULL, NULL, NULL, NULL),
-  ('계좌정보 통합조회 전문 개선 2차', '050', 0, 'PASSED', NULL, 'yoon.chaka@chaka.example.com', '윤차카', -90,
+  ('계좌정보 통합조회 전문 개선 2차', '050', 0, 'PASSED', NULL, 'yoon.chaka@fsb.example.com', '윤차카', -90,
    100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -72),
-  ('계좌정보 통합조회 전문 개선 2차', '050', 1, 'PASSED', NULL, 'yoon.chaka@chaka.example.com', '윤차카', -90,
+  ('계좌정보 통합조회 전문 개선 2차', '050', 1, 'PASSED', NULL, 'yoon.chaka@fsb.example.com', '윤차카', -90,
    100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -72),
-  ('계좌정보 통합조회 전문 개선 2차', '050', 2, 'PASSED', NULL, 'yoon.chaka@chaka.example.com', '윤차카', -90,
+  ('계좌정보 통합조회 전문 개선 2차', '050', 2, 'PASSED', NULL, 'yoon.chaka@fsb.example.com', '윤차카', -90,
    100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -72),
-  ('계좌정보 통합조회 전문 개선 2차', '050', 3, 'PASSED', NULL, 'yoon.chaka@chaka.example.com', '윤차카', -90,
+  ('계좌정보 통합조회 전문 개선 2차', '050', 3, 'PASSED', NULL, 'yoon.chaka@fsb.example.com', '윤차카', -90,
    100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -72),
-  ('계좌정보 통합조회 전문 개선 2차', '050', 4, 'PASSED', '평균 1.8초입니다.', 'yoon.chaka@chaka.example.com', '윤차카', -70,
+  ('계좌정보 통합조회 전문 개선 2차', '050', 4, 'PASSED', '평균 1.8초입니다.', 'yoon.chaka@fsb.example.com', '윤차카', -70,
    NULL, NULL, NULL, NULL, NULL),
   -- 내 계좌 한눈에 연계 개선: 세 기관 모두 완료(수행 완료)
-  ('내 계좌 한눈에 연계 개선', '004', 0, 'PASSED', NULL, 'kim.gana@gana.example.com', '김가나', -620, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
-  ('내 계좌 한눈에 연계 개선', '004', 1, 'PASSED', NULL, 'kim.gana@gana.example.com', '김가나', -620, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
-  ('내 계좌 한눈에 연계 개선', '004', 2, 'PASSED', NULL, 'kim.gana@gana.example.com', '김가나', -620, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
-  ('내 계좌 한눈에 연계 개선', '088', 0, 'PASSED', NULL, 'park.dara@dara.example.com', '박다라', -640, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
-  ('내 계좌 한눈에 연계 개선', '088', 1, 'PASSED', NULL, 'park.dara@dara.example.com', '박다라', -640, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
-  ('내 계좌 한눈에 연계 개선', '088', 2, 'PASSED', NULL, 'park.dara@dara.example.com', '박다라', -640, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
-  ('내 계좌 한눈에 연계 개선', '048', 0, 'PASSED', NULL, 'jung.nada@nada.example.com', '정나다', -630, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
-  ('내 계좌 한눈에 연계 개선', '048', 1, 'PASSED', NULL, 'jung.nada@nada.example.com', '정나다', -630, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
-  ('내 계좌 한눈에 연계 개선', '048', 2, 'PASSED', NULL, 'jung.nada@nada.example.com', '정나다', -630, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
-  -- 오픈뱅킹 안심차단 등록 전문 신설(기간 지남): 사아증권 33%, 차카저축은행 0%
-  ('오픈뱅킹 안심차단 등록 전문 신설', '240', 0, 'PASSED', NULL, 'choi.saa@saa.example.com', '최사아', -200, NULL, NULL, NULL, NULL, NULL),
-  ('오픈뱅킹 안심차단 등록 전문 신설', '050', 0, 'FAILED', '등록 전문의 고객 식별번호 길이가 맞지 않아 거절됩니다.', 'yoon.chaka@chaka.example.com', '윤차카', -150, NULL, NULL, NULL, NULL, NULL),
-  ('오픈뱅킹 안심차단 등록 전문 신설', '050', 1, 'NOT_STARTED', NULL, 'yoon.chaka@chaka.example.com', '윤차카', -150, NULL, NULL, NULL, NULL, NULL),
-  -- 자동이체 통합조회 응답 항목 추가: 다라은행 50%(완료 2), 사아증권·나다상호금융은 그 업무 계정이 아직 없어 미등록
-  ('자동이체 통합조회 응답 항목 추가', '088', 0, 'PASSED', NULL, 'lee.dara@dara.example.com', '이다라', -40, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -28),
-  ('자동이체 통합조회 응답 항목 추가', '088', 1, 'FAILED', '최근 출금일이 YYYYMMDD 대신 YYMMDD 로 내려옵니다.', 'lee.dara@dara.example.com', '이다라', -30, NULL, NULL, NULL, NULL, NULL),
-  ('자동이체 통합조회 응답 항목 추가', '088', 2, 'IN_PROGRESS', '출금 이력 없는 테스트 고객을 만드는 중입니다.', 'lee.dara@dara.example.com', '이다라', -30, NULL, NULL, NULL, NULL, NULL),
-  ('자동이체 통합조회 응답 항목 추가', '088', 3, 'PASSED', NULL, 'lee.dara@dara.example.com', '이다라', -40, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -28),
-  -- 출금이체 전문 연계 테스트: 다라은행 53%(002 는 결제원 의견 뒤에 다시 등록해 다시 확인 필요)
-  ('출금이체 전문 연계 테스트', '088', 0, 'PASSED', NULL, 'lee.dara@dara.example.com', '이다라', -30, 60, '요청 전문은 정상이나 결과 전문 회신이 30초를 넘는 건이 있습니다.', 'park.cms@kftc.example.com', '박하늘', -20),
-  ('출금이체 전문 연계 테스트', '088', 1, 'PASSED', '한도 초과 응답코드를 고쳐 다시 확인했습니다.', 'lee.dara@dara.example.com', '이다라', -6, 70, '한도 초과 응답코드가 표준과 다릅니다.', 'park.cms@kftc.example.com', '박하늘', -20),
-  ('출금이체 전문 연계 테스트', '088', 2, 'IN_PROGRESS', NULL, 'lee.dara@dara.example.com', '이다라', -6, NULL, NULL, NULL, NULL, NULL)
+  ('내 계좌 한눈에 연계 개선', '004', 0, 'PASSED', NULL, 'kim.gana@kb.example.com', '김가나', -620, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
+  ('내 계좌 한눈에 연계 개선', '004', 1, 'PASSED', NULL, 'kim.gana@kb.example.com', '김가나', -620, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
+  ('내 계좌 한눈에 연계 개선', '004', 2, 'PASSED', NULL, 'kim.gana@kb.example.com', '김가나', -620, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
+  ('내 계좌 한눈에 연계 개선', '088', 0, 'PASSED', NULL, 'park.dara@shinhan.example.com', '박다라', -640, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
+  ('내 계좌 한눈에 연계 개선', '088', 1, 'PASSED', NULL, 'park.dara@shinhan.example.com', '박다라', -640, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
+  ('내 계좌 한눈에 연계 개선', '088', 2, 'PASSED', NULL, 'park.dara@shinhan.example.com', '박다라', -640, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
+  ('내 계좌 한눈에 연계 개선', '048', 0, 'PASSED', NULL, 'jung.nada@cu.example.com', '정나다', -630, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
+  ('내 계좌 한눈에 연계 개선', '048', 1, 'PASSED', NULL, 'jung.nada@cu.example.com', '정나다', -630, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
+  ('내 계좌 한눈에 연계 개선', '048', 2, 'PASSED', NULL, 'jung.nada@cu.example.com', '정나다', -630, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
+  -- 오픈뱅킹 안심차단 등록 전문 신설(기간 지남): 삼성증권 33%, 저축은행중앙회 0%
+  ('오픈뱅킹 안심차단 등록 전문 신설', '240', 0, 'PASSED', NULL, 'choi.saa@samsung.example.com', '최사아', -200, NULL, NULL, NULL, NULL, NULL),
+  ('오픈뱅킹 안심차단 등록 전문 신설', '050', 0, 'FAILED', '등록 전문의 고객 식별번호 길이가 맞지 않아 거절됩니다.', 'yoon.chaka@fsb.example.com', '윤차카', -150, NULL, NULL, NULL, NULL, NULL),
+  ('오픈뱅킹 안심차단 등록 전문 신설', '050', 1, 'NOT_STARTED', NULL, 'yoon.chaka@fsb.example.com', '윤차카', -150, NULL, NULL, NULL, NULL, NULL),
+  -- 자동이체 통합조회 응답 항목 추가: 신한은행 50%(완료 2), 삼성증권·신협은 그 업무 계정이 아직 없어 미등록
+  ('자동이체 통합조회 응답 항목 추가', '088', 0, 'PASSED', NULL, 'lee.dara@shinhan.example.com', '이다라', -40, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -28),
+  ('자동이체 통합조회 응답 항목 추가', '088', 1, 'FAILED', '최근 출금일이 YYYYMMDD 대신 YYMMDD 로 내려옵니다.', 'lee.dara@shinhan.example.com', '이다라', -30, NULL, NULL, NULL, NULL, NULL),
+  ('자동이체 통합조회 응답 항목 추가', '088', 2, 'IN_PROGRESS', '출금 이력 없는 테스트 고객을 만드는 중입니다.', 'lee.dara@shinhan.example.com', '이다라', -30, NULL, NULL, NULL, NULL, NULL),
+  ('자동이체 통합조회 응답 항목 추가', '088', 3, 'PASSED', NULL, 'lee.dara@shinhan.example.com', '이다라', -40, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -28),
+  -- 출금이체 전문 연계 테스트: 신한은행 53%(002 는 결제원 의견 뒤에 다시 등록해 다시 확인 필요)
+  ('출금이체 전문 연계 테스트', '088', 0, 'PASSED', NULL, 'lee.dara@shinhan.example.com', '이다라', -30, 60, '요청 전문은 정상이나 결과 전문 회신이 30초를 넘는 건이 있습니다.', 'park.cms@kftc.example.com', '박하늘', -20),
+  ('출금이체 전문 연계 테스트', '088', 1, 'PASSED', '한도 초과 응답코드를 고쳐 다시 확인했습니다.', 'lee.dara@shinhan.example.com', '이다라', -6, 70, '한도 초과 응답코드가 표준과 다릅니다.', 'park.cms@kftc.example.com', '박하늘', -20),
+  ('출금이체 전문 연계 테스트', '088', 2, 'IN_PROGRESS', NULL, 'lee.dara@shinhan.example.com', '이다라', -6, NULL, NULL, NULL, NULL, NULL)
 ) AS r (plan_title, org_code, sort_order, result, note, reporter_email, reporter_name, reported_hour,
         feedback_rate, feedback_note, feedback_email, feedback_name, feedback_hour)
 JOIN test_plan p ON p.title = r.plan_title

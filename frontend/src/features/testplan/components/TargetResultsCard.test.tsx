@@ -8,7 +8,7 @@ const summary = {
   targetId: 31,
   organizationId: 3,
   organizationCode: '004',
-  organizationName: '가나은행',
+  organizationName: 'KB국민은행',
   progressRate: 50,
   completedCount: 0,
   itemCount: 2,

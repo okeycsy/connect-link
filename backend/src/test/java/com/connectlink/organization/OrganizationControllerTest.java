@@ -89,7 +89,7 @@ class OrganizationControllerTest {
         .andExpect(jsonPath("$.content[0].code").value("KFTC"))
         .andExpect(jsonPath("$.content[0].businesses", hasSize(4)))
         .andExpect(jsonPath("$.content[0].businesses[0].slug").value("account-info"))
-        .andExpect(jsonPath("$.content[1].name").value("가나은행"))
+        .andExpect(jsonPath("$.content[1].name").value("KB국민은행"))
         .andExpect(jsonPath("$.content[11].typeLabel").value("이용기관"));
   }
 
@@ -137,8 +137,8 @@ class OrganizationControllerTest {
     mockMvc
         .perform(get("/api/v1/organizations/{id}", id).with(TestUsers.admin()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.name").value("다라은행"))
-        .andExpect(jsonPath("$.emailDomain").value("dara.example.com"))
+        .andExpect(jsonPath("$.name").value("신한은행"))
+        .andExpect(jsonPath("$.emailDomain").value("shinhan.example.com"))
         .andExpect(jsonPath("$.active").value(true))
         .andExpect(jsonPath("$.businesses", hasSize(3)))
         .andExpect(jsonPath("$.createdBy").value("seed"))
@@ -248,7 +248,7 @@ class OrganizationControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"name":"사아증권","emailDomain":"saa.example.com","active":true,"businesses":["ACCOUNT_INFO","AUTO_TRANSFER"],"sector":"INSURANCE"}
+                    {"name":"삼성증권","emailDomain":"samsung.example.com","active":true,"businesses":["ACCOUNT_INFO","AUTO_TRANSFER"],"sector":"INSURANCE"}
                     """)
                 .with(TestUsers.admin())
                 .with(csrf()))
@@ -286,7 +286,7 @@ class OrganizationControllerTest {
     Long id = organizationRepository.findByCode("240").orElseThrow().getId();
     String body =
         """
-        {"name":"사아증권","emailDomain":"saa.example.com","active":true,
+        {"name":"삼성증권","emailDomain":"samsung.example.com","active":true,
          "businesses":["ACCOUNT_INFO","AUTO_TRANSFER","LOAN_TRANSFER"],"sector":"BANK"}
         """;
     mockMvc
@@ -306,7 +306,7 @@ class OrganizationControllerTest {
     Long id = organizationRepository.findByCode("004").orElseThrow().getId();
     String changed =
         """
-        {"name":"가나은행(새 이름)","emailDomain":"gana.example.com","active":true,
+        {"name":"KB국민은행(새 이름)","emailDomain":"kb.example.com","active":true,
          "businesses":["ACCOUNT_INFO","AUTO_TRANSFER","LOAN_TRANSFER"],"sector":"BANK"}
         """;
     mockMvc
@@ -336,13 +336,13 @@ class OrganizationControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.totalElements").value(1))
         .andExpect(jsonPath("$.content[0].action").value("UPDATED"))
-        .andExpect(jsonPath("$.content[0].summary").value("가나은행(새 이름) 수정"))
+        .andExpect(jsonPath("$.content[0].summary").value("KB국민은행(새 이름) 수정"))
         .andExpect(jsonPath("$.content[0].changedBy").value("admin@kftc.example.com"))
         .andExpect(jsonPath("$.content[0].changedByName").value("데모 관리자"))
         .andExpect(jsonPath("$.content[0].changes", hasSize(2)))
         .andExpect(jsonPath("$.content[0].changes[0].field").value("name"))
-        .andExpect(jsonPath("$.content[0].changes[0].before").value("가나은행"))
-        .andExpect(jsonPath("$.content[0].changes[0].after").value("가나은행(새 이름)"))
+        .andExpect(jsonPath("$.content[0].changes[0].before").value("KB국민은행"))
+        .andExpect(jsonPath("$.content[0].changes[0].after").value("KB국민은행(새 이름)"))
         .andExpect(jsonPath("$.content[0].changes[1].label").value("참여 업무"))
         .andExpect(jsonPath("$.content[0].changes[1].before").value("계좌통합관리, 자동이체통합관리, 대출이동, CMS"))
         .andExpect(jsonPath("$.content[0].changes[1].after").value("계좌통합관리, 자동이체통합관리, 대출이동"));

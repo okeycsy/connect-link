@@ -37,7 +37,7 @@ class ChangeHistoryControllerTest {
         .andExpect(jsonPath("$.totalElements").value(2))
         .andExpect(jsonPath("$.content[0].action").value("UPDATED"))
         .andExpect(jsonPath("$.content[0].actionLabel").value("수정"))
-        .andExpect(jsonPath("$.content[0].summary").value("다라은행 수정"))
+        .andExpect(jsonPath("$.content[0].summary").value("신한은행 수정"))
         .andExpect(jsonPath("$.content[0].changedBy").value("admin@kftc.example.com"))
         .andExpect(jsonPath("$.content[0].changedByName").value("데모 관리자"))
         .andExpect(jsonPath("$.content[0].changedAt").value("2026-07-14T14:05:00"))

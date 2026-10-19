@@ -20,7 +20,7 @@ export async function mailbox(request: APIRequestContext, email: string) {
   return (await response.json()) as { subject: string; body: string }[];
 }
 
-/** 화면을 거치지 않고 가입 API 로 가나은행 계좌통합관리 담당자의 가입을 신청한다(인증 코드는 데모 메일함에서 읽는다). */
+/** 화면을 거치지 않고 가입 API 로 KB국민은행 계좌통합관리 담당자의 가입을 신청한다(인증 코드는 데모 메일함에서 읽는다). */
 export async function applyForGana(request: APIRequestContext, email: string, name: string) {
   const sent = await request.post('/api/v1/email-verifications', {
     data: { email },

@@ -28,26 +28,26 @@ public final class TestUsers {
           JobRole.IT,
           Set.of(ItRole.OPS));
 
-  /** 가나은행 계좌통합관리 현업 담당자(관리자 아님). 알림 시드에 이 사람 앞으로 1건이 있다. */
+  /** KB국민은행 계좌통합관리 현업 담당자(관리자 아님). 알림 시드에 이 사람 앞으로 1건이 있다. */
   public static final CurrentUser GANA_MEMBER =
       new CurrentUser(
-          "kim.gana@gana.example.com",
+          "kim.gana@kb.example.com",
           "김가나",
           "004",
-          "가나은행",
+          "KB국민은행",
           OrganizationType.FINANCE_ORGANIZATION,
           false,
           Set.of(Business.ACCOUNT_INFO),
           JobRole.BUSINESS,
           Set.of());
 
-  /** 사아증권 계좌통합관리 현업 담당자(관리자 아님). 의견 요청에서 가나은행과 다른 대상 기관 담당자로 쓴다. */
+  /** 삼성증권 계좌통합관리 현업 담당자(관리자 아님). 의견 요청에서 KB국민은행과 다른 대상 기관 담당자로 쓴다. */
   public static final CurrentUser SAA_MEMBER =
       new CurrentUser(
-          "choi.saa@saa.example.com",
+          "choi.saa@samsung.example.com",
           "최사아",
           "240",
-          "사아증권",
+          "삼성증권",
           OrganizationType.FINANCE_ORGANIZATION,
           false,
           Set.of(Business.ACCOUNT_INFO),

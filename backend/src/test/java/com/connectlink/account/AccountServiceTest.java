@@ -22,7 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 /** 계정 상태별 로그인 규칙. 사용 중만 허용하고, 승인 대기·반려는 상태를 알리며 거부하고, 탈퇴는 없는 계정처럼 거부한다. */
 class AccountServiceTest {
 
-  private static final String EMAIL = "someone@gana.example.com";
+  private static final String EMAIL = "someone@kb.example.com";
   private static final String PASSWORD = "secret-1234";
 
   private final PasswordEncoder encoder = new BCryptPasswordEncoder(4);
@@ -32,7 +32,7 @@ class AccountServiceTest {
   private void givenAccount(AccountStatus status) {
     Organization organization = mock(Organization.class);
     when(organization.getCode()).thenReturn("004");
-    when(organization.getName()).thenReturn("가나은행");
+    when(organization.getName()).thenReturn("KB국민은행");
     when(organization.getType()).thenReturn(OrganizationType.FINANCE_ORGANIZATION);
     UserAccount account = mock(UserAccount.class);
     when(account.getEmail()).thenReturn(EMAIL);
@@ -97,7 +97,6 @@ class AccountServiceTest {
   @Test
   void 이메일은_소문자로_맞춰_찾는다() {
     givenAccount(AccountStatus.ACTIVE);
-    assertThat(service.authenticate("  SomeOne@GANA.example.com", PASSWORD).email())
-        .isEqualTo(EMAIL);
+    assertThat(service.authenticate("  SomeOne@kb.example.com", PASSWORD).email()).isEqualTo(EMAIL);
   }
 }
