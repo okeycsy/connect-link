@@ -5,6 +5,7 @@ public enum NotificationType {
   SIGNUP_REQUESTED("가입 신청"),
   SIGNUP_APPROVED("가입 승인"),
   CONTACT_CHANGE_REQUESTED("연락처 변경 요청"),
+  CONTACT_CHANGE_REMINDER("연락처 변경 리마인드"),
   CONTACT_RECONFIRM_DUE("연락처 확인 요청"),
   OPINION_REQUEST_OPENED("의견 요청 등록"),
   OPINION_REQUEST_CHANGED("의견 요청 변경"),
