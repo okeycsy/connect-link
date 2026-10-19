@@ -11,18 +11,19 @@ import {
   Text,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconAlertTriangle, IconUserCheck, IconUserOff } from '@tabler/icons-react';
+import { IconAlertTriangle, IconUserOff } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 
 import { OrgMonogram } from '../../../shared/OrgMonogram';
 import { ErrorState } from '../../../shared/state/StateView';
+import { MyContactsCard } from '../../contact/components/MyContactsCard';
 import { WithdrawModal } from '../components/WithdrawModal';
 import { useMe, useWithdrawalCheck } from '../hooks';
 import { PageHeader } from '../../../shared/PageHeader';
 
 /**
- * 내 정보. 서버가 아는 로그인 사용자 정보를 보여 주고 여기서 탈퇴한다. 연락처 수정·"변동 없음" 확인 자리는 연락처 모듈이 붙을 때 동작을
- * 연결한다(SHY 결정 2026-10-15). 담당 업무와 직무는 계정 값이며 레일(업무 영역)의 조회 범위를 정한다.
+ * 내 정보. 서버가 아는 로그인 사용자 정보와 연락처 모듈의 내 담당자 정보(업무별)를 보여 주고, 여기서 연락처를 고치거나 "변동 없음"으로
+ * 확인하고 탈퇴한다. 담당 업무와 직무는 계정 값이며 레일(업무 영역)의 조회 범위를 정한다.
  */
 export function MyInfoPage() {
   const { data: me, isPending, isError, error } = useMe();
@@ -93,32 +94,7 @@ export function MyInfoPage() {
         </Grid.Col>
 
         <Grid.Col span={{ base: 12, md: 7 }}>
-          <Card h="100%" data-testid="my-contact">
-            <Group justify="space-between" mb="sm">
-              <Text fw={700} size="lg">
-                연락처
-              </Text>
-              <Badge variant="outline" color="gray">
-                준비 중 · 연락처 모듈
-              </Badge>
-            </Group>
-            <Text size="sm" c="dimmed" mb="md">
-              부서·팀·직급, 내선과 휴대폰은 가입 때 적은 값이 들어옵니다. 고치면 최근 확인일이
-              갱신되고, 바뀐 것이 없으면 "변동 없음"으로 확인합니다.
-            </Text>
-            <Stack gap="sm">
-              <Field label="세부업무" value="-" />
-              <Field label="부서 · 팀 · 직급" value="-" />
-              <Field label="내선 · 휴대폰" value="-" />
-              <Field label="최근 확인일" value="-" />
-            </Stack>
-            <Group justify="flex-end" mt="md" gap="xs">
-              <Button variant="light" leftSection={<IconUserCheck size={16} />} disabled>
-                변동 없음
-              </Button>
-              <Button disabled>연락처 수정</Button>
-            </Group>
-          </Card>
+          <MyContactsCard />
         </Grid.Col>
 
         <Grid.Col span={12}>

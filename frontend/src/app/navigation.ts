@@ -128,6 +128,7 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     key: 'update-campaign',
     label: '정기 변경 주간',
     description: '연락처 현행화 주간 등록과 진행률',
+    path: 'admin/update-campaigns',
     owner: '연락처',
   },
   {

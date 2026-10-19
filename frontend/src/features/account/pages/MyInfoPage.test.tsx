@@ -42,6 +42,7 @@ const member = {
 const state = vi.hoisted(() => ({
   me: {} as Record<string, unknown>,
   withdrawal: {} as Record<string, unknown>,
+  contacts: [] as Record<string, unknown>[],
   posts: [] as { path: string; body: unknown }[],
   navigated: [] as string[],
 }));
@@ -58,13 +59,25 @@ vi.mock('../../../api/client', async (importOriginal) => {
     api: {
       GET: vi.fn(async (path: string) => {
         if (path === '/api/v1/me') return { data: state.me, response: new Response() };
+        if (path === '/api/v1/contacts/me')
+          return { data: state.contacts, response: new Response() };
         if (path === '/api/v1/me/withdrawal') {
           return { data: state.withdrawal, response: new Response() };
         }
         throw new Error(`unexpected GET ${path}`);
       }),
       POST: vi.fn(async (path: string, options: { body: { password: string } }) => {
-        state.posts.push({ path, body: options.body });
+        state.posts.push({ path, body: options?.body });
+        if (path === '/api/v1/contacts/{id}/confirmation') {
+          return {
+            data: {
+              ...state.contacts[0],
+              needsConfirm: false,
+              lastConfirmedAt: '2026-10-19T09:00:00',
+            },
+            response: new Response(),
+          };
+        }
         if (options.body.password !== 'Welcome1!') {
           return {
             error: {
@@ -86,13 +99,42 @@ function renderPage() {
   return renderWithProviders(<MyInfoPage />, { route: '/cms/me', path: '/:business/me' });
 }
 
+const MY_CONTACT = {
+  id: 11,
+  business: 'ACCOUNT_INFO',
+  businessLabel: '계좌통합관리',
+  organizationId: 3,
+  organizationCode: '004',
+  organizationName: 'KB국민은행',
+  organizationType: 'FINANCE_ORGANIZATION',
+  subBusiness: '계좌정보 통합조회',
+  name: '김가나',
+  department: '디지털금융부',
+  team: '오픈뱅킹팀',
+  jobTitle: '대리',
+  jobRole: 'BUSINESS',
+  jobRoleLabel: '현업',
+  itRoles: [],
+  rank: 'PRIMARY',
+  rankLabel: '주담당',
+  extensionPhone: '2101',
+  mobilePhone: '010-0000-2101',
+  email: 'kim.gana@kb.example.com',
+  lastConfirmedAt: '2026-04-01T09:00:00',
+  lastConfirmedByName: '김가나',
+  needsConfirm: true,
+  self: true,
+  permissions: { edit: true, delete: false },
+};
+
 beforeEach(() => {
+  state.contacts = [];
   state.posts.length = 0;
   state.navigated.length = 0;
 });
 
 describe('MyInfoPage', () => {
-  it('계정 정보, 담당 업무·직무와 접속 망을 보여 주고 연락처는 준비 중으로 둔다', async () => {
+  it('계정 정보, 담당 업무·직무와 접속 망을 보여 준다', async () => {
     state.me = admin;
     state.withdrawal = { allowed: true, blockers: [] };
     renderPage();
@@ -103,8 +145,26 @@ describe('MyInfoPage', () => {
     expect(screen.getByText('계좌통합관리')).toBeInTheDocument();
     expect(screen.getByText('전산(운영)')).toBeInTheDocument();
     expect(screen.getByText('인터넷망')).toBeInTheDocument();
-    expect(screen.getByText('준비 중 · 연락처 모듈')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '연락처 수정' })).toBeDisabled();
+    expect(
+      await screen.findByText('연락처에 등록된 내 담당자 정보가 없습니다.'),
+    ).toBeInTheDocument();
+  });
+
+  it('업무별 내 연락처를 보이고 변동 없음으로 확인한다', async () => {
+    state.me = member;
+    state.withdrawal = { allowed: true, blockers: [] };
+    state.contacts = [MY_CONTACT];
+    renderPage();
+    const row = await screen.findByTestId('my-contact-row');
+    expect(row).toHaveTextContent('계좌통합관리');
+    expect(row).toHaveTextContent('내선 2101 · 휴대폰 010-0000-2101');
+    expect(row).toHaveTextContent('최근 확인일 2026-04-01');
+    expect(within(row).getByText('확인 필요')).toBeInTheDocument();
+    expect(within(row).getByRole('button', { name: '수정' })).toBeEnabled();
+    fireEvent.click(within(row).getByRole('button', { name: '변동 없음' }));
+    await waitFor(() =>
+      expect(state.posts.map((p) => p.path)).toContain('/api/v1/contacts/{id}/confirmation'),
+    );
   });
 
   it('탈퇴를 막는 까닭이 있으면 그 까닭과 바로 가기를 보이고 탈퇴 버튼을 막는다', async () => {

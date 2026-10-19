@@ -38,6 +38,7 @@ import {
   useLogout,
   useMe,
 } from '../../features/account/hooks';
+import { ContactReconfirmModal } from '../../features/contact/components/ContactReconfirmModal';
 import { NotificationBell } from '../../features/notification/components/NotificationBell';
 import { useUnreadCount } from '../../features/notification/hooks';
 import { useBusinesses } from '../../features/organization/hooks';
@@ -289,6 +290,7 @@ export function AppShellLayout() {
       </AppShell.Navbar>
 
       <CommandPalette opened={searchOpened} onClose={closeSearch} />
+      <ContactReconfirmModal key={me.email} email={me.email} />
       {demo && (
         <AccountSwitchModal opened={switchOpened} onClose={closeSwitch} currentEmail={me.email} />
       )}
