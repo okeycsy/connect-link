@@ -1,6 +1,6 @@
 import { type APIRequestContext, expect, type Page, test } from '@playwright/test';
 
-import { csrf, mailbox } from './support/account';
+import { csrf, mailbox, skipContactReconfirm } from './support/account';
 
 // 이 파일은 공통 세션(데모 관리자) 없이 빈 브라우저로 시작한다. 결제원 담당자(홍길동)와 기관 담당자(김가나)로 로그인한다.
 test.use({
@@ -62,6 +62,8 @@ async function createAsHong(request: APIRequestContext, title: string): Promise<
 }
 
 test.describe('다. 기관 테스트', () => {
+  test.beforeEach(async ({ page }) => skipContactReconfirm(page));
+
   test('결제원 담당자가 기관 테스트를 만들고 결과 등록 알림 대상을 정하면 대상 기관에 메일이 간다', async ({
     page,
     request,

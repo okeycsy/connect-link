@@ -1,6 +1,6 @@
 import { type APIRequestContext, expect, type Page, test } from '@playwright/test';
 
-import { csrf, mailbox } from './support/account';
+import { csrf, mailbox, skipContactReconfirm } from './support/account';
 
 // 이 파일은 공통 세션(데모 관리자) 없이 빈 브라우저로 시작한다. 기관 담당자(김가나)와 결제원 담당자(홍길동)로 로그인한다.
 // 달력이 서버와 같은 날짜를 보이도록 브라우저 시간대를 서버(Asia/Seoul)에 맞춘다.
@@ -92,6 +92,8 @@ async function registerAsGana(request: APIRequestContext, reason: string): Promi
 }
 
 test.describe('라. 일시중단', () => {
+  test.beforeEach(async ({ page }) => skipContactReconfirm(page));
+
   test('기관 담당자가 양식으로 일시중단을 등록하면 검토 대기가 되고 결제원 담당자에게 메일이 간다', async ({
     page,
     request,

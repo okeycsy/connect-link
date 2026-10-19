@@ -278,8 +278,8 @@ function CampaignProgress({
             <Table.Tr>
               <Table.Th>기관</Table.Th>
               <Table.Th w={80}>담당자</Table.Th>
-              <Table.Th w={210}>현행화</Table.Th>
-              <Table.Th w={190}>정보 변경</Table.Th>
+              <Table.Th w={170}>현행화</Table.Th>
+              <Table.Th w={150}>정보 변경</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -300,14 +300,14 @@ function CampaignProgress({
                 </Table.Td>
                 <Table.Td>
                   {o.completed ? (
-                    <Group gap={6} wrap="nowrap">
+                    <Stack gap={2} align="flex-start">
                       <Badge color="sky" size="sm">
                         완료
                       </Badge>
                       <Text size="xs" c="dimmed" className={classes.numeric}>
                         {formatDateTime(o.completedAt)} {o.completedByName}
                       </Text>
-                    </Group>
+                    </Stack>
                   ) : (
                     <Badge color="amber" size="sm">
                       미확인
@@ -316,14 +316,14 @@ function CampaignProgress({
                 </Table.Td>
                 <Table.Td>
                   {o.changed ? (
-                    <Group gap={6} wrap="nowrap">
+                    <Stack gap={2} align="flex-start">
                       <Badge color="clay" size="sm">
                         정보 변경
                       </Badge>
                       <Text size="xs" c="dimmed" className={classes.numeric}>
                         {formatDateTime(o.changedAt)}
                       </Text>
-                    </Group>
+                    </Stack>
                   ) : (
                     <Text size="sm" c="dimmed">
                       -

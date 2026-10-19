@@ -299,13 +299,13 @@ function ContactTable({
     <Table verticalSpacing="sm" highlightOnHover data-testid="contact-table">
       <Table.Thead>
         <Table.Tr>
-          <Table.Th w={170}>이름</Table.Th>
-          <Table.Th w={110}>직무</Table.Th>
-          <Table.Th>부서 · 팀 · 직급</Table.Th>
+          <Table.Th w={150}>이름</Table.Th>
+          <Table.Th w={96}>직무</Table.Th>
+          <Table.Th>부서 · 팀</Table.Th>
           <Table.Th>세부업무</Table.Th>
-          <Table.Th w={130}>내선</Table.Th>
-          <Table.Th w={140}>휴대폰</Table.Th>
-          <Table.Th w={150}>최근 확인일</Table.Th>
+          <Table.Th w={80}>내선</Table.Th>
+          <Table.Th w={124}>휴대폰</Table.Th>
+          <Table.Th w={168}>최근 확인일</Table.Th>
         </Table.Tr>
       </Table.Thead>
       <Table.Tbody>
@@ -362,17 +362,22 @@ function ContactTable({
                         </Badge>
                       )}
                     </Group>
+                    {r.jobTitle && (
+                      <Text size="xs" c="dimmed">
+                        {r.jobTitle}
+                      </Text>
+                    )}
                   </Table.Td>
                   <Table.Td>
                     <Text size="sm">{r.jobRoleLabel}</Text>
                   </Table.Td>
                   <Table.Td>
-                    <Text size="sm" lineClamp={1}>
-                      {[r.department, r.team, r.jobTitle].filter(Boolean).join(' · ')}
+                    <Text size="sm" lineClamp={2}>
+                      {[r.department, r.team].filter(Boolean).join(' · ')}
                     </Text>
                   </Table.Td>
                   <Table.Td>
-                    <Text size="sm" lineClamp={1} c={r.subBusiness ? undefined : 'dimmed'}>
+                    <Text size="sm" lineClamp={2} c={r.subBusiness ? undefined : 'dimmed'}>
                       {r.subBusiness || '-'}
                     </Text>
                   </Table.Td>

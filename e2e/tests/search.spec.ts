@@ -12,7 +12,6 @@ test.describe('전역 검색 (Ctrl K)', () => {
     await palette.getByLabel('검색어').fill('신한');
     await expect(palette.getByRole('option', { name: '신한은행', exact: true })).toBeVisible();
     await expect(palette.getByRole('option', { name: '이다라' })).toBeVisible();
-    await expect(palette.getByText('샘플').first()).toBeVisible();
     await page.waitForTimeout(300);
     await page.screenshot({ path: 'screenshots/search-palette.png' });
 

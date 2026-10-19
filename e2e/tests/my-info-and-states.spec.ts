@@ -11,7 +11,9 @@ test.describe('내 정보와 상태 화면', () => {
     await expect(account.getByText('데모 관리자')).toBeVisible();
     await expect(account.getByText('admin@kftc.example.com')).toBeVisible();
     await expect(account.getByText('내부망')).toBeVisible();
-    await expect(page.getByTestId('my-contact').getByText('준비 중 · 연락처 모듈')).toBeVisible();
+    await expect(
+      page.getByTestId('my-contact').getByText('연락처에 등록된 내 담당자 정보가 없습니다.'),
+    ).toBeVisible();
     await page.screenshot({ path: 'screenshots/my-info.png', fullPage: true });
   });
 

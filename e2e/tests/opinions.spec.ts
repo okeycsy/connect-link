@@ -1,6 +1,6 @@
 import { type APIRequestContext, expect, type Page, test } from '@playwright/test';
 
-import { csrf, mailbox } from './support/account';
+import { csrf, mailbox, skipContactReconfirm } from './support/account';
 
 // 이 파일은 공통 세션(데모 관리자) 없이 빈 브라우저로 시작한다. 결제원 담당자(홍길동)와 기관 담당자(김가나)로 로그인한다.
 test.use({ storageState: { cookies: [], origins: [] } });
@@ -74,6 +74,8 @@ async function openRequestForGana(request: APIRequestContext, title: string): Pr
 }
 
 test.describe('나. 의견 요청', () => {
+  test.beforeEach(async ({ page }) => skipContactReconfirm(page));
+
   test('결제원 담당자가 회신 현황을 보고 리마인드·엑셀을 쓰고, 새 요청을 만들어 회신을 요청한다', async ({
     page,
     request,

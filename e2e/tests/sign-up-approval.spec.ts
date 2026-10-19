@@ -6,6 +6,7 @@ import {
   csrf,
   mailbox,
   NEW_ACCOUNT_PASSWORD as PASSWORD,
+  skipContactReconfirm,
 } from './support/account';
 
 // 이 파일은 공통 세션(데모 관리자) 없이 빈 브라우저로 시작한다. 결제원 담당자(홍길동)로 승인한다.
@@ -16,6 +17,8 @@ const row = (page: Page, name: string) =>
   page.getByTestId('sign-up-table').getByRole('button', { name: `${name} 가입 신청` });
 
 test.describe('관리 > 가입 승인', () => {
+  test.beforeEach(async ({ page }) => skipContactReconfirm(page));
+
   test('결제원 담당자가 맡은 업무의 가입 신청을 승인하고 반려하면 메일이 간다', async ({
     page,
     request,
