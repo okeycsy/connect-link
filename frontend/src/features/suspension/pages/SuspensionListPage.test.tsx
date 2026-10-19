@@ -8,8 +8,8 @@ const cms = { code: 'CMS', slug: 'cms', label: 'CMS', shortLabel: 'CMS' };
 
 function user(overrides: Record<string, unknown>) {
   return {
-    email: 'hong.gildong@kftc.example.com',
-    name: '홍길동',
+    email: 'hong.sungmin@kftc.example.com',
+    name: '홍성민',
     organizationCode: 'KFTC',
     organizationName: '금융결제원',
     organizationType: 'KFTC',
@@ -28,8 +28,8 @@ function user(overrides: Record<string, unknown>) {
 
 const KFTC = user({});
 const DARA = user({
-  email: 'park.dara@shinhan.example.com',
-  name: '박다라',
+  email: 'park.jihoon@shinhan.example.com',
+  name: '박지훈',
   organizationCode: '088',
   organizationName: '신한은행',
   organizationType: 'FINANCE_ORGANIZATION',
@@ -49,7 +49,7 @@ const ROW = {
   status: 'IN_REVIEW',
   statusLabel: '검토 중',
   reason: '전산 시스템 정기 점검',
-  registrantName: '박다라',
+  registrantName: '박지훈',
   registrantKftc: false,
   reviewerCount: 1,
 };

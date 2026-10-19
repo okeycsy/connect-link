@@ -25,7 +25,7 @@ class NotificationServiceTest {
     NotificationResponse created =
         notificationService.publish(
             new NotificationCommand(
-                "kim.gana@kb.example.com",
+                "kim.minjun@kb.example.com",
                 NotificationType.SUSPENSION_CHANGED,
                 Business.CMS,
                 "KB국민은행 CMS 일시중단이 등록되었습니다",
@@ -47,8 +47,8 @@ class NotificationServiceTest {
         .extracting(NotificationOutbox::getChannel, NotificationOutbox::getRecipient)
         .containsExactlyInAnyOrder(
             org.assertj.core.groups.Tuple.tuple(
-                NotificationChannel.EMAIL, "kim.gana@kb.example.com"),
-            org.assertj.core.groups.Tuple.tuple(NotificationChannel.MATTERMOST, "@kim.gana"));
+                NotificationChannel.EMAIL, "kim.minjun@kb.example.com"),
+            org.assertj.core.groups.Tuple.tuple(NotificationChannel.MATTERMOST, "@kim.minjun"));
   }
 
   @Test

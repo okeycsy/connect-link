@@ -18,9 +18,9 @@ test.describe('관리 > 기관·업무 기준정보', () => {
     await expect(page.getByRole('heading', { name: '기관·업무 기준정보' })).toBeVisible();
 
     const table = page.getByTestId('organization-table');
-    // 대출이동 참여 기관(사용 중)만: 금융결제원, KB국민은행, SBI저축은행, 타파보험, 파하캐피탈
+    // 대출이동 참여 기관(사용 중)만: 금융결제원, KB국민은행, SBI저축은행, 우리은행, 카카오뱅크
     await expect(page.getByTestId('organization-count')).toHaveText('5곳');
-    await expect(table.getByText('파하캐피탈')).toBeVisible();
+    await expect(table.getByText('카카오뱅크')).toBeVisible();
     await expect(table.getByText('신한은행')).toHaveCount(0);
     await page.screenshot({ path: 'screenshots/admin-organizations.png', fullPage: true });
   });

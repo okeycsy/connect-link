@@ -322,7 +322,7 @@ class WithdrawalControllerTest {
     UserAccount withdrawn = accountRepository.findById(id).orElseThrow();
     assertThat(withdrawn.getStatus()).isEqualTo(AccountStatus.WITHDRAWN);
     assertThat(withdrawn.getName()).isEqualTo(UserAccount.WITHDRAWN_NAME);
-    assertThat(withdrawn.getWithdrawnByName()).isEqualTo("홍길동");
+    assertThat(withdrawn.getWithdrawnByName()).isEqualTo("홍성민");
     assertThat(withdrawn.getWithdrawnByEmail()).isEqualTo(TestUsers.KFTC_ACCOUNT_INFO.email());
     assertThat(withdrawn.getWithdrawalReason()).isEqualTo("인사이동으로 담당이 끝났습니다.");
     NotificationOutbox mail =
@@ -331,7 +331,7 @@ class WithdrawalControllerTest {
             .get(0);
     assertThat(mail.getSubject()).isEqualTo("[연결고리] 계정이 탈퇴 처리되었습니다");
     assertThat(mail.getBody())
-        .contains("결제원 담당자 홍길동 님이 탈퇴 처리했습니다")
+        .contains("결제원 담당자 홍성민 님이 탈퇴 처리했습니다")
         .contains("사유: 인사이동으로 담당이 끝났습니다.");
     assertThat(events.stream(AccountWithdrawnEvent.class))
         .containsExactly(
@@ -376,7 +376,7 @@ class WithdrawalControllerTest {
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.fieldErrors[0].field").value("reason"))
         .andExpect(jsonPath("$.fieldErrors[0].message").value("탈퇴 처리 사유를 적어 주세요."));
-    withdrawByStaff(idOf("han.gana@kb.example.com"), "사유", TestUsers.KFTC_ACCOUNT_INFO)
+    withdrawByStaff(idOf("han.yerin@kb.example.com"), "사유", TestUsers.KFTC_ACCOUNT_INFO)
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("ACCOUNT_NOT_ACTIVE"));
     mockMvc

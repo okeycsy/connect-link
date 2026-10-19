@@ -13,8 +13,8 @@ const accountInfo = {
 
 function user(overrides: Record<string, unknown>) {
   return {
-    email: 'hong.gildong@kftc.example.com',
-    name: '홍길동',
+    email: 'hong.sungmin@kftc.example.com',
+    name: '홍성민',
     organizationCode: 'KFTC',
     organizationName: '금융결제원',
     organizationType: 'KFTC',
@@ -33,8 +33,8 @@ function user(overrides: Record<string, unknown>) {
 
 const KFTC = user({});
 const GANA = user({
-  email: 'kim.gana@kb.example.com',
-  name: '김가나',
+  email: 'kim.minjun@kb.example.com',
+  name: '김민준',
   organizationCode: '004',
   organizationName: 'KB국민은행',
   organizationType: 'FINANCE_ORGANIZATION',
@@ -49,7 +49,7 @@ function summary(overrides: Record<string, unknown>) {
     cancelled: false,
     dueDate: '2026-10-20',
     daysLeft: 2,
-    ownerName: '홍길동',
+    ownerName: '홍성민',
     targetCount: 6,
     repliedCount: 4,
     myReplyStatus: null,

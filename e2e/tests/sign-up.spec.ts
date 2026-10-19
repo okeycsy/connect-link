@@ -108,7 +108,7 @@ test.describe('회원가입', () => {
     page,
   }) => {
     await page.goto('/sign-up');
-    await page.getByLabel('회사 이메일').fill('kim.gana@kb.example.com');
+    await page.getByLabel('회사 이메일').fill('kim.minjun@kb.example.com');
     await page.getByRole('button', { name: '인증 코드 받기' }).click();
     await expect(page.getByText('이미 가입했거나 가입을 신청한 이메일입니다.')).toBeVisible();
 

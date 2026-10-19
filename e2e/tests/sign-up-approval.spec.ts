@@ -8,7 +8,7 @@ import {
   NEW_ACCOUNT_PASSWORD as PASSWORD,
 } from './support/account';
 
-// 이 파일은 공통 세션(데모 관리자) 없이 빈 브라우저로 시작한다. 결제원 담당자(홍길동)로 승인한다.
+// 이 파일은 공통 세션(데모 관리자) 없이 빈 브라우저로 시작한다. 결제원 담당자(홍성민)로 승인한다.
 test.use({ storageState: { cookies: [], origins: [] } });
 
 /** 표의 한 행(신청자 이름으로 찾는다). */
@@ -28,7 +28,7 @@ test.describe('관리 > 가입 승인', () => {
 
     // 결제원 담당자는 관리 메뉴가 보이고, 홈에 가입 승인 대기 카드가 있다.
     await page.goto('/login');
-    await page.getByRole('button', { name: '홍길동 (결제원 · 현업)로 로그인' }).click();
+    await page.getByRole('button', { name: '홍성민 (결제원 · 현업)로 로그인' }).click();
     await expect(page).toHaveURL(/\/account-info\/home$/);
     const card = page.getByTestId('home-card-SIGNUP_APPROVAL');
     await expect(card.getByText('가입 승인 대기')).toBeVisible();
@@ -46,14 +46,14 @@ test.describe('관리 > 가입 승인', () => {
     await menu.getByRole('link', { name: /가입 승인/ }).click();
     await expect(page).toHaveURL(/\/account-info\/admin\/sign-ups$/);
     await expect(page.getByRole('heading', { name: '가입 승인' })).toBeVisible();
-    await expect(row(page, '오다라')).toBeVisible();
-    await expect(row(page, '한가나')).toBeVisible();
+    await expect(row(page, '오승현')).toBeVisible();
+    await expect(row(page, '한예린')).toBeVisible();
     await expect(row(page, approvee.name)).toBeVisible();
-    await expect(row(page, '오다라')).toContainText('도메인 다름');
+    await expect(row(page, '오승현')).toContainText('도메인 다름');
     await page.screenshot({ path: 'screenshots/sign-up-approval-list.png', fullPage: true });
 
     // 도메인이 다른 신청은 상세 패널이 먼저 알려 준다.
-    await row(page, '오다라').click();
+    await row(page, '오승현').click();
     const detail = page.getByTestId('sign-up-detail');
     await expect(detail).toContainText('등록된 도메인(shinhan.example.com)과 다릅니다');
     await expect(detail).toContainText('자동이체 전문 개발');
@@ -91,8 +91,8 @@ test.describe('관리 > 가입 승인', () => {
 
     // 반려 칩: 처리한 사람과 날짜, 패널에 반려 사유.
     await page.getByRole('group', { name: '상태' }).getByText(/^반려/).click();
-    await expect(row(page, rejectee.name)).toContainText('홍길동');
-    await expect(row(page, '서사아')).toBeVisible();
+    await expect(row(page, rejectee.name)).toContainText('홍성민');
+    await expect(row(page, '서민재')).toBeVisible();
     await row(page, rejectee.name).click();
     await expect(page.getByTestId('sign-up-detail')).toContainText(reason);
     await page.waitForTimeout(300);
@@ -131,7 +131,7 @@ test.describe('관리 > 가입 승인', () => {
 
   test('참가기관 담당자는 관리 메뉴가 없고 가입 승인 API 도 막힌다', async ({ page }) => {
     await page.goto('/login');
-    await page.getByRole('button', { name: '김가나 (참가기관 · 현업)로 로그인' }).click();
+    await page.getByRole('button', { name: '김민준 (참가기관 · 현업)로 로그인' }).click();
     await expect(page).toHaveURL(/\/account-info\/home$/);
     await expect(page.getByTestId('home-card-SIGNUP_APPROVAL')).toHaveCount(0);
     await expect(

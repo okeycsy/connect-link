@@ -31,9 +31,9 @@ test.describe('로그인', () => {
     await expect(page.getByRole('heading', { name: '로그인' })).toBeVisible();
     const demo = page.getByTestId('demo-accounts');
     await expect(demo.getByText('데모 관리자')).toBeVisible();
-    await expect(demo.getByText('김가나')).toBeVisible();
+    await expect(demo.getByText('김민준')).toBeVisible();
     // 승인 대기 계정은 데모 계정 목록에 없다.
-    await expect(demo.getByText('정마바')).toHaveCount(0);
+    await expect(demo.getByText('정다은')).toHaveCount(0);
     await page.screenshot({ path: 'screenshots/login.png', fullPage: true });
 
     await loginWithForm(page, 'admin@kftc.example.com', PASSWORD);
@@ -43,12 +43,12 @@ test.describe('로그인', () => {
 
   test('틀린 비밀번호와 승인 전 계정은 서버 메시지를 보여 준다', async ({ page }) => {
     await page.goto('/login');
-    await loginWithForm(page, 'kim.gana@kb.example.com', 'wrong-password');
+    await loginWithForm(page, 'kim.minjun@kb.example.com', 'wrong-password');
     await expect(page.getByTestId('login-error')).toHaveText(
       '이메일 또는 비밀번호가 맞지 않습니다.',
     );
 
-    await loginWithForm(page, 'jung.maba@sbi.example.com', PASSWORD);
+    await loginWithForm(page, 'jung.daeun@sbi.example.com', PASSWORD);
     await expect(page.getByTestId('login-error')).toContainText('가입 승인 전입니다.');
     await expect(page).toHaveURL(/\/login$/);
     await page.screenshot({ path: 'screenshots/login-pending.png', fullPage: true });
@@ -56,9 +56,9 @@ test.describe('로그인', () => {
 
   test('참가기관 담당자는 자기 업무만 보고 관리 메뉴가 없다', async ({ page }) => {
     await page.goto('/login');
-    await page.getByRole('button', { name: '김가나 (참가기관 · 현업)로 로그인' }).click();
+    await page.getByRole('button', { name: '김민준 (참가기관 · 현업)로 로그인' }).click();
     await expect(page).toHaveURL(/\/account-info\/home$/);
-    await expect(page.getByRole('heading', { name: '안녕하세요, 김가나 님' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '안녕하세요, 김민준 님' })).toBeVisible();
     expect(await railLabels(page)).toEqual(['계좌통합관리']);
     await expect(rail(page).getByRole('link', { name: '관리', exact: true })).toHaveCount(0);
     await page.screenshot({ path: 'screenshots/login-member-home.png', fullPage: true });
@@ -76,7 +76,7 @@ test.describe('로그인', () => {
 
   test('데모 도구에서 계정을 바꾸고, 로그아웃하면 다시 로그인 화면이다', async ({ page }) => {
     await page.goto('/login');
-    await page.getByRole('button', { name: '김가나 (참가기관 · 현업)로 로그인' }).click();
+    await page.getByRole('button', { name: '김민준 (참가기관 · 현업)로 로그인' }).click();
     await expect(page).toHaveURL(/\/account-info\/home$/);
 
     await page.getByRole('button', { name: '데모 도구' }).click();
@@ -86,13 +86,13 @@ test.describe('로그인', () => {
     await page.waitForTimeout(300);
     await page.screenshot({ path: 'screenshots/account-switch.png' });
 
-    await dialog.getByRole('button', { name: /^이다라 / }).click();
+    await dialog.getByRole('button', { name: /^이준호 / }).click();
     await expect(page).toHaveURL(/\/auto-transfer\/home$/);
-    await expect(page.getByRole('heading', { name: '안녕하세요, 이다라 님' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '안녕하세요, 이준호 님' })).toBeVisible();
     expect(await railLabels(page)).toEqual(['자동이체통합관리', 'CMS']);
 
     await page.getByRole('button', { name: '사용자 메뉴' }).click();
-    await expect(page.getByTestId('user-name')).toHaveText('이다라');
+    await expect(page.getByTestId('user-name')).toHaveText('이준호');
     await page.getByRole('menuitem', { name: '로그아웃' }).click();
     await expect(page).toHaveURL(/\/login$/);
 
@@ -108,7 +108,7 @@ test.describe('로그인', () => {
     const body = await demo.json();
     expect(body.accounts[0].email).toBe('admin@kftc.example.com');
     expect(body.accounts.map((a: { email: string }) => a.email)).not.toContain(
-      'jung.maba@sbi.example.com',
+      'jung.daeun@sbi.example.com',
     );
   });
 });

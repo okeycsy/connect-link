@@ -22,8 +22,8 @@ class TestPlanAccessPolicyTest {
   /** 저축은행중앙회 계좌통합관리 담당자. 아래 테스트의 대상 기관이 아니다. */
   private static final CurrentUser CHAKA_MEMBER =
       new CurrentUser(
-          "yoon.chaka@fsb.example.com",
-          "윤차카",
+          "yoon.seoyeon@fsb.example.com",
+          "윤서연",
           "050",
           "저축은행중앙회",
           OrganizationType.FINANCE_ORGANIZATION,
@@ -35,8 +35,8 @@ class TestPlanAccessPolicyTest {
   /** 하하통신(이용기관) 담당자. */
   private static final CurrentUser HAHA_MEMBER =
       new CurrentUser(
-          "oh.haha@haha.example.com",
-          "오하하",
+          "oh.eunbi@haha.example.com",
+          "오은비",
           "HAHA",
           "하하통신",
           OrganizationType.USE_ORGANIZATION,
@@ -52,8 +52,8 @@ class TestPlanAccessPolicyTest {
             Business.ACCOUNT_INFO,
             new TestPlan.Content(
                 "계좌정보 조회·해지", "전문 개선", null, LocalDate.now(), LocalDate.now().plusDays(7)),
-            "hong.gildong@kftc.example.com",
-            "홍길동");
+            "hong.sungmin@kftc.example.com",
+            "홍성민");
     plan.addTarget(org("004", "KB국민은행"));
     plan.addTarget(org("240", "삼성증권"));
     return plan;

@@ -176,7 +176,7 @@ class SignUpControllerTest {
 
   @Test
   void 이미_가입한_이메일에는_코드를_보내지_않는다() throws Exception {
-    requestCode("kim.gana@kb.example.com")
+    requestCode("kim.minjun@kb.example.com")
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("EMAIL_ALREADY_REGISTERED"))
         .andExpect(jsonPath("$.fieldErrors[0].field").value("email"));
@@ -296,10 +296,10 @@ class SignUpControllerTest {
 
   @Test
   void 전산이면_세부_직무가_하나_이상_있어야_하고_현업이면_세부_직무를_버린다() throws Exception {
-    String email = "it-role@jacha.example.com";
+    String email = "it-role@epost.example.com";
     String token = verify(email);
     Map<String, Object> body = signUpBody(token, email);
-    body.put("organizationId", organizationId("JACHA"));
+    body.put("organizationId", organizationId("071"));
     body.put("businesses", List.of(Map.of("business", "CMS")));
     body.put("jobRole", "IT");
     postJson("/api/v1/sign-ups", body)
@@ -312,9 +312,9 @@ class SignUpControllerTest {
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.jobRoleLabel").value("전산(개발, 운영)"));
 
-    String business = "business-role@jacha.example.com";
+    String business = "business-role@epost.example.com";
     Map<String, Object> businessBody = signUpBody(verify(business), business);
-    businessBody.put("organizationId", organizationId("JACHA"));
+    businessBody.put("organizationId", organizationId("071"));
     businessBody.put("businesses", List.of(Map.of("business", "CMS")));
     businessBody.put("itRoles", List.of("OPS"));
     postJson("/api/v1/sign-ups", businessBody)

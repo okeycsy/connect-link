@@ -26,8 +26,8 @@ const admin = {
 
 const member = {
   ...admin,
-  email: 'kim.gana@kb.example.com',
-  name: '김가나',
+  email: 'kim.minjun@kb.example.com',
+  name: '김민준',
   organizationCode: '004',
   organizationName: 'KB국민은행',
   organizationType: 'FINANCE_ORGANIZATION',
@@ -144,7 +144,7 @@ describe('MyInfoPage', () => {
     await waitFor(() => expect(open).toBeEnabled());
     fireEvent.click(open);
     const dialog = await screen.findByRole('dialog', { name: '탈퇴' });
-    expect(dialog).toHaveTextContent('KB국민은행 김가나 님의 연결고리 계정을 탈퇴합니다.');
+    expect(dialog).toHaveTextContent('KB국민은행 김민준 님의 연결고리 계정을 탈퇴합니다.');
 
     const password = within(dialog).getByLabelText(/비밀번호/);
     fireEvent.change(password, { target: { value: 'Wrong123!' } });
