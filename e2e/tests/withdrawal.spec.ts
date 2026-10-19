@@ -141,7 +141,7 @@ test.describe('탈퇴', () => {
     expect(login.ok()).toBeTruthy();
 
     await page.goto('/login');
-    await page.getByRole('button', { name: '홍길동 (결제원 · 현업)로 로그인' }).click();
+    await page.getByRole('button', { name: '홍성민 (결제원 · 현업)로 로그인' }).click();
     await expect(page).toHaveURL(/\/account-info\/home$/);
     await page.goto('/account-info/admin/sign-ups');
     await page
@@ -170,7 +170,7 @@ test.describe('탈퇴', () => {
     // 탈퇴 처리된 사람에게 사유를 담은 메일이 가고, 그 사람의 세션은 끝났다.
     const mail = (await mailbox(request, email))[0];
     expect(mail.subject).toBe('[연결고리] 계정이 탈퇴 처리되었습니다');
-    expect(mail.body).toContain('결제원 담당자 홍길동 님이 탈퇴 처리했습니다');
+    expect(mail.body).toContain('결제원 담당자 홍성민 님이 탈퇴 처리했습니다');
     expect(mail.body).toContain(`사유: ${reason}`);
     expect((await target.request.get('/api/v1/me')).status()).toBe(401);
     await target.close();

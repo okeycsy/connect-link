@@ -24,7 +24,7 @@ const candidates: OpinionRecipientCandidate[] = [
     organizationName: 'KB국민은행',
     sector: 'BANK',
     sectorLabel: '은행',
-    members: [member(11, '김가나', '내 계좌 한눈에'), member(12, '이가나', '오픈뱅킹 안심차단')],
+    members: [member(11, '김민준', '내 계좌 한눈에'), member(12, '이도현', '오픈뱅킹 안심차단')],
   },
   {
     organizationId: 2,
@@ -32,7 +32,7 @@ const candidates: OpinionRecipientCandidate[] = [
     organizationName: '삼성증권',
     sector: 'SECURITIES',
     sectorLabel: '증권사',
-    members: [member(21, '최사아', '오픈뱅킹 안심차단')],
+    members: [member(21, '최유진', '오픈뱅킹 안심차단')],
   },
 ];
 
@@ -56,9 +56,9 @@ describe('TargetPicker', () => {
   it('세부업무 칩은 그 세부업무 담당자만 기관을 넘어 고르고, 다시 누르면 뺀다', () => {
     renderWithProviders(<Harness />);
     fireEvent.click(screen.getByRole('checkbox', { name: '오픈뱅킹 안심차단' }));
-    expect(screen.getByRole('checkbox', { name: 'KB국민은행 이가나' })).toBeChecked();
-    expect(screen.getByRole('checkbox', { name: '삼성증권 최사아' })).toBeChecked();
-    expect(screen.getByRole('checkbox', { name: 'KB국민은행 김가나' })).not.toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'KB국민은행 이도현' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: '삼성증권 최유진' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'KB국민은행 김민준' })).not.toBeChecked();
     expect(summary()).toBe('대상 2곳 · 회신 담당자 2명');
 
     fireEvent.click(screen.getByRole('checkbox', { name: '오픈뱅킹 안심차단' }));
@@ -82,7 +82,7 @@ describe('TargetPicker', () => {
     renderWithProviders(<Harness />);
     fireEvent.click(screen.getByRole('button', { name: '이 업무 담당자 모두 고르기' }));
     expect(summary()).toBe('대상 2곳 · 회신 담당자 3명');
-    fireEvent.click(screen.getByRole('checkbox', { name: 'KB국민은행 김가나' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'KB국민은행 김민준' }));
     expect(summary()).toBe('대상 2곳 · 회신 담당자 2명');
     expect(screen.getByRole('button', { name: '이 업무 담당자 모두 고르기' })).toBeInTheDocument();
   });

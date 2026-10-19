@@ -31,8 +31,8 @@ public final class TestUsers {
   /** KB국민은행 계좌통합관리 현업 담당자(관리자 아님). 알림 시드에 이 사람 앞으로 1건이 있다. */
   public static final CurrentUser GANA_MEMBER =
       new CurrentUser(
-          "kim.gana@kb.example.com",
-          "김가나",
+          "kim.minjun@kb.example.com",
+          "김민준",
           "004",
           "KB국민은행",
           OrganizationType.FINANCE_ORGANIZATION,
@@ -44,8 +44,8 @@ public final class TestUsers {
   /** 삼성증권 계좌통합관리 현업 담당자(관리자 아님). 의견 요청에서 KB국민은행과 다른 대상 기관 담당자로 쓴다. */
   public static final CurrentUser SAA_MEMBER =
       new CurrentUser(
-          "choi.saa@samsung.example.com",
-          "최사아",
+          "choi.yujin@samsung.example.com",
+          "최유진",
           "240",
           "삼성증권",
           OrganizationType.FINANCE_ORGANIZATION,
@@ -57,8 +57,8 @@ public final class TestUsers {
   /** 결제원 계좌통합관리·자동이체통합관리 현업 담당자(관리자 아님). 그 업무의 가입 신청을 승인한다. */
   public static final CurrentUser KFTC_ACCOUNT_INFO =
       new CurrentUser(
-          "hong.gildong@kftc.example.com",
-          "홍길동",
+          "hong.sungmin@kftc.example.com",
+          "홍성민",
           "KFTC",
           "금융결제원",
           OrganizationType.KFTC,

@@ -176,7 +176,7 @@ class SignUpControllerTest {
 
   @Test
   void 이미_가입한_이메일에는_코드를_보내지_않는다() throws Exception {
-    requestCode("kim.gana@kb.example.com")
+    requestCode("kim.minjun@kb.example.com")
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("EMAIL_ALREADY_REGISTERED"))
         .andExpect(jsonPath("$.fieldErrors[0].field").value("email"));

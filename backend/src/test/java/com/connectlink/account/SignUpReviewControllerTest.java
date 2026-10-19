@@ -42,8 +42,8 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 /**
- * 관리 > 가입 승인: 신청 목록·건수·상세, 승인·반려, 승인자 알림, 반려 뒤 다시 신청. 시드의 계좌통합관리 신청(승인 대기 한가나·오다라, 승인 김가나·최사아, 반려
- * 서사아)은 읽기만 하고, 승인·반려 테스트는 자동이체통합관리만 신청한 새 계정을 만들어 쓴다. 계정과 발송함을 실제로 쌓으므로 따로 쓰는 DB 다.
+ * 관리 > 가입 승인: 신청 목록·건수·상세, 승인·반려, 승인자 알림, 반려 뒤 다시 신청. 시드의 계좌통합관리 신청(승인 대기 한예린·오승현, 승인 김민준·최유진, 반려
+ * 서민재)은 읽기만 하고, 승인·반려 테스트는 자동이체통합관리만 신청한 새 계정을 만들어 쓴다. 계정과 발송함을 실제로 쌓으므로 따로 쓰는 DB 다.
  */
 @SpringBootTest(
     properties =
@@ -155,7 +155,7 @@ class SignUpReviewControllerTest {
         .perform(get("/api/v1/sign-ups").param("business", "account-info").with(hong()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.totalElements").value(2))
-        .andExpect(jsonPath("$.content[0].name").value("오다라"))
+        .andExpect(jsonPath("$.content[0].name").value("오승현"))
         .andExpect(jsonPath("$.content[0].organizationName").value("신한은행"))
         .andExpect(jsonPath("$.content[0].emailDomainMatches").value(false))
         .andExpect(jsonPath("$.content[0].organizationEmailDomain").value("shinhan.example.com"))
@@ -163,7 +163,7 @@ class SignUpReviewControllerTest {
         .andExpect(jsonPath("$.content[0].businesses[1].subBusiness").value("자동이체 전문 개발"))
         .andExpect(jsonPath("$.content[0].statusLabel").value("승인 대기"))
         .andExpect(jsonPath("$.content[0].reviewerName").doesNotExist())
-        .andExpect(jsonPath("$.content[1].name").value("한가나"))
+        .andExpect(jsonPath("$.content[1].name").value("한예린"))
         .andExpect(jsonPath("$.content[1].emailDomainMatches").value(true));
   }
 
@@ -183,9 +183,9 @@ class SignUpReviewControllerTest {
                 .with(hong()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.totalElements").value(2))
-        .andExpect(jsonPath("$.content[0].name").value("최사아"))
+        .andExpect(jsonPath("$.content[0].name").value("최유진"))
         .andExpect(jsonPath("$.content[0].reviewerName").value("데모 관리자"))
-        .andExpect(jsonPath("$.content[1].name").value("김가나"));
+        .andExpect(jsonPath("$.content[1].name").value("김민준"));
     mockMvc
         .perform(
             get("/api/v1/sign-ups")
@@ -193,7 +193,7 @@ class SignUpReviewControllerTest {
                 .param("status", "REJECTED")
                 .with(hong()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.content[0].name").value("서사아"))
+        .andExpect(jsonPath("$.content[0].name").value("서민재"))
         .andExpect(jsonPath("$.content[0].rejectionReason").value(containsString("부서장 확인")));
   }
 
@@ -218,7 +218,7 @@ class SignUpReviewControllerTest {
     mockMvc
         .perform(get("/api/v1/sign-ups").param("business", "loan-transfer").with(TestUsers.admin()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.content[0].name").value("정마바"));
+        .andExpect(jsonPath("$.content[0].name").value("정다은"));
   }
 
   @Test
@@ -254,7 +254,7 @@ class SignUpReviewControllerTest {
     postJson("/api/v1/sign-ups/" + id + "/approval", Map.of(), hong())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("ACTIVE"))
-        .andExpect(jsonPath("$.reviewerName").value("홍길동"))
+        .andExpect(jsonPath("$.reviewerName").value("홍성민"))
         .andExpect(jsonPath("$.reviewedAt").exists());
 
     login(email).andExpect(status().isOk()).andExpect(jsonPath("$.name").value("승인대상"));
@@ -319,7 +319,7 @@ class SignUpReviewControllerTest {
     assertThat(mail.get("subject").asText()).isEqualTo("[연결고리] 가입 신청이 반려되었습니다");
     assertThat(mail.get("body").asText())
         .contains("반려 사유: 소속 기관을 다시 골라 주세요.")
-        .contains("결제원 담당자 홍길동 님");
+        .contains("결제원 담당자 홍성민 님");
     login(email)
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("ACCOUNT_REJECTED"));
@@ -358,7 +358,7 @@ class SignUpReviewControllerTest {
         .andExpect(jsonPath("$.cards[5].key").value("SIGNUP_APPROVAL"))
         .andExpect(jsonPath("$.cards[5].source").value("REAL"))
         .andExpect(jsonPath("$.cards[5].metrics[0].value").value(2))
-        .andExpect(jsonPath("$.cards[5].items[0].title").value("신한은행 · 오다라"))
+        .andExpect(jsonPath("$.cards[5].items[0].title").value("신한은행 · 오승현"))
         .andExpect(jsonPath("$.cards[5].items[0].subtitle").value("전산(개발) · 도메인 다름"))
         .andExpect(
             jsonPath("$.cards[5].items[0].link")

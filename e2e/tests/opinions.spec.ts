@@ -2,7 +2,7 @@ import { type APIRequestContext, expect, type Page, test } from '@playwright/tes
 
 import { csrf, mailbox } from './support/account';
 
-// 이 파일은 공통 세션(데모 관리자) 없이 빈 브라우저로 시작한다. 결제원 담당자(홍길동)와 기관 담당자(김가나)로 로그인한다.
+// 이 파일은 공통 세션(데모 관리자) 없이 빈 브라우저로 시작한다. 결제원 담당자(홍성민)와 기관 담당자(김민준)로 로그인한다.
 test.use({ storageState: { cookies: [], origins: [] } });
 
 const SEEDED = '계좌통합관리 수수료 체계 개편 의견 요청';
@@ -28,9 +28,9 @@ async function apiLogin(request: APIRequestContext, email: string) {
   expect(login.ok()).toBeTruthy();
 }
 
-/** 홍길동으로 KB국민은행(김가나)만 대상인 계좌통합관리 의견 요청을 만들어 회신중으로 연다. 객관식(필수)·주관식 질문이 하나씩 있다. */
+/** 홍길동으로 KB국민은행(김민준)만 대상인 계좌통합관리 의견 요청을 만들어 회신중으로 연다. 객관식(필수)·주관식 질문이 하나씩 있다. */
 async function openRequestForGana(request: APIRequestContext, title: string): Promise<number> {
-  await apiLogin(request, 'hong.gildong@kftc.example.com');
+  await apiLogin(request, 'hong.sungmin@kftc.example.com');
   const candidates = (await (
     await request.get('/api/v1/opinion-requests/recipient-candidates?business=account-info')
   ).json()) as {
@@ -39,7 +39,7 @@ async function openRequestForGana(request: APIRequestContext, title: string): Pr
     members: { accountId: number; email: string }[];
   }[];
   const gana = candidates.find((c) => c.organizationCode === '004')!;
-  const kim = gana.members.find((m) => m.email === 'kim.gana@kb.example.com')!;
+  const kim = gana.members.find((m) => m.email === 'kim.minjun@kb.example.com')!;
   const created = await request.post('/api/v1/opinion-requests', {
     data: {
       business: 'ACCOUNT_INFO',
@@ -78,7 +78,7 @@ test.describe('나. 의견 요청', () => {
     page,
     request,
   }) => {
-    await loginAs(page, '홍길동 (결제원 · 현업)로 로그인');
+    await loginAs(page, '홍성민 (결제원 · 현업)로 로그인');
     await page
       .getByRole('navigation')
       .getByRole('link', { name: '의견 요청', exact: true })
@@ -131,10 +131,10 @@ test.describe('나. 의견 요청', () => {
     await shot(page, 'opinion-remind');
     await remind.getByRole('button', { name: /곳에 보내기$/ }).click();
     await expect(page.getByTestId('remind-sent')).toContainText('리마인드 메일을 보냈습니다');
-    const mails = await mailbox(request, 'kim.gana@kb.example.com');
+    const mails = await mailbox(request, 'kim.minjun@kb.example.com');
     expect(mails.some((m) => m.subject.includes(`회신을 기다립니다: ${SEEDED}`))).toBeTruthy();
     await page.getByRole('tab', { name: '리마인드 이력' }).click();
-    await expect(page.getByTestId('reminder-history')).toContainText('홍길동');
+    await expect(page.getByTestId('reminder-history')).toContainText('홍성민');
 
     // 취합표와 엑셀(내부망)
     await page.getByRole('tab', { name: '취합표' }).click();
@@ -196,10 +196,10 @@ test.describe('나. 의견 요청', () => {
       .getByRole('group', { name: '세부업무로 고르기' })
       .getByText('오픈뱅킹 안심차단', { exact: true })
       .click();
-    await expect(page.getByRole('checkbox', { name: '삼성증권 최사아' })).toBeChecked();
-    await expect(page.getByRole('checkbox', { name: '저축은행중앙회 윤차카' })).toBeChecked();
-    await expect(page.getByRole('checkbox', { name: '신한은행 박다라' })).not.toBeChecked();
-    await page.getByRole('checkbox', { name: 'KB국민은행 김가나' }).check();
+    await expect(page.getByRole('checkbox', { name: '삼성증권 최유진' })).toBeChecked();
+    await expect(page.getByRole('checkbox', { name: '저축은행중앙회 윤서연' })).toBeChecked();
+    await expect(page.getByRole('checkbox', { name: '신한은행 박지훈' })).not.toBeChecked();
+    await page.getByRole('checkbox', { name: 'KB국민은행 김민준' }).check();
     await expect(page.getByTestId('target-summary')).toHaveText('대상 3곳 · 회신 담당자 3명');
     // 업권을 고르면 그 업권 기관이 모두 대상이 된다(담당자 계정이 없는 기관도).
     await page
@@ -208,7 +208,7 @@ test.describe('나. 의견 요청', () => {
       .click();
     await expect(page.getByRole('checkbox', { name: 'SBI저축은행 대상' })).toBeChecked();
     await expect(page.getByRole('checkbox', { name: '신협 대상' })).toBeChecked();
-    await expect(page.getByRole('checkbox', { name: '신협 정나다' })).toBeChecked();
+    await expect(page.getByRole('checkbox', { name: '신협 정현우' })).toBeChecked();
     await expect(page.getByTestId('target-summary')).toHaveText('대상 5곳 · 회신 담당자 4명');
     await shot(page, 'opinion-editor');
     await page.getByRole('button', { name: '저장', exact: true }).click();
@@ -226,7 +226,7 @@ test.describe('나. 의견 요청', () => {
       .getByRole('button', { name: '시작하기' })
       .click();
     await expect(page.getByText('회신중', { exact: true })).toBeVisible();
-    const opened = await mailbox(request, 'kim.gana@kb.example.com');
+    const opened = await mailbox(request, 'kim.minjun@kb.example.com');
     expect(opened.some((m) => m.subject.includes(`의견 요청: ${title}`))).toBeTruthy();
   });
 
@@ -240,7 +240,7 @@ test.describe('나. 의견 요청', () => {
     });
     const id = await openRequestForGana(hong.request, title);
 
-    await loginAs(page, '김가나 (참가기관 · 현업)로 로그인');
+    await loginAs(page, '김민준 (참가기관 · 현업)로 로그인');
     await page
       .getByRole('navigation')
       .getByRole('link', { name: '의견 요청', exact: true })

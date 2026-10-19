@@ -26,7 +26,7 @@ const home = {
       progress: null,
       items: [
         {
-          title: 'KB국민은행 · 김가나 (현업)',
+          title: 'KB국민은행 · 김민준 (현업)',
           subtitle: '최근 확인 2026-02-02',
           dueAt: null,
           urgency: 'OVERDUE',
@@ -134,7 +134,7 @@ describe('HomePage', () => {
 
     // 확인이 필요한 담당자: 한 줄 띠로 작게, 항목 목록은 보이지 않는다.
     expect(screen.getByTestId('home-card-CONTACT_CONFIRM')).toHaveAttribute('data-compact');
-    expect(screen.queryByText('KB국민은행 · 김가나 (현업)')).not.toBeInTheDocument();
+    expect(screen.queryByText('KB국민은행 · 김민준 (현업)')).not.toBeInTheDocument();
     expect(screen.getByText('초과')).toBeInTheDocument();
 
     // 최근 소식: 알림 센터와 같은 내용

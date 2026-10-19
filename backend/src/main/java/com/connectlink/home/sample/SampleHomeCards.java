@@ -84,7 +84,7 @@ public final class SampleHomeCards {
           null,
           List.of(
               new HomeCardItem(
-                  "KB국민은행 · 김가나 (현업)",
+                  "KB국민은행 · 김민준 (현업)",
                   "최근 확인 " + today.minusMonths(8).withDayOfMonth(2),
                   null,
                   Urgency.OVERDUE,
@@ -96,19 +96,19 @@ public final class SampleHomeCards {
                   Urgency.OVERDUE,
                   link),
               new HomeCardItem(
-                  "타파보험 · 정타파 (현업)",
+                  "타파보험 · 정재원 (현업)",
                   "최근 확인 " + today.minusMonths(6).minusDays(3),
                   null,
                   Urgency.OVERDUE,
                   link),
               new HomeCardItem(
-                  "자차카드 · 윤자차 (전산·대외계)",
+                  "자차카드 · 윤하은 (전산·대외계)",
                   "최근 확인 " + today.minusMonths(6).minusDays(9),
                   null,
                   Urgency.OVERDUE,
                   link),
               new HomeCardItem(
-                  "하하통신 · 오하하 (현업)",
+                  "하하통신 · 오은비 (현업)",
                   "최근 확인 " + today.minusMonths(6).minusDays(12),
                   null,
                   Urgency.OVERDUE,

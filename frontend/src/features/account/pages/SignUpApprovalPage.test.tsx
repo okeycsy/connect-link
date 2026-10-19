@@ -12,8 +12,8 @@ const businesses = [
 function application(overrides: Record<string, unknown>) {
   return {
     id: 1,
-    email: 'han.gana@kb.example.com',
-    name: '한가나',
+    email: 'han.yerin@kb.example.com',
+    name: '한예린',
     organizationId: 2,
     organizationName: 'KB국민은행',
     organizationType: 'FINANCE_ORGANIZATION',
@@ -41,8 +41,8 @@ function application(overrides: Record<string, unknown>) {
 const pending = [
   application({
     id: 2,
-    email: 'oh.dara@mail.example.com',
-    name: '오다라',
+    email: 'oh.seunghyun@mail.example.com',
+    name: '오승현',
     organizationId: 3,
     organizationName: '신한은행',
     organizationEmailDomain: 'shinhan.example.com',
@@ -61,13 +61,13 @@ const pending = [
 const rejected = [
   application({
     id: 3,
-    email: 'seo.saa@samsung.example.com',
-    name: '서사아',
+    email: 'seo.minjae@samsung.example.com',
+    name: '서민재',
     organizationName: '삼성증권',
     status: 'REJECTED',
     statusLabel: '반려',
     reviewedAt: '2026-10-13T14:00:00',
-    reviewerName: '홍길동',
+    reviewerName: '홍성민',
     rejectionReason: '담당자 명단에서 확인되지 않습니다.',
   }),
 ];
@@ -75,12 +75,12 @@ const rejected = [
 const approved = [
   application({
     id: 4,
-    email: 'kim.gana@kb.example.com',
-    name: '김가나',
+    email: 'kim.minjun@kb.example.com',
+    name: '김민준',
     status: 'ACTIVE',
     statusLabel: '사용 중',
     reviewedAt: '2026-09-26T10:00:00',
-    reviewerName: '홍길동',
+    reviewerName: '홍성민',
   }),
 ];
 
@@ -200,25 +200,25 @@ describe('SignUpApprovalPage', () => {
     renderPage();
 
     const table = await screen.findByTestId('sign-up-table');
-    expect(await within(table).findByText('오다라')).toBeInTheDocument();
-    expect(within(table).getByText('한가나')).toBeInTheDocument();
+    expect(await within(table).findByText('오승현')).toBeInTheDocument();
+    expect(within(table).getByText('한예린')).toBeInTheDocument();
     // 이메일 도메인이 기관과 다른 신청만 표시가 붙는다.
     expect(within(table).getAllByText('도메인 다름')).toHaveLength(1);
     expect(calls.list[0]).toMatchObject({ business: 'account-info', status: 'PENDING_APPROVAL' });
     expect(await screen.findByLabelText('승인 대기 2')).toBeChecked();
 
     fireEvent.click(screen.getByLabelText('반려 1'));
-    expect(await within(table).findByText('서사아')).toBeInTheDocument();
+    expect(await within(table).findByText('서민재')).toBeInTheDocument();
     expect(within(table).getByText('처리')).toBeInTheDocument();
-    expect(within(table).getByText(/홍길동 · 2026-10-13/)).toBeInTheDocument();
-    expect(within(table).queryByText('한가나')).not.toBeInTheDocument();
+    expect(within(table).getByText(/홍성민 · 2026-10-13/)).toBeInTheDocument();
+    expect(within(table).queryByText('한예린')).not.toBeInTheDocument();
   });
 
   it('주소의 id 로 들어오면 그 신청의 상세 패널이 열린다', async () => {
     renderPage('/account-info/admin/sign-ups?id=2');
 
     const detail = await screen.findByTestId('sign-up-detail');
-    expect(detail).toHaveTextContent('oh.dara@mail.example.com');
+    expect(detail).toHaveTextContent('oh.seunghyun@mail.example.com');
     expect(detail).toHaveTextContent('등록된 도메인(shinhan.example.com)과 다릅니다');
     expect(detail).toHaveTextContent('자동이체 전문 개발');
     expect(screen.getByRole('button', { name: '승인' })).toBeInTheDocument();
@@ -227,7 +227,7 @@ describe('SignUpApprovalPage', () => {
   it('반려는 사유가 있어야 하고, 서버의 필드 메시지를 그대로 보인다', async () => {
     renderPage();
 
-    fireEvent.click(await screen.findByRole('button', { name: '한가나 가입 신청' }));
+    fireEvent.click(await screen.findByRole('button', { name: '한예린 가입 신청' }));
     fireEvent.click(await screen.findByRole('button', { name: '반려' }));
     const textarea = await screen.findByLabelText(/반려 사유/);
     fireEvent.click(screen.getByRole('button', { name: '반려하기' }));
@@ -249,10 +249,10 @@ describe('SignUpApprovalPage', () => {
   it('승인은 확인 창을 한 번 거쳐 승인 API 를 부른다', async () => {
     renderPage();
 
-    fireEvent.click(await screen.findByRole('button', { name: '오다라 가입 신청' }));
+    fireEvent.click(await screen.findByRole('button', { name: '오승현 가입 신청' }));
     fireEvent.click(await screen.findByRole('button', { name: '승인' }));
     const confirm = await screen.findByRole('dialog', { name: '가입 승인' });
-    expect(confirm).toHaveTextContent('신한은행 오다라 님의 가입을 승인합니다.');
+    expect(confirm).toHaveTextContent('신한은행 오승현 님의 가입을 승인합니다.');
     expect(confirm).toHaveTextContent('이메일 도메인이 기관과 다릅니다.');
     expect(calls.post).toHaveLength(0);
 
@@ -268,11 +268,11 @@ describe('SignUpApprovalPage', () => {
     renderPage('/account-info/admin/sign-ups?id=4');
 
     const detail = await screen.findByTestId('sign-up-detail');
-    expect(detail).toHaveTextContent('kim.gana@kb.example.com');
+    expect(detail).toHaveTextContent('kim.minjun@kb.example.com');
     expect(screen.queryByRole('button', { name: '승인' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '탈퇴 처리' }));
     const dialog = await screen.findByRole('dialog', { name: '탈퇴 처리' });
-    expect(dialog).toHaveTextContent('KB국민은행 김가나 님의 계정을 탈퇴 처리합니다.');
+    expect(dialog).toHaveTextContent('KB국민은행 김민준 님의 계정을 탈퇴 처리합니다.');
 
     const submit = within(dialog).getByRole('button', { name: '탈퇴 처리' });
     await waitFor(() => expect(submit).toBeEnabled());

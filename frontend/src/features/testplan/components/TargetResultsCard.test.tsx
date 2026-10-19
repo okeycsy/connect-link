@@ -30,7 +30,7 @@ const reported = {
   result: 'PASSED',
   resultLabel: '정상',
   note: null,
-  reportedByName: '김가나',
+  reportedByName: '김민준',
   reportedAt: '2026-10-18T10:00:00',
   feedbackRate: null,
   feedbackNote: null,

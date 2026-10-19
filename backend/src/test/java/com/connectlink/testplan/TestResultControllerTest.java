@@ -192,7 +192,7 @@ class TestResultControllerTest {
         .andExpect(jsonPath("$.rows[0].effectiveRate").value(100))
         .andExpect(jsonPath("$.rows[0].completed").value(false))
         .andExpect(jsonPath("$.rows[1].resultLabel").value("오류"))
-        .andExpect(jsonPath("$.rows[1].reportedByName").value("김가나"))
+        .andExpect(jsonPath("$.rows[1].reportedByName").value("김민준"))
         .andExpect(jsonPath("$.canReport").value(true))
         .andExpect(jsonPath("$.canFeedback").value(false));
 
@@ -201,12 +201,12 @@ class TestResultControllerTest {
                 .filter(n -> n.getType() == NotificationType.TEST_RESULT_REPORTED)
                 .filter(n -> n.getTitle().contains("결과 등록 알림"))
                 .map(n -> n.getRecipientEmail()))
-        .containsExactly("hong.gildong@kftc.example.com");
+        .containsExactly("hong.sungmin@kftc.example.com");
     assertThat(outboxRepository.findAll())
         .filteredOn(o -> o.getBody() != null && o.getBody().contains("002 오류"))
         .filteredOn(o -> o.getSubject().contains("결과 등록 알림"))
         .extracting(NotificationOutbox::getRecipient, NotificationOutbox::getChannel)
-        .containsExactly(tuple("@hong.gildong", NotificationChannel.MATTERMOST));
+        .containsExactly(tuple("@hong.sungmin", NotificationChannel.MATTERMOST));
 
     // 바뀐 것이 없으면 다시 알리지 않는다.
     report(
@@ -262,7 +262,7 @@ class TestResultControllerTest {
     feedback(plan, "004", 0, 100, null)
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.rows[0].completed").value(true))
-        .andExpect(jsonPath("$.rows[0].feedbackByName").value("홍길동"))
+        .andExpect(jsonPath("$.rows[0].feedbackByName").value("홍성민"))
         .andExpect(jsonPath("$.summary.completed").value(true))
         .andExpect(jsonPath("$.summary.awaitingReview").value(0));
     // 삼성증권이 아직이라 테스트는 진행 중이다.

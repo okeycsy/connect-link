@@ -22,8 +22,8 @@ class OpinionAccessPolicyTest {
 
   private static final CurrentUser HAHA_MEMBER =
       new CurrentUser(
-          "oh.haha@haha.example.com",
-          "오하하",
+          "oh.eunbi@haha.example.com",
+          "오은비",
           "HAHA",
           "하하통신",
           OrganizationType.USE_ORGANIZATION,
@@ -40,8 +40,8 @@ class OpinionAccessPolicyTest {
             "요청",
             "내용",
             LocalDate.now().plusDays(3),
-            "hong.gildong@kftc.example.com",
-            "홍길동");
+            "hong.sungmin@kftc.example.com",
+            "홍성민");
     request.addTarget(
         new Organization("004", "KB국민은행", OrganizationType.FINANCE_ORGANIZATION, null));
     if (open) {

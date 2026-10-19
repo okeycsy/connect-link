@@ -79,6 +79,6 @@ class HomeControllerTest {
     mockMvc
         .perform(get("/api/v1/home").param("business", "account-info").with(TestUsers.ganaMember()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.userName").value("김가나"));
+        .andExpect(jsonPath("$.userName").value("김민준"));
   }
 }

@@ -2,7 +2,7 @@ import { type APIRequestContext, expect, type Page, test } from '@playwright/tes
 
 import { csrf, mailbox } from './support/account';
 
-// 이 파일은 공통 세션(데모 관리자) 없이 빈 브라우저로 시작한다. 기관 담당자(김가나)와 결제원 담당자(홍길동)로 로그인한다.
+// 이 파일은 공통 세션(데모 관리자) 없이 빈 브라우저로 시작한다. 기관 담당자(김민준)와 결제원 담당자(홍성민)로 로그인한다.
 // 달력이 서버와 같은 날짜를 보이도록 브라우저 시간대를 서버(Asia/Seoul)에 맞춘다.
 test.use({
   storageState: { cookies: [], origins: [] },
@@ -66,7 +66,7 @@ async function pickDateTime(
 /** 김가나로 KB국민은행 계좌통합관리 일시중단을 API 로 등록한다. request 의 세션은 김가나로 바뀐다. */
 async function registerAsGana(request: APIRequestContext, reason: string): Promise<number> {
   const login = await request.post('/api/v1/auth/login', {
-    data: { email: 'kim.gana@kb.example.com', password: DEMO_PASSWORD },
+    data: { email: 'kim.minjun@kb.example.com', password: DEMO_PASSWORD },
     headers: await csrf(request),
   });
   expect(login.ok()).toBeTruthy();
@@ -80,9 +80,9 @@ async function registerAsGana(request: APIRequestContext, reason: string): Promi
       endAt: iso(date, '03:00'),
       reason,
       kftcAction: '작업 시간 동안 KB국민은행 조회 요청을 차단해 주세요.',
-      contactName: '김가나',
+      contactName: '김민준',
       contactPhone: '010-0000-2101',
-      contactEmail: 'kim.gana@kb.example.com',
+      contactEmail: 'kim.minjun@kb.example.com',
       extraNote: null,
     },
     headers: await csrf(request),
@@ -96,7 +96,7 @@ test.describe('라. 일시중단', () => {
     page,
     request,
   }) => {
-    await loginAs(page, '김가나 (참가기관 · 현업)로 로그인');
+    await loginAs(page, '김민준 (참가기관 · 현업)로 로그인');
     await page.getByRole('navigation').getByRole('link', { name: '일시중단', exact: true }).click();
     await expect(page).toHaveURL(/\/account-info\/suspensions$/);
     await expect(page.getByRole('heading', { name: '일시중단' })).toBeVisible();
@@ -110,7 +110,7 @@ test.describe('라. 일시중단', () => {
     await page.getByRole('link', { name: '일시중단 등록' }).click();
     await expect(page.getByRole('heading', { name: '일시중단 등록' })).toBeVisible();
     await expect(page.getByRole('textbox', { name: '기관' })).toHaveValue('KB국민은행');
-    await expect(page.getByRole('textbox', { name: '이름' })).toHaveValue('김가나');
+    await expect(page.getByRole('textbox', { name: '이름' })).toHaveValue('김민준');
 
     const reason = `E2E 계정계 패치 작업 ${Date.now()}`;
     const date = seoulDate(3);
@@ -143,7 +143,7 @@ test.describe('라. 일시중단', () => {
     await shot(page, 'suspension-detail-organization');
 
     // 그 업무 결제원 담당자에게 등록 메일이 간다(매터모스트는 발송함에 함께 남는다).
-    const mails = await mailbox(request, 'hong.gildong@kftc.example.com');
+    const mails = await mailbox(request, 'hong.sungmin@kftc.example.com');
     expect(
       mails.some((m) => m.subject.includes('KB국민은행 계좌통합관리 일시중단이 등록되었습니다')),
     ).toBeTruthy();
@@ -156,7 +156,7 @@ test.describe('라. 일시중단', () => {
     const reason = `E2E 인터넷뱅킹 점검 ${Date.now()}`;
     const id = await registerAsGana(request, reason);
 
-    await loginAs(page, '홍길동 (결제원 · 현업)로 로그인');
+    await loginAs(page, '홍성민 (결제원 · 현업)로 로그인');
     await page.getByRole('navigation').getByRole('link', { name: '일시중단', exact: true }).click();
     await expect(page.getByTestId('pending-review-count')).toContainText('확정 전');
     // 진행 중에는 전 기관이 보인다.
@@ -181,7 +181,7 @@ test.describe('라. 일시중단', () => {
       .getByRole('button', { name: '확인 시작' })
       .click();
     await expect(page.getByTestId('suspension-status')).toHaveText('검토 중');
-    await expect(page.getByTestId('suspension-reviewers')).toContainText('홍길동');
+    await expect(page.getByTestId('suspension-reviewers')).toContainText('홍성민');
 
     // 조치 및 인수인계 사항을 쓰면 확정된다.
     await page.getByRole('button', { name: '조치 쓰고 확정' }).click();

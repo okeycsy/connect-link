@@ -15,7 +15,7 @@ test.describe('알림 센터와 발송함', () => {
     await expect(page).toHaveURL(/\/account-info\/notifications$/);
     await expect(page.getByRole('heading', { name: '알림 센터' })).toBeVisible();
     const list = page.getByTestId('notification-list');
-    await expect(list.getByText('SBI저축은행 정마바 님이 가입을 신청했습니다')).toBeVisible();
+    await expect(list.getByText('SBI저축은행 정다은 님이 가입을 신청했습니다')).toBeVisible();
     await page.screenshot({
       path: 'screenshots/notification-center.png',
       fullPage: true,

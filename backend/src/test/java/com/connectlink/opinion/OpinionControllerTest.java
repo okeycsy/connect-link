@@ -104,7 +104,7 @@ class OpinionControllerTest {
         .orElseThrow();
   }
 
-  /** KB국민은행(김가나)과 삼성증권(최사아)이 대상인 새 요청. 질문은 객관식(필수, 1월/7월), 체크박스(정산/안내/개발), 주관식(월 조회 건수) 세 개다. */
+  /** KB국민은행(김민준)과 삼성증권(최유진)이 대상인 새 요청. 질문은 객관식(필수, 1월/7월), 체크박스(정산/안내/개발), 주관식(월 조회 건수) 세 개다. */
   private Map<String, Object> newRequest(String title) {
     Map<String, Object> body = new HashMap<>();
     body.put("business", "ACCOUNT_INFO");
@@ -140,12 +140,12 @@ class OpinionControllerTest {
                 "organizationId",
                 orgId("004"),
                 "recipientAccountIds",
-                List.of(accountId("kim.gana@kb.example.com"))),
+                List.of(accountId("kim.minjun@kb.example.com"))),
             Map.of(
                 "organizationId",
                 orgId("240"),
                 "recipientAccountIds",
-                List.of(accountId("choi.saa@samsung.example.com")))));
+                List.of(accountId("choi.yujin@samsung.example.com")))));
     return body;
   }
 
@@ -230,7 +230,7 @@ class OpinionControllerTest {
   void 회신_담당자_후보는_그_업무의_결제원_담당자만_본다() throws Exception {
     send(get(BASE + "/recipient-candidates").param("business", "account-info"), null, hong())
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[?(@.organizationCode == '004')].members[0].name").value("김가나"))
+        .andExpect(jsonPath("$[?(@.organizationCode == '004')].members[0].name").value("김민준"))
         .andExpect(jsonPath("$[?(@.organizationCode == '004')].sectorLabel").value("은행"))
         .andExpect(jsonPath("$[?(@.organizationCode == '240')].sector").value("SECURITIES"))
         .andExpect(jsonPath("$[*].organizationCode").value(not(hasItem("KFTC"))))
@@ -253,10 +253,11 @@ class OpinionControllerTest {
                 .filter(n -> n.getType() == NotificationType.OPINION_REQUEST_OPENED)
                 .filter(n -> n.getTitle().contains("알림 확인 요청"))
                 .map(n -> n.getRecipientEmail()))
-        .containsExactlyInAnyOrder("kim.gana@kb.example.com", "choi.saa@samsung.example.com");
+        .containsExactlyInAnyOrder("kim.minjun@kb.example.com", "choi.yujin@samsung.example.com");
     JsonNode mails =
         json(
-            mockMvc.perform(get("/api/v1/demo/mailbox").param("email", "kim.gana@kb.example.com")));
+            mockMvc.perform(
+                get("/api/v1/demo/mailbox").param("email", "kim.minjun@kb.example.com")));
     assertThat(mails.get(0).get("subject").asText()).contains("알림 확인 요청");
   }
 
@@ -287,7 +288,7 @@ class OpinionControllerTest {
                 "organizationId",
                 orgId("240"),
                 "recipientAccountIds",
-                List.of(accountId("kim.gana@kb.example.com")))));
+                List.of(accountId("kim.minjun@kb.example.com")))));
     send(post(BASE), wrong, hong())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("OPINION_RECIPIENT_INVALID"));
@@ -320,7 +321,7 @@ class OpinionControllerTest {
                 "organizationId",
                 orgId("240"),
                 "recipientAccountIds",
-                List.of(accountId("choi.saa@samsung.example.com")))));
+                List.of(accountId("choi.yujin@samsung.example.com")))));
     send(put(BASE + "/" + id), body, hong())
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("OPINION_TARGET_HAS_REPLY"));
@@ -412,7 +413,7 @@ class OpinionControllerTest {
                 .anyMatch(
                     n ->
                         n.getType() == NotificationType.OPINION_REPLY_REVISION
-                            && n.getRecipientEmail().equals("hong.gildong@kftc.example.com")
+                            && n.getRecipientEmail().equals("hong.sungmin@kftc.example.com")
                             && n.getTitle().contains("수정 요청 흐름")))
         .isTrue();
 
@@ -638,10 +639,10 @@ class OpinionControllerTest {
                 .filter(n -> n.getType() == NotificationType.OPINION_REPLY_DUE)
                 .filter(n -> n.getTitle().contains("리마인드 확인"))
                 .map(n -> n.getRecipientEmail()))
-        .containsExactly("choi.saa@samsung.example.com");
+        .containsExactly("choi.yujin@samsung.example.com");
     send(get(BASE + "/" + id + "/reminders"), null, hong())
         .andExpect(jsonPath("$.length()").value(1))
-        .andExpect(jsonPath("$[0].senderName").value("홍길동"));
+        .andExpect(jsonPath("$[0].senderName").value("홍성민"));
     send(
             post(BASE + "/" + id + "/reminders"),
             Map.of("organizationIds", List.of(orgId("004"))),

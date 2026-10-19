@@ -62,12 +62,12 @@ public final class SampleSearchProviders {
           SearchCategory.CONTACT,
           "contacts",
           List.of(
-              new String[] {"김가나", "KB국민은행 · 현업 · 주담당"},
-              new String[] {"이다라", "신한은행 · 전산(대외계) · 주담당"},
-              new String[] {"박마바", "SBI저축은행 · 현업 · 부담당"},
-              new String[] {"최사아", "삼성증권 · 전산(개발) · 주담당"},
-              new String[] {"정타파", "타파보험 · 현업 · 주담당"},
-              new String[] {"윤자차", "자차카드 · 전산(운영) · 부담당"}));
+              new String[] {"김민준", "KB국민은행 · 현업 · 주담당"},
+              new String[] {"이준호", "신한은행 · 전산(대외계) · 주담당"},
+              new String[] {"박소영", "SBI저축은행 · 현업 · 부담당"},
+              new String[] {"최유진", "삼성증권 · 전산(개발) · 주담당"},
+              new String[] {"정재원", "타파보험 · 현업 · 주담당"},
+              new String[] {"윤하은", "자차카드 · 전산(운영) · 부담당"}));
     }
   }
 }

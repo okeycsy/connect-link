@@ -2,7 +2,7 @@ import { type APIRequestContext, expect, type Page, test } from '@playwright/tes
 
 import { csrf, mailbox } from './support/account';
 
-// 이 파일은 공통 세션(데모 관리자) 없이 빈 브라우저로 시작한다. 결제원 담당자(홍길동)와 기관 담당자(김가나)로 로그인한다.
+// 이 파일은 공통 세션(데모 관리자) 없이 빈 브라우저로 시작한다. 결제원 담당자(홍성민)와 기관 담당자(김민준)로 로그인한다.
 test.use({
   storageState: { cookies: [], origins: [] },
   timezoneId: 'Asia/Seoul',
@@ -31,7 +31,7 @@ function seoulDate(days: number) {
 /** 홍길동으로 KB국민은행 대상 계좌통합관리 기관 테스트를 API 로 만든다. request 의 세션은 홍길동으로 바뀐다. */
 async function createAsHong(request: APIRequestContext, title: string): Promise<number> {
   const login = await request.post('/api/v1/auth/login', {
-    data: { email: 'hong.gildong@kftc.example.com', password: DEMO_PASSWORD },
+    data: { email: 'hong.sungmin@kftc.example.com', password: DEMO_PASSWORD },
     headers: await csrf(request),
   });
   expect(login.ok()).toBeTruthy();
@@ -66,7 +66,7 @@ test.describe('다. 기관 테스트', () => {
     page,
     request,
   }) => {
-    await loginAs(page, '홍길동 (결제원 · 현업)로 로그인');
+    await loginAs(page, '홍성민 (결제원 · 현업)로 로그인');
     await page
       .getByRole('navigation')
       .getByRole('link', { name: '기관 테스트', exact: true })
@@ -111,20 +111,20 @@ test.describe('다. 기관 테스트', () => {
     await expect(targets).toContainText('삼성증권');
     await shot(page, 'test-plan-detail');
 
-    // 알림 설정: 만든 사람(홍길동)에 김운영을 더한다.
+    // 알림 설정: 만든 사람(홍성민)에 김운영을 더한다.
     await page.getByRole('link', { name: '알림 설정' }).click();
     await expect(page.getByRole('heading', { name: '결과 등록 알림 설정' })).toBeVisible();
-    await expect(page.getByRole('checkbox', { name: '홍길동 알림 받기' })).toBeChecked();
-    await page.getByRole('checkbox', { name: '김운영 알림 받기' }).check();
+    await expect(page.getByRole('checkbox', { name: '홍성민 알림 받기' })).toBeChecked();
+    await page.getByRole('checkbox', { name: '김태호 알림 받기' }).check();
     await expect(page.getByTestId('recipient-count')).toHaveText('2명 선택');
     await shot(page, 'test-plan-recipients');
     await page.getByRole('button', { name: '저장' }).click();
     await expect(page).toHaveURL(/tab=content/);
-    await expect(page.getByTestId('plan-recipients')).toContainText('김운영');
+    await expect(page.getByTestId('plan-recipients')).toContainText('김태호');
     await expect(page.getByText('테스트가이드.pdf')).toBeVisible();
 
     // 대상 기관 담당자에게 열림 메일이 간다.
-    const mails = await mailbox(request, 'kim.gana@kb.example.com');
+    const mails = await mailbox(request, 'kim.minjun@kb.example.com');
     expect(mails.some((m) => m.subject.includes(`${title} 기관 테스트가 열렸습니다`))).toBeTruthy();
   });
 
@@ -136,7 +136,7 @@ test.describe('다. 기관 테스트', () => {
     const id = await createAsHong(request, title);
 
     // 기관 담당자: 정상과 오류를 고른다. 오류는 특이사항(오류내용)이 있어야 저장된다.
-    await loginAs(page, '김가나 (참가기관 · 현업)로 로그인');
+    await loginAs(page, '김민준 (참가기관 · 현업)로 로그인');
     await page.goto(`/account-info/tests/${id}`);
     await expect(page.getByRole('heading', { name: title })).toBeVisible();
     await expect(page.getByTestId('target-table')).toHaveCount(0);
@@ -155,7 +155,7 @@ test.describe('다. 기관 테스트', () => {
     await shot(page, 'test-plan-results-organization');
 
     // 결제원 담당자: 알림을 받고, 001 은 완료 확인, 002 는 미니 수행률과 특이사항을 남긴다.
-    await loginAs(page, '홍길동 (결제원 · 현업)로 로그인');
+    await loginAs(page, '홍성민 (결제원 · 현업)로 로그인');
     const notifications = (await (await page.request.get('/api/v1/notifications')).json()) as {
       content: { title: string }[];
     };
@@ -185,7 +185,7 @@ test.describe('다. 기관 테스트', () => {
     await shot(page, 'test-plan-results-kftc');
 
     // 기관 담당자가 고쳐 다시 등록하면 결제원 의견은 "다시 확인" 이 된다.
-    await loginAs(page, '김가나 (참가기관 · 현업)로 로그인');
+    await loginAs(page, '김민준 (참가기관 · 현업)로 로그인');
     await page.goto(`/account-info/tests/${id}`);
     await page.getByTestId('item-002').getByText('정상', { exact: true }).click();
     await page
@@ -198,7 +198,7 @@ test.describe('다. 기관 테스트', () => {
     ).toBeVisible();
 
     // 결제원 담당자가 다시 보고 완료 확인하면 모든 요구사항이 완료라 테스트 수행 완료다.
-    await loginAs(page, '홍길동 (결제원 · 현업)로 로그인');
+    await loginAs(page, '홍성민 (결제원 · 현업)로 로그인');
     await page.goto(`/account-info/tests/${id}`);
     await page.getByTestId('item-002').getByRole('button', { name: '완료 확인' }).click();
     await expect(page.getByTestId('test-plan-state')).toHaveText('수행 완료');
