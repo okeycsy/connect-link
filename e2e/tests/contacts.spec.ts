@@ -41,6 +41,7 @@ async function pickDate(page: Page, label: string, days: number) {
   const date = seoulDate(days);
   await page.getByRole('button', { name: label, exact: true }).click();
   const dropdown = page.getByRole('dialog').last();
+  await expect(dropdown.getByRole('button', { name: /월 \d{4}$/ }).first()).toBeVisible();
   const dayButton = dropdown.getByRole('button', {
     name: `${date.day} ${date.month}월 ${date.year}`,
     exact: true,

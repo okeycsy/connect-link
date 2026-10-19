@@ -48,6 +48,8 @@ async function pickDateTime(
 ) {
   await page.getByRole('button', { name: label, exact: true }).click();
   const dropdown = page.getByRole('dialog').filter({ has: page.getByRole('spinbutton') });
+  // 달력이 다 열린 뒤에 날짜를 찾는다. 열리기 전에 보면 없는 것으로 알고 다음 달로 넘긴다.
+  await expect(dropdown).toBeVisible();
   const dayButton = dropdown.getByRole('button', {
     name: `${date.day} ${date.month}월 ${date.year}`,
     exact: true,
@@ -174,6 +176,8 @@ test.describe('라. 일시중단', () => {
     await expect(table).toContainText(reason);
     await table.getByRole('button').filter({ hasText: reason }).click();
     await expect(page).toHaveURL(new RegExp(`/account-info/suspensions/${id}$`));
+    // 주소가 바뀐 직후에는 목록이 아직 남아 있을 수 있어, 상세 머리가 뜬 뒤에 상태를 본다.
+    await expect(page.getByRole('heading', { name: 'KB국민은행 일시중단' })).toBeVisible();
     await expect(page.getByTestId('suspension-status')).toHaveText('검토 대기');
 
     // 확인 시작: 검토 중이 되고 확인자로 이름이 남는다.
