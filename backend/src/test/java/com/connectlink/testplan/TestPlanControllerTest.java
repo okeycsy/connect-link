@@ -246,7 +246,7 @@ class TestPlanControllerTest {
         .andExpect(jsonPath("$.code").value("TEST_PLAN_ITEMS_REQUIRED"));
     send(post(BASE), form("대상 없음", List.of(), "확인"), hong())
         .andExpect(jsonPath("$.code").value("TEST_PLAN_TARGETS_REQUIRED"));
-    // 우체국는 계좌통합관리에 참여하지 않는다.
+    // 우체국은 계좌통합관리에 참여하지 않는다.
     send(post(BASE), form("참여 안 하는 기관", List.of("071"), "확인"), hong())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("TEST_TARGET_INVALID"));

@@ -188,7 +188,7 @@ class SuspensionControllerTest {
   @Test
   void 업무에_참여하지_않는_기관은_고를_수_없다() throws Exception {
     Map<String, Object> body = form("참여 안 하는 기관");
-    body.put("organizationId", orgId("071")); // 우체국는 계좌통합관리에 참여하지 않는다.
+    body.put("organizationId", orgId("071")); // 우체국은 계좌통합관리에 참여하지 않는다.
     send(post(BASE), body, hong())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("SUSPENSION_ORGANIZATION_INVALID"));
