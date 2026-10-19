@@ -41,7 +41,7 @@ test.describe('홈 대시보드', () => {
     await expect(page.getByText('CMS', { exact: true }).first()).toBeVisible();
     await expect(
       page.getByTestId('home-card-UPDATE_CAMPAIGN').getByRole('link', { name: '모두 보기' }),
-    ).toHaveAttribute('href', /^\/cms\/admin\/update-campaigns/);
+    ).toHaveAttribute('href', /^\/cms\/contacts\/update-campaigns/);
   });
 
   test('카드의 모두 보기는 해당 기능 화면으로 간다', async ({ page }) => {

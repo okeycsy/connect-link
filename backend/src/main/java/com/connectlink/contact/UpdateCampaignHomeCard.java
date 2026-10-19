@@ -62,7 +62,7 @@ public class UpdateCampaignHomeCard implements HomeCardContributor {
   }
 
   private HomeContribution forManager(Business business) {
-    String adminLink = "/" + business.getSlug() + "/admin/update-campaigns";
+    String adminLink = "/" + business.getSlug() + "/contacts/update-campaigns";
     Optional<UpdateCampaignProgressResponse> open = campaignService.openProgress(business);
     if (open.isEmpty()) {
       return HomeContribution.of(

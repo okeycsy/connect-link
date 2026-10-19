@@ -6,7 +6,10 @@ import { SignUpApprovalPage } from '../features/account/pages/SignUpApprovalPage
 import { SignUpPage } from '../features/account/pages/SignUpPage';
 import { SignUpPendingPage } from '../features/account/pages/SignUpPendingPage';
 import { ContactListPage } from '../features/contact/pages/ContactListPage';
-import { UpdateCampaignPage } from '../features/contact/pages/UpdateCampaignPage';
+import {
+  UpdateCampaignLegacyRedirect,
+  UpdateCampaignPage,
+} from '../features/contact/pages/UpdateCampaignPage';
 import { HomePage } from '../features/home/pages/HomePage';
 import { NotificationCenterPage } from '../features/notification/pages/NotificationCenterPage';
 import { NotificationOutboxPage } from '../features/notification/pages/NotificationOutboxPage';
@@ -77,8 +80,8 @@ export const router = createBrowserRouter([
             children: [
               { index: true, element: <AdminHubPage /> },
               { path: 'sign-ups', element: <SignUpApprovalPage /> },
-              // 가. 정기 변경 주간(그 업무의 결제원 담당자와 관리자).
-              { path: 'update-campaigns', element: <UpdateCampaignPage /> },
+              // 가. 정기 변경 주간은 연락처 메뉴 안으로 옮겼다. 예전 주소는 새 주소로 보낸다.
+              { path: 'update-campaigns', element: <UpdateCampaignLegacyRedirect /> },
               {
                 element: <AdminGuard adminOnly />,
                 children: [{ path: 'organizations', element: <OrganizationAdminPage /> }],
@@ -87,6 +90,8 @@ export const router = createBrowserRouter([
           },
           // 가. 연락처: 목록(기관별 묶음, ?id= 상세 패널).
           { path: 'contacts', element: <ContactListPage /> },
+          // 가. 정기 변경 주간(그 업무의 결제원 담당자와 관리자만, 화면이 권한을 확인한다).
+          { path: 'contacts/update-campaigns', element: <UpdateCampaignPage /> },
           // 나. 의견 요청: 목록, 작성, 상세(회신 현황·취합표 탭, 기관 회신), 고치기.
           { path: 'opinions', element: <OpinionListPage /> },
           { path: 'opinions/new', element: <OpinionEditorPage /> },

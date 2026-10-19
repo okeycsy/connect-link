@@ -18,10 +18,16 @@ import {
 import { DatePickerInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { IconMailForward, IconPencil, IconPlus, IconTrash } from '@tabler/icons-react';
+import {
+  IconArrowLeft,
+  IconMailForward,
+  IconPencil,
+  IconPlus,
+  IconTrash,
+} from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useParams, useSearchParams } from 'react-router-dom';
 
 import { ApiError, fieldErrorsOf } from '../../../api/client';
 import { ConfirmModal } from '../../../shared/ConfirmModal';
@@ -46,6 +52,13 @@ import {
   useUpdateCampaignSchedule,
   useUpdateCampaigns,
 } from '../hooks';
+
+/** 예전 주소(관리 메뉴 아래 `/{업무}/admin/update-campaigns`)를 연락처 메뉴 아래 새 주소로 보낸다. ?id= 는 그대로 넘긴다. */
+export function UpdateCampaignLegacyRedirect() {
+  const { business: slug = '' } = useParams<{ business: string }>();
+  const { search } = useLocation();
+  return <Navigate to={`/${slug}/contacts/update-campaigns${search}`} replace />;
+}
 
 const STATUS_COLOR = { UPCOMING: 'gray', OPEN: 'sky', CLOSED: 'gray' } as const;
 
@@ -85,12 +98,22 @@ export function UpdateCampaignPage() {
         title="정기 변경 주간"
         description={`${current?.label ?? '이 업무'} 담당자 현행화 주간입니다. 등록하면 참가기관 담당자에게 변경 요청 메일을 보냅니다.`}
         actions={
-          <Button
-            leftSection={<IconPlus size={18} stroke={1.8} />}
-            onClick={() => setEditing('new')}
-          >
-            주간 등록
-          </Button>
+          <>
+            <Button
+              component={Link}
+              to={`/${slug}/contacts`}
+              variant="light"
+              leftSection={<IconArrowLeft size={16} stroke={1.8} />}
+            >
+              담당자 목록
+            </Button>
+            <Button
+              leftSection={<IconPlus size={18} stroke={1.8} />}
+              onClick={() => setEditing('new')}
+            >
+              주간 등록
+            </Button>
+          </>
         }
       />
 
