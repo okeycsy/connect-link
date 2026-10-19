@@ -61,9 +61,9 @@
 | 이용기관 | `USE_ORGANIZATION` (기관 구분), `UseOrganization` | 금융회사가 아닌 일반 회사(주로 결제원의 고객). 이용기관 담당자의 권한과 기능은 명세에 정해지기 전까지 구현하지 않는다 |
 | 계정 | `UserAccount` | 로그인 주체. 식별 키는 회사 이메일(소문자). 상태 `AccountStatus` = `PENDING_APPROVAL`(승인 대기), `ACTIVE`(사용 중), `REJECTED`(반려), `WITHDRAWN`(탈퇴). 담당 업무는 `UserAccountBusiness`, 전산 세부 직무는 `UserAccountItRole` |
 | 회사 이메일 인증 | `EmailVerification` | 가입 때 숫자 6자리 코드 확인 한 건. 맞으면 가입 신청에 한 번 쓰는 인증 토큰을 준다. 설정 `app.account.verification.*`. 가입 신청은 `SignUpService` 가 계정을 승인 대기로 만든다 |
-| 가입 승인 | `SignUpReviewService`, `SignUpReviewAccessPolicy` | 승인 대기 계정을 승인(`ACTIVE`)하거나 사유를 적어 반려(`REJECTED`)한다. 처리할 수 있는 사람은 관리자와 신청 업무를 맡은 결제원 담당자. API `/api/v1/sign-ups`(목록·건수·상세, `/{id}/approval`, `/{id}/rejection`), 화면 `/{업무}/admin/sign-ups` |
+| 가입 승인 | `SignUpReviewService`, `SignUpReviewAccessPolicy` | 승인 대기 계정을 승인(`ACTIVE`)하거나 사유를 적어 반려(`REJECTED`)한다. 승인하면 `AccountApprovedEvent`(가입 때 받은 부서·연락처 포함)를 같은 트랜잭션에서 발행한다. 처리할 수 있는 사람은 관리자와 신청 업무를 맡은 결제원 담당자. API `/api/v1/sign-ups`(목록·건수·상세, `/{id}/approval`, `/{id}/rejection`), 화면 `/{업무}/admin/sign-ups` |
 | 탈퇴 | `WithdrawalService`, `WithdrawalAccessPolicy`, `WithdrawalCheck`, `WithdrawalBlocker`, `AccountWithdrawnEvent` | 본인이 비밀번호를 다시 넣어 탈퇴한다(API `/api/v1/me/withdrawal`, 화면 내 정보). 결제원 담당자는 맡은 업무의 참가기관 담당자를 사유를 적어 탈퇴 처리한다(API `/api/v1/accounts/{id}/withdrawal`, 화면 가입 승인 상세). 계정은 `WITHDRAWN` 으로 남고 개인 정보는 지운다. 막는 규칙은 기능 모듈이 `WithdrawalCheck` 빈 하나로 더하고(예: 후임자 규칙), 탈퇴 뒤 자기 데이터는 `AccountWithdrawnEvent` 를 받아 지운다 |
-| 담당자 연락처 | `Contact` | 계정이 없는 담당자(후임자 등)도 존재 가능 |
+| 담당자 연락처 | `Contact` | 기관 × 업무 × 사람 한 행. 계정이 없는 담당자(후임자 등)도 존재 가능하며 계정과는 회사 이메일로만 잇는다. 권한 `ContactAccessPolicy`(결제원 담당자는 그 업무 전 기관 관리, 결제원 운영·상황실·대외계는 전 업무 조회, 기관 담당자는 결제원과 자기 기관만 보고 자기 기관을 고친다). 휴대폰·이메일 가리기 `ContactMasking`. 승인되면 `AccountApprovedEvent` 를 받아 만들고, 유일한 기관 담당자의 탈퇴는 `ContactSuccessorWithdrawalCheck` 가 막는다. API `/api/v1/contacts`, 화면 `/{업무}/contacts` |
 | 기관 업무 참여 | `OrganizationBusiness` | 기관이 참여하는 업무 영역 한 건. 레일별 조회 범위의 기준. 테이블 `organization_business` |
 | 업무 | `Business` | `ACCOUNT_INFO`(계좌통합관리), `AUTO_TRANSFER`(자동이체통합관리), `LOAN_TRANSFER`(대출이동), `CMS` |
 | 세부업무 | `subBusiness` | 자유 텍스트 |
@@ -71,8 +71,8 @@
 | 직무 | `JobRole` | `BUSINESS`(현업), `IT`(전산) |
 | 전산 세부 직무 | `ItRole` (복수 선택) | `DEV`, `OPS`, `INFRA`, `EXTERNAL_LINK`(대외계), `CONTROL_ROOM`(상황실) |
 | 주/부담당 | `ContactRank` | `PRIMARY`, `SECONDARY` |
-| 최근 확인일 | `lastConfirmedAt` | 수정·확인 시 갱신 |
-| 정기 변경(현행화) 주간 | `UpdateCampaign` | |
+| 최근 확인일 | `lastConfirmedAt` | 수정·확인 시 갱신. 6개월이 지나면 "확인 필요"(`needsConfirm`)이고 로그인 뒤 확인 창과 매일 알림(`ContactReconfirmJob`)이 있다 |
+| 정기 변경(현행화) 주간 | `UpdateCampaign` | 업무별 현행화 기간. 상태 `UpdateCampaignStatus` = `UPCOMING`(예정), `OPEN`(진행 중), `CLOSED`(종료), 저장하지 않고 날짜로 계산한다. 기관별 현행화는 `UpdateCampaignOrganization`("현행화 완료" 일시·처리자, 정보 변경 일시), 진행 현황 거르기 `UpdateCampaignProgressFilter` = `ALL`/`COMPLETED`/`INCOMPLETE`/`CHANGED`. API `/api/v1/update-campaigns`, 화면 `/{업무}/admin/update-campaigns` |
 | 의견 요청 | `OpinionRequest` | 상태 `OpinionRequestStatus` = `DRAFT`(작성중), `OPEN`(회신중), `CLOSED`(마감). 회신중 요청을 취소하면 `CLOSED` + `cancelled`. 권한 `OpinionAccessPolicy`. API `/api/v1/opinion-requests`, 화면 `/{업무}/opinions` |
 | 질문 | `OpinionQuestion` | 의견 요청에 넣는 질문 하나. 유형 `OpinionQuestionType` = `SINGLE_CHOICE`(객관식), `MULTIPLE_CHOICE`(체크박스), `TEXT`(주관식), 필수 여부. 선택지는 `OpinionQuestionOption`. 작성중일 때만 고치고, 하나 이상 있어야 회신 요청을 시작한다 |
 | 질문 답 | `OpinionReplyAnswer` | 기관 회신의 답 한 칸. 회신처럼 제출한 답(`SUBMITTED`)과 임시저장한 답(`DRAFT`)을 따로 둔다. 객관식은 고른 선택지마다, 주관식은 질문마다 한 행 |
@@ -119,8 +119,8 @@ connect-link/
 │       │   ├── auth/          # 로그인, 세션, 보안 설정
 │       │   ├── account/       # 가입, 이메일 인증, 가입 승인, 탈퇴
 │       │   ├── organization/  # 기관(결제원·참가기관·이용기관), 업무 기준정보
-│       │   ├── home/          # 홈 "지금 할 일": 카드 자리(HomeCardKey)와 기여자 계약(HomeCardContributor), 샘플 카드(home/sample)
-│       │   ├── search/        # 전역 검색: 묶음(SearchCategory)과 제공자 계약(SearchProvider), 샘플 제공자(search/sample)
+│       │   ├── home/          # 홈 "지금 할 일": 카드 자리(HomeCardKey)와 기여자 계약(HomeCardContributor)
+│       │   ├── search/        # 전역 검색: 묶음(SearchCategory)과 제공자 계약(SearchProvider)
 │       │   ├── contact/       # 가. 연락처 관리
 │       │   ├── opinion/       # 나. 의견 회신 취합
 │       │   ├── testplan/      # 다. 기관 테스트
