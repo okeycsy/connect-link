@@ -30,7 +30,7 @@ class HomeControllerTest {
         .andExpect(jsonPath("$.userName").value("데모 관리자"))
         .andExpect(jsonPath("$.cards", hasSize(6)))
         .andExpect(jsonPath("$.cards[0].key").value("CONTACT_CONFIRM"))
-        .andExpect(jsonPath("$.cards[0].source").value("SAMPLE"))
+        .andExpect(jsonPath("$.cards[0].source").value("REAL"))
         .andExpect(jsonPath("$.cards[0].urgency").value("OVERDUE"))
         .andExpect(jsonPath("$.cards[0].link").value("/account-info/contacts"))
         .andExpect(jsonPath("$.cards[5].key").value("SIGNUP_APPROVAL"))
@@ -47,8 +47,9 @@ class HomeControllerTest {
         .perform(get("/api/v1/home").param("business", "cms").with(TestUsers.admin()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.businessLabel").value("CMS"))
-        .andExpect(jsonPath("$.kpis[0].value").value(4))
-        .andExpect(jsonPath("$.cards[1].link").value("/cms/contacts"));
+        // CMS 는 차민결(타파보험) 한 명이 6개월을 넘겼고, 진행 중인 정기 변경 주간이 없다(연락처 시드).
+        .andExpect(jsonPath("$.kpis[0].value").value(1))
+        .andExpect(jsonPath("$.cards[1].link").value("/cms/admin/update-campaigns"));
   }
 
   @Test

@@ -18,4 +18,12 @@ public interface HistoryTargetAccess {
   default FieldChange redact(CurrentUser user, FieldChange change) {
     return change;
   }
+
+  /**
+   * 이 사용자에게 보여 줄 최신 이력의 최대 건수. 기본은 제한이 없다. 연락처처럼 "이전 이력은 한 명까지만" 같은 규칙이 있는 모듈이 재정의한다. 요청한 쪽이 더 큰
+   * 쪽수를 달라고 해도 서버가 이 건수에서 자른다.
+   */
+  default int maxVisible(CurrentUser user) {
+    return Integer.MAX_VALUE;
+  }
 }
