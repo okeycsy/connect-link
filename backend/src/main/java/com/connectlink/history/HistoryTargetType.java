@@ -9,6 +9,7 @@ public enum HistoryTargetType implements Labeled {
   OPINION_REQUEST("의견 요청"),
   OPINION_REPLY("기관 회신"),
   TEST_PLAN("기관 테스트"),
+  TEST_PLAN_TARGET("기관 테스트 결과"),
   SUSPENSION("일시중단");
 
   private final String label;

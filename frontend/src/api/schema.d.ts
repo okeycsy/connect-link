@@ -4,6 +4,98 @@
  */
 
 export interface paths {
+  '/api/v1/test-plans/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 기관 테스트 상세 조회
+     * @description 기관 담당자에게는 자기 기관 현황만 준다. permissions 가 지금 할 수 있는 일이다.
+     */
+    get: operations['get'];
+    /**
+     * 기관 테스트 고치기
+     * @description 그 업무 결제원 담당자가 내용·요구사항·대상 기관을 고친다. 업무는 바꿀 수 없다(TEST_PLAN_BUSINESS_FIXED). 결과가 있는 요구사항·기관을 빼면 409 TEST_ITEM_HAS_RESULTS, TEST_TARGET_HAS_RESULTS. 새로 더한 대상 기관 담당자에게 알림·메일이 간다.
+     */
+    put: operations['update'];
+    post?: never;
+    /**
+     * 기관 테스트 지우기
+     * @description 그 업무 결제원 담당자가 지운다. 기관 결과와 가이드 첨부도 함께 지운다.
+     */
+    delete: operations['delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/test-plans/{id}/targets/{organizationId}/results': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * 대상 기관 결과 저장
+     * @description 그 기관 담당자가 요구사항별 결과(정상·오류·수행중·미수행)와 특이사항을 저장한다. 오류면 특이사항이 필요하다(TEST_RESULT_NOTE_REQUIRED). 바뀐 것이 있으면 테스트의 알림 대상 결제원 담당자에게 매터모스트 알림이 간다.
+     */
+    put: operations['report'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/test-plans/{id}/targets/{organizationId}/items/{itemId}/feedback': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * 결제원 의견 저장
+     * @description 그 업무 결제원 담당자가 기관 결과 하나에 미니 수행률(0~100)과 특이사항을 남긴다. 둘 다 비우면 지운다. 미니 수행률 100 이고 기관 결과가 정상이면 그 요구사항은 수행 완료다. 결과가 없는 요구사항이면 409 TEST_RESULT_NOT_REPORTED.
+     */
+    put: operations['feedback'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/test-plans/{id}/recipients': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 결과 등록 알림 대상 조회
+     * @description 그 업무를 맡은 사용 중 결제원 담당자 후보와 지금 고른 사람(selected). 그 업무 결제원 담당자만 쓴다.
+     */
+    get: operations['recipients'];
+    /**
+     * 결과 등록 알림 대상 바꾸기
+     * @description 기관이 결과를 등록하면 매터모스트 알림을 받을 결제원 담당자를 통째로 바꾼다. 후보가 아닌 계정이면 400 TEST_RECIPIENT_INVALID.
+     */
+    put: operations['replaceRecipients'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/suspensions/{id}': {
     parameters: {
       query?: never;
@@ -15,18 +107,18 @@ export interface paths {
      * 일시중단 상세 조회
      * @description permissions 가 지금 할 수 있는 일이다.
      */
-    get: operations['get'];
+    get: operations['get_2'];
     /**
      * 일시중단 수정
      * @description 등록한 기관 담당자나 그 업무 결제원 담당자가 고친다. 기관 담당자가 확인이 시작된 건을 고치면 검토 대기로 돌아간다. 결제원 담당자에게 매터모스트 알림이 간다. 완료한 건이면 409 SUSPENSION_COMPLETED.
      */
-    put: operations['update'];
+    put: operations['update_1'];
     post?: never;
     /**
      * 일시중단 삭제
      * @description 등록한 본인만 지운다. 결제원 담당자에게 매터모스트 알림이 간다.
      */
-    delete: operations['delete'];
+    delete: operations['delete_1'];
     options?: never;
     head?: never;
     patch?: never;
@@ -40,12 +132,12 @@ export interface paths {
       cookie?: never;
     };
     /** 기관 기준정보 상세 조회 (관리자) */
-    get: operations['get_2'];
+    get: operations['get_4'];
     /**
      * 기관 수정 (관리자)
      * @description 이름, 이메일 도메인, 사용 여부, 참여 업무를 통째로 바꾼다.
      */
-    put: operations['update_1'];
+    put: operations['update_2'];
     post?: never;
     delete?: never;
     options?: never;
@@ -88,18 +180,42 @@ export interface paths {
      * 의견 요청 상세 조회
      * @description 결제원 담당자는 대상 전부를, 기관 담당자는 자기 기관의 대상 행만 본다. permissions 가 지금 할 수 있는 일이다.
      */
-    get: operations['get_3'];
+    get: operations['get_5'];
     /**
      * 의견 요청 수정
      * @description 작성중·회신중에 고친다. 질문(작성중일 때만)·대상은 보낸 목록으로 바뀐다. 회신중이면 새 회신 담당자에게 요청 메일, 남은 담당자에게 변경 알림이 간다. 회신을 저장한 기관을 빼면 409 OPINION_TARGET_HAS_REPLY.
      */
-    put: operations['update_2'];
+    put: operations['update_3'];
     post?: never;
     /**
      * 작성중 의견 요청 삭제
      * @description 작성중만 지운다. 회신중이면 409 이고 취소를 쓴다.
      */
-    delete: operations['delete_1'];
+    delete: operations['delete_2'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/test-plans': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 기관 테스트 목록 조회
+     * @description 한 업무 영역의 기관 테스트. state 가 없으면 전부(최근 만든 순)다. 결제원 담당자는 전부와 전체 수행률을, 기관 담당자는 자기 기관이 대상인 것과 자기 기관 수행률을 본다.
+     */
+    get: operations['list'];
+    put?: never;
+    /**
+     * 기관 테스트 만들기
+     * @description 그 업무 결제원 담당자가 단위업무/개발 건마다 만든다. 요구사항과 대상 기관이 하나 이상 있어야 한다(TEST_PLAN_ITEMS_REQUIRED, TEST_PLAN_TARGETS_REQUIRED). 바로 대상 기관에 열리고 대상 기관 담당자에게 알림·메일이 간다. 만든 사람이 결과 등록 알림 대상이 된다. 가이드·참고자료(TEST_PLAN)는 저장한 뒤 첨부 API 로 올린다.
+     */
+    post: operations['create'];
+    delete?: never;
     options?: never;
     head?: never;
     patch?: never;
@@ -116,13 +232,13 @@ export interface paths {
      * 일시중단 목록 조회
      * @description 한 업무 영역의 일시중단. period 가 없으면 전부(최근 시작 순)다. 결제원 담당자는 전 기관을, 기관 담당자는 자기 기관만 본다. organizationId 는 결제원 담당자의 기관별 이력 보기다.
      */
-    get: operations['list'];
+    get: operations['list_1'];
     put?: never;
     /**
      * 일시중단 등록
      * @description 검토 대기로 등록하고 그 업무 결제원 담당자에게 메일·매터모스트 알림을 보낸다. 공문(SUSPENSION)은 저장한 뒤 첨부 API 로 올린다.
      */
-    post: operations['create'];
+    post: operations['create_1'];
     delete?: never;
     options?: never;
     head?: never;
@@ -200,7 +316,7 @@ export interface paths {
      * 가입 신청 목록 조회
      * @description 한 업무 영역을 신청에 넣은 계정을 상태별로 최근 신청 순서로 돌려준다. 승인(ACTIVE)·반려(REJECTED)는 가입 승인을 거친 계정만 나온다.
      */
-    get: operations['list_1'];
+    get: operations['list_2'];
     put?: never;
     /**
      * 가입 신청
@@ -270,7 +386,7 @@ export interface paths {
      * 기관 등록 (관리자)
      * @description 같은 코드가 이미 있으면 409.
      */
-    post: operations['create_1'];
+    post: operations['create_2'];
     delete?: never;
     options?: never;
     head?: never;
@@ -288,13 +404,13 @@ export interface paths {
      * 의견 요청 목록 조회
      * @description 한 업무 영역의 요청 중 한 상태. 결제원 담당자는 그 업무의 모든 요청을, 기관 담당자는 자기 기관이 대상인 회신중·마감 요청만 본다(작성중은 빈 목록).
      */
-    get: operations['list_2'];
+    get: operations['list_3'];
     put?: never;
     /**
      * 의견 요청 작성
      * @description 작성중으로 저장한다. 첨부자료(OPINION_REQUEST)는 저장한 뒤 첨부 API 로 올린다.
      */
-    post: operations['create_2'];
+    post: operations['create_3'];
     delete?: never;
     options?: never;
     head?: never;
@@ -614,7 +730,7 @@ export interface paths {
       cookie?: never;
     };
     /** 대상 하나의 첨부파일 목록(올린 순) */
-    get: operations['list_8'];
+    get: operations['list_9'];
     put?: never;
     /** 첨부파일 올리기 (multipart: file) */
     post: operations['upload'];
@@ -648,6 +764,66 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/test-plans/{id}/targets/{organizationId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 대상 기관 결과 조회
+     * @description 한 대상 기관의 요구사항별 결과와 결제원 의견. 결제원 담당자는 어느 기관이든, 기관 담당자는 자기 기관만 본다.
+     */
+    get: operations['get_1'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/test-plans/organizations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 기관 테스트 대상 기관 후보 조회
+     * @description 그 업무에 참여하는 사용 중 참가기관(업권 포함). 그 업무 결제원 담당자만 쓴다.
+     */
+    get: operations['organizations'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/test-plans/counts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 기관 테스트 진행 구분별 건수 조회
+     * @description 목록의 필터 칩이 쓴다.
+     */
+    get: operations['counts'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/suspensions/organizations': {
     parameters: {
       query?: never;
@@ -659,7 +835,7 @@ export interface paths {
      * 일시중단 대상 기관 조회
      * @description 결제원 담당자는 그 업무에 참여하는 사용 중 참가기관 전부, 기관 담당자는 자기 기관 하나를 받는다. 등록 양식과 기관별 이력이 쓴다.
      */
-    get: operations['organizations'];
+    get: operations['organizations_1'];
     put?: never;
     post?: never;
     delete?: never;
@@ -679,7 +855,7 @@ export interface paths {
      * 일시중단 시간 구분별 건수 조회
      * @description 목록의 필터 칩이 쓴다. pendingReview 는 아직 확정되지 않은 진행 중·예정 건이다.
      */
-    get: operations['counts'];
+    get: operations['counts_1'];
     put?: never;
     post?: never;
     delete?: never;
@@ -699,7 +875,7 @@ export interface paths {
      * 가입 신청 상세 조회
      * @description 신청한 업무 중 하나라도 맡은 결제원 담당자나 관리자만 본다.
      */
-    get: operations['get_1'];
+    get: operations['get_3'];
     put?: never;
     post?: never;
     delete?: never;
@@ -719,7 +895,7 @@ export interface paths {
      * 가입 신청 건수 조회
      * @description 한 업무 영역의 승인 대기·승인·반려 건수. 목록의 필터 칩과 관리 화면이 쓴다.
      */
-    get: operations['counts_1'];
+    get: operations['counts_2'];
     put?: never;
     post?: never;
     delete?: never;
@@ -839,7 +1015,7 @@ export interface paths {
      * 의견 요청 상태별 건수 조회
      * @description 목록의 필터 칩이 쓴다. 기관 담당자의 작성중은 0 이다.
      */
-    get: operations['counts_2'];
+    get: operations['counts_3'];
     put?: never;
     post?: never;
     delete?: never;
@@ -859,7 +1035,7 @@ export interface paths {
      * 내 알림 목록 조회
      * @description 최신순. unreadOnly=true 면 읽지 않은 알림만 돌려준다.
      */
-    get: operations['list_3'];
+    get: operations['list_4'];
     put?: never;
     post?: never;
     delete?: never;
@@ -896,7 +1072,7 @@ export interface paths {
      * 발송함 조회
      * @description 최신순. 관리자만 볼 수 있다.
      */
-    get: operations['list_4'];
+    get: operations['list_5'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1010,7 +1186,7 @@ export interface paths {
       cookie?: never;
     };
     /** 받은 메일함 (받는 사람별 최근 메일 5건, 로그인 전에도 열림) */
-    get: operations['list_5'];
+    get: operations['list_6'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1027,7 +1203,7 @@ export interface paths {
       cookie?: never;
     };
     /** 데모 계정 목록 (역할별, 로그인 전에도 열림) */
-    get: operations['list_6'];
+    get: operations['list_7'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1044,7 +1220,7 @@ export interface paths {
       cookie?: never;
     };
     /** 대상 하나의 변경 이력(최신순) */
-    get: operations['list_7'];
+    get: operations['list_8'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1101,7 +1277,7 @@ export interface paths {
     put?: never;
     post?: never;
     /** 첨부파일 지우기 */
-    delete: operations['delete_2'];
+    delete: operations['delete_3'];
     options?: never;
     head?: never;
     patch?: never;
@@ -1111,6 +1287,161 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    TestItemRequest: {
+      /** Format: int64 */
+      id?: number | null;
+      title: string;
+      description?: string | null;
+    };
+    TestPlanSaveRequest: {
+      /** @enum {string} */
+      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
+      subBusiness: string;
+      title: string;
+      description?: string | null;
+      /** Format: date */
+      startDate: string;
+      /** Format: date */
+      endDate: string;
+      items: components['schemas']['TestItemRequest'][];
+      organizationIds: number[];
+    };
+    TestItemResponse: {
+      /** Format: int64 */
+      id: number;
+      number: string;
+      title: string;
+      description?: string | null;
+    };
+    TestPlanDetailResponse: {
+      /** Format: int64 */
+      id: number;
+      /** @enum {string} */
+      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
+      businessSlug: string;
+      businessLabel: string;
+      subBusiness: string;
+      title: string;
+      description?: string | null;
+      /** Format: date */
+      startDate: string;
+      /** Format: date */
+      endDate: string;
+      /** @enum {string} */
+      state: 'IN_PROGRESS' | 'COMPLETED';
+      stateLabel: string;
+      overdue: boolean;
+      /** Format: int32 */
+      progressRate: number;
+      /** Format: date-time */
+      completedAt?: string | null;
+      ownerName: string;
+      items: components['schemas']['TestItemResponse'][];
+      targets: components['schemas']['TestTargetSummaryResponse'][];
+      /** Format: int64 */
+      ownOrganizationId?: number | null;
+      recipients: string[];
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+      permissions: components['schemas']['TestPlanPermissions'];
+    };
+    TestPlanPermissions: {
+      manage: boolean;
+      report: boolean;
+      feedback: boolean;
+    };
+    TestTargetSummaryResponse: {
+      /** Format: int64 */
+      targetId: number;
+      /** Format: int64 */
+      organizationId: number;
+      organizationCode: string;
+      organizationName: string;
+      /** Format: int32 */
+      progressRate: number;
+      /** Format: int32 */
+      completedCount: number;
+      /** Format: int32 */
+      itemCount: number;
+      /** Format: int32 */
+      passed: number;
+      /** Format: int32 */
+      failed: number;
+      /** Format: int32 */
+      inProgress: number;
+      /** Format: int32 */
+      notStarted: number;
+      /** Format: int32 */
+      unreported: number;
+      /** Format: int32 */
+      awaitingReview: number;
+      completed: boolean;
+      /** Format: date-time */
+      lastReportedAt?: string | null;
+    };
+    Entry: {
+      /** Format: int64 */
+      itemId: number;
+      /** @enum {string} */
+      result: 'PASSED' | 'FAILED' | 'IN_PROGRESS' | 'NOT_STARTED';
+      note?: string | null;
+    };
+    TestResultSaveRequest: {
+      results: components['schemas']['Entry'][];
+    };
+    TestItemResultResponse: {
+      /** Format: int64 */
+      itemId: number;
+      number: string;
+      title: string;
+      description?: string | null;
+      /** @enum {string|null} */
+      result?: 'PASSED' | 'FAILED' | 'IN_PROGRESS' | 'NOT_STARTED' | null;
+      resultLabel?: string | null;
+      note?: string | null;
+      reportedByName?: string | null;
+      /** Format: date-time */
+      reportedAt?: string | null;
+      /** Format: int32 */
+      feedbackRate?: number | null;
+      feedbackNote?: string | null;
+      feedbackByName?: string | null;
+      /** Format: date-time */
+      feedbackAt?: string | null;
+      feedbackOutdated: boolean;
+      /** Format: int32 */
+      effectiveRate: number;
+      completed: boolean;
+    };
+    TestTargetResultsResponse: {
+      /** Format: int64 */
+      planId: number;
+      summary: components['schemas']['TestTargetSummaryResponse'];
+      rows: components['schemas']['TestItemResultResponse'][];
+      canReport: boolean;
+      canFeedback: boolean;
+    };
+    TestFeedbackRequest: {
+      /** Format: int32 */
+      rate?: number | null;
+      note?: string | null;
+    };
+    TestPlanRecipientsRequest: {
+      accountIds: number[];
+    };
+    TestPlanRecipientResponse: {
+      /** Format: int64 */
+      accountId?: number | null;
+      name: string;
+      email: string;
+      jobRoleLabel?: string | null;
+      department?: string | null;
+      team?: string | null;
+      selected: boolean;
+      candidate: boolean;
+    };
     SuspensionSaveRequest: {
       /** @enum {string} */
       business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
@@ -1505,6 +1836,8 @@ export interface components {
         | 'OPINION_REPLY_DUE'
         | 'OPINION_REPLY_REVISION'
         | 'TEST_PLAN_OPENED'
+        | 'TEST_RESULT_REPORTED'
+        | 'TEST_RESULT_FEEDBACK'
         | 'SUSPENSION_CHANGED'
         | 'SYSTEM';
       typeLabel: string;
@@ -1572,7 +1905,7 @@ export interface components {
       /** Format: int64 */
       id: number;
       /** @enum {string} */
-      ownerType: 'OPINION_REQUEST' | 'OPINION_REPLY' | 'SUSPENSION' | 'DEMO';
+      ownerType: 'OPINION_REQUEST' | 'OPINION_REPLY' | 'SUSPENSION' | 'TEST_PLAN' | 'DEMO';
       /** Format: int64 */
       ownerId: number;
       name: string;
@@ -1585,6 +1918,63 @@ export interface components {
     };
     AccountWithdrawalRequest: {
       reason: string;
+    };
+    PageResponseTestPlanSummaryResponse: {
+      content: components['schemas']['TestPlanSummaryResponse'][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+      last: boolean;
+    };
+    TestPlanSummaryResponse: {
+      /** Format: int64 */
+      id: number;
+      /** @enum {string} */
+      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
+      businessLabel: string;
+      subBusiness: string;
+      title: string;
+      /** Format: date */
+      startDate: string;
+      /** Format: date */
+      endDate: string;
+      /** @enum {string} */
+      state: 'IN_PROGRESS' | 'COMPLETED';
+      stateLabel: string;
+      overdue: boolean;
+      /** Format: int32 */
+      progressRate: number;
+      /** Format: int32 */
+      itemCount: number;
+      /** Format: int32 */
+      targetCount?: number | null;
+      /** Format: int32 */
+      completedTargetCount?: number | null;
+      /** Format: int32 */
+      ownCompletedCount?: number | null;
+      /** Format: date-time */
+      ownLastReportedAt?: string | null;
+      ownerName: string;
+    };
+    TestPlanOrganizationResponse: {
+      /** Format: int64 */
+      id: number;
+      code: string;
+      name: string;
+      /** @enum {string|null} */
+      sector?: 'BANK' | 'SECURITIES' | 'MICROFINANCE' | 'INSURANCE' | null;
+      sectorLabel?: string | null;
+    };
+    TestPlanCountsResponse: {
+      /** Format: int64 */
+      inProgress: number;
+      /** Format: int64 */
+      completed: number;
     };
     PageResponseSuspensionSummaryResponse: {
       content: components['schemas']['SuspensionSummaryResponse'][];
@@ -1997,6 +2387,7 @@ export interface components {
         | 'OPINION_REQUEST'
         | 'OPINION_REPLY'
         | 'TEST_PLAN'
+        | 'TEST_PLAN_TARGET'
         | 'SUSPENSION';
       /** Format: int64 */
       targetId: number;
@@ -2056,12 +2447,183 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          '*/*': components['schemas']['SuspensionDetailResponse'];
+          '*/*': components['schemas']['TestPlanDetailResponse'];
         };
       };
     };
   };
   update: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TestPlanSaveRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['TestPlanDetailResponse'];
+        };
+      };
+    };
+  };
+  delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  report: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+        organizationId: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TestResultSaveRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['TestTargetResultsResponse'];
+        };
+      };
+    };
+  };
+  feedback: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+        organizationId: number;
+        itemId: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TestFeedbackRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['TestTargetResultsResponse'];
+        };
+      };
+    };
+  };
+  recipients: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['TestPlanRecipientResponse'][];
+        };
+      };
+    };
+  };
+  replaceRecipients: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TestPlanRecipientsRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['TestPlanRecipientResponse'][];
+        };
+      };
+    };
+  };
+  get_2: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['SuspensionDetailResponse'];
+        };
+      };
+    };
+  };
+  update_1: {
     parameters: {
       query?: never;
       header?: never;
@@ -2087,7 +2649,7 @@ export interface operations {
       };
     };
   };
-  delete: {
+  delete_1: {
     parameters: {
       query?: never;
       header?: never;
@@ -2107,7 +2669,7 @@ export interface operations {
       };
     };
   };
-  get_2: {
+  get_4: {
     parameters: {
       query?: never;
       header?: never;
@@ -2129,7 +2691,7 @@ export interface operations {
       };
     };
   };
-  update_1: {
+  update_2: {
     parameters: {
       query?: never;
       header?: never;
@@ -2203,7 +2765,7 @@ export interface operations {
       };
     };
   };
-  get_3: {
+  get_5: {
     parameters: {
       query?: never;
       header?: never;
@@ -2225,7 +2787,7 @@ export interface operations {
       };
     };
   };
-  update_2: {
+  update_3: {
     parameters: {
       query?: never;
       header?: never;
@@ -2251,7 +2813,7 @@ export interface operations {
       };
     };
   };
-  delete_1: {
+  delete_2: {
     parameters: {
       query?: never;
       header?: never;
@@ -2272,6 +2834,58 @@ export interface operations {
     };
   };
   list: {
+    parameters: {
+      query: {
+        /** @description 업무 영역 slug (예: account-info) */
+        business: string;
+        /** @description IN_PROGRESS(진행 중), COMPLETED(수행 완료). 없으면 전부 */
+        state?: 'IN_PROGRESS' | 'COMPLETED';
+        /** @description 0부터 시작 */
+        page?: number;
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['PageResponseTestPlanSummaryResponse'];
+        };
+      };
+    };
+  };
+  create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TestPlanSaveRequest'];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['TestPlanDetailResponse'];
+        };
+      };
+    };
+  };
+  list_1: {
     parameters: {
       query: {
         /** @description 업무 영역 slug (예: account-info) */
@@ -2301,7 +2915,7 @@ export interface operations {
       };
     };
   };
-  create: {
+  create_1: {
     parameters: {
       query?: never;
       header?: never;
@@ -2393,7 +3007,7 @@ export interface operations {
       };
     };
   };
-  list_1: {
+  list_2: {
     parameters: {
       query: {
         /** @description 업무 영역 slug (예: account-info) */
@@ -2512,7 +3126,7 @@ export interface operations {
       };
     };
   };
-  create_1: {
+  create_2: {
     parameters: {
       query?: never;
       header?: never;
@@ -2536,7 +3150,7 @@ export interface operations {
       };
     };
   };
-  list_2: {
+  list_3: {
     parameters: {
       query: {
         /** @description 업무 영역 slug (예: account-info) */
@@ -2563,7 +3177,7 @@ export interface operations {
       };
     };
   };
-  create_2: {
+  create_3: {
     parameters: {
       query?: never;
       header?: never;
@@ -2975,10 +3589,10 @@ export interface operations {
       };
     };
   };
-  list_8: {
+  list_9: {
     parameters: {
       query: {
-        ownerType: 'OPINION_REQUEST' | 'OPINION_REPLY' | 'SUSPENSION' | 'DEMO';
+        ownerType: 'OPINION_REQUEST' | 'OPINION_REPLY' | 'SUSPENSION' | 'TEST_PLAN' | 'DEMO';
         ownerId: number;
       };
       header?: never;
@@ -3001,7 +3615,7 @@ export interface operations {
   upload: {
     parameters: {
       query: {
-        ownerType: 'OPINION_REQUEST' | 'OPINION_REPLY' | 'SUSPENSION' | 'DEMO';
+        ownerType: 'OPINION_REQUEST' | 'OPINION_REPLY' | 'SUSPENSION' | 'TEST_PLAN' | 'DEMO';
         ownerId: number;
       };
       header?: never;
@@ -3074,7 +3688,76 @@ export interface operations {
       };
     };
   };
+  get_1: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+        organizationId: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['TestTargetResultsResponse'];
+        };
+      };
+    };
+  };
   organizations: {
+    parameters: {
+      query: {
+        /** @description 업무 영역 slug (예: account-info) */
+        business: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['TestPlanOrganizationResponse'][];
+        };
+      };
+    };
+  };
+  counts: {
+    parameters: {
+      query: {
+        /** @description 업무 영역 slug (예: account-info) */
+        business: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['TestPlanCountsResponse'];
+        };
+      };
+    };
+  };
+  organizations_1: {
     parameters: {
       query: {
         /** @description 업무 영역 slug (예: account-info) */
@@ -3097,7 +3780,7 @@ export interface operations {
       };
     };
   };
-  counts: {
+  counts_1: {
     parameters: {
       query: {
         /** @description 업무 영역 slug (예: account-info) */
@@ -3122,7 +3805,7 @@ export interface operations {
       };
     };
   };
-  get_1: {
+  get_3: {
     parameters: {
       query?: never;
       header?: never;
@@ -3144,7 +3827,7 @@ export interface operations {
       };
     };
   };
-  counts_1: {
+  counts_2: {
     parameters: {
       query: {
         /** @description 업무 영역 slug (예: account-info) */
@@ -3288,7 +3971,7 @@ export interface operations {
       };
     };
   };
-  counts_2: {
+  counts_3: {
     parameters: {
       query: {
         /** @description 업무 영역 slug (예: account-info) */
@@ -3311,7 +3994,7 @@ export interface operations {
       };
     };
   };
-  list_3: {
+  list_4: {
     parameters: {
       query?: {
         /** @description 0부터 시작 */
@@ -3356,7 +4039,7 @@ export interface operations {
       };
     };
   };
-  list_4: {
+  list_5: {
     parameters: {
       query?: {
         /** @description 0부터 시작 */
@@ -3483,7 +4166,7 @@ export interface operations {
       };
     };
   };
-  list_5: {
+  list_6: {
     parameters: {
       query: {
         /** @description 받는 사람 이메일. 대소문자를 가리지 않는다 */
@@ -3506,7 +4189,7 @@ export interface operations {
       };
     };
   };
-  list_6: {
+  list_7: {
     parameters: {
       query?: never;
       header?: never;
@@ -3526,7 +4209,7 @@ export interface operations {
       };
     };
   };
-  list_7: {
+  list_8: {
     parameters: {
       query: {
         targetType:
@@ -3535,6 +4218,7 @@ export interface operations {
           | 'OPINION_REQUEST'
           | 'OPINION_REPLY'
           | 'TEST_PLAN'
+          | 'TEST_PLAN_TARGET'
           | 'SUSPENSION';
         targetId: number;
         page?: number;
@@ -3599,7 +4283,7 @@ export interface operations {
       };
     };
   };
-  delete_2: {
+  delete_3: {
     parameters: {
       query?: never;
       header?: never;
