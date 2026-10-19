@@ -96,13 +96,13 @@ public final class SampleHomeCards {
                   Urgency.OVERDUE,
                   link),
               new HomeCardItem(
-                  "타파보험 · 정재원 (현업)",
+                  "우리은행 · 정재원 (현업)",
                   "최근 확인 " + today.minusMonths(6).minusDays(3),
                   null,
                   Urgency.OVERDUE,
                   link),
               new HomeCardItem(
-                  "자차카드 · 윤하은 (전산·대외계)",
+                  "우체국 · 윤하은 (전산·대외계)",
                   "최근 확인 " + today.minusMonths(6).minusDays(9),
                   null,
                   Urgency.OVERDUE,

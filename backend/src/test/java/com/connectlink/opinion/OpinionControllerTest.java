@@ -296,7 +296,7 @@ class OpinionControllerTest {
     Map<String, Object> notParticipating = newRequest("참여하지 않는 기관");
     notParticipating.put(
         "targets",
-        List.of(Map.of("organizationId", orgId("JACHA"), "recipientAccountIds", List.of())));
+        List.of(Map.of("organizationId", orgId("071"), "recipientAccountIds", List.of())));
     send(post(BASE), notParticipating, hong())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("OPINION_TARGET_INVALID"));

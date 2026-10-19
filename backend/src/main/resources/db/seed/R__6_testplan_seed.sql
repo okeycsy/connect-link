@@ -78,7 +78,7 @@ FROM (VALUES
   ('자동이체 통합조회 응답 항목 추가', '240',   0,   0, CAST(NULL AS INT)),
   ('자동이체 통합조회 응답 항목 추가', '048',  0,   0, NULL),
   ('출금이체 전문 연계 테스트',        '088',  53,  0, -6),
-  ('출금이체 전문 연계 테스트',        'JACHA', 0,   0, NULL)
+  ('출금이체 전문 연계 테스트',        '071', 0,   0, NULL)
 ) AS t (plan_title, org_code, progress_rate, completed_count, last_hour)
 JOIN test_plan p ON p.title = t.plan_title
 JOIN organization o ON o.code = t.org_code;

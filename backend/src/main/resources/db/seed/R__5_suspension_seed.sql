@@ -47,8 +47,8 @@ FROM (VALUES
    '김민준', '010-0000-2101', 'kim.minjun@kb.example.com', NULL,
    'COMPLETED', 'kim.minjun@kb.example.com', '김민준', FALSE, '상황실이 훈련 시작·종료를 확인했습니다.', 'lee.control@kftc.example.com', '이수진'),
   -- 자동이체통합관리
-  ('AUTO_TRANSFER', '자동이체 통합조회', 'JACHA', 1560, 1680,
-   '카드 승인 시스템 정기 점검으로 자동이체 조회가 중단됩니다.', '자차카드 조회 요청 차단',
+  ('AUTO_TRANSFER', '자동이체 통합조회', '071', 1560, 1680,
+   '우체국금융 전산 정기 점검으로 자동이체 조회가 중단됩니다.', '우체국 조회 요청 차단',
    '윤하은', '010-0000-8101', NULL, NULL,
    'CONFIRMED', 'hong.sungmin@kftc.example.com', '홍성민', TRUE, '운영팀이 02:00 에 차단하고 04:00 에 풉니다.', 'kim.ops@kftc.example.com', '김태호'),
   ('AUTO_TRANSFER', '자동이체 해지', '088', 4200, 4380,
@@ -64,21 +64,21 @@ FROM (VALUES
    '코어뱅킹 정기 점검으로 CMS 출금이체가 중단됩니다.', '신한은행 출금 요청을 작업 뒤 일괄 재처리',
    '이준호', '010-0000-3101', 'lee.junho@shinhan.example.com', '공문 붙임 참고 바랍니다.',
    'CONFIRMED', 'lee.junho@shinhan.example.com', '이준호', FALSE, 'CMS운영팀이 재처리 일정을 잡았습니다. 상황실은 04:00 정상화 여부를 확인합니다.', 'park.cms@kftc.example.com', '박하늘'),
-  ('CMS', '출금이체', 'TAPA', 7080, 7320,
-   '보험료 수납 시스템 교체로 CMS 출금이 중단됩니다.', '타파보험 출금 요청 보류',
+  ('CMS', '출금이체', '020', 7080, 7320,
+   '수납 시스템 교체로 CMS 출금이 중단됩니다.', '우리은행 출금 요청 보류',
    '정재원', '010-0000-9101', NULL, NULL,
    'PENDING_REVIEW', 'park.cms@kftc.example.com', '박하늘', TRUE, NULL, NULL, NULL),
-  ('CMS', '출금이체', 'JACHA', -19620, -19500,
-   '카드 결제 시스템 작업으로 출금이 중단되었습니다.', '자차카드 출금 보류',
+  ('CMS', '출금이체', '071', -19620, -19500,
+   '출금 시스템 작업으로 출금이 중단되었습니다.', '우체국 출금 보류',
    '윤하은', '010-0000-8101', NULL, NULL,
    'COMPLETED', 'park.cms@kftc.example.com', '박하늘', TRUE, '재처리를 마쳤습니다.', 'park.cms@kftc.example.com', '박하늘'),
   -- 대출이동
-  ('LOAN_TRANSFER', '신규기관 주택담보대출', 'PAHA', 4260, 4440,
-   '대출 원장 시스템 점검으로 대출이동 조회가 중단됩니다.', '파하캐피탈 대출이동 조회 차단',
+  ('LOAN_TRANSFER', '신규기관 주택담보대출', '090', 4260, 4440,
+   '대출 원장 시스템 점검으로 대출이동 조회가 중단됩니다.', '카카오뱅크 대출이동 조회 차단',
    '오성훈', '010-0000-1201', NULL, NULL,
    'IN_REVIEW', 'kim.ops@kftc.example.com', '김태호', TRUE, NULL, NULL, NULL),
-  ('LOAN_TRANSFER', '신용대출', 'TAPA', -35940, -35760,
-   '약관대출 시스템 교체로 대출이동이 중단되었습니다.', '타파보험 대출이동 차단',
+  ('LOAN_TRANSFER', '신용대출', '020', -35940, -35760,
+   '여신 시스템 교체로 대출이동이 중단되었습니다.', '우리은행 대출이동 차단',
    '정재원', '010-0000-9101', NULL, NULL,
    'COMPLETED', 'kim.ops@kftc.example.com', '김태호', TRUE, '차단과 해제를 마쳤습니다.', 'kim.ops@kftc.example.com', '김태호')
 ) AS s (business, sub_business, org_code, start_min, end_min, reason, kftc_action, contact_name, contact_phone, contact_email, extra_note,
@@ -95,12 +95,12 @@ FROM (VALUES
   ('050', 'ACCOUNT_INFO',  8940,   'hong.sungmin@kftc.example.com', '홍성민', '현업'),
   ('103',  'ACCOUNT_INFO',  -12780, 'kim.ops@kftc.example.com',      '김태호', '전산(운영)'),
   ('004',  'ACCOUNT_INFO',  -56040, 'lee.control@kftc.example.com',  '이수진', '전산(상황실)'),
-  ('JACHA', 'AUTO_TRANSFER', 1680,   'kim.ops@kftc.example.com',      '김태호', '전산(운영)'),
+  ('071', 'AUTO_TRANSFER', 1680,   'kim.ops@kftc.example.com',      '김태호', '전산(운영)'),
   ('240',   'AUTO_TRANSFER', -27780, 'kim.ops@kftc.example.com',      '김태호', '전산(운영)'),
   ('088',  'CMS',           1680,   'park.cms@kftc.example.com',     '박하늘', '현업'),
-  ('JACHA', 'CMS',           -19500, 'park.cms@kftc.example.com',     '박하늘', '현업'),
-  ('PAHA',  'LOAN_TRANSFER', 4440,   'lee.control@kftc.example.com',  '이수진', '전산(상황실)'),
-  ('TAPA',  'LOAN_TRANSFER', -35760, 'kim.ops@kftc.example.com',      '김태호', '전산(운영)')
+  ('071', 'CMS',           -19500, 'park.cms@kftc.example.com',     '박하늘', '현업'),
+  ('090',  'LOAN_TRANSFER', 4440,   'lee.control@kftc.example.com',  '이수진', '전산(상황실)'),
+  ('020',  'LOAN_TRANSFER', -35760, 'kim.ops@kftc.example.com',      '김태호', '전산(운영)')
 ) AS r (org_code, business, end_min, email, name, role_label)
 JOIN organization o ON o.code = r.org_code
 JOIN suspension su ON su.organization_id = o.id AND su.business = r.business

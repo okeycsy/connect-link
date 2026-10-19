@@ -1,6 +1,6 @@
 -- 샘플 기관. local, demo 프로필에서만 읽는다.
 -- 참가기관은 공개된 금융기관 공동코드(3자리)와 실제 이름을 쓴다(CLAUDE.md 2절 1번). 이메일 도메인은 가상(example.com)이다.
--- 카드·보험·캐피탈·이용기관은 공개 코드를 확인하지 못해 가상 이름과 영문 코드를 둔다.
+-- 공개 코드를 확인하지 못한 카드·보험·캐피탈은 넣지 않는다. 이용기관은 금융회사가 아니라 가상 이름과 영문 코드를 둔다.
 -- Flyway 반복 마이그레이션(R__)이라 내용이 바뀌면 다시 실행된다. 메모리 DB라 매번 새로 넣는다.
 -- 반복 마이그레이션은 설명(파일 이름) 순서로 돈다. 1 기관 → 2 계정 → 3 알림 순서이며, 계정이 기관을 참조하므로 계정부터 지운다.
 DELETE FROM user_account_it_role;
@@ -11,28 +11,29 @@ DELETE FROM organization_business;
 DELETE FROM organization;
 
 INSERT INTO organization (code, name, type, email_domain, active, created_at, created_by, updated_at, updated_by) VALUES
-  ('KFTC',    '금융결제원',     'KFTC',                 'kftc.example.com',    TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
-  ('004',     'KB국민은행',       'FINANCE_ORGANIZATION', 'kb.example.com',    TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
-  ('088',     '신한은행',       'FINANCE_ORGANIZATION', 'shinhan.example.com',    TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
-  ('103',     'SBI저축은행',   'FINANCE_ORGANIZATION', 'sbi.example.com',    TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
-  ('240',     '삼성증권',       'FINANCE_ORGANIZATION', 'samsung.example.com',     TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
-  ('JACHA',   '자차카드',       'FINANCE_ORGANIZATION', 'jacha.example.com',   TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
-  ('TAPA',    '타파보험',       'FINANCE_ORGANIZATION', 'tapa.example.com',    TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
-  ('050',     '저축은행중앙회',   'FINANCE_ORGANIZATION', 'fsb.example.com',   TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
-  ('PAHA',    '파하캐피탈',     'FINANCE_ORGANIZATION', 'paha.example.com',    TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
-  ('048',     '신협',   'FINANCE_ORGANIZATION', 'cu.example.com',    TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
-  ('HAHA',    '하하통신',       'USE_ORGANIZATION',     'haha.example.com',    TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
-  ('005',     '외환은행',       'FINANCE_ORGANIZATION', 'keb.example.com',     FALSE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed');
+  ('KFTC',  '금융결제원',     'KFTC',                 'kftc.example.com',      TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
+  ('004',   'KB국민은행',    'FINANCE_ORGANIZATION', 'kb.example.com',        TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
+  ('088',   '신한은행',      'FINANCE_ORGANIZATION', 'shinhan.example.com',   TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
+  ('103',   'SBI저축은행',   'FINANCE_ORGANIZATION', 'sbi.example.com',       TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
+  ('240',   '삼성증권',      'FINANCE_ORGANIZATION', 'samsung.example.com',   TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
+  ('071',   '우체국',       'FINANCE_ORGANIZATION', 'epost.example.com',     TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
+  ('020',   '우리은행',      'FINANCE_ORGANIZATION', 'woori.example.com',     TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
+  ('050',   '저축은행중앙회',   'FINANCE_ORGANIZATION', 'fsb.example.com',       TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
+  ('090',   '카카오뱅크',     'FINANCE_ORGANIZATION', 'kakaobank.example.com', TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
+  ('048',   '신협',        'FINANCE_ORGANIZATION', 'cu.example.com',        TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
+  ('HAHA',  '하하통신',      'USE_ORGANIZATION',     'haha.example.com',      TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
+  ('005',   '외환은행',      'FINANCE_ORGANIZATION', 'keb.example.com',       FALSE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed');
 
 -- 업권. 의견 요청에서 대상 기관을 업권별로 고를 때 쓴다(참가기관만).
 UPDATE organization SET sector = CASE code
   WHEN '004'  THEN 'BANK'
   WHEN '088'  THEN 'BANK'
-  WHEN '005'   THEN 'BANK'
+  WHEN '005'  THEN 'BANK'
   WHEN '103'  THEN 'MICROFINANCE'
-  WHEN '050' THEN 'MICROFINANCE'
-  WHEN '240'   THEN 'SECURITIES'
-  WHEN 'TAPA'  THEN 'INSURANCE'
+  WHEN '050'  THEN 'MICROFINANCE'
+  WHEN '240'  THEN 'SECURITIES'
+  WHEN '020'  THEN 'BANK'
+  WHEN '090'  THEN 'BANK'
   WHEN '048'  THEN 'MICROFINANCE'
 END
 WHERE type = 'FINANCE_ORGANIZATION';
@@ -46,10 +47,10 @@ FROM (VALUES
   ('088',     'ACCOUNT_INFO'), ('088',  'AUTO_TRANSFER'), ('088',  'CMS'),
   ('103',     'ACCOUNT_INFO'), ('103',  'LOAN_TRANSFER'),
   ('240',     'ACCOUNT_INFO'), ('240',   'AUTO_TRANSFER'),
-  ('JACHA',   'AUTO_TRANSFER'), ('JACHA', 'CMS'),
-  ('TAPA',    'LOAN_TRANSFER'), ('TAPA',  'CMS'),
+  ('071',   'AUTO_TRANSFER'), ('071', 'CMS'),
+  ('020',    'LOAN_TRANSFER'), ('020',  'CMS'),
   ('050',     'ACCOUNT_INFO'), ('050', 'AUTO_TRANSFER'),
-  ('PAHA',    'LOAN_TRANSFER'),
+  ('090',    'LOAN_TRANSFER'),
   ('048',     'ACCOUNT_INFO'), ('048',  'AUTO_TRANSFER'), ('048',  'CMS'),
   ('HAHA',    'CMS'),
   ('005',     'ACCOUNT_INFO')

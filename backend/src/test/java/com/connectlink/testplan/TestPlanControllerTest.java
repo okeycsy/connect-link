@@ -229,7 +229,7 @@ class TestPlanControllerTest {
     send(get(BASE + "/organizations").param("business", "account-info"), null, hong())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[*].code").value(hasItem("004")))
-        .andExpect(jsonPath("$[*].code").value(not(hasItem("JACHA"))))
+        .andExpect(jsonPath("$[*].code").value(not(hasItem("071"))))
         .andExpect(jsonPath("$[*].code").value(not(hasItem("KFTC"))))
         .andExpect(jsonPath("$[?(@.code == '004')].sector").value(hasItem("BANK")));
   }
@@ -246,8 +246,8 @@ class TestPlanControllerTest {
         .andExpect(jsonPath("$.code").value("TEST_PLAN_ITEMS_REQUIRED"));
     send(post(BASE), form("대상 없음", List.of(), "확인"), hong())
         .andExpect(jsonPath("$.code").value("TEST_PLAN_TARGETS_REQUIRED"));
-    // 자차카드는 계좌통합관리에 참여하지 않는다.
-    send(post(BASE), form("참여 안 하는 기관", List.of("JACHA"), "확인"), hong())
+    // 우체국는 계좌통합관리에 참여하지 않는다.
+    send(post(BASE), form("참여 안 하는 기관", List.of("071"), "확인"), hong())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("TEST_TARGET_INVALID"));
     send(post(BASE), form(" ", List.of("004"), " "), hong())

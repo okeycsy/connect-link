@@ -103,16 +103,16 @@ FROM (VALUES
   ('야간 배치 시간 조정 의견 요청',           '088'),
   ('자동이체 통합조회 해지 절차 개선',        '088'),
   ('자동이체 통합조회 해지 절차 개선',        '004'),
-  ('자동이체 통합조회 해지 절차 개선',        'JACHA'),
+  ('자동이체 통합조회 해지 절차 개선',        '071'),
   ('자동이체 통합조회 해지 절차 개선',        '048'),
   ('CMS 출금이체 전문 개정 의견 요청',        '088'),
-  ('CMS 출금이체 전문 개정 의견 요청',        'JACHA'),
-  ('CMS 출금이체 전문 개정 의견 요청',        'TAPA'),
+  ('CMS 출금이체 전문 개정 의견 요청',        '071'),
+  ('CMS 출금이체 전문 개정 의견 요청',        '020'),
   ('CMS 출금이체 전문 개정 의견 요청',        '048'),
   ('대출이동 신규기관 접수시간 연장',         '004'),
   ('대출이동 신규기관 접수시간 연장',         '103'),
-  ('대출이동 신규기관 접수시간 연장',         'TAPA'),
-  ('대출이동 신규기관 접수시간 연장',         'PAHA')
+  ('대출이동 신규기관 접수시간 연장',         '020'),
+  ('대출이동 신규기관 접수시간 연장',         '090')
 ) AS t (title, org_code)
 JOIN opinion_request r ON r.title = t.title
 JOIN organization o ON o.code = t.org_code;
@@ -159,11 +159,11 @@ FROM (VALUES
   ('계좌정보 일괄해지 화면 문구 개선', '088', 'SUBMITTED', 'park.jihoon@shinhan.example.com', '박지훈', 27, NULL),
   ('계좌정보 일괄해지 화면 문구 개선', '103', 'SUBMITTED', 'jung.daeun@sbi.example.com', '정다은', 26, NULL),
   ('자동이체 통합조회 해지 절차 개선', '004', 'SUBMITTED', 'han.gana2@kb.example.com', '한가람', 6, NULL),
-  ('자동이체 통합조회 해지 절차 개선', 'JACHA', 'SUBMITTED', 'yoon.haeun@jacha.example.com', '윤하은', 4, NULL),
-  ('CMS 출금이체 전문 개정 의견 요청', 'TAPA', 'SUBMITTED', 'jung.jaewon@tapa.example.com', '정재원', 1, NULL),
+  ('자동이체 통합조회 해지 절차 개선', '071', 'SUBMITTED', 'yoon.haeun@epost.example.com', '윤하은', 4, NULL),
+  ('CMS 출금이체 전문 개정 의견 요청', '020', 'SUBMITTED', 'jung.jaewon@woori.example.com', '정재원', 1, NULL),
   ('대출이동 신규기관 접수시간 연장', '004', 'SUBMITTED', 'kim.minjun@kb.example.com', '김민준', 35, NULL),
   ('대출이동 신규기관 접수시간 연장', '103', 'SUBMITTED', 'jung.daeun@sbi.example.com', '정다은', 34, NULL),
-  ('대출이동 신규기관 접수시간 연장', 'TAPA', 'SUBMITTED', 'jung.jaewon@tapa.example.com', '정재원', 33, NULL)
+  ('대출이동 신규기관 접수시간 연장', '020', 'SUBMITTED', 'jung.jaewon@woori.example.com', '정재원', 33, NULL)
 ) AS p (title, org_code, status, replier_email, replier_name, submitted_days, revision_reason)
 JOIN opinion_request r ON r.title = p.title
 JOIN organization o ON o.code = p.org_code
@@ -196,13 +196,13 @@ FROM (VALUES
   ('계좌정보 일괄해지 화면 문구 개선', '103', 'SUBMITTED', 0, '이견', NULL),
   ('계좌정보 일괄해지 화면 문구 개선', '103', 'SUBMITTED', 1, NULL, '고객 문의가 늘 수 있어 지금 문구를 유지하기를 바랍니다.'),
   ('자동이체 통합조회 해지 절차 개선', '004', 'SUBMITTED', 0, '동의', NULL),
-  ('자동이체 통합조회 해지 절차 개선', 'JACHA', 'SUBMITTED', 0, '조건부 동의', NULL),
-  ('자동이체 통합조회 해지 절차 개선', 'JACHA', 'SUBMITTED', 1, NULL, '처리 결과 통지는 영업일 기준 2일 안으로 해 주세요.'),
-  ('CMS 출금이체 전문 개정 의견 요청', 'TAPA', 'SUBMITTED', 0, '동의', NULL),
+  ('자동이체 통합조회 해지 절차 개선', '071', 'SUBMITTED', 0, '조건부 동의', NULL),
+  ('자동이체 통합조회 해지 절차 개선', '071', 'SUBMITTED', 1, NULL, '처리 결과 통지는 영업일 기준 2일 안으로 해 주세요.'),
+  ('CMS 출금이체 전문 개정 의견 요청', '020', 'SUBMITTED', 0, '동의', NULL),
   ('대출이동 신규기관 접수시간 연장', '004', 'SUBMITTED', 0, '동의', NULL),
   ('대출이동 신규기관 접수시간 연장', '103', 'SUBMITTED', 0, '조건부 동의', NULL),
   ('대출이동 신규기관 접수시간 연장', '103', 'SUBMITTED', 1, NULL, '18시 연장 시 상담 인력 배치가 필요해 시행을 한 달 늦춰 주세요.'),
-  ('대출이동 신규기관 접수시간 연장', 'TAPA', 'SUBMITTED', 0, '동의', NULL)
+  ('대출이동 신규기관 접수시간 연장', '020', 'SUBMITTED', 0, '동의', NULL)
 ) AS a (title, org_code, stage, question_order, option_label, text_value)
 JOIN opinion_request r ON r.title = a.title
 JOIN organization g ON g.code = a.org_code

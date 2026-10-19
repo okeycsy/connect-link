@@ -98,7 +98,7 @@ class OrganizationControllerTest {
     mockMvc
         .perform(get("/api/v1/organizations/search").param("keyword", "은행").with(TestUsers.admin()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.totalElements").value(5));
+        .andExpect(jsonPath("$.totalElements").value(6));
     mockMvc
         .perform(
             get("/api/v1/organizations/search").param("keyword", "004").with(TestUsers.admin()))
@@ -207,10 +207,10 @@ class OrganizationControllerTest {
 
   @Test
   void 기관을_수정하면_참여_업무가_통째로_바뀌고_빈_도메인은_null이_된다() throws Exception {
-    Long id = organizationRepository.findByCode("PAHA").orElseThrow().getId();
+    Long id = organizationRepository.findByCode("090").orElseThrow().getId();
     String body =
         """
-        {"name":"파하캐피탈(변경)","emailDomain":"  ","active":false,"businesses":["LOAN_TRANSFER","CMS"]}
+        {"name":"카카오뱅크(변경)","emailDomain":"  ","active":false,"businesses":["LOAN_TRANSFER","CMS"]}
         """;
     mockMvc
         .perform(
@@ -220,7 +220,7 @@ class OrganizationControllerTest {
                 .with(TestUsers.admin())
                 .with(csrf()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.name").value("파하캐피탈(변경)"))
+        .andExpect(jsonPath("$.name").value("카카오뱅크(변경)"))
         .andExpect(jsonPath("$.emailDomain").doesNotExist())
         .andExpect(jsonPath("$.active").value(false))
         .andExpect(jsonPath("$.businesses", hasSize(2)))
@@ -230,7 +230,7 @@ class OrganizationControllerTest {
     // 공개 목록에서는 사용 중지된 기관이 빠진다.
     mockMvc
         .perform(get("/api/v1/organizations"))
-        .andExpect(jsonPath("$[*].code", not(org.hamcrest.Matchers.hasItem("PAHA"))));
+        .andExpect(jsonPath("$[*].code", not(org.hamcrest.Matchers.hasItem("090"))));
   }
 
   @Test

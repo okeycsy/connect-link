@@ -66,8 +66,8 @@ public final class SampleSearchProviders {
               new String[] {"이준호", "신한은행 · 전산(대외계) · 주담당"},
               new String[] {"박소영", "SBI저축은행 · 현업 · 부담당"},
               new String[] {"최유진", "삼성증권 · 전산(개발) · 주담당"},
-              new String[] {"정재원", "타파보험 · 현업 · 주담당"},
-              new String[] {"윤하은", "자차카드 · 전산(운영) · 부담당"}));
+              new String[] {"정재원", "우리은행 · 현업 · 주담당"},
+              new String[] {"윤하은", "우체국 · 전산(운영) · 부담당"}));
     }
   }
 }
