@@ -25,7 +25,8 @@ test.describe('홈 대시보드', () => {
     // 큰 칸은 알림 센터와 같은 최근 소식, 일시중단은 월~금 요일 칸
     await expect(cards.getByTestId('home-recent-notifications')).toBeVisible();
     await expect(cards.getByTestId('suspension-week')).toBeVisible();
-    await expect(cards.getByText('샘플').first()).toBeVisible();
+    // 모든 카드가 실제 데이터다(샘플 카드 없음).
+    await expect(cards.getByText('샘플')).toHaveCount(0);
     await page.screenshot({ path: 'screenshots/home.png', fullPage: true });
   });
 
@@ -40,7 +41,7 @@ test.describe('홈 대시보드', () => {
     await expect(page.getByText('CMS', { exact: true }).first()).toBeVisible();
     await expect(
       page.getByTestId('home-card-UPDATE_CAMPAIGN').getByRole('link', { name: '모두 보기' }),
-    ).toHaveAttribute('href', '/cms/contacts');
+    ).toHaveAttribute('href', /^\/cms\/admin\/update-campaigns/);
   });
 
   test('카드의 모두 보기는 해당 기능 화면으로 간다', async ({ page }) => {

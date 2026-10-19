@@ -26,7 +26,7 @@ test.describe('앱 셸', () => {
     await page.getByRole('navigation').getByRole('link', { name: 'CMS' }).click();
     await expect(page).toHaveURL(/\/cms\/contacts$/);
     await expect(page.getByRole('heading', { name: '연락처' })).toBeVisible();
-    await expect(page.getByText('CMS의 연락처 화면은')).toBeVisible();
+    await expect(page.getByTestId('contact-table')).toContainText('이준호');
   });
 
   test('모르는 업무 영역 주소는 기본 업무 홈으로 보낸다', async ({ page }) => {

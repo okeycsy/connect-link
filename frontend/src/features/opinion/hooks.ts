@@ -10,6 +10,7 @@ import { api, ApiError, unwrap } from '../../api/client';
 import type { components } from '../../api/schema';
 import type { CurrentUserResponse } from '../account/hooks';
 import { attachmentKeys } from '../attachment/hooks';
+import { fileNameOf, saveBlob } from '../../shared/download';
 import { historyKeys } from '../history/hooks';
 import { homeKeys } from '../home/hooks';
 
@@ -353,25 +354,6 @@ export function useDownloadOpinionExcel(requestId: number) {
       saveBlob(blob, fileNameOf(result.response) ?? '의견취합.xlsx');
     },
   });
-}
-
-/** Content-Disposition 의 filename*=UTF-8''… (한글 이름) 을 읽는다. */
-export function fileNameOf(response: Response): string | undefined {
-  const header = response.headers.get('Content-Disposition') ?? '';
-  const encoded = /filename\*=UTF-8''([^;]+)/i.exec(header)?.[1];
-  if (encoded) return decodeURIComponent(encoded);
-  return /filename="?([^";]+)"?/i.exec(header)?.[1];
-}
-
-function saveBlob(blob: Blob, fileName: string) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1_000);
 }
 
 /** 첨부를 올리거나 지운 뒤 다른 대상(기관 회신 등) 목록도 새로 읽게 할 때. */

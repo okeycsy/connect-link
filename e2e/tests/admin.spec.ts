@@ -10,7 +10,8 @@ test.describe('관리 > 기관·업무 기준정보', () => {
     await page.goto('/loan-transfer/admin');
     await expect(page.getByRole('heading', { name: '관리' })).toBeVisible();
     const menu = page.getByTestId('admin-menu');
-    await expect(menu.getByText('준비 중 · 연락처')).toBeVisible();
+    await expect(menu.getByRole('link', { name: /정기 변경 주간/ })).toBeVisible();
+    await expect(menu.getByText('준비 중 · 공통')).toBeVisible();
     await page.screenshot({ path: 'screenshots/admin-hub.png', fullPage: true });
 
     await menu.getByRole('link', { name: /기관·업무 기준정보/ }).click();

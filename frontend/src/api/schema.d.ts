@@ -4,6 +4,30 @@
  */
 
 export interface paths {
+  '/api/v1/update-campaigns/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * 정기 변경 주간 수정
+     * @description 이름과 기간을 고친다. 끝난 주간이면 409 UPDATE_CAMPAIGN_CLOSED.
+     */
+    put: operations['update'];
+    post?: never;
+    /**
+     * 정기 변경 주간 삭제
+     * @description 아직 시작하지 않은 주간만 지운다. 시작했으면 409 UPDATE_CAMPAIGN_STARTED.
+     */
+    delete: operations['delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/test-plans/{id}': {
     parameters: {
       query?: never;
@@ -20,13 +44,13 @@ export interface paths {
      * 기관 테스트 고치기
      * @description 그 업무 결제원 담당자가 내용·요구사항·대상 기관을 고친다. 업무는 바꿀 수 없다(TEST_PLAN_BUSINESS_FIXED). 결과가 있는 요구사항·기관을 빼면 409 TEST_ITEM_HAS_RESULTS, TEST_TARGET_HAS_RESULTS. 새로 더한 대상 기관 담당자에게 알림·메일이 간다.
      */
-    put: operations['update'];
+    put: operations['update_1'];
     post?: never;
     /**
      * 기관 테스트 지우기
      * @description 그 업무 결제원 담당자가 지운다. 기관 결과와 가이드 첨부도 함께 지운다.
      */
-    delete: operations['delete'];
+    delete: operations['delete_1'];
     options?: never;
     head?: never;
     patch?: never;
@@ -112,13 +136,13 @@ export interface paths {
      * 일시중단 수정
      * @description 등록한 기관 담당자나 그 업무 결제원 담당자가 고친다. 기관 담당자가 확인이 시작된 건을 고치면 검토 대기로 돌아간다. 결제원 담당자에게 매터모스트 알림이 간다. 완료한 건이면 409 SUSPENSION_COMPLETED.
      */
-    put: operations['update_1'];
+    put: operations['update_2'];
     post?: never;
     /**
      * 일시중단 삭제
      * @description 등록한 본인만 지운다. 결제원 담당자에게 매터모스트 알림이 간다.
      */
-    delete: operations['delete_1'];
+    delete: operations['delete_2'];
     options?: never;
     head?: never;
     patch?: never;
@@ -137,7 +161,7 @@ export interface paths {
      * 기관 수정 (관리자)
      * @description 이름, 이메일 도메인, 사용 여부, 참여 업무를 통째로 바꾼다.
      */
-    put: operations['update_2'];
+    put: operations['update_3'];
     post?: never;
     delete?: never;
     options?: never;
@@ -185,13 +209,65 @@ export interface paths {
      * 의견 요청 수정
      * @description 작성중·회신중에 고친다. 질문(작성중일 때만)·대상은 보낸 목록으로 바뀐다. 회신중이면 새 회신 담당자에게 요청 메일, 남은 담당자에게 변경 알림이 간다. 회신을 저장한 기관을 빼면 409 OPINION_TARGET_HAS_REPLY.
      */
-    put: operations['update_3'];
+    put: operations['update_4'];
     post?: never;
     /**
      * 작성중 의견 요청 삭제
      * @description 작성중만 지운다. 회신중이면 409 이고 취소를 쓴다.
      */
-    delete: operations['delete_2'];
+    delete: operations['delete_3'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/contacts/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 담당자 상세 조회
+     * @description permissions 가 지금 할 수 있는 일이다. 변경 이력은 변경 이력 API 로 본다.
+     */
+    get: operations['get_6'];
+    /**
+     * 담당자 수정
+     * @description 본인과 소속 기관의 같은 업무 담당자, 또는 그 업무 결제원 담당자(내부망)가 고친다. 저장하면 최근 확인일이 갱신되고 바뀐 항목은 변경 전·후 이력으로 남는다. 기관과 업무는 바뀌지 않는다.
+     */
+    put: operations['update_5'];
+    post?: never;
+    /**
+     * 담당자 삭제
+     * @description 그 업무 결제원 담당자가 내부망에서 지운다. 삭제 이력이 남는다.
+     */
+    delete: operations['delete_4'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/update-campaigns': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 정기 변경 주간 목록 조회
+     * @description 한 업무의 주간 전부, 최근 시작 순. 결제원 담당자만 본다.
+     */
+    get: operations['list'];
+    put?: never;
+    /**
+     * 정기 변경 주간 등록
+     * @description 그 업무 결제원 담당자가 등록한다. 그 업무 참가기관 담당자에게 알림 센터와 메일로 알린다. 같은 업무의 다른 주간과 기간이 겹치면 409 UPDATE_CAMPAIGN_OVERLAP.
+     */
+    post: operations['create'];
+    delete?: never;
     options?: never;
     head?: never;
     patch?: never;
@@ -208,13 +284,13 @@ export interface paths {
      * 기관 테스트 목록 조회
      * @description 한 업무 영역의 기관 테스트. state 가 없으면 전부(최근 만든 순)다. 결제원 담당자는 전부와 전체 수행률을, 기관 담당자는 자기 기관이 대상인 것과 자기 기관 수행률을 본다.
      */
-    get: operations['list'];
+    get: operations['list_1'];
     put?: never;
     /**
      * 기관 테스트 만들기
      * @description 그 업무 결제원 담당자가 단위업무/개발 건마다 만든다. 요구사항과 대상 기관이 하나 이상 있어야 한다(TEST_PLAN_ITEMS_REQUIRED, TEST_PLAN_TARGETS_REQUIRED). 바로 대상 기관에 열리고 대상 기관 담당자에게 알림·메일이 간다. 만든 사람이 결과 등록 알림 대상이 된다. 가이드·참고자료(TEST_PLAN)는 저장한 뒤 첨부 API 로 올린다.
      */
-    post: operations['create'];
+    post: operations['create_1'];
     delete?: never;
     options?: never;
     head?: never;
@@ -232,13 +308,13 @@ export interface paths {
      * 일시중단 목록 조회
      * @description 한 업무 영역의 일시중단. period 가 없으면 전부(최근 시작 순)다. 결제원 담당자는 전 기관을, 기관 담당자는 자기 기관만 본다. organizationId 는 결제원 담당자의 기관별 이력 보기다.
      */
-    get: operations['list_1'];
+    get: operations['list_2'];
     put?: never;
     /**
      * 일시중단 등록
      * @description 검토 대기로 등록하고 그 업무 결제원 담당자에게 메일·매터모스트 알림을 보낸다. 공문(SUSPENSION)은 저장한 뒤 첨부 API 로 올린다.
      */
-    post: operations['create_1'];
+    post: operations['create_2'];
     delete?: never;
     options?: never;
     head?: never;
@@ -316,7 +392,7 @@ export interface paths {
      * 가입 신청 목록 조회
      * @description 한 업무 영역을 신청에 넣은 계정을 상태별로 최근 신청 순서로 돌려준다. 승인(ACTIVE)·반려(REJECTED)는 가입 승인을 거친 계정만 나온다.
      */
-    get: operations['list_2'];
+    get: operations['list_3'];
     put?: never;
     /**
      * 가입 신청
@@ -386,7 +462,7 @@ export interface paths {
      * 기관 등록 (관리자)
      * @description 같은 코드가 이미 있으면 409.
      */
-    post: operations['create_2'];
+    post: operations['create_3'];
     delete?: never;
     options?: never;
     head?: never;
@@ -404,13 +480,13 @@ export interface paths {
      * 의견 요청 목록 조회
      * @description 한 업무 영역의 요청 중 한 상태. 결제원 담당자는 그 업무의 모든 요청을, 기관 담당자는 자기 기관이 대상인 회신중·마감 요청만 본다(작성중은 빈 목록).
      */
-    get: operations['list_3'];
+    get: operations['list_4'];
     put?: never;
     /**
      * 의견 요청 작성
      * @description 작성중으로 저장한다. 첨부자료(OPINION_REQUEST)는 저장한 뒤 첨부 API 로 올린다.
      */
-    post: operations['create_3'];
+    post: operations['create_4'];
     delete?: never;
     options?: never;
     head?: never;
@@ -682,6 +758,90 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/demo/contact-reconfirm-runs': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 6개월 미확인 알림 지금 보내기(데모)
+     * @description 매일 9시 예약 작업과 같다. 이번 미확인 기간에 이미 알린 담당자는 건너뛴다.
+     */
+    post: operations['run'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/contacts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 담당자 목록 조회
+     * @description 한 업무의 담당자. 결제원 담당자와 결제원 운영·상황실·대외계는 전 기관을, 기관 담당자는 결제원 담당자와 자기 기관만 본다. 결제원이 맨 위, 기관 이름순, 주담당 → 부담당이다. 검색어·기관·직무·확인 필요 조건은 내부망 전용이라 인터넷망에서 쓰면 403 INTERNAL_ONLY.
+     */
+    get: operations['list_9'];
+    put?: never;
+    /**
+     * 담당자 등록
+     * @description 결제원 담당자는 결제원이나 그 업무 참가기관을 골라(내부망), 기관 담당자는 자기 기관에 후임자 등을 등록한다. 같은 기관·업무에 같은 이메일이 있으면 409 CONTACT_DUPLICATE.
+     */
+    post: operations['create_5'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/contacts/{id}/confirmation': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 변동 없음 확인
+     * @description 내용은 그대로 두고 최근 확인일만 오늘로 한다. 고칠 수 있는 사람이 한다.
+     */
+    post: operations['confirm_2'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/contacts/organization-confirmations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 기관 담당자 현행화 완료
+     * @description 기관 하나의 한 업무 담당자 전부를 변동 없음으로 확인한다. 정기 변경 주간이 진행 중이면 그 기관을 현행화 완료로 남긴다. 기관 담당자는 자기 기관, 결제원 담당자는 고른 기관(내부망). 담당자가 없으면 409 CONTACT_NONE.
+     */
+    post: operations['confirmOrganization'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/auth/logout': {
     parameters: {
       query?: never;
@@ -730,7 +890,7 @@ export interface paths {
       cookie?: never;
     };
     /** 대상 하나의 첨부파일 목록(올린 순) */
-    get: operations['list_9'];
+    get: operations['list_11'];
     put?: never;
     /** 첨부파일 올리기 (multipart: file) */
     post: operations['upload'];
@@ -758,6 +918,46 @@ export interface paths {
      * @description 사유를 받아 참가기관 담당자의 계정을 탈퇴시키고, 그 담당자에게 사유를 담은 메일을 보낸다. 그 담당자의 세션은 다음 요청에서 끝난다. 사용 중 계정이 아니면 409 ACCOUNT_NOT_ACTIVE, 막는 까닭이 있으면 409 WITHDRAWAL_BLOCKED.
      */
     post: operations['withdraw_1'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/update-campaigns/{id}/progress': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 정기 변경 진행률 조회
+     * @description 전체 진행률과 기관별 현행화 완료·미완료, 정보 변경 여부. filter 로 미확인(INCOMPLETE)·정보 변경(CHANGED) 기관만 따로 본다. 결제원 담당자만 본다.
+     */
+    get: operations['progress'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/update-campaigns/current': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 진행 중인 정기 변경 주간 조회
+     * @description 연락처 화면 위쪽 안내. 담당자 목록을 볼 수 있는 누구나 보고, 기관 담당자는 자기 기관 현행화도 받는다. 진행 중인 주간이 없으면 campaign 이 null.
+     */
+    get: operations['current'];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -1035,7 +1235,7 @@ export interface paths {
      * 내 알림 목록 조회
      * @description 최신순. unreadOnly=true 면 읽지 않은 알림만 돌려준다.
      */
-    get: operations['list_4'];
+    get: operations['list_5'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1072,7 +1272,7 @@ export interface paths {
      * 발송함 조회
      * @description 최신순. 관리자만 볼 수 있다.
      */
-    get: operations['list_5'];
+    get: operations['list_6'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1186,7 +1386,7 @@ export interface paths {
       cookie?: never;
     };
     /** 받은 메일함 (받는 사람별 최근 메일 5건, 로그인 전에도 열림) */
-    get: operations['list_6'];
+    get: operations['list_7'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1203,7 +1403,107 @@ export interface paths {
       cookie?: never;
     };
     /** 데모 계정 목록 (역할별, 로그인 전에도 열림) */
-    get: operations['list_7'];
+    get: operations['list_8'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/contacts/reconfirm-due': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 확인이 필요한 담당자 조회(로그인 알림)
+     * @description 최근 확인일에서 6개월이 지난 담당자 중 로그인한 사람이 확인할 것. 본인 행과, 기관 담당자면 자기 기관의 맡은 업무 담당자다. 화면은 로그인 뒤 한 번 알림을 띄운다.
+     */
+    get: operations['reconfirmDue'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/contacts/organizations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 담당자 기관 조회
+     * @description 등록 양식과 기관 거르기에 쓰는 기관. 전 기관을 보는 사람은 결제원과 그 업무 참가기관 전부, 기관 담당자는 결제원과 자기 기관이다.
+     */
+    get: operations['organizations_2'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/contacts/me': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 내 연락처 조회
+     * @description 로그인한 사람 본인의 담당자 행(맡은 업무마다 하나). 내 정보 화면이 쓴다.
+     */
+    get: operations['mine'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/contacts/excel': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 담당자 목록 엑셀 다운로드
+     * @description 목록과 같은 범위·조건의 xlsx. 내부망 전용이라 인터넷망이면 403 INTERNAL_ONLY.
+     */
+    get: operations['excel_1'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/contacts/counts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 담당자 건수 조회
+     * @description 볼 수 있는 범위의 전체 담당자 수와 최근 확인일 6개월 경과 수.
+     */
+    get: operations['counts_4'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1220,7 +1520,7 @@ export interface paths {
       cookie?: never;
     };
     /** 대상 하나의 변경 이력(최신순) */
-    get: operations['list_8'];
+    get: operations['list_10'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1277,7 +1577,7 @@ export interface paths {
     put?: never;
     post?: never;
     /** 첨부파일 지우기 */
-    delete: operations['delete_3'];
+    delete: operations['delete_5'];
     options?: never;
     head?: never;
     patch?: never;
@@ -1287,6 +1587,41 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    UpdateCampaignSaveRequest: {
+      /** @enum {string} */
+      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
+      title: string;
+      /** Format: date */
+      startDate: string;
+      /** Format: date */
+      endDate: string;
+    };
+    UpdateCampaignResponse: {
+      /** Format: int64 */
+      id: number;
+      /** @enum {string} */
+      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
+      businessLabel: string;
+      title: string;
+      /** Format: date */
+      startDate: string;
+      /** Format: date */
+      endDate: string;
+      /** @enum {string} */
+      status: 'UPCOMING' | 'OPEN' | 'CLOSED';
+      statusLabel: string;
+      registrantName: string;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: int32 */
+      targetCount: number;
+      /** Format: int32 */
+      completedCount: number;
+      /** Format: int32 */
+      changedCount: number;
+      /** Format: int32 */
+      progressRate: number;
+    };
     TestItemRequest: {
       /** Format: int64 */
       id?: number | null;
@@ -1685,6 +2020,64 @@ export interface components {
       /** @enum {string|null} */
       replyStatus?: 'DRAFT' | 'SUBMITTED' | 'REVISION_REQUESTED' | 'REVISING' | null;
     };
+    ContactSaveRequest: {
+      /** @enum {string} */
+      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
+      /** Format: int64 */
+      organizationId?: number | null;
+      subBusiness?: string | null;
+      name: string;
+      department: string;
+      team?: string | null;
+      jobTitle?: string | null;
+      /** @enum {string} */
+      jobRole: 'BUSINESS' | 'IT';
+      /** @description 전산 세부 직무. 직무가 전산이면 하나 이상, 현업이면 비워 둔다(보내도 버린다). */
+      itRoles?: ('DEV' | 'OPS' | 'INFRA' | 'EXTERNAL_LINK' | 'CONTROL_ROOM' | null)[] | null;
+      /** @enum {string} */
+      rank: 'PRIMARY' | 'SECONDARY';
+      extensionPhone: string;
+      mobilePhone?: string | null;
+      email: string;
+    };
+    ContactPermissions: {
+      edit: boolean;
+      delete: boolean;
+    };
+    ContactResponse: {
+      /** Format: int64 */
+      id: number;
+      /** @enum {string} */
+      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
+      businessLabel: string;
+      /** Format: int64 */
+      organizationId: number;
+      organizationCode: string;
+      organizationName: string;
+      /** @enum {string} */
+      organizationType: 'KFTC' | 'FINANCE_ORGANIZATION' | 'USE_ORGANIZATION';
+      subBusiness?: string | null;
+      name: string;
+      department: string;
+      team?: string | null;
+      jobTitle?: string | null;
+      /** @enum {string} */
+      jobRole: 'BUSINESS' | 'IT';
+      jobRoleLabel: string;
+      itRoles: ('DEV' | 'OPS' | 'INFRA' | 'EXTERNAL_LINK' | 'CONTROL_ROOM')[];
+      /** @enum {string} */
+      rank: 'PRIMARY' | 'SECONDARY';
+      rankLabel: string;
+      extensionPhone: string;
+      mobilePhone?: string | null;
+      email: string;
+      /** Format: date-time */
+      lastConfirmedAt: string;
+      lastConfirmedByName: string;
+      needsConfirm: boolean;
+      self: boolean;
+      permissions: components['schemas']['ContactPermissions'];
+    };
     SuspensionHandoverRequest: {
       handover: string;
     };
@@ -1878,6 +2271,21 @@ export interface components {
       tokenExpiresAt: string;
       suggestedOrganizationIds: number[];
     };
+    ContactReconfirmRunResponse: {
+      /** Format: int32 */
+      notified: number;
+    };
+    ContactOrganizationConfirmRequest: {
+      /** @enum {string} */
+      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
+      /** Format: int64 */
+      organizationId?: number | null;
+    };
+    ContactOrganizationConfirmResponse: {
+      /** Format: int32 */
+      confirmedCount: number;
+      campaignTitle?: string | null;
+    };
     LoginRequest: {
       email: string;
       password: string;
@@ -1918,6 +2326,29 @@ export interface components {
     };
     AccountWithdrawalRequest: {
       reason: string;
+    };
+    UpdateCampaignOrganizationResponse: {
+      /** Format: int64 */
+      organizationId: number;
+      organizationCode: string;
+      organizationName: string;
+      completed: boolean;
+      /** Format: date-time */
+      completedAt?: string | null;
+      completedByName?: string | null;
+      changed: boolean;
+      /** Format: date-time */
+      changedAt?: string | null;
+      /** Format: int64 */
+      contactCount: number;
+    };
+    UpdateCampaignProgressResponse: {
+      campaign: components['schemas']['UpdateCampaignResponse'];
+      organizations: components['schemas']['UpdateCampaignOrganizationResponse'][];
+    };
+    CurrentUpdateCampaignResponse: {
+      campaign: components['schemas']['UpdateCampaignResponse'];
+      ownOrganization: components['schemas']['UpdateCampaignOrganizationResponse'];
     };
     PageResponseTestPlanSummaryResponse: {
       content: components['schemas']['TestPlanSummaryResponse'][];
@@ -2377,6 +2808,32 @@ export interface components {
       password: string;
       accounts: components['schemas']['DemoAccountResponse'][];
     };
+    PageResponseContactResponse: {
+      content: components['schemas']['ContactResponse'][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+      last: boolean;
+    };
+    ContactOrganizationResponse: {
+      /** Format: int64 */
+      id: number;
+      code: string;
+      name: string;
+      /** @enum {string} */
+      type: 'KFTC' | 'FINANCE_ORGANIZATION' | 'USE_ORGANIZATION';
+    };
+    ContactCountsResponse: {
+      /** Format: int64 */
+      total: number;
+      /** Format: int64 */
+      needsConfirm: number;
+    };
     ChangeHistoryResponse: {
       /** Format: int64 */
       id: number;
@@ -2430,6 +2887,52 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  update: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateCampaignSaveRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['UpdateCampaignResponse'];
+        };
+      };
+    };
+  };
+  delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   get: {
     parameters: {
       query?: never;
@@ -2452,7 +2955,7 @@ export interface operations {
       };
     };
   };
-  update: {
+  update_1: {
     parameters: {
       query?: never;
       header?: never;
@@ -2478,7 +2981,7 @@ export interface operations {
       };
     };
   };
-  delete: {
+  delete_1: {
     parameters: {
       query?: never;
       header?: never;
@@ -2623,7 +3126,7 @@ export interface operations {
       };
     };
   };
-  update_1: {
+  update_2: {
     parameters: {
       query?: never;
       header?: never;
@@ -2649,7 +3152,7 @@ export interface operations {
       };
     };
   };
-  delete_1: {
+  delete_2: {
     parameters: {
       query?: never;
       header?: never;
@@ -2691,7 +3194,7 @@ export interface operations {
       };
     };
   };
-  update_2: {
+  update_3: {
     parameters: {
       query?: never;
       header?: never;
@@ -2787,7 +3290,7 @@ export interface operations {
       };
     };
   };
-  update_3: {
+  update_4: {
     parameters: {
       query?: never;
       header?: never;
@@ -2813,7 +3316,75 @@ export interface operations {
       };
     };
   };
-  delete_2: {
+  delete_3: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_6: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['ContactResponse'];
+        };
+      };
+    };
+  };
+  update_5: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ContactSaveRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['ContactResponse'];
+        };
+      };
+    };
+  };
+  delete_4: {
     parameters: {
       query?: never;
       header?: never;
@@ -2834,6 +3405,53 @@ export interface operations {
     };
   };
   list: {
+    parameters: {
+      query: {
+        /** @description 업무 영역 slug (예: account-info) */
+        business: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['UpdateCampaignResponse'][];
+        };
+      };
+    };
+  };
+  create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateCampaignSaveRequest'];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['UpdateCampaignResponse'];
+        };
+      };
+    };
+  };
+  list_1: {
     parameters: {
       query: {
         /** @description 업무 영역 slug (예: account-info) */
@@ -2861,7 +3479,7 @@ export interface operations {
       };
     };
   };
-  create: {
+  create_1: {
     parameters: {
       query?: never;
       header?: never;
@@ -2885,7 +3503,7 @@ export interface operations {
       };
     };
   };
-  list_1: {
+  list_2: {
     parameters: {
       query: {
         /** @description 업무 영역 slug (예: account-info) */
@@ -2915,7 +3533,7 @@ export interface operations {
       };
     };
   };
-  create_1: {
+  create_2: {
     parameters: {
       query?: never;
       header?: never;
@@ -3007,7 +3625,7 @@ export interface operations {
       };
     };
   };
-  list_2: {
+  list_3: {
     parameters: {
       query: {
         /** @description 업무 영역 slug (예: account-info) */
@@ -3126,7 +3744,7 @@ export interface operations {
       };
     };
   };
-  create_2: {
+  create_3: {
     parameters: {
       query?: never;
       header?: never;
@@ -3150,7 +3768,7 @@ export interface operations {
       };
     };
   };
-  list_3: {
+  list_4: {
     parameters: {
       query: {
         /** @description 업무 영역 slug (예: account-info) */
@@ -3177,7 +3795,7 @@ export interface operations {
       };
     };
   };
-  create_3: {
+  create_4: {
     parameters: {
       query?: never;
       header?: never;
@@ -3547,6 +4165,130 @@ export interface operations {
       };
     };
   };
+  run: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['ContactReconfirmRunResponse'];
+        };
+      };
+    };
+  };
+  list_9: {
+    parameters: {
+      query: {
+        /** @description 업무 영역 slug (예: account-info) */
+        business: string;
+        /** @description 이름, 기관, 부서, 세부업무, 이메일 검색어(내부망) */
+        q?: string;
+        /** @description 이 기관만(내부망) */
+        organizationId?: number;
+        /** @description 이 직무만(내부망) */
+        jobRole?: 'BUSINESS' | 'IT';
+        /** @description 최근 확인일 6개월 경과만(내부망) */
+        needsConfirm?: boolean;
+        /** @description 0부터 시작 */
+        page?: number;
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['PageResponseContactResponse'];
+        };
+      };
+    };
+  };
+  create_5: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ContactSaveRequest'];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['ContactResponse'];
+        };
+      };
+    };
+  };
+  confirm_2: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['ContactResponse'];
+        };
+      };
+    };
+  };
+  confirmOrganization: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ContactOrganizationConfirmRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['ContactOrganizationConfirmResponse'];
+        };
+      };
+    };
+  };
   logout: {
     parameters: {
       query?: never;
@@ -3589,7 +4331,7 @@ export interface operations {
       };
     };
   };
-  list_9: {
+  list_11: {
     parameters: {
       query: {
         ownerType: 'OPINION_REQUEST' | 'OPINION_REPLY' | 'SUSPENSION' | 'TEST_PLAN' | 'DEMO';
@@ -3685,6 +4427,54 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+    };
+  };
+  progress: {
+    parameters: {
+      query?: {
+        /** @description ALL(기본), COMPLETED, INCOMPLETE, CHANGED */
+        filter?: 'ALL' | 'COMPLETED' | 'INCOMPLETE' | 'CHANGED';
+      };
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['UpdateCampaignProgressResponse'];
+        };
+      };
+    };
+  };
+  current: {
+    parameters: {
+      query: {
+        /** @description 업무 영역 slug (예: account-info) */
+        business: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['CurrentUpdateCampaignResponse'];
+        };
       };
     };
   };
@@ -3994,7 +4784,7 @@ export interface operations {
       };
     };
   };
-  list_4: {
+  list_5: {
     parameters: {
       query?: {
         /** @description 0부터 시작 */
@@ -4039,7 +4829,7 @@ export interface operations {
       };
     };
   };
-  list_5: {
+  list_6: {
     parameters: {
       query?: {
         /** @description 0부터 시작 */
@@ -4166,7 +4956,7 @@ export interface operations {
       };
     };
   };
-  list_6: {
+  list_7: {
     parameters: {
       query: {
         /** @description 받는 사람 이메일. 대소문자를 가리지 않는다 */
@@ -4189,7 +4979,7 @@ export interface operations {
       };
     };
   };
-  list_7: {
+  list_8: {
     parameters: {
       query?: never;
       header?: never;
@@ -4209,7 +4999,120 @@ export interface operations {
       };
     };
   };
-  list_8: {
+  reconfirmDue: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['ContactResponse'][];
+        };
+      };
+    };
+  };
+  organizations_2: {
+    parameters: {
+      query: {
+        /** @description 업무 영역 slug (예: account-info) */
+        business: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['ContactOrganizationResponse'][];
+        };
+      };
+    };
+  };
+  mine: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['ContactResponse'][];
+        };
+      };
+    };
+  };
+  excel_1: {
+    parameters: {
+      query: {
+        /** @description 업무 영역 slug (예: account-info) */
+        business: string;
+        q?: string;
+        organizationId?: number;
+        jobRole?: 'BUSINESS' | 'IT';
+        needsConfirm?: boolean;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string[];
+        };
+      };
+    };
+  };
+  counts_4: {
+    parameters: {
+      query: {
+        /** @description 업무 영역 slug (예: account-info) */
+        business: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['ContactCountsResponse'];
+        };
+      };
+    };
+  };
+  list_10: {
     parameters: {
       query: {
         targetType:
@@ -4283,7 +5186,7 @@ export interface operations {
       };
     };
   };
-  delete_3: {
+  delete_5: {
     parameters: {
       query?: never;
       header?: never;

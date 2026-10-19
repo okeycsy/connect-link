@@ -1,5 +1,7 @@
 import { expect, type Page, test } from '@playwright/test';
 
+import { skipContactReconfirm } from './support/account';
+
 // 이 파일은 공통 세션(데모 관리자) 없이 빈 브라우저로 시작한다.
 test.use({ storageState: { cookies: [], origins: [] } });
 
@@ -23,6 +25,8 @@ async function railLabels(page: Page): Promise<string[]> {
 }
 
 test.describe('로그인', () => {
+  test.beforeEach(async ({ page }) => skipContactReconfirm(page));
+
   test('로그인하지 않으면 로그인 화면으로 보내고, 로그인하면 원래 주소로 돌아간다', async ({
     page,
   }) => {

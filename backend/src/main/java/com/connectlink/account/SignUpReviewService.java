@@ -17,9 +17,12 @@ import com.connectlink.organization.Organization;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -42,6 +45,7 @@ public class SignUpReviewService {
   private final SignUpReviewAccessPolicy accessPolicy;
   private final NotificationService notificationService;
   private final NotificationSender notificationSender;
+  private final ApplicationEventPublisher events;
   private final Clock clock;
 
   public SignUpReviewService(
@@ -49,11 +53,13 @@ public class SignUpReviewService {
       SignUpReviewAccessPolicy accessPolicy,
       NotificationService notificationService,
       NotificationSender notificationSender,
+      ApplicationEventPublisher events,
       Clock clock) {
     this.repository = repository;
     this.accessPolicy = accessPolicy;
     this.notificationService = notificationService;
     this.notificationSender = notificationSender;
+    this.events = events;
     this.clock = clock;
   }
 
@@ -87,10 +93,33 @@ public class SignUpReviewService {
     return toResponse(account);
   }
 
-  /** 승인한다. 신청자에게 알림 센터 알림과 승인 메일이 간다. 승인 대기가 아니면 409 다. */
+  /**
+   * 승인한다. 신청자에게 알림 센터 알림과 승인 메일이 가고, 기능 모듈에 {@link AccountApprovedEvent} 를 알린다(연락처 모듈이 담당자 행을 만든다).
+   * 승인 대기가 아니면 409 다.
+   */
   public SignUpApplicationResponse approve(CurrentUser user, Long id) {
     UserAccount account = findPending(user, id);
     account.approve(user.email(), user.name(), now());
+    Map<Business, String> subBusinesses = new EnumMap<>(Business.class);
+    account
+        .getBusinessDetails()
+        .forEach(b -> subBusinesses.put(b.getBusiness(), b.getSubBusiness()));
+    events.publishEvent(
+        new AccountApprovedEvent(
+            account.getId(),
+            account.getEmail(),
+            account.getName(),
+            account.getOrganization().getId(),
+            account.getOrganization().getCode(),
+            account.getDepartment(),
+            account.getTeam(),
+            account.getJobTitle(),
+            account.getJobRole(),
+            account.getItRoles(),
+            account.getExtensionPhone(),
+            account.getMobilePhone(),
+            subBusinesses,
+            user));
     Business home = account.getBusinesses().iterator().next();
     notificationService.publish(
         new NotificationCommand(

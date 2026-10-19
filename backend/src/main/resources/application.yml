@@ -65,6 +65,9 @@ app:
     # 프로토타입 저장소(임시 디렉터리). 운영은 공유 스토리지 경로나 다른 FileStorage 구현으로 바꾼다.
     dir: ${java.io.tmpdir}/connect-link-files
     max-size: 20MB
+  contact:
+    # 최근 확인일 6개월이 지난 담당자에게 확인 요청 알림을 보내는 때(매일 9시).
+    reconfirm-cron: "0 0 9 * * *"
   suspension:
     # 끝난 확정 일시중단을 완료로 바꾸는 주기(ms).
     completion-interval: 60000

@@ -76,15 +76,4 @@ class ChangeHistoryControllerTest {
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
   }
-
-  @Test
-  void 권한_빈이_아직_없는_대상_종류는_관리자도_403이다() throws Exception {
-    mockMvc
-        .perform(
-            get("/api/v1/change-histories")
-                .param("targetType", "CONTACT")
-                .param("targetId", "1")
-                .with(TestUsers.admin()))
-        .andExpect(status().isForbidden());
-  }
 }

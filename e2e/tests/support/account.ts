@@ -86,3 +86,17 @@ export async function closeToast(page: Page, text: string) {
   await toast.getByRole('button').click();
   await expect(toast).toHaveCount(0);
 }
+
+/**
+ * 샘플의 김민준는 최근 확인일이 6개월 지나 로그인 뒤 연락처 확인 창이 뜬다. 그 창을 다루지 않는 시나리오는 창을 이미 본 것으로 둔다
+ * (화면은 창마다 한 번만 띄우고 sessionStorage 에 본 사람을 남긴다). 확인 창 자체는 contacts.spec.ts 가 본다.
+ */
+export async function skipContactReconfirm(page: Page) {
+  await page.addInitScript(() => {
+    try {
+      window.sessionStorage.setItem('contact.reconfirmShown', 'kim.minjun@kb.example.com');
+    } catch {
+      // 저장소를 못 쓰면 창이 뜬다.
+    }
+  });
+}

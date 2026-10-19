@@ -5,6 +5,8 @@ import { MyInfoPage } from '../features/account/pages/MyInfoPage';
 import { SignUpApprovalPage } from '../features/account/pages/SignUpApprovalPage';
 import { SignUpPage } from '../features/account/pages/SignUpPage';
 import { SignUpPendingPage } from '../features/account/pages/SignUpPendingPage';
+import { ContactListPage } from '../features/contact/pages/ContactListPage';
+import { UpdateCampaignPage } from '../features/contact/pages/UpdateCampaignPage';
 import { HomePage } from '../features/home/pages/HomePage';
 import { NotificationCenterPage } from '../features/notification/pages/NotificationCenterPage';
 import { NotificationOutboxPage } from '../features/notification/pages/NotificationOutboxPage';
@@ -34,6 +36,7 @@ import { DEFAULT_BUSINESS_SLUG, FEATURE_MENU, type FeatureMenuItem } from './nav
 const BUILT_FEATURES: FeatureMenuItem['key'][] = [
   'home',
   'admin',
+  'contacts',
   'opinions',
   'tests',
   'suspensions',
@@ -74,12 +77,16 @@ export const router = createBrowserRouter([
             children: [
               { index: true, element: <AdminHubPage /> },
               { path: 'sign-ups', element: <SignUpApprovalPage /> },
+              // 가. 정기 변경 주간(그 업무의 결제원 담당자와 관리자).
+              { path: 'update-campaigns', element: <UpdateCampaignPage /> },
               {
                 element: <AdminGuard adminOnly />,
                 children: [{ path: 'organizations', element: <OrganizationAdminPage /> }],
               },
             ],
           },
+          // 가. 연락처: 목록(기관별 묶음, ?id= 상세 패널).
+          { path: 'contacts', element: <ContactListPage /> },
           // 나. 의견 요청: 목록, 작성, 상세(회신 현황·취합표 탭, 기관 회신), 고치기.
           { path: 'opinions', element: <OpinionListPage /> },
           { path: 'opinions/new', element: <OpinionEditorPage /> },

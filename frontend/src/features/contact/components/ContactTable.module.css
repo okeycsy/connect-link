@@ -1,0 +1,45 @@
+.row {
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--mantine-color-clay-6);
+    outline-offset: -2px;
+  }
+}
+
+.selected {
+  background: var(--mantine-color-clay-1);
+}
+
+.group td {
+  background: var(--cl-sunken);
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.numeric {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.campaignRow {
+  display: block;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--mantine-radius-lg);
+  background: var(--cl-sunken);
+  transition: background 160ms var(--cl-ease);
+
+  &:hover {
+    background: var(--mantine-color-clay-0);
+  }
+
+  &[data-active] {
+    background: var(--mantine-color-clay-1);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mantine-color-clay-6);
+    outline-offset: 2px;
+  }
+}
