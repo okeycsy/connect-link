@@ -273,6 +273,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/update-campaigns/{id}/reminders': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 미회신 기관에 리마인드 메일 보내기
+     * @description 진행 중 주간에서 아직 현행화 완료를 누르지 않은 기관에 지금 리마인드 메일을 보낸다. organizationIds 를 비우면 미완료 기관 전부. 받는 사람은 그 기관·업무의 사용 중 계정과 담당자 연락처 이메일. 진행 중이 아니면 409 UPDATE_CAMPAIGN_NOT_OPEN. 결제원 담당자만 보낸다.
+     */
+    post: operations['remind'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/test-plans': {
     parameters: {
       query?: never;
@@ -550,7 +570,7 @@ export interface paths {
      * 미회신 기관에 리마인드 메일 보내기
      * @description 고른 미회신 기관(비우면 전부)의 회신 담당자에게 알림과 메일을 보내고 이력을 남긴다. 받을 사람이 없으면 400 OPINION_REMINDER_NO_RECIPIENT.
      */
-    post: operations['remind'];
+    post: operations['remind_1'];
     delete?: never;
     options?: never;
     head?: never;
@@ -758,6 +778,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/demo/update-campaign-runs': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 정기 변경 예약 작업 지금 돌리기(데모)
+     * @description 매일 9시 30분 예약 작업과 같다. 주기가 돌아온 업무에 주간을 등록하고, 간격이 지난 미회신 기관에 리마인드 메일을 보낸다.
+     */
+    post: operations['run'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/demo/contact-reconfirm-runs': {
     parameters: {
       query?: never;
@@ -771,7 +811,7 @@ export interface paths {
      * 6개월 미확인 알림 지금 보내기(데모)
      * @description 매일 9시 예약 작업과 같다. 이번 미확인 기간에 이미 알린 담당자는 건너뛴다.
      */
-    post: operations['run'];
+    post: operations['run_1'];
     delete?: never;
     options?: never;
     head?: never;
@@ -936,6 +976,26 @@ export interface paths {
      * @description 전체 진행률과 기관별 현행화 완료·미완료, 정보 변경 여부. filter 로 미확인(INCOMPLETE)·정보 변경(CHANGED) 기관만 따로 본다. 결제원 담당자만 본다.
      */
     get: operations['progress'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/update-campaigns/schedule': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 정기 변경 주기 조회
+     * @description 주기(기본 6개월)와 다음 정기 변경 요청일, 자동 등록 여부, 리마인드 간격. 다음 요청일은 최근 주간 시작일 + 주기이고, 주간이 없으면 null. 결제원 담당자만 본다.
+     */
+    get: operations['schedule'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1621,6 +1681,7 @@ export interface components {
       changedCount: number;
       /** Format: int32 */
       progressRate: number;
+      autoCreated: boolean;
     };
     TestItemRequest: {
       /** Format: int64 */
@@ -2078,6 +2139,17 @@ export interface components {
       self: boolean;
       permissions: components['schemas']['ContactPermissions'];
     };
+    UpdateCampaignReminderRequest: {
+      organizationIds?: (number | null)[] | null;
+    };
+    UpdateCampaignReminderResultResponse: {
+      /** Format: int32 */
+      organizationCount: number;
+      /** Format: int32 */
+      recipientCount: number;
+      /** Format: int32 */
+      skippedOrganizationCount: number;
+    };
     SuspensionHandoverRequest: {
       handover: string;
     };
@@ -2223,6 +2295,7 @@ export interface components {
         | 'SIGNUP_REQUESTED'
         | 'SIGNUP_APPROVED'
         | 'CONTACT_CHANGE_REQUESTED'
+        | 'CONTACT_CHANGE_REMINDER'
         | 'CONTACT_RECONFIRM_DUE'
         | 'OPINION_REQUEST_OPENED'
         | 'OPINION_REQUEST_CHANGED'
@@ -2270,6 +2343,12 @@ export interface components {
       /** Format: date-time */
       tokenExpiresAt: string;
       suggestedOrganizationIds: number[];
+    };
+    UpdateCampaignRunResponse: {
+      /** Format: int32 */
+      createdCampaignCount: number;
+      /** Format: int32 */
+      remindedOrganizationCount: number;
     };
     ContactReconfirmRunResponse: {
       /** Format: int32 */
@@ -2341,10 +2420,25 @@ export interface components {
       changedAt?: string | null;
       /** Format: int64 */
       contactCount: number;
+      /** Format: int32 */
+      reminderCount: number;
+      /** Format: date-time */
+      lastRemindedAt?: string | null;
     };
     UpdateCampaignProgressResponse: {
       campaign: components['schemas']['UpdateCampaignResponse'];
       organizations: components['schemas']['UpdateCampaignOrganizationResponse'][];
+    };
+    UpdateCampaignScheduleResponse: {
+      autoCreate: boolean;
+      /** Format: int32 */
+      cycleMonths: number;
+      /** Format: int32 */
+      durationDays: number;
+      /** Format: int32 */
+      reminderIntervalDays: number;
+      /** Format: date */
+      nextCycleDate?: string | null;
     };
     CurrentUpdateCampaignResponse: {
       campaign: components['schemas']['UpdateCampaignResponse'];
@@ -3451,6 +3545,32 @@ export interface operations {
       };
     };
   };
+  remind: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        'application/json': components['schemas']['UpdateCampaignReminderRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['UpdateCampaignReminderResultResponse'];
+        };
+      };
+    };
+  };
   list_1: {
     parameters: {
       query: {
@@ -3887,7 +4007,7 @@ export interface operations {
       };
     };
   };
-  remind: {
+  remind_1: {
     parameters: {
       query?: never;
       header?: never;
@@ -4180,6 +4300,26 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
+          '*/*': components['schemas']['UpdateCampaignRunResponse'];
+        };
+      };
+    };
+  };
+  run_1: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
           '*/*': components['schemas']['ContactReconfirmRunResponse'];
         };
       };
@@ -4451,6 +4591,29 @@ export interface operations {
         };
         content: {
           '*/*': components['schemas']['UpdateCampaignProgressResponse'];
+        };
+      };
+    };
+  };
+  schedule: {
+    parameters: {
+      query: {
+        /** @description 업무 영역 slug (예: account-info) */
+        business: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['UpdateCampaignScheduleResponse'];
         };
       };
     };

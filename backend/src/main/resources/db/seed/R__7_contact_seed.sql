@@ -1,7 +1,8 @@
 -- 가. 담당자 연락처 샘플. 전부 가상 사람·가상 번호(010-0000-xxxx)·가상 이메일(*.example.com)이다. local, demo 프로필(과 테스트)에서만 읽는다.
 -- 기관(R__1)·계정(R__2) 시드 뒤에 돈다. 계정이 있는 담당자는 계정 시드와 이름·부서·번호를 맞췄고, 나머지는 계정이 없는 담당자(후임자 등)다.
 -- 최근 확인일은 오늘 기준 며칠 전(days_ago)이라 시연 때 늘 "6개월 경과" 담당자가 업무마다 보인다(김민준 본인 행도 경과라 로그인 확인 알림이 뜬다).
--- 계좌통합관리에는 진행 중인 정기 변경 주간(완료·미완료·정보 변경 기관이 섞임)과 지난 주간, CMS 에는 예정 주간이 있다.
+-- 계좌통합관리에는 진행 중인 정기 변경 주간(완료·미완료·정보 변경 기관이 섞임, 미완료 기관 하나에는 어제 보낸 리마인드)과 지난 주간, CMS 에는 예정 주간이 있다.
+DELETE FROM update_campaign_reminder;
 DELETE FROM update_campaign_organization;
 DELETE FROM update_campaign;
 DELETE FROM contact_it_role;
@@ -112,3 +113,11 @@ FROM (VALUES
 ) AS r (title, org_code, completed_days_ago, completed_by, changed_days_ago)
 JOIN update_campaign u ON u.title = r.title
 JOIN organization o ON o.code = r.org_code;
+
+-- 리마인드 이력. 진행 중 주간의 미완료 기관 KB국민은행에 어제 결제원 담당자가 보낸 리마인드 한 번.
+INSERT INTO update_campaign_reminder (campaign_id, organization_id, sent_at, manual, sender_name, recipient_count, created_at, created_by, updated_at, updated_by)
+SELECT u.id, o.id, CURRENT_TIMESTAMP - INTERVAL '1' DAY, TRUE, '홍성민', 2,
+       CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'
+FROM update_campaign u
+JOIN organization o ON o.code = '004'
+WHERE u.title = '하반기 담당자 정기 변경';
