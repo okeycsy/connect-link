@@ -31,7 +31,10 @@ FROM (VALUES
    -3, 10, 'hong.gildong@kftc.example.com', '홍길동', 17, NULL),
   ('CMS', '출금이체', '출금이체 전문 연계 테스트',
    '출금이체 요청·결과 전문의 신규 연계 테스트입니다. 이체 한도 초과와 잔액 부족 응답을 꼭 확인해 주세요.',
-   -5, 5, 'park.cms@kftc.example.com', '박하늘', 27, NULL)
+   -5, 5, 'park.cms@kftc.example.com', '박하늘', 27, NULL),
+  ('LOAN_TRANSFER', '대환대출 이동', '대환대출 이동 신청 전문 개선',
+   '대환대출 이동 신청 전문에 중도상환수수료 항목을 더했습니다. 신청, 조회, 취소 세 가지를 확인합니다.',
+   -1, 13, 'kim.ops@kftc.example.com', '김운영', 0, NULL)
 ) AS p (business, sub_business, title, description, start_day, end_day, owner_email, owner_name, progress_rate, completed_day);
 
 -- 요구사항. 번호는 sort_order 순서로 001, 002 … 이다.
@@ -55,7 +58,10 @@ FROM (VALUES
   ('자동이체 통합조회 응답 항목 추가', 3, '조회 응답 시간 확인', NULL),
   ('출금이체 전문 연계 테스트', 0, '출금이체 요청 전문 송수신', NULL),
   ('출금이체 전문 연계 테스트', 1, '이체 한도 초과 응답 확인', NULL),
-  ('출금이체 전문 연계 테스트', 2, '잔액 부족 응답 확인', NULL)
+  ('출금이체 전문 연계 테스트', 2, '잔액 부족 응답 확인', NULL),
+  ('대환대출 이동 신청 전문 개선', 0, '이동 신청 전문 중도상환수수료 항목 확인', '신청 전문에 중도상환수수료 금액이 채워져 오는지 확인합니다.'),
+  ('대환대출 이동 신청 전문 개선', 1, '이동 진행 조회 전문 확인', NULL),
+  ('대환대출 이동 신청 전문 개선', 2, '이동 신청 취소 전문 처리', NULL)
 ) AS i (plan_title, sort_order, title, description)
 JOIN test_plan p ON p.title = i.plan_title;
 
@@ -78,13 +84,17 @@ FROM (VALUES
   ('자동이체 통합조회 응답 항목 추가', '240',   0,   0, CAST(NULL AS INT)),
   ('자동이체 통합조회 응답 항목 추가', '048',  0,   0, NULL),
   ('출금이체 전문 연계 테스트',        '088',  53,  0, -6),
-  ('출금이체 전문 연계 테스트',        'JACHA', 0,   0, NULL)
+  ('출금이체 전문 연계 테스트',        'JACHA', 0,   0, NULL),
+  ('대환대출 이동 신청 전문 개선',     '004',  0,   0, NULL),
+  ('대환대출 이동 신청 전문 개선',     '103',  0,   0, NULL),
+  ('대환대출 이동 신청 전문 개선',     'TAPA', 0,   0, NULL)
 ) AS t (plan_title, org_code, progress_rate, completed_count, last_hour)
 JOIN test_plan p ON p.title = t.plan_title
 JOIN organization o ON o.code = t.org_code;
 
 -- 기관 결과와 결제원 의견. 시각은 오늘 0시 기준 시간(reported_hour, feedback_hour)이다.
 -- 출금이체 002 는 결제원 의견(70%) 뒤에 신한은행이 결과를 다시 등록해 "다시 확인" 상태다.
+-- 대환대출 이동 신청 전문 개선(대출이동)은 대상 기관에 대출이동 담당 계정이 아직 없어(SBI저축은행은 가입 승인 대기) 결과가 없다.
 INSERT INTO test_item_result (test_item_id, test_plan_target_id, result, note, reported_by_email, reported_by_name, reported_at,
                               feedback_rate, feedback_note, feedback_by_email, feedback_by_name, feedback_at,
                               created_at, created_by, updated_at, updated_by)
@@ -161,7 +171,8 @@ FROM (VALUES
   ('내 계좌 한눈에 연계 개선',        'hong.gildong@kftc.example.com'),
   ('오픈뱅킹 안심차단 등록 전문 신설', 'kim.ops@kftc.example.com'),
   ('자동이체 통합조회 응답 항목 추가', 'hong.gildong@kftc.example.com'),
-  ('출금이체 전문 연계 테스트',        'park.cms@kftc.example.com')
+  ('출금이체 전문 연계 테스트',        'park.cms@kftc.example.com'),
+  ('대환대출 이동 신청 전문 개선',     'kim.ops@kftc.example.com')
 ) AS r (plan_title, email)
 JOIN test_plan p ON p.title = r.plan_title
 JOIN user_account u ON u.email = r.email;
