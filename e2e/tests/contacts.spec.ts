@@ -208,4 +208,29 @@ test.describe('가. 담당자 연락처', () => {
       .click();
     await expect(page.getByTestId('campaign-list')).not.toContainText('E2E 임시 정기 변경');
   });
+
+  test('결제원 담당자는 미확인 기관에 리마인드 메일을 다시 보낸다', async ({ page }) => {
+    await loginAs(page, '홍성민 (결제원 · 현업)로 로그인');
+    await page.goto('/account-info/admin/update-campaigns');
+    await expect(page.getByTestId('campaign-schedule')).toContainText('6개월 주기');
+    await expect(page.getByTestId('campaign-schedule')).toContainText('3일마다 리마인드');
+
+    // 기관 하나에 보내기
+    const organizations = page.getByTestId('campaign-organizations');
+    const cu = organizations.getByRole('row').filter({ hasText: '신협' });
+    await cu.getByRole('button', { name: '신협 리마인드' }).click();
+    const dialog = page.getByRole('dialog', { name: '리마인드 메일 보내기' });
+    await expect(dialog).toContainText('신협 담당자에게');
+    await dialog.getByRole('button', { name: '보내기' }).click();
+    await expect(dialog).toBeHidden();
+    await expect(cu).toContainText(/\d+회 · 최근/);
+
+    // 미확인 기관 전부에 보내기
+    await page.getByRole('button', { name: '미확인 기관 리마인드' }).click();
+    await expect(dialog).toContainText('현행화 완료를 누르지 않은');
+    await dialog.getByRole('button', { name: '보내기' }).click();
+    await expect(page.getByText(/리마인드 메일을 보냈습니다/)).toBeVisible();
+    await shot(page, 'update-campaign-reminder');
+  });
 });
+
