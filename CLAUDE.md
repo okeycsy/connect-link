@@ -72,7 +72,7 @@
 | 전산 세부 직무 | `ItRole` (복수 선택) | `DEV`, `OPS`, `INFRA`, `EXTERNAL_LINK`(대외계), `CONTROL_ROOM`(상황실) |
 | 주/부담당 | `ContactRank` | `PRIMARY`, `SECONDARY` |
 | 최근 확인일 | `lastConfirmedAt` | 수정·확인 시 갱신. 6개월이 지나면 "확인 필요"(`needsConfirm`)이고 로그인 뒤 확인 창과 매일 알림(`ContactReconfirmJob`)이 있다 |
-| 정기 변경(현행화) 주간 | `UpdateCampaign` | 업무별 현행화 기간. 상태 `UpdateCampaignStatus` = `UPCOMING`(예정), `OPEN`(진행 중), `CLOSED`(종료), 저장하지 않고 날짜로 계산한다. 기관별 현행화는 `UpdateCampaignOrganization`("현행화 완료" 일시·처리자, 정보 변경 일시), 진행 현황 거르기 `UpdateCampaignProgressFilter` = `ALL`/`COMPLETED`/`INCOMPLETE`/`CHANGED`. API `/api/v1/update-campaigns`, 화면 `/{업무}/admin/update-campaigns` |
+| 정기 변경(현행화) 주간 | `UpdateCampaign` | 업무별 현행화 기간. 상태 `UpdateCampaignStatus` = `UPCOMING`(예정), `OPEN`(진행 중), `CLOSED`(종료), 저장하지 않고 날짜로 계산한다. 기관별 현행화는 `UpdateCampaignOrganization`("현행화 완료" 일시·처리자, 정보 변경 일시), 진행 현황 거르기 `UpdateCampaignProgressFilter` = `ALL`/`COMPLETED`/`INCOMPLETE`/`CHANGED`. 주기(기본 6개월)가 돌아오면 `UpdateCampaignJob` 이 주간을 스스로 등록(`autoCreated`)해 변경 요청 메일을 보내고, 미완료 기관에는 간격마다 리마인드 메일(`UpdateCampaignReminder`, 알림 `CONTACT_CHANGE_REMINDER`)을 다시 보낸다. 설정 `app.contact.campaign.*`(`UpdateCampaignProperties`). API `/api/v1/update-campaigns`(`/schedule`, `/{id}/reminders`), 화면 `/{업무}/admin/update-campaigns` |
 | 의견 요청 | `OpinionRequest` | 상태 `OpinionRequestStatus` = `DRAFT`(작성중), `OPEN`(회신중), `CLOSED`(마감). 회신중 요청을 취소하면 `CLOSED` + `cancelled`. 권한 `OpinionAccessPolicy`. API `/api/v1/opinion-requests`, 화면 `/{업무}/opinions` |
 | 질문 | `OpinionQuestion` | 의견 요청에 넣는 질문 하나. 유형 `OpinionQuestionType` = `SINGLE_CHOICE`(객관식), `MULTIPLE_CHOICE`(체크박스), `TEXT`(주관식), 필수 여부. 선택지는 `OpinionQuestionOption`. 작성중일 때만 고치고, 하나 이상 있어야 회신 요청을 시작한다 |
 | 질문 답 | `OpinionReplyAnswer` | 기관 회신의 답 한 칸. 회신처럼 제출한 답(`SUBMITTED`)과 임시저장한 답(`DRAFT`)을 따로 둔다. 객관식은 고른 선택지마다, 주관식은 질문마다 한 행 |
@@ -91,7 +91,7 @@
 | 일시중단 시기 | `SuspensionPeriod` | 지금 기준 `CURRENT`(진행 중), `UPCOMING`(예정), `PAST`(지난). 저장하지 않고 일시로 계산한다 |
 | 일시중단 확인자 | `SuspensionReviewer` | 확인을 시작한 결제원 담당자 한 명(이름·이메일·직무 표시·시작 일시). 조치 및 인수인계 사항(`handover`)을 쓰면 확정이다 |
 | 전 영업일 취합 | `SuspensionDigest`, `SuspensionDigestService`, `SuspensionDigestFormatter` | 작업일 전 영업일에 확정 일시중단을 모아 운영·관제 매터모스트 채널로 보낸 한 번. 설정 `app.suspension.digest.*`, 영업일 `BusinessDayCalendar`. 전달 양식은 미결이라 `SuspensionDigestFormatter` 빈을 바꿔 끼운다 |
-| 알림 | `Notification` | 알림 센터 항목. 종류 `NotificationType` (`SIGNUP_REQUESTED`, `SIGNUP_APPROVED`, `CONTACT_CHANGE_REQUESTED`, `CONTACT_RECONFIRM_DUE`, `OPINION_REQUEST_OPENED`, `OPINION_REQUEST_CHANGED`, `OPINION_REPLY_DUE`, `OPINION_REPLY_REVISION`, `TEST_PLAN_OPENED`, `TEST_RESULT_REPORTED`, `TEST_RESULT_FEEDBACK`, `SUSPENSION_CHANGED`, `SYSTEM`) |
+| 알림 | `Notification` | 알림 센터 항목. 종류 `NotificationType` (`SIGNUP_REQUESTED`, `SIGNUP_APPROVED`, `CONTACT_CHANGE_REQUESTED`, `CONTACT_CHANGE_REMINDER`, `CONTACT_RECONFIRM_DUE`, `OPINION_REQUEST_OPENED`, `OPINION_REQUEST_CHANGED`, `OPINION_REPLY_DUE`, `OPINION_REPLY_REVISION`, `TEST_PLAN_OPENED`, `TEST_RESULT_REPORTED`, `TEST_RESULT_FEEDBACK`, `SUSPENSION_CHANGED`, `SYSTEM`) |
 | 알림 채널 | `NotificationChannel` | `EMAIL`, `MATTERMOST` |
 | 발송함 | `NotificationOutbox` | 프로토타입에서 실제 발송 대신 기록. 상태 `OutboxStatus` = `PENDING`(발송 대기), `SENT`, `FAILED` |
 | 로그인 사용자 | `CurrentUser` | Service 권한 판단에 넘기는 값. 로그인할 때 계정에서 만들어 세션에 둔다. 업무 영역(레일) 조회 범위는 `BusinessAccessPolicy`(관리자는 전 업무, 그 밖에는 담당 업무). 테스트는 `TestUsers` |
