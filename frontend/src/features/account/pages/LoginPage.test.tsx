@@ -29,8 +29,8 @@ const demoAccounts = {
       businessLabels: ['계좌통합관리', '자동이체통합관리', '대출이동', 'CMS'],
     },
     {
-      email: 'kim.gana@kb.example.com',
-      name: '김가나',
+      email: 'kim.minjun@kb.example.com',
+      name: '김민준',
       organizationName: 'KB국민은행',
       roleLabel: '참가기관 · 현업',
       admin: false,
@@ -66,7 +66,7 @@ describe('LoginPage', () => {
     renderWithProviders(<LoginPage />, { route: '/login', path: '/login' });
 
     fireEvent.change(screen.getByLabelText('회사 이메일'), {
-      target: { value: 'kim.gana@kb.example.com' },
+      target: { value: 'kim.minjun@kb.example.com' },
     });
     fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'wrong' } });
     fireEvent.click(screen.getByRole('button', { name: '로그인' }));
@@ -75,7 +75,7 @@ describe('LoginPage', () => {
       '이메일 또는 비밀번호가 맞지 않습니다.',
     );
     expect(POST).toHaveBeenCalledWith('/api/v1/auth/login', {
-      body: { email: 'kim.gana@kb.example.com', password: 'wrong' },
+      body: { email: 'kim.minjun@kb.example.com', password: 'wrong' },
     });
   });
 
@@ -89,7 +89,7 @@ describe('LoginPage', () => {
     );
 
     fireEvent.change(screen.getByLabelText('회사 이메일'), {
-      target: { value: 'kim.gana@kb.example.com' },
+      target: { value: 'kim.minjun@kb.example.com' },
     });
     fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'wrong' } });
     fireEvent.click(screen.getByRole('button', { name: '로그인' }));
@@ -114,10 +114,10 @@ describe('LoginPage', () => {
     expect(list).toHaveTextContent('참가기관 · 현업');
     expect(screen.getByText('demo1234!')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: '김가나 (참가기관 · 현업)로 로그인' }));
+    fireEvent.click(screen.getByRole('button', { name: '김민준 (참가기관 · 현업)로 로그인' }));
     await waitFor(() =>
       expect(POST).toHaveBeenCalledWith('/api/v1/auth/login', {
-        body: { email: 'kim.gana@kb.example.com', password: 'demo1234!' },
+        body: { email: 'kim.minjun@kb.example.com', password: 'demo1234!' },
       }),
     );
     expect(await screen.findByTestId('login-error')).toHaveTextContent('승인 전');

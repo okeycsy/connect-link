@@ -31,7 +31,7 @@ class ContactAccessPolicyTest {
   private static final CurrentUser CONTROL_ROOM =
       new CurrentUser(
           "lee.control@kftc.example.com",
-          "이상황",
+          "이수진",
           "KFTC",
           "금융결제원",
           OrganizationType.KFTC,
@@ -99,14 +99,14 @@ class ContactAccessPolicyTest {
   }
 
   private static final Contact KB_ACCOUNT_INFO =
-      contact(KB, Business.ACCOUNT_INFO, "kim.gana@kb.example.com");
+      contact(KB, Business.ACCOUNT_INFO, "kim.minjun@kb.example.com");
   private static final Contact KB_COLLEAGUE =
       contact(KB, Business.ACCOUNT_INFO, "namgung.min@kb.example.com");
   private static final Contact KB_CMS = contact(KB, Business.CMS, "kook.haesol@kb.example.com");
   private static final Contact SHINHAN_ACCOUNT_INFO =
-      contact(SHINHAN, Business.ACCOUNT_INFO, "park.dara@shinhan.example.com");
+      contact(SHINHAN, Business.ACCOUNT_INFO, "park.jihoon@shinhan.example.com");
   private static final Contact KFTC_ACCOUNT_INFO =
-      contact(KFTC, Business.ACCOUNT_INFO, "hong.gildong@kftc.example.com");
+      contact(KFTC, Business.ACCOUNT_INFO, "hong.sungmin@kftc.example.com");
 
   @Test
   void 결제원_담당자는_맡은_업무의_모든_기관_담당자를_본다() {

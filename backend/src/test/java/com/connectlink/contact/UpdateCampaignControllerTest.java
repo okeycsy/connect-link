@@ -133,10 +133,10 @@ class UpdateCampaignControllerTest {
                 .with(hong()))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.status").value("UPCOMING"))
-        .andExpect(jsonPath("$.registrantName").value("홍길동"));
+        .andExpect(jsonPath("$.registrantName").value("홍성민"));
     assertThat(
             notificationRepository.findByRecipientEmailAndReadAtIsNull(
-                "lee.dara@shinhan.example.com"))
+                "lee.junho@shinhan.example.com"))
         .anyMatch(
             n ->
                 n.getType() == NotificationType.CONTACT_CHANGE_REQUESTED

@@ -19,19 +19,22 @@ SELECT p.business, p.sub_business, p.title, p.description,
 FROM (VALUES
   ('ACCOUNT_INFO', '계좌정보 조회·해지', '계좌정보 통합조회 전문 개선 2차',
    '잔액·거래내역 조회 전문 개정과 해지 사유코드 추가를 기관별로 확인합니다. 테스트 서버 접속 정보와 전문 규격은 첨부 가이드를 봐 주세요.',
-   -7, 7, 'hong.gildong@kftc.example.com', '홍길동', 49, CAST(NULL AS INT)),
+   -7, 7, 'hong.sungmin@kftc.example.com', '홍성민', 49, CAST(NULL AS INT)),
   ('ACCOUNT_INFO', '내 계좌 한눈에', '내 계좌 한눈에 연계 개선',
    '보유 계좌 목록 응답에 휴면 여부 항목을 더한 연계 개선 테스트입니다.',
-   -40, -25, 'hong.gildong@kftc.example.com', '홍길동', 100, -24),
+   -40, -25, 'hong.sungmin@kftc.example.com', '홍성민', 100, -24),
   ('ACCOUNT_INFO', '오픈뱅킹 안심차단', '오픈뱅킹 안심차단 등록 전문 신설',
    '안심차단 등록·해제 전문을 새로 만들었습니다. 등록, 해제, 중복 등록 오류 세 가지를 확인합니다.',
-   -20, -2, 'kim.ops@kftc.example.com', '김운영', 17, NULL),
+   -20, -2, 'kim.ops@kftc.example.com', '김태호', 17, NULL),
   ('AUTO_TRANSFER', '자동이체 통합조회', '자동이체 통합조회 응답 항목 추가',
    '자동이체 통합조회 응답에 수납기관 연락처와 최근 출금일 항목을 더합니다.',
-   -3, 10, 'hong.gildong@kftc.example.com', '홍길동', 17, NULL),
+   -3, 10, 'hong.sungmin@kftc.example.com', '홍성민', 17, NULL),
   ('CMS', '출금이체', '출금이체 전문 연계 테스트',
    '출금이체 요청·결과 전문의 신규 연계 테스트입니다. 이체 한도 초과와 잔액 부족 응답을 꼭 확인해 주세요.',
-   -5, 5, 'park.cms@kftc.example.com', '박하늘', 27, NULL)
+   -5, 5, 'park.cms@kftc.example.com', '박하늘', 27, NULL),
+  ('LOAN_TRANSFER', '대환대출 이동', '대환대출 이동 신청 전문 개선',
+   '대환대출 이동 신청 전문에 중도상환수수료 항목을 더했습니다. 신청, 조회, 취소 세 가지를 확인합니다.',
+   -1, 13, 'kim.ops@kftc.example.com', '김태호', 0, NULL)
 ) AS p (business, sub_business, title, description, start_day, end_day, owner_email, owner_name, progress_rate, completed_day);
 
 -- 요구사항. 번호는 sort_order 순서로 001, 002 … 이다.
@@ -55,7 +58,10 @@ FROM (VALUES
   ('자동이체 통합조회 응답 항목 추가', 3, '조회 응답 시간 확인', NULL),
   ('출금이체 전문 연계 테스트', 0, '출금이체 요청 전문 송수신', NULL),
   ('출금이체 전문 연계 테스트', 1, '이체 한도 초과 응답 확인', NULL),
-  ('출금이체 전문 연계 테스트', 2, '잔액 부족 응답 확인', NULL)
+  ('출금이체 전문 연계 테스트', 2, '잔액 부족 응답 확인', NULL),
+  ('대환대출 이동 신청 전문 개선', 0, '이동 신청 전문 중도상환수수료 항목 확인', '신청 전문에 중도상환수수료 금액이 채워져 오는지 확인합니다.'),
+  ('대환대출 이동 신청 전문 개선', 1, '이동 진행 조회 전문 확인', NULL),
+  ('대환대출 이동 신청 전문 개선', 2, '이동 신청 취소 전문 처리', NULL)
 ) AS i (plan_title, sort_order, title, description)
 JOIN test_plan p ON p.title = i.plan_title;
 
@@ -78,13 +84,17 @@ FROM (VALUES
   ('자동이체 통합조회 응답 항목 추가', '240',   0,   0, CAST(NULL AS INT)),
   ('자동이체 통합조회 응답 항목 추가', '048',  0,   0, NULL),
   ('출금이체 전문 연계 테스트',        '088',  53,  0, -6),
-  ('출금이체 전문 연계 테스트',        'JACHA', 0,   0, NULL)
+  ('출금이체 전문 연계 테스트',        '071', 0,   0, NULL),
+  ('대환대출 이동 신청 전문 개선',     '004',  0,   0, NULL),
+  ('대환대출 이동 신청 전문 개선',     '103',  0,   0, NULL),
+  ('대환대출 이동 신청 전문 개선',     '020', 0,   0, NULL)
 ) AS t (plan_title, org_code, progress_rate, completed_count, last_hour)
 JOIN test_plan p ON p.title = t.plan_title
 JOIN organization o ON o.code = t.org_code;
 
 -- 기관 결과와 결제원 의견. 시각은 오늘 0시 기준 시간(reported_hour, feedback_hour)이다.
 -- 출금이체 002 는 결제원 의견(70%) 뒤에 신한은행이 결과를 다시 등록해 "다시 확인" 상태다.
+-- 대환대출 이동 신청 전문 개선(대출이동)은 대상 기관에 대출이동 담당 계정이 아직 없어(SBI저축은행은 가입 승인 대기) 결과가 없다.
 INSERT INTO test_item_result (test_item_id, test_plan_target_id, result, note, reported_by_email, reported_by_name, reported_at,
                               feedback_rate, feedback_note, feedback_by_email, feedback_by_name, feedback_at,
                               created_at, created_by, updated_at, updated_by)
@@ -96,55 +106,55 @@ SELECT i.id, t.id, r.result, r.note, r.reporter_email, r.reporter_name,
        CAST(CURRENT_DATE AS TIMESTAMP) + COALESCE(r.feedback_hour, r.reported_hour) * INTERVAL '1' HOUR, COALESCE(r.feedback_email, r.reporter_email)
 FROM (VALUES
   -- 계좌정보 통합조회 전문 개선 2차: KB국민은행 56%(완료 2), 신한은행 40%(완료 1), 삼성증권 미등록, 저축은행중앙회 100%(완료 4)
-  ('계좌정보 통합조회 전문 개선 2차', '004', 0, 'PASSED', CAST(NULL AS VARCHAR(2000)), 'kim.gana@kb.example.com', '김가나', -50,
-   100, CAST(NULL AS VARCHAR(2000)), 'hong.gildong@kftc.example.com', '홍길동', -30),
-  ('계좌정보 통합조회 전문 개선 2차', '004', 1, 'PASSED', NULL, 'kim.gana@kb.example.com', '김가나', -50,
-   100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -30),
-  ('계좌정보 통합조회 전문 개선 2차', '004', 2, 'PASSED', '사유코드 07, 08 은 확인했습니다.', 'kim.gana@kb.example.com', '김가나', -50,
-   80, '003 전문에 대해 예외사항 발생: 해지 사유코드 09 를 처리하지 못해 재확인이 필요합니다.', 'hong.gildong@kftc.example.com', '홍길동', -30),
-  ('계좌정보 통합조회 전문 개선 2차', '004', 3, 'FAILED', '기관 오류 E31 을 표준 응답코드 대신 E99 로 내려보냅니다. 수정 배포 예정입니다.', 'kim.gana@kb.example.com', '김가나', -20,
+  ('계좌정보 통합조회 전문 개선 2차', '004', 0, 'PASSED', CAST(NULL AS VARCHAR(2000)), 'kim.minjun@kb.example.com', '김민준', -50,
+   100, CAST(NULL AS VARCHAR(2000)), 'hong.sungmin@kftc.example.com', '홍성민', -30),
+  ('계좌정보 통합조회 전문 개선 2차', '004', 1, 'PASSED', NULL, 'kim.minjun@kb.example.com', '김민준', -50,
+   100, NULL, 'hong.sungmin@kftc.example.com', '홍성민', -30),
+  ('계좌정보 통합조회 전문 개선 2차', '004', 2, 'PASSED', '사유코드 07, 08 은 확인했습니다.', 'kim.minjun@kb.example.com', '김민준', -50,
+   80, '003 전문에 대해 예외사항 발생: 해지 사유코드 09 를 처리하지 못해 재확인이 필요합니다.', 'hong.sungmin@kftc.example.com', '홍성민', -30),
+  ('계좌정보 통합조회 전문 개선 2차', '004', 3, 'FAILED', '기관 오류 E31 을 표준 응답코드 대신 E99 로 내려보냅니다. 수정 배포 예정입니다.', 'kim.minjun@kb.example.com', '김민준', -20,
    CAST(NULL AS INT), NULL, CAST(NULL AS VARCHAR(200)), CAST(NULL AS VARCHAR(50)), CAST(NULL AS INT)),
-  ('계좌정보 통합조회 전문 개선 2차', '004', 4, 'IN_PROGRESS', NULL, 'kim.gana@kb.example.com', '김가나', -20,
+  ('계좌정보 통합조회 전문 개선 2차', '004', 4, 'IN_PROGRESS', NULL, 'kim.minjun@kb.example.com', '김민준', -20,
    NULL, NULL, NULL, NULL, NULL),
-  ('계좌정보 통합조회 전문 개선 2차', '088', 0, 'PASSED', NULL, 'park.dara@shinhan.example.com', '박다라', -60,
-   100, NULL, 'kim.ops@kftc.example.com', '김운영', -40),
-  ('계좌정보 통합조회 전문 개선 2차', '088', 1, 'PASSED', NULL, 'park.dara@shinhan.example.com', '박다라', -44,
+  ('계좌정보 통합조회 전문 개선 2차', '088', 0, 'PASSED', NULL, 'park.jihoon@shinhan.example.com', '박지훈', -60,
+   100, NULL, 'kim.ops@kftc.example.com', '김태호', -40),
+  ('계좌정보 통합조회 전문 개선 2차', '088', 1, 'PASSED', NULL, 'park.jihoon@shinhan.example.com', '박지훈', -44,
    NULL, NULL, NULL, NULL, NULL),
-  ('계좌정보 통합조회 전문 개선 2차', '088', 2, 'NOT_STARTED', '테스트 서버 반영 일정 조율 중입니다.', 'park.dara@shinhan.example.com', '박다라', -44,
+  ('계좌정보 통합조회 전문 개선 2차', '088', 2, 'NOT_STARTED', '테스트 서버 반영 일정 조율 중입니다.', 'park.jihoon@shinhan.example.com', '박지훈', -44,
    NULL, NULL, NULL, NULL, NULL),
-  ('계좌정보 통합조회 전문 개선 2차', '050', 0, 'PASSED', NULL, 'yoon.chaka@fsb.example.com', '윤차카', -90,
-   100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -72),
-  ('계좌정보 통합조회 전문 개선 2차', '050', 1, 'PASSED', NULL, 'yoon.chaka@fsb.example.com', '윤차카', -90,
-   100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -72),
-  ('계좌정보 통합조회 전문 개선 2차', '050', 2, 'PASSED', NULL, 'yoon.chaka@fsb.example.com', '윤차카', -90,
-   100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -72),
-  ('계좌정보 통합조회 전문 개선 2차', '050', 3, 'PASSED', NULL, 'yoon.chaka@fsb.example.com', '윤차카', -90,
-   100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -72),
-  ('계좌정보 통합조회 전문 개선 2차', '050', 4, 'PASSED', '평균 1.8초입니다.', 'yoon.chaka@fsb.example.com', '윤차카', -70,
+  ('계좌정보 통합조회 전문 개선 2차', '050', 0, 'PASSED', NULL, 'yoon.seoyeon@fsb.example.com', '윤서연', -90,
+   100, NULL, 'hong.sungmin@kftc.example.com', '홍성민', -72),
+  ('계좌정보 통합조회 전문 개선 2차', '050', 1, 'PASSED', NULL, 'yoon.seoyeon@fsb.example.com', '윤서연', -90,
+   100, NULL, 'hong.sungmin@kftc.example.com', '홍성민', -72),
+  ('계좌정보 통합조회 전문 개선 2차', '050', 2, 'PASSED', NULL, 'yoon.seoyeon@fsb.example.com', '윤서연', -90,
+   100, NULL, 'hong.sungmin@kftc.example.com', '홍성민', -72),
+  ('계좌정보 통합조회 전문 개선 2차', '050', 3, 'PASSED', NULL, 'yoon.seoyeon@fsb.example.com', '윤서연', -90,
+   100, NULL, 'hong.sungmin@kftc.example.com', '홍성민', -72),
+  ('계좌정보 통합조회 전문 개선 2차', '050', 4, 'PASSED', '평균 1.8초입니다.', 'yoon.seoyeon@fsb.example.com', '윤서연', -70,
    NULL, NULL, NULL, NULL, NULL),
   -- 내 계좌 한눈에 연계 개선: 세 기관 모두 완료(수행 완료)
-  ('내 계좌 한눈에 연계 개선', '004', 0, 'PASSED', NULL, 'kim.gana@kb.example.com', '김가나', -620, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
-  ('내 계좌 한눈에 연계 개선', '004', 1, 'PASSED', NULL, 'kim.gana@kb.example.com', '김가나', -620, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
-  ('내 계좌 한눈에 연계 개선', '004', 2, 'PASSED', NULL, 'kim.gana@kb.example.com', '김가나', -620, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
-  ('내 계좌 한눈에 연계 개선', '088', 0, 'PASSED', NULL, 'park.dara@shinhan.example.com', '박다라', -640, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
-  ('내 계좌 한눈에 연계 개선', '088', 1, 'PASSED', NULL, 'park.dara@shinhan.example.com', '박다라', -640, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
-  ('내 계좌 한눈에 연계 개선', '088', 2, 'PASSED', NULL, 'park.dara@shinhan.example.com', '박다라', -640, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
-  ('내 계좌 한눈에 연계 개선', '048', 0, 'PASSED', NULL, 'jung.nada@cu.example.com', '정나다', -630, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
-  ('내 계좌 한눈에 연계 개선', '048', 1, 'PASSED', NULL, 'jung.nada@cu.example.com', '정나다', -630, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
-  ('내 계좌 한눈에 연계 개선', '048', 2, 'PASSED', NULL, 'jung.nada@cu.example.com', '정나다', -630, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -600),
+  ('내 계좌 한눈에 연계 개선', '004', 0, 'PASSED', NULL, 'kim.minjun@kb.example.com', '김민준', -620, 100, NULL, 'hong.sungmin@kftc.example.com', '홍성민', -600),
+  ('내 계좌 한눈에 연계 개선', '004', 1, 'PASSED', NULL, 'kim.minjun@kb.example.com', '김민준', -620, 100, NULL, 'hong.sungmin@kftc.example.com', '홍성민', -600),
+  ('내 계좌 한눈에 연계 개선', '004', 2, 'PASSED', NULL, 'kim.minjun@kb.example.com', '김민준', -620, 100, NULL, 'hong.sungmin@kftc.example.com', '홍성민', -600),
+  ('내 계좌 한눈에 연계 개선', '088', 0, 'PASSED', NULL, 'park.jihoon@shinhan.example.com', '박지훈', -640, 100, NULL, 'hong.sungmin@kftc.example.com', '홍성민', -600),
+  ('내 계좌 한눈에 연계 개선', '088', 1, 'PASSED', NULL, 'park.jihoon@shinhan.example.com', '박지훈', -640, 100, NULL, 'hong.sungmin@kftc.example.com', '홍성민', -600),
+  ('내 계좌 한눈에 연계 개선', '088', 2, 'PASSED', NULL, 'park.jihoon@shinhan.example.com', '박지훈', -640, 100, NULL, 'hong.sungmin@kftc.example.com', '홍성민', -600),
+  ('내 계좌 한눈에 연계 개선', '048', 0, 'PASSED', NULL, 'jung.hyunwoo@cu.example.com', '정현우', -630, 100, NULL, 'hong.sungmin@kftc.example.com', '홍성민', -600),
+  ('내 계좌 한눈에 연계 개선', '048', 1, 'PASSED', NULL, 'jung.hyunwoo@cu.example.com', '정현우', -630, 100, NULL, 'hong.sungmin@kftc.example.com', '홍성민', -600),
+  ('내 계좌 한눈에 연계 개선', '048', 2, 'PASSED', NULL, 'jung.hyunwoo@cu.example.com', '정현우', -630, 100, NULL, 'hong.sungmin@kftc.example.com', '홍성민', -600),
   -- 오픈뱅킹 안심차단 등록 전문 신설(기간 지남): 삼성증권 33%, 저축은행중앙회 0%
-  ('오픈뱅킹 안심차단 등록 전문 신설', '240', 0, 'PASSED', NULL, 'choi.saa@samsung.example.com', '최사아', -200, NULL, NULL, NULL, NULL, NULL),
-  ('오픈뱅킹 안심차단 등록 전문 신설', '050', 0, 'FAILED', '등록 전문의 고객 식별번호 길이가 맞지 않아 거절됩니다.', 'yoon.chaka@fsb.example.com', '윤차카', -150, NULL, NULL, NULL, NULL, NULL),
-  ('오픈뱅킹 안심차단 등록 전문 신설', '050', 1, 'NOT_STARTED', NULL, 'yoon.chaka@fsb.example.com', '윤차카', -150, NULL, NULL, NULL, NULL, NULL),
+  ('오픈뱅킹 안심차단 등록 전문 신설', '240', 0, 'PASSED', NULL, 'choi.yujin@samsung.example.com', '최유진', -200, NULL, NULL, NULL, NULL, NULL),
+  ('오픈뱅킹 안심차단 등록 전문 신설', '050', 0, 'FAILED', '등록 전문의 고객 식별번호 길이가 맞지 않아 거절됩니다.', 'yoon.seoyeon@fsb.example.com', '윤서연', -150, NULL, NULL, NULL, NULL, NULL),
+  ('오픈뱅킹 안심차단 등록 전문 신설', '050', 1, 'NOT_STARTED', NULL, 'yoon.seoyeon@fsb.example.com', '윤서연', -150, NULL, NULL, NULL, NULL, NULL),
   -- 자동이체 통합조회 응답 항목 추가: 신한은행 50%(완료 2), 삼성증권·신협은 그 업무 계정이 아직 없어 미등록
-  ('자동이체 통합조회 응답 항목 추가', '088', 0, 'PASSED', NULL, 'lee.dara@shinhan.example.com', '이다라', -40, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -28),
-  ('자동이체 통합조회 응답 항목 추가', '088', 1, 'FAILED', '최근 출금일이 YYYYMMDD 대신 YYMMDD 로 내려옵니다.', 'lee.dara@shinhan.example.com', '이다라', -30, NULL, NULL, NULL, NULL, NULL),
-  ('자동이체 통합조회 응답 항목 추가', '088', 2, 'IN_PROGRESS', '출금 이력 없는 테스트 고객을 만드는 중입니다.', 'lee.dara@shinhan.example.com', '이다라', -30, NULL, NULL, NULL, NULL, NULL),
-  ('자동이체 통합조회 응답 항목 추가', '088', 3, 'PASSED', NULL, 'lee.dara@shinhan.example.com', '이다라', -40, 100, NULL, 'hong.gildong@kftc.example.com', '홍길동', -28),
+  ('자동이체 통합조회 응답 항목 추가', '088', 0, 'PASSED', NULL, 'lee.junho@shinhan.example.com', '이준호', -40, 100, NULL, 'hong.sungmin@kftc.example.com', '홍성민', -28),
+  ('자동이체 통합조회 응답 항목 추가', '088', 1, 'FAILED', '최근 출금일이 YYYYMMDD 대신 YYMMDD 로 내려옵니다.', 'lee.junho@shinhan.example.com', '이준호', -30, NULL, NULL, NULL, NULL, NULL),
+  ('자동이체 통합조회 응답 항목 추가', '088', 2, 'IN_PROGRESS', '출금 이력 없는 테스트 고객을 만드는 중입니다.', 'lee.junho@shinhan.example.com', '이준호', -30, NULL, NULL, NULL, NULL, NULL),
+  ('자동이체 통합조회 응답 항목 추가', '088', 3, 'PASSED', NULL, 'lee.junho@shinhan.example.com', '이준호', -40, 100, NULL, 'hong.sungmin@kftc.example.com', '홍성민', -28),
   -- 출금이체 전문 연계 테스트: 신한은행 53%(002 는 결제원 의견 뒤에 다시 등록해 다시 확인 필요)
-  ('출금이체 전문 연계 테스트', '088', 0, 'PASSED', NULL, 'lee.dara@shinhan.example.com', '이다라', -30, 60, '요청 전문은 정상이나 결과 전문 회신이 30초를 넘는 건이 있습니다.', 'park.cms@kftc.example.com', '박하늘', -20),
-  ('출금이체 전문 연계 테스트', '088', 1, 'PASSED', '한도 초과 응답코드를 고쳐 다시 확인했습니다.', 'lee.dara@shinhan.example.com', '이다라', -6, 70, '한도 초과 응답코드가 표준과 다릅니다.', 'park.cms@kftc.example.com', '박하늘', -20),
-  ('출금이체 전문 연계 테스트', '088', 2, 'IN_PROGRESS', NULL, 'lee.dara@shinhan.example.com', '이다라', -6, NULL, NULL, NULL, NULL, NULL)
+  ('출금이체 전문 연계 테스트', '088', 0, 'PASSED', NULL, 'lee.junho@shinhan.example.com', '이준호', -30, 60, '요청 전문은 정상이나 결과 전문 회신이 30초를 넘는 건이 있습니다.', 'park.cms@kftc.example.com', '박하늘', -20),
+  ('출금이체 전문 연계 테스트', '088', 1, 'PASSED', '한도 초과 응답코드를 고쳐 다시 확인했습니다.', 'lee.junho@shinhan.example.com', '이준호', -6, 70, '한도 초과 응답코드가 표준과 다릅니다.', 'park.cms@kftc.example.com', '박하늘', -20),
+  ('출금이체 전문 연계 테스트', '088', 2, 'IN_PROGRESS', NULL, 'lee.junho@shinhan.example.com', '이준호', -6, NULL, NULL, NULL, NULL, NULL)
 ) AS r (plan_title, org_code, sort_order, result, note, reporter_email, reporter_name, reported_hour,
         feedback_rate, feedback_note, feedback_email, feedback_name, feedback_hour)
 JOIN test_plan p ON p.title = r.plan_title
@@ -156,12 +166,13 @@ JOIN test_plan_target t ON t.test_plan_id = p.id AND t.organization_id = o.id;
 INSERT INTO test_plan_recipient (test_plan_id, account_id, email, name, created_at, created_by, updated_at, updated_by)
 SELECT p.id, u.id, u.email, u.name, p.created_at, p.created_by, p.created_at, p.created_by
 FROM (VALUES
-  ('계좌정보 통합조회 전문 개선 2차', 'hong.gildong@kftc.example.com'),
+  ('계좌정보 통합조회 전문 개선 2차', 'hong.sungmin@kftc.example.com'),
   ('계좌정보 통합조회 전문 개선 2차', 'kim.ops@kftc.example.com'),
-  ('내 계좌 한눈에 연계 개선',        'hong.gildong@kftc.example.com'),
+  ('내 계좌 한눈에 연계 개선',        'hong.sungmin@kftc.example.com'),
   ('오픈뱅킹 안심차단 등록 전문 신설', 'kim.ops@kftc.example.com'),
-  ('자동이체 통합조회 응답 항목 추가', 'hong.gildong@kftc.example.com'),
-  ('출금이체 전문 연계 테스트',        'park.cms@kftc.example.com')
+  ('자동이체 통합조회 응답 항목 추가', 'hong.sungmin@kftc.example.com'),
+  ('출금이체 전문 연계 테스트',        'park.cms@kftc.example.com'),
+  ('대환대출 이동 신청 전문 개선',     'kim.ops@kftc.example.com')
 ) AS r (plan_title, email)
 JOIN test_plan p ON p.title = r.plan_title
 JOIN user_account u ON u.email = r.email;

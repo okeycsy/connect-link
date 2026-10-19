@@ -29,7 +29,7 @@ vi.mock('../../../api/client', () => ({
                 label: '담당자',
                 source: 'SAMPLE',
                 hits: [
-                  { title: '이다라', subtitle: '신한은행 · 전산(대외계)', link: '/cms/contacts' },
+                  { title: '이준호', subtitle: '신한은행 · 전산(대외계)', link: '/cms/contacts' },
                 ],
               },
             ]
@@ -53,7 +53,7 @@ describe('CommandPalette', () => {
     fireEvent.change(screen.getByLabelText('검색어'), { target: { value: '다라' } });
     expect(await screen.findByRole('option', { name: '신한은행' })).toBeInTheDocument();
     expect(screen.getByText('참가기관 · 088')).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: '이다라' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: '이준호' })).toBeInTheDocument();
     expect(screen.getByText('샘플')).toBeInTheDocument();
     // 바로 가기는 검색어에 맞는 것만 남는다.
     expect(screen.queryByRole('option', { name: '연락처' })).not.toBeInTheDocument();
@@ -79,7 +79,7 @@ describe('CommandPalette', () => {
     await screen.findByRole('option', { name: '신한은행' });
     fireEvent.keyDown(input, { key: 'ArrowDown' });
     await waitFor(() =>
-      expect(screen.getByRole('option', { name: '이다라' })).toHaveAttribute(
+      expect(screen.getByRole('option', { name: '이준호' })).toHaveAttribute(
         'aria-selected',
         'true',
       ),

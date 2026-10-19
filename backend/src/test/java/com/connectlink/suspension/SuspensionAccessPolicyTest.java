@@ -22,8 +22,8 @@ class SuspensionAccessPolicyTest {
   /** KB국민은행의 다른 계좌통합관리 담당자(같은 기관, 등록한 사람 아님). */
   private static final CurrentUser GANA_COLLEAGUE =
       new CurrentUser(
-          "han.gana@kb.example.com",
-          "한가나",
+          "han.yerin@kb.example.com",
+          "한예린",
           "004",
           "KB국민은행",
           OrganizationType.FINANCE_ORGANIZATION,
@@ -34,8 +34,8 @@ class SuspensionAccessPolicyTest {
 
   private static final CurrentUser HAHA_MEMBER =
       new CurrentUser(
-          "oh.haha@haha.example.com",
-          "오하하",
+          "oh.eunbi@haha.example.com",
+          "오은비",
           "HAHA",
           "하하통신",
           OrganizationType.USE_ORGANIZATION,
@@ -44,7 +44,7 @@ class SuspensionAccessPolicyTest {
           JobRole.BUSINESS,
           Set.of());
 
-  /** 김가나가 올린 KB국민은행 계좌통합관리 일시중단. */
+  /** 김민준이 올린 KB국민은행 계좌통합관리 일시중단. */
   private static Suspension ganaSuspension() {
     LocalDateTime start = LocalDateTime.now().plusDays(1);
     return Suspension.register(
@@ -56,12 +56,12 @@ class SuspensionAccessPolicyTest {
             start.plusHours(2),
             "점검",
             null,
-            "김가나",
+            "김민준",
             "010-0000-2101",
             null,
             null),
-        "kim.gana@kb.example.com",
-        "김가나",
+        "kim.minjun@kb.example.com",
+        "김민준",
         false);
   }
 
@@ -150,7 +150,7 @@ class SuspensionAccessPolicyTest {
   void 완료한_건은_아무도_고치거나_지우거나_확정하지_못한다() {
     Suspension s = ganaSuspension();
     LocalDateTime now = LocalDateTime.now();
-    s.confirm("차단", "hong.gildong@kftc.example.com", "홍길동", "현업", now);
+    s.confirm("차단", "hong.sungmin@kftc.example.com", "홍성민", "현업", now);
     s.complete(now);
     assertThat(policy.canEdit(TestUsers.KFTC_ACCOUNT_INFO, s)).isFalse();
     assertThat(policy.canDelete(TestUsers.GANA_MEMBER, s)).isFalse();
@@ -163,8 +163,8 @@ class SuspensionAccessPolicyTest {
     Suspension s = ganaSuspension();
     LocalDateTime now = LocalDateTime.now();
     assertThat(s.getStatus()).isEqualTo(SuspensionStatus.PENDING_REVIEW);
-    assertThat(s.startReview("kim.ops@kftc.example.com", "김운영", "전산(운영)", now)).isTrue();
-    assertThat(s.startReview("kim.ops@kftc.example.com", "김운영", "전산(운영)", now)).isFalse();
+    assertThat(s.startReview("kim.ops@kftc.example.com", "김태호", "전산(운영)", now)).isTrue();
+    assertThat(s.startReview("kim.ops@kftc.example.com", "김태호", "전산(운영)", now)).isFalse();
     assertThat(s.getStatus()).isEqualTo(SuspensionStatus.IN_REVIEW);
     s.reopenReview();
     assertThat(s.getStatus()).isEqualTo(SuspensionStatus.PENDING_REVIEW);

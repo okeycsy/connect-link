@@ -19,7 +19,7 @@ final class ContactMasking {
     return head + "-" + "*".repeat(digits.length() - 7) + "-" + tail;
   }
 
-  /** 회사 이메일 아이디를 앞 두 글자만 남기고 가린다. hong.gildong@kftc.example.com → ho***@kftc.example.com. */
+  /** 회사 이메일 아이디를 앞 두 글자만 남기고 가린다. hong.sungmin@kftc.example.com → ho***@kftc.example.com. */
   static String email(String value) {
     if (value == null || value.isBlank()) {
       return null;

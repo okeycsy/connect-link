@@ -198,18 +198,18 @@ class TestPlanControllerTest {
         .andExpect(jsonPath("$.items[1].number").value("002"))
         .andExpect(jsonPath("$.targets.length()").value(2))
         .andExpect(jsonPath("$.targets[*].unreported").value(everyItem(is(2))))
-        .andExpect(jsonPath("$.recipients[0]").value("홍길동"))
-        .andExpect(jsonPath("$.ownerName").value("홍길동"))
+        .andExpect(jsonPath("$.recipients[0]").value("홍성민"))
+        .andExpect(jsonPath("$.ownerName").value("홍성민"))
         .andExpect(jsonPath("$.permissions.manage").value(true))
         .andExpect(jsonPath("$.permissions.report").value(false))
         .andExpect(jsonPath("$.permissions.feedback").value(true));
 
     assertThat(notified(NotificationType.TEST_PLAN_OPENED, "만들기 알림 확인"))
-        .contains("kim.gana@kb.example.com", "choi.saa@samsung.example.com")
-        .doesNotContain("yoon.chaka@fsb.example.com", "hong.gildong@kftc.example.com");
+        .contains("kim.minjun@kb.example.com", "choi.yujin@samsung.example.com")
+        .doesNotContain("yoon.seoyeon@fsb.example.com", "hong.sungmin@kftc.example.com");
     assertThat(outboxRepository.findAll())
         .filteredOn(o -> o.getSubject() != null && o.getSubject().contains("만들기 알림 확인"))
-        .filteredOn(o -> o.getRecipient().equals("kim.gana@kb.example.com"))
+        .filteredOn(o -> o.getRecipient().equals("kim.minjun@kb.example.com"))
         .extracting(NotificationOutbox::getChannel)
         .containsExactly(NotificationChannel.EMAIL);
   }
@@ -229,7 +229,7 @@ class TestPlanControllerTest {
     send(get(BASE + "/organizations").param("business", "account-info"), null, hong())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[*].code").value(hasItem("004")))
-        .andExpect(jsonPath("$[*].code").value(not(hasItem("JACHA"))))
+        .andExpect(jsonPath("$[*].code").value(not(hasItem("071"))))
         .andExpect(jsonPath("$[*].code").value(not(hasItem("KFTC"))))
         .andExpect(jsonPath("$[?(@.code == '004')].sector").value(hasItem("BANK")));
   }
@@ -246,8 +246,8 @@ class TestPlanControllerTest {
         .andExpect(jsonPath("$.code").value("TEST_PLAN_ITEMS_REQUIRED"));
     send(post(BASE), form("대상 없음", List.of(), "확인"), hong())
         .andExpect(jsonPath("$.code").value("TEST_PLAN_TARGETS_REQUIRED"));
-    // 자차카드는 계좌통합관리에 참여하지 않는다.
-    send(post(BASE), form("참여 안 하는 기관", List.of("JACHA"), "확인"), hong())
+    // 우체국은 계좌통합관리에 참여하지 않는다.
+    send(post(BASE), form("참여 안 하는 기관", List.of("071"), "확인"), hong())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("TEST_TARGET_INVALID"));
     send(post(BASE), form(" ", List.of("004"), " "), hong())
@@ -354,7 +354,7 @@ class TestPlanControllerTest {
         .andExpect(jsonPath("$.targets.length()").value(2));
     // 새로 더한 삼성증권에만 열림 알림이 간다(KB국민은행은 만들 때 한 번).
     assertThat(notified(NotificationType.TEST_PLAN_OPENED, "고치기 대상 개정"))
-        .containsExactly("choi.saa@samsung.example.com");
+        .containsExactly("choi.yujin@samsung.example.com");
 
     send(
             get("/api/v1/change-histories")
@@ -415,9 +415,9 @@ class TestPlanControllerTest {
     Long id = create("알림 대상 설정", List.of("004"), "확인").get("id").asLong();
     send(get(BASE + "/" + id + "/recipients"), null, hong())
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[?(@.name == '홍길동')].selected").value(hasItem(true)))
-        .andExpect(jsonPath("$[?(@.name == '김운영')].selected").value(hasItem(false)))
-        .andExpect(jsonPath("$[*].email").value(not(hasItem("kim.gana@kb.example.com"))))
+        .andExpect(jsonPath("$[?(@.name == '홍성민')].selected").value(hasItem(true)))
+        .andExpect(jsonPath("$[?(@.name == '김태호')].selected").value(hasItem(false)))
+        .andExpect(jsonPath("$[*].email").value(not(hasItem("kim.minjun@kb.example.com"))))
         .andExpect(jsonPath("$[*].email").value(not(hasItem("park.cms@kftc.example.com"))));
 
     send(
@@ -429,14 +429,14 @@ class TestPlanControllerTest {
                     accountId("lee.control@kftc.example.com"))),
             hong())
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[?(@.selected == true)].name").value(hasItem("김운영")))
-        .andExpect(jsonPath("$[?(@.selected == true)].name").value(hasItem("이상황")))
-        .andExpect(jsonPath("$[?(@.selected == true)].name").value(not(hasItem("홍길동"))));
+        .andExpect(jsonPath("$[?(@.selected == true)].name").value(hasItem("김태호")))
+        .andExpect(jsonPath("$[?(@.selected == true)].name").value(hasItem("이수진")))
+        .andExpect(jsonPath("$[?(@.selected == true)].name").value(not(hasItem("홍성민"))));
     send(get(BASE + "/" + id), null, hong()).andExpect(jsonPath("$.recipients.length()").value(2));
 
     send(
             put(BASE + "/" + id + "/recipients"),
-            Map.of("accountIds", List.of(accountId("kim.gana@kb.example.com"))),
+            Map.of("accountIds", List.of(accountId("kim.minjun@kb.example.com"))),
             hong())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("TEST_RECIPIENT_INVALID"));

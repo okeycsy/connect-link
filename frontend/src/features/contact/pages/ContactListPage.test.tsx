@@ -13,8 +13,8 @@ const accountInfo = {
 
 function user(overrides: Record<string, unknown>) {
   return {
-    email: 'hong.gildong@kftc.example.com',
-    name: '홍길동',
+    email: 'hong.sungmin@kftc.example.com',
+    name: '홍성민',
     organizationCode: 'KFTC',
     organizationName: '금융결제원',
     organizationType: 'KFTC',
@@ -33,8 +33,8 @@ function user(overrides: Record<string, unknown>) {
 
 const HONG = user({});
 const GANA = user({
-  email: 'kim.gana@kb.example.com',
-  name: '김가나',
+  email: 'kim.minjun@kb.example.com',
+  name: '김민준',
   organizationCode: '004',
   organizationName: 'KB국민은행',
   organizationType: 'FINANCE_ORGANIZATION',
@@ -52,7 +52,7 @@ function contact(overrides: Record<string, unknown>) {
     organizationName: '금융결제원',
     organizationType: 'KFTC',
     subBusiness: '계좌정보 조회·해지',
-    name: '홍길동',
+    name: '홍성민',
     department: '계좌서비스부',
     team: '계좌통합팀',
     jobTitle: '과장',
@@ -63,9 +63,9 @@ function contact(overrides: Record<string, unknown>) {
     rankLabel: '주담당',
     extensionPhone: '1101',
     mobilePhone: '01000001101',
-    email: 'hong.gildong@kftc.example.com',
+    email: 'hong.sungmin@kftc.example.com',
     lastConfirmedAt: '2026-09-29T09:00:00',
-    lastConfirmedByName: '홍길동',
+    lastConfirmedByName: '홍성민',
     needsConfirm: false,
     self: false,
     permissions: { edit: false, delete: false },
@@ -81,7 +81,7 @@ const ROWS = [
     organizationCode: '004',
     organizationName: 'KB국민은행',
     organizationType: 'FINANCE_ORGANIZATION',
-    name: '김가나',
+    name: '김민준',
     department: '디지털금융부',
     mobilePhone: '010-0000-2101',
     lastConfirmedAt: '2026-04-01T09:00:00',
@@ -141,7 +141,7 @@ vi.mock('../../../api/client', async (importOriginal) => {
                 endDate: '2026-10-23',
                 status: 'OPEN',
                 statusLabel: '진행 중',
-                registrantName: '홍길동',
+                registrantName: '홍성민',
                 createdAt: '2026-10-14T09:00:00',
                 targetCount: 6,
                 completedCount: 2,
@@ -196,7 +196,7 @@ describe('ContactListPage', () => {
     renderPage();
 
     const table = await screen.findByTestId('contact-table');
-    expect(await within(table).findByText('김가나')).toBeInTheDocument();
+    expect(await within(table).findByText('김민준')).toBeInTheDocument();
     const groups = within(table).getAllByTestId('contact-group');
     expect(groups.map((g) => g.textContent)).toEqual([
       expect.stringContaining('금융결제원'),

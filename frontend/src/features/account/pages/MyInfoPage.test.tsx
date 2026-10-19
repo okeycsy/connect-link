@@ -26,8 +26,8 @@ const admin = {
 
 const member = {
   ...admin,
-  email: 'kim.gana@kb.example.com',
-  name: '김가나',
+  email: 'kim.minjun@kb.example.com',
+  name: '김민준',
   organizationCode: '004',
   organizationName: 'KB국민은행',
   organizationType: 'FINANCE_ORGANIZATION',
@@ -108,7 +108,7 @@ const MY_CONTACT = {
   organizationName: 'KB국민은행',
   organizationType: 'FINANCE_ORGANIZATION',
   subBusiness: '계좌정보 통합조회',
-  name: '김가나',
+  name: '김민준',
   department: '디지털금융부',
   team: '오픈뱅킹팀',
   jobTitle: '대리',
@@ -119,9 +119,9 @@ const MY_CONTACT = {
   rankLabel: '주담당',
   extensionPhone: '2101',
   mobilePhone: '010-0000-2101',
-  email: 'kim.gana@kb.example.com',
+  email: 'kim.minjun@kb.example.com',
   lastConfirmedAt: '2026-04-01T09:00:00',
-  lastConfirmedByName: '김가나',
+  lastConfirmedByName: '김민준',
   needsConfirm: true,
   self: true,
   permissions: { edit: true, delete: false },
@@ -204,7 +204,7 @@ describe('MyInfoPage', () => {
     await waitFor(() => expect(open).toBeEnabled());
     fireEvent.click(open);
     const dialog = await screen.findByRole('dialog', { name: '탈퇴' });
-    expect(dialog).toHaveTextContent('KB국민은행 김가나 님의 연결고리 계정을 탈퇴합니다.');
+    expect(dialog).toHaveTextContent('KB국민은행 김민준 님의 연결고리 계정을 탈퇴합니다.');
 
     const password = within(dialog).getByLabelText(/비밀번호/);
     fireEvent.change(password, { target: { value: 'Wrong123!' } });

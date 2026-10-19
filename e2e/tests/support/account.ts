@@ -62,10 +62,10 @@ export async function applyForGana(request: APIRequestContext, email: string, na
   expect(signUp.ok(), await signUp.text()).toBeTruthy();
 }
 
-/** 계좌통합관리 결제원 담당자(홍길동)로 로그인해 이 이메일의 가입 신청을 승인한다. request 의 세션은 홍길동으로 바뀐다. */
+/** 계좌통합관리 결제원 담당자(홍성민)로 로그인해 이 이메일의 가입 신청을 승인한다. request 의 세션은 홍성민으로 바뀐다. */
 export async function approveAsHong(request: APIRequestContext, email: string) {
   const login = await request.post('/api/v1/auth/login', {
-    data: { email: 'hong.gildong@kftc.example.com', password: 'demo1234!' },
+    data: { email: 'hong.sungmin@kftc.example.com', password: 'demo1234!' },
     headers: await csrf(request),
   });
   expect(login.ok()).toBeTruthy();
@@ -88,13 +88,13 @@ export async function closeToast(page: Page, text: string) {
 }
 
 /**
- * 샘플의 김가나는 최근 확인일이 6개월 지나 로그인 뒤 연락처 확인 창이 뜬다. 그 창을 다루지 않는 시나리오는 창을 이미 본 것으로 둔다
+ * 샘플의 김민준는 최근 확인일이 6개월 지나 로그인 뒤 연락처 확인 창이 뜬다. 그 창을 다루지 않는 시나리오는 창을 이미 본 것으로 둔다
  * (화면은 창마다 한 번만 띄우고 sessionStorage 에 본 사람을 남긴다). 확인 창 자체는 contacts.spec.ts 가 본다.
  */
 export async function skipContactReconfirm(page: Page) {
   await page.addInitScript(() => {
     try {
-      window.sessionStorage.setItem('contact.reconfirmShown', 'kim.gana@kb.example.com');
+      window.sessionStorage.setItem('contact.reconfirmShown', 'kim.minjun@kb.example.com');
     } catch {
       // 저장소를 못 쓰면 창이 뜬다.
     }

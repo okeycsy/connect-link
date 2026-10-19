@@ -19,8 +19,8 @@ class SignUpReviewAccessPolicyTest {
   /** 담당 업무에 CMS 가 있는 참가기관 담당자. 업무가 같아도 결제원이 아니면 승인하지 못한다. */
   private static final CurrentUser FINANCE_CMS_MEMBER =
       new CurrentUser(
-          "lee.dara@shinhan.example.com",
-          "이다라",
+          "lee.junho@shinhan.example.com",
+          "이준호",
           "088",
           "신한은행",
           OrganizationType.FINANCE_ORGANIZATION,

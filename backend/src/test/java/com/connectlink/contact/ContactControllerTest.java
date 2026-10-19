@@ -181,7 +181,7 @@ class ContactControllerTest {
             jsonPath("$.content[*].organizationCode", everyItem(in(List.of("KFTC", "004")))));
     mockMvc
         .perform(
-            get(BASE + "/" + contactId("choi.saa@samsung.example.com", Business.ACCOUNT_INFO))
+            get(BASE + "/" + contactId("choi.yujin@samsung.example.com", Business.ACCOUNT_INFO))
                 .with(gana()))
         .andExpect(status().isForbidden());
     mockMvc
@@ -235,7 +235,7 @@ class ContactControllerTest {
                     .with(gana())))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.extensionPhone").value("2202"))
-        .andExpect(jsonPath("$.lastConfirmedByName").value("김가나"))
+        .andExpect(jsonPath("$.lastConfirmedByName").value("김민준"))
         .andExpect(jsonPath("$.needsConfirm").value(false));
     mockMvc
         .perform(
@@ -270,7 +270,7 @@ class ContactControllerTest {
         .perform(json(put(BASE + "/" + id), namgungForm(Map.of("team", "인프라팀"))).with(hong()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.team").value("인프라팀"))
-        .andExpect(jsonPath("$.lastConfirmedByName").value("홍길동"));
+        .andExpect(jsonPath("$.lastConfirmedByName").value("홍성민"));
   }
 
   @Test
@@ -350,11 +350,11 @@ class ContactControllerTest {
 
   @Test
   void 변동_없음_확인은_최근_확인일만_바꾸고_이력은_남기지_않는다() throws Exception {
-    Long id = contactId("kim.gana@kb.example.com", Business.ACCOUNT_INFO);
+    Long id = contactId("kim.minjun@kb.example.com", Business.ACCOUNT_INFO);
     mockMvc
         .perform(get(BASE + "/reconfirm-due").with(gana()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[*].name", hasItem("김가나")));
+        .andExpect(jsonPath("$[*].name", hasItem("김민준")));
     mockMvc
         .perform(external(post(BASE + "/" + id + "/confirmation").with(csrf()).with(gana())))
         .andExpect(status().isOk())
@@ -362,7 +362,7 @@ class ContactControllerTest {
         .andExpect(jsonPath("$.self").value(true));
     mockMvc
         .perform(get(BASE + "/reconfirm-due").with(gana()))
-        .andExpect(jsonPath("$[*].name", not(hasItem("김가나"))));
+        .andExpect(jsonPath("$[*].name", not(hasItem("김민준"))));
     mockMvc
         .perform(
             get("/api/v1/change-histories")
@@ -374,7 +374,7 @@ class ContactControllerTest {
 
   @Test
   void 다른_기관_담당자는_확인하지_못한다() throws Exception {
-    Long id = contactId("kim.gana@kb.example.com", Business.ACCOUNT_INFO);
+    Long id = contactId("kim.minjun@kb.example.com", Business.ACCOUNT_INFO);
     mockMvc
         .perform(post(BASE + "/" + id + "/confirmation").with(csrf()).with(saa()))
         .andExpect(status().isForbidden());
@@ -396,7 +396,7 @@ class ContactControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.notified").value(org.hamcrest.Matchers.greaterThanOrEqualTo(1)));
     assertThat(
-            notificationRepository.findByRecipientEmailAndReadAtIsNull("kim.gana@kb.example.com"))
+            notificationRepository.findByRecipientEmailAndReadAtIsNull("kim.minjun@kb.example.com"))
         .anyMatch(n -> n.getType() == NotificationType.CONTACT_RECONFIRM_DUE);
     mockMvc
         .perform(post("/api/v1/demo/contact-reconfirm-runs").with(csrf()).with(TestUsers.admin()))
@@ -413,7 +413,7 @@ class ContactControllerTest {
         .perform(external(json(post(BASE), body).with(gana())))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.organizationCode").value("004"))
-        .andExpect(jsonPath("$.lastConfirmedByName").value("김가나"));
+        .andExpect(jsonPath("$.lastConfirmedByName").value("김민준"));
     mockMvc
         .perform(json(post(BASE), body).with(gana()))
         .andExpect(status().isConflict())
@@ -434,7 +434,7 @@ class ContactControllerTest {
     body.put(
         "organizationId",
         contactRepository
-            .findById(contactId("kim.gana@kb.example.com", Business.ACCOUNT_INFO))
+            .findById(contactId("kim.minjun@kb.example.com", Business.ACCOUNT_INFO))
             .orElseThrow()
             .getOrganization()
             .getId());
@@ -475,14 +475,14 @@ class ContactControllerTest {
         .perform(
             get("/api/v1/update-campaigns/current").param("business", "account-info").with(gana()))
         .andExpect(jsonPath("$.ownOrganization.completed").value(true))
-        .andExpect(jsonPath("$.ownOrganization.completedByName").value("김가나"));
+        .andExpect(jsonPath("$.ownOrganization.completedByName").value("김민준"));
   }
 
   @Test
   void 다른_기관의_현행화_완료는_누르지_못한다() throws Exception {
     Long otherOrg =
         contactRepository
-            .findById(contactId("choi.saa@samsung.example.com", Business.ACCOUNT_INFO))
+            .findById(contactId("choi.yujin@samsung.example.com", Business.ACCOUNT_INFO))
             .orElseThrow()
             .getOrganization()
             .getId();
@@ -496,21 +496,22 @@ class ContactControllerTest {
         .andExpect(jsonPath("$.confirmedCount").value(2));
     assertThat(
             contactRepository
-                .findById(contactId("choi.saa@samsung.example.com", Business.ACCOUNT_INFO))
+                .findById(contactId("choi.yujin@samsung.example.com", Business.ACCOUNT_INFO))
                 .orElseThrow()
                 .getLastConfirmedByName())
-        .isEqualTo("최사아");
+        .isEqualTo("최유진");
   }
 
   // 계정 연결
 
   @Test
   void 가입을_승인하면_그_업무의_담당자로_등록된다() throws Exception {
-    Long accountId = accountRepository.findByEmail("han.gana@kb.example.com").orElseThrow().getId();
+    Long accountId =
+        accountRepository.findByEmail("han.yerin@kb.example.com").orElseThrow().getId();
     mockMvc
         .perform(json(post("/api/v1/sign-ups/" + accountId + "/approval"), Map.of()).with(hong()))
         .andExpect(status().isOk());
-    assertThat(contactRepository.findByEmailOrderByBusinessAscIdAsc("han.gana@kb.example.com"))
+    assertThat(contactRepository.findByEmailOrderByBusinessAscIdAsc("han.yerin@kb.example.com"))
         .singleElement()
         .satisfies(
             c -> {

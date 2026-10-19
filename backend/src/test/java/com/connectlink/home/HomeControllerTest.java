@@ -47,7 +47,7 @@ class HomeControllerTest {
         .perform(get("/api/v1/home").param("business", "cms").with(TestUsers.admin()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.businessLabel").value("CMS"))
-        // CMS 는 차민결(타파보험) 한 명이 6개월을 넘겼고, 진행 중인 정기 변경 주간이 없다(연락처 시드).
+        // CMS 는 차민결(우리은행) 한 명이 6개월을 넘겼고, 진행 중인 정기 변경 주간이 없다(연락처 시드).
         .andExpect(jsonPath("$.kpis[0].value").value(1))
         .andExpect(jsonPath("$.cards[1].link").value("/cms/admin/update-campaigns"));
   }
@@ -80,6 +80,6 @@ class HomeControllerTest {
     mockMvc
         .perform(get("/api/v1/home").param("business", "account-info").with(TestUsers.ganaMember()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.userName").value("김가나"));
+        .andExpect(jsonPath("$.userName").value("김민준"));
   }
 }

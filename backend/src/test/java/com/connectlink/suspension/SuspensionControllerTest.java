@@ -112,9 +112,9 @@ class SuspensionControllerTest {
     body.put("endAt", start.plusHours(2).toString());
     body.put("reason", reason);
     body.put("kftcAction", "조회 차단");
-    body.put("contactName", "김가나");
+    body.put("contactName", "김민준");
     body.put("contactPhone", "010-0000-2101");
-    body.put("contactEmail", "kim.gana@kb.example.com");
+    body.put("contactEmail", "kim.minjun@kb.example.com");
     return body;
   }
 
@@ -156,18 +156,18 @@ class SuspensionControllerTest {
     List<String> recipients = notified("등록 알림 확인 작업");
     assertThat(recipients)
         .contains(
-            "hong.gildong@kftc.example.com",
+            "hong.sungmin@kftc.example.com",
             "kim.ops@kftc.example.com",
             "lee.control@kftc.example.com",
             "admin@kftc.example.com")
-        .doesNotContain("kim.gana@kb.example.com", "park.cms@kftc.example.com");
+        .doesNotContain("kim.minjun@kb.example.com", "park.cms@kftc.example.com");
     List<NotificationOutbox> sent = outbox("등록 알림 확인 작업");
     assertThat(sent)
-        .filteredOn(o -> o.getRecipient().equals("hong.gildong@kftc.example.com"))
+        .filteredOn(o -> o.getRecipient().equals("hong.sungmin@kftc.example.com"))
         .extracting(NotificationOutbox::getChannel)
         .containsExactly(NotificationChannel.EMAIL);
     assertThat(sent)
-        .filteredOn(o -> o.getRecipient().equals("@hong.gildong"))
+        .filteredOn(o -> o.getRecipient().equals("@hong.sungmin"))
         .extracting(NotificationOutbox::getChannel)
         .containsExactly(NotificationChannel.MATTERMOST);
   }
@@ -188,7 +188,7 @@ class SuspensionControllerTest {
   @Test
   void 업무에_참여하지_않는_기관은_고를_수_없다() throws Exception {
     Map<String, Object> body = form("참여 안 하는 기관");
-    body.put("organizationId", orgId("JACHA")); // 자차카드는 계좌통합관리에 참여하지 않는다.
+    body.put("organizationId", orgId("071")); // 우체국은 계좌통합관리에 참여하지 않는다.
     send(post(BASE), body, hong())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("SUSPENSION_ORGANIZATION_INVALID"));
@@ -289,7 +289,7 @@ class SuspensionControllerTest {
     send(post(BASE + "/" + id + "/review"), null, hong())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("IN_REVIEW"))
-        .andExpect(jsonPath("$.reviewers[0].name").value("홍길동"))
+        .andExpect(jsonPath("$.reviewers[0].name").value("홍성민"))
         .andExpect(jsonPath("$.permissions.startReview").value(false));
     send(
             post(BASE + "/" + id + "/confirmation"),
@@ -303,7 +303,7 @@ class SuspensionControllerTest {
     // 등록한 기관 담당자에게 확정 알림이 간다.
     assertThat(
             notificationRepository.findAll().stream()
-                .filter(n -> n.getRecipientEmail().equals("kim.gana@kb.example.com"))
+                .filter(n -> n.getRecipientEmail().equals("kim.minjun@kb.example.com"))
                 .filter(n -> n.getTitle().contains("확정")))
         .isNotEmpty();
   }
@@ -342,7 +342,7 @@ class SuspensionControllerTest {
     assertThat(sent)
         .extracting(NotificationOutbox::getChannel)
         .containsOnly(NotificationChannel.MATTERMOST);
-    assertThat(sent).extracting(NotificationOutbox::getRecipient).contains("@hong.gildong");
+    assertThat(sent).extracting(NotificationOutbox::getRecipient).contains("@hong.sungmin");
   }
 
   @Test
@@ -357,7 +357,7 @@ class SuspensionControllerTest {
         .andExpect(jsonPath("$.kftcAction").value("결제원이 고친 조치사항"));
     assertThat(
             notificationRepository.findAll().stream()
-                .filter(n -> n.getRecipientEmail().equals("kim.gana@kb.example.com"))
+                .filter(n -> n.getRecipientEmail().equals("kim.minjun@kb.example.com"))
                 .filter(n -> n.getTitle().contains("결제원이 고쳤습니다")))
         .isNotEmpty();
   }

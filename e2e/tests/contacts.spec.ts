@@ -1,6 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 
-// 이 파일은 공통 세션(데모 관리자) 없이 빈 브라우저로 시작한다. 기관 담당자(김가나)와 결제원 담당자(홍길동)로 로그인한다.
+// 이 파일은 공통 세션(데모 관리자) 없이 빈 브라우저로 시작한다. 기관 담당자(김민준)와 결제원 담당자(홍성민)로 로그인한다.
 test.use({
   storageState: { cookies: [], origins: [] },
   timezoneId: 'Asia/Seoul',
@@ -57,12 +57,12 @@ test.describe('가. 담당자 연락처', () => {
     page,
   }) => {
     await useZone(page, 'EXTERNAL');
-    await loginAs(page, '김가나 (참가기관 · 현업)로 로그인');
+    await loginAs(page, '김민준 (참가기관 · 현업)로 로그인');
 
     // 최근 확인일이 6개월 지난 본인 행이 확인 창에 뜬다.
     const reconfirm = page.getByTestId('contact-reconfirm');
     await expect(reconfirm).toBeVisible();
-    await expect(reconfirm).toContainText('김가나');
+    await expect(reconfirm).toContainText('김민준');
     await shot(page, 'contact-reconfirm');
     await reconfirm.getByRole('button', { name: '변동 없음' }).click();
     await expect(reconfirm.getByText('확인 완료')).toBeVisible();
@@ -73,8 +73,8 @@ test.describe('가. 담당자 연락처', () => {
     const table = page.getByTestId('contact-table');
     // 결제원과 자기 기관(KB국민은행) 담당자만 보인다.
     await expect(table.getByText('남궁민')).toBeVisible();
-    await expect(table.getByText('홍길동')).toBeVisible();
-    await expect(table.getByText('최사아')).toHaveCount(0);
+    await expect(table.getByText('홍성민')).toBeVisible();
+    await expect(table.getByText('최유진')).toHaveCount(0);
     // 인터넷망에서는 검색·필터·엑셀이 없다.
     await expect(page.getByTestId('contact-filter-internal-only')).toBeVisible();
     await expect(page.getByRole('button', { name: '엑셀' })).toHaveCount(0);
@@ -102,12 +102,12 @@ test.describe('가. 담당자 연락처', () => {
     await form.getByRole('button', { name: '저장' }).click();
     await expect(form).toBeHidden();
     await expect(detail).toContainText('2202');
-    await expect(detail).toContainText('김가나');
+    await expect(detail).toContainText('김민준');
     await expect(detail.getByTestId('change-history')).toContainText('2201');
 
     // 결제원 담당자 행은 고치지 못한다.
     await page.keyboard.press('Escape');
-    await table.getByRole('button', { name: '금융결제원 홍길동' }).click();
+    await table.getByRole('button', { name: '금융결제원 홍성민' }).click();
     await expect(page.getByTestId('contact-detail')).toBeVisible();
     await expect(page.getByRole('button', { name: '수정', exact: true })).toHaveCount(0);
 
@@ -120,22 +120,22 @@ test.describe('가. 담당자 연락처', () => {
   test('결제원 담당자는 내부망에서 걸러 보고 엑셀을 받으며, 인터넷망에서는 고치지 못한다', async ({
     page,
   }) => {
-    await loginAs(page, '홍길동 (결제원 · 현업)로 로그인');
+    await loginAs(page, '홍성민 (결제원 · 현업)로 로그인');
     await page.goto('/account-info/contacts');
     const table = page.getByTestId('contact-table');
-    await expect(table.getByText('최사아')).toBeVisible();
+    await expect(table.getByText('최유진')).toBeVisible();
     await expect(page.getByTestId('campaign-banner')).toContainText('진행 현황 보기');
 
     // 확인 필요만 거르기
     await page.getByText(/^확인 필요만/).click();
     await expect(table.getByText('문하린')).toBeVisible();
-    await expect(table.getByText('최사아')).toHaveCount(0);
+    await expect(table.getByText('최유진')).toHaveCount(0);
     await shot(page, 'contact-list-kftc');
 
     // 검색
     await page.getByText(/^확인 필요만/).click();
     await page.getByRole('textbox', { name: '담당자 검색' }).fill('삼성');
-    await expect(table.getByText('최사아')).toBeVisible();
+    await expect(table.getByText('최유진')).toBeVisible();
     await expect(table.getByText('문하린')).toHaveCount(0);
 
     const download = page.waitForEvent('download');
@@ -152,7 +152,7 @@ test.describe('가. 담당자 연락처', () => {
     await expect(page.getByTestId('contact-filter-internal-only')).toBeVisible();
     await page
       .getByTestId('contact-table')
-      .getByRole('button', { name: '삼성증권 최사아' })
+      .getByRole('button', { name: '삼성증권 최유진' })
       .click();
     await expect(page.getByTestId('contact-internal-only')).toBeVisible();
     await expect(page.getByRole('button', { name: '수정', exact: true })).toHaveCount(0);
@@ -162,7 +162,7 @@ test.describe('가. 담당자 연락처', () => {
   test('결제원 담당자는 정기 변경 주간의 진행률과 미확인 기관을 보고 주간을 등록·삭제한다', async ({
     page,
   }) => {
-    await loginAs(page, '홍길동 (결제원 · 현업)로 로그인');
+    await loginAs(page, '홍성민 (결제원 · 현업)로 로그인');
     await page.goto('/account-info/admin');
     await page
       .getByTestId('admin-menu')

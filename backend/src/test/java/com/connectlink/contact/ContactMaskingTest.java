@@ -15,7 +15,7 @@ class ContactMaskingTest {
 
   @Test
   void 이메일은_아이디_앞_두_글자만_남긴다() {
-    assertThat(ContactMasking.email("hong.gildong@kftc.example.com"))
+    assertThat(ContactMasking.email("hong.sungmin@kftc.example.com"))
         .isEqualTo("ho***@kftc.example.com");
     assertThat(ContactMasking.email("a@b.example.com")).isEqualTo("a***@b.example.com");
     assertThat(ContactMasking.email(" ")).isNull();
