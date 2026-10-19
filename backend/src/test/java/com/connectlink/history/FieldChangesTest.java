@@ -16,7 +16,7 @@ class FieldChangesTest {
   void 값이_다른_항목만_남기고_불리언과_enum은_화면_이름으로_적는다() {
     List<FieldChange> changes =
         FieldChanges.compare()
-            .field("name", "기관명", "가나은행", "가나은행")
+            .field("name", "기관명", "KB국민은행", "KB국민은행")
             .field("active", "사용 여부", true, false)
             .field("type", "기관 구분", OrganizationType.KFTC, OrganizationType.FINANCE_ORGANIZATION)
             .field("emailDomain", "이메일 도메인", null, "  ")
@@ -41,8 +41,7 @@ class FieldChangesTest {
 
   @Test
   void value는_비교_없이_그대로_남긴다() {
-    List<FieldChange> changes =
-        FieldChanges.compare().value("code", "기관 코드", null, "GANA").toList();
-    assertThat(changes).containsExactly(new FieldChange("code", "기관 코드", null, "GANA"));
+    List<FieldChange> changes = FieldChanges.compare().value("code", "기관 코드", null, "004").toList();
+    assertThat(changes).containsExactly(new FieldChange("code", "기관 코드", null, "004"));
   }
 }

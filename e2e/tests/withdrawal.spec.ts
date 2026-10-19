@@ -22,7 +22,7 @@ test.describe('탈퇴', () => {
     browser,
     request,
   }) => {
-    const email = `leave.${Date.now().toString(36).slice(-6)}@gana.example.com`;
+    const email = `leave.${Date.now().toString(36).slice(-6)}@kb.example.com`;
     await applyForGana(request, email, '이탈퇴');
     await approveAsHong(request, email);
 
@@ -51,7 +51,7 @@ test.describe('탈퇴', () => {
     // 비밀번호가 틀리면 칸 아래에 서버 메시지가 보이고 탈퇴하지 않는다.
     await open.click();
     const dialog = page.getByRole('dialog', { name: '탈퇴' });
-    await expect(dialog).toContainText('가나은행 이탈퇴 님의 연결고리 계정을 탈퇴합니다.');
+    await expect(dialog).toContainText('KB국민은행 이탈퇴 님의 연결고리 계정을 탈퇴합니다.');
     await dialog.getByLabel(/비밀번호/).fill('Wrong123!');
     await dialog.getByRole('button', { name: '탈퇴하기' }).click();
     await expect(dialog.getByText('비밀번호가 맞지 않습니다.')).toBeVisible();
@@ -71,7 +71,7 @@ test.describe('탈퇴', () => {
     // 탈퇴 확인 메일이 가고, 다른 브라우저의 세션도 끝났다.
     const mail = (await mailbox(request, email))[0];
     expect(mail.subject).toBe('[연결고리] 탈퇴가 완료되었습니다');
-    expect(mail.body).toContain('가나은행 이탈퇴 님의 연결고리 탈퇴가 완료되었습니다.');
+    expect(mail.body).toContain('KB국민은행 이탈퇴 님의 연결고리 탈퇴가 완료되었습니다.');
     expect((await elsewhere.request.get('/api/v1/me')).status()).toBe(401);
     await elsewhere.close();
 
@@ -111,7 +111,7 @@ test.describe('탈퇴', () => {
     browser,
     request,
   }) => {
-    const email = `moved.${Date.now().toString(36).slice(-6)}@gana.example.com`;
+    const email = `moved.${Date.now().toString(36).slice(-6)}@kb.example.com`;
     const name = '이동해';
     await applyForGana(request, email, name);
     await approveAsHong(request, email);
@@ -156,10 +156,10 @@ test.describe('탈퇴', () => {
 
     await page.getByRole('button', { name: '탈퇴 처리', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: '탈퇴 처리' });
-    await expect(dialog).toContainText(`가나은행 ${name} 님의 계정을 탈퇴 처리합니다.`);
+    await expect(dialog).toContainText(`KB국민은행 ${name} 님의 계정을 탈퇴 처리합니다.`);
     const submit = dialog.getByRole('button', { name: '탈퇴 처리' });
     await expect(submit).toBeEnabled();
-    const reason = '인사이동으로 계좌통합관리 담당이 끝났다고 가나은행에서 알려 왔습니다.';
+    const reason = '인사이동으로 계좌통합관리 담당이 끝났다고 KB국민은행에서 알려 왔습니다.';
     await dialog.getByLabel(/탈퇴 처리 사유/).fill(reason);
     await page.waitForTimeout(300);
     await page.screenshot({ path: 'screenshots/withdrawal-staff-confirm.png', fullPage: true });

@@ -28,11 +28,11 @@ const organizations = [
   },
   {
     id: 2,
-    code: 'GANA',
-    name: '가나은행',
+    code: '004',
+    name: 'KB국민은행',
     type: 'FINANCE_ORGANIZATION',
     typeLabel: '참가기관',
-    emailDomain: 'gana.example.com',
+    emailDomain: 'kb.example.com',
     active: true,
     businesses: businesses.slice(0, 2),
     createdAt: '2026-10-15T09:00:00',
@@ -112,17 +112,17 @@ describe('OrganizationAdminPage', () => {
     });
 
     expect(await screen.findByText('금융결제원')).toBeInTheDocument();
-    expect(screen.queryByText('가나은행')).not.toBeInTheDocument();
+    expect(screen.queryByText('KB국민은행')).not.toBeInTheDocument();
     expect(screen.getByTestId('organization-count')).toHaveTextContent('1곳');
     expect(calls.search[0]).toMatchObject({ business: 'loan-transfer', active: true });
 
     fireEvent.click(screen.getByLabelText('전체 업무'));
-    expect(await screen.findByText('가나은행')).toBeInTheDocument();
+    expect(await screen.findByText('KB국민은행')).toBeInTheDocument();
     expect(screen.getByText('하하통신')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByTestId('organization-count')).toHaveTextContent('3곳'));
 
     fireEvent.click(screen.getByLabelText('이용기관'));
-    await waitFor(() => expect(screen.queryByText('가나은행')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText('KB국민은행')).not.toBeInTheDocument());
     expect(screen.getByText('하하통신')).toBeInTheDocument();
   });
 
@@ -132,10 +132,10 @@ describe('OrganizationAdminPage', () => {
       path: '/:business/admin/organizations',
     });
 
-    fireEvent.click(await screen.findByRole('button', { name: '가나은행' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'KB국민은행' }));
     const dialog = await screen.findByRole('dialog');
-    expect(dialog).toHaveTextContent('GANA · 참가기관');
-    await waitFor(() => expect(screen.getByLabelText(/기관명/)).toHaveValue('가나은행'));
+    expect(dialog).toHaveTextContent('004 · 참가기관');
+    await waitFor(() => expect(screen.getByLabelText(/기관명/)).toHaveValue('KB국민은행'));
     expect(screen.getByLabelText('계좌통합관리')).toBeChecked();
     expect(screen.getByLabelText('CMS')).not.toBeChecked();
     expect(screen.getByRole('button', { name: '저장' })).toBeInTheDocument();

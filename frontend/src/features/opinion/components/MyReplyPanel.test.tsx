@@ -74,7 +74,7 @@ type Body = {
 const empty = {
   requestId: 7,
   targetId: 3,
-  organizationName: '가나은행',
+  organizationName: 'KB국민은행',
   replyId: null,
   status: null,
   statusLabel: '미작성',

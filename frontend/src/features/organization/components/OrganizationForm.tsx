@@ -121,7 +121,7 @@ export function OrganizationForm({ organization, defaultBusiness, onSaved, onCan
             <TextInput
               label="기관 코드"
               description="영문 대문자·숫자 2~20자. 등록 뒤 바꾸지 않습니다."
-              placeholder="예: GANA"
+              placeholder="예: 004"
               required
               {...form.getInputProps('code')}
               onChange={(e) => form.setFieldValue('code', e.currentTarget.value.toUpperCase())}
@@ -137,7 +137,7 @@ export function OrganizationForm({ organization, defaultBusiness, onSaved, onCan
         )}
         <TextInput
           label="기관명"
-          placeholder="예: 가나은행"
+          placeholder="예: KB국민은행"
           required
           {...form.getInputProps('name')}
         />
@@ -154,7 +154,7 @@ export function OrganizationForm({ organization, defaultBusiness, onSaved, onCan
         <TextInput
           label="회사 이메일 도메인"
           description="가입 승인 때 신청자 이메일이 이 기관과 맞는지 볼 때 씁니다."
-          placeholder="예: gana.example.com"
+          placeholder="예: kb.example.com"
           {...form.getInputProps('emailDomain')}
         />
         <Checkbox.Group

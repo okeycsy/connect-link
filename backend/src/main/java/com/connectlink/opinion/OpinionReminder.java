@@ -33,7 +33,7 @@ public class OpinionReminder extends AuditedEntity {
   @Column(name = "recipient_count", nullable = false)
   private int recipientCount;
 
-  /** 그때 받은 기관 이름들("가나은행, 다라은행"). */
+  /** 그때 받은 기관 이름들("KB국민은행, 신한은행"). */
   @Column(name = "organization_names", nullable = false, length = 2000)
   private String organizationNames;
 

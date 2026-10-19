@@ -42,7 +42,7 @@ public class ChangeHistory extends AuditedEntity {
   @Column(name = "action", nullable = false, length = 20)
   private ChangeAction action;
 
-  /** 목록에 한 줄로 보일 요약. 예: "가나은행 수정". */
+  /** 목록에 한 줄로 보일 요약. 예: "KB국민은행 수정". */
   @Column(name = "summary", nullable = false, length = 200)
   private String summary;
 

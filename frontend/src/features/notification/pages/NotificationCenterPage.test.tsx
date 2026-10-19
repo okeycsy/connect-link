@@ -12,7 +12,7 @@ const notifications = [
     business: null,
     businessSlug: null,
     businessLabel: null,
-    title: '가나은행 김가나 님이 가입을 신청했습니다',
+    title: 'KB국민은행 김가나 님이 가입을 신청했습니다',
     body: '이메일 도메인이 기관과 일치합니다.',
     link: '/account-info/admin',
     read: false,
@@ -26,7 +26,7 @@ const notifications = [
     business: 'CMS',
     businessSlug: 'cms',
     businessLabel: 'CMS',
-    title: '다라은행 CMS 일시중단이 확정되었습니다',
+    title: '신한은행 CMS 일시중단이 확정되었습니다',
     body: null,
     link: '/cms/suspensions',
     read: true,
@@ -72,14 +72,16 @@ describe('NotificationCenterPage', () => {
       path: '/:business/notifications',
     });
 
-    expect(await screen.findByText('가나은행 김가나 님이 가입을 신청했습니다')).toBeInTheDocument();
-    expect(screen.getByText('다라은행 CMS 일시중단이 확정되었습니다')).toBeInTheDocument();
+    expect(
+      await screen.findByText('KB국민은행 김가나 님이 가입을 신청했습니다'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('신한은행 CMS 일시중단이 확정되었습니다')).toBeInTheDocument();
     expect(screen.getByText('읽지 않은 알림 1건')).toBeInTheDocument();
     expect(screen.getByText('2건')).toBeInTheDocument();
 
     fireEvent.click(screen.getByLabelText('읽지 않음'));
     await waitFor(() =>
-      expect(screen.queryByText('다라은행 CMS 일시중단이 확정되었습니다')).not.toBeInTheDocument(),
+      expect(screen.queryByText('신한은행 CMS 일시중단이 확정되었습니다')).not.toBeInTheDocument(),
     );
     await waitFor(() => expect(screen.getByText('1건')).toBeInTheDocument());
   });
@@ -91,7 +93,7 @@ describe('NotificationCenterPage', () => {
     });
 
     fireEvent.click(
-      await screen.findByRole('button', { name: '가나은행 김가나 님이 가입을 신청했습니다' }),
+      await screen.findByRole('button', { name: 'KB국민은행 김가나 님이 가입을 신청했습니다' }),
     );
     await waitFor(() =>
       expect(post).toHaveBeenCalledWith('/api/v1/notifications/{id}/read', {

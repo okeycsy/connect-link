@@ -20,16 +20,16 @@ const member = (accountId: number, name: string, subBusiness: string | null) => 
 const candidates: OpinionRecipientCandidate[] = [
   {
     organizationId: 1,
-    organizationCode: 'GANA',
-    organizationName: '가나은행',
+    organizationCode: '004',
+    organizationName: 'KB국민은행',
     sector: 'BANK',
     sectorLabel: '은행',
     members: [member(11, '김가나', '내 계좌 한눈에'), member(12, '이가나', '오픈뱅킹 안심차단')],
   },
   {
     organizationId: 2,
-    organizationCode: 'SAA',
-    organizationName: '사아증권',
+    organizationCode: '240',
+    organizationName: '삼성증권',
     sector: 'SECURITIES',
     sectorLabel: '증권사',
     members: [member(21, '최사아', '오픈뱅킹 안심차단')],
@@ -56,9 +56,9 @@ describe('TargetPicker', () => {
   it('세부업무 칩은 그 세부업무 담당자만 기관을 넘어 고르고, 다시 누르면 뺀다', () => {
     renderWithProviders(<Harness />);
     fireEvent.click(screen.getByRole('checkbox', { name: '오픈뱅킹 안심차단' }));
-    expect(screen.getByRole('checkbox', { name: '가나은행 이가나' })).toBeChecked();
-    expect(screen.getByRole('checkbox', { name: '사아증권 최사아' })).toBeChecked();
-    expect(screen.getByRole('checkbox', { name: '가나은행 김가나' })).not.toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'KB국민은행 이가나' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: '삼성증권 최사아' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'KB국민은행 김가나' })).not.toBeChecked();
     expect(summary()).toBe('대상 2곳 · 회신 담당자 2명');
 
     fireEvent.click(screen.getByRole('checkbox', { name: '오픈뱅킹 안심차단' }));
@@ -68,13 +68,13 @@ describe('TargetPicker', () => {
   it('업권 칩은 그 업권 기관을 담당자 전부와 함께 고른다', () => {
     renderWithProviders(<Harness />);
     fireEvent.click(screen.getByRole('checkbox', { name: '은행 1곳' }));
-    expect(screen.getByRole('checkbox', { name: '가나은행 대상' })).toBeChecked();
-    expect(screen.getByRole('checkbox', { name: '사아증권 대상' })).not.toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'KB국민은행 대상' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: '삼성증권 대상' })).not.toBeChecked();
     expect(summary()).toBe('대상 1곳 · 회신 담당자 2명');
 
     // 업권 묶음 머리의 체크로도 그 업권 기관을 모두 고른다.
     fireEvent.click(screen.getByRole('checkbox', { name: '증권사 기관 모두' }));
-    expect(screen.getByRole('checkbox', { name: '사아증권 대상' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: '삼성증권 대상' })).toBeChecked();
     expect(summary()).toBe('대상 2곳 · 회신 담당자 3명');
   });
 
@@ -82,7 +82,7 @@ describe('TargetPicker', () => {
     renderWithProviders(<Harness />);
     fireEvent.click(screen.getByRole('button', { name: '이 업무 담당자 모두 고르기' }));
     expect(summary()).toBe('대상 2곳 · 회신 담당자 3명');
-    fireEvent.click(screen.getByRole('checkbox', { name: '가나은행 김가나' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'KB국민은행 김가나' }));
     expect(summary()).toBe('대상 2곳 · 회신 담당자 2명');
     expect(screen.getByRole('button', { name: '이 업무 담당자 모두 고르기' })).toBeInTheDocument();
   });

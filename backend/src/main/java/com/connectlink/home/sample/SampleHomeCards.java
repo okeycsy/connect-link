@@ -84,13 +84,13 @@ public final class SampleHomeCards {
           null,
           List.of(
               new HomeCardItem(
-                  "가나은행 · 김가나 (현업)",
+                  "KB국민은행 · 김가나 (현업)",
                   "최근 확인 " + today.minusMonths(8).withDayOfMonth(2),
                   null,
                   Urgency.OVERDUE,
                   link),
               new HomeCardItem(
-                  "마바저축은행 · 이창수 (전산·운영)",
+                  "SBI저축은행 · 이창수 (전산·운영)",
                   "최근 확인 " + today.minusMonths(7).withDayOfMonth(15),
                   null,
                   Urgency.OVERDUE,
@@ -142,8 +142,8 @@ public final class SampleHomeCards {
               new HomeCardMetric("완료 기관", done, "곳"), new HomeCardMetric("미완료", total - done, "곳")),
           new HomeCardProgress(done, total, "기관"),
           List.of(
-              new HomeCardItem("다라은행 · 미확인", "담당자 3명 중 1명 확인", end, Urgency.SOON, link),
-              new HomeCardItem("사아증권 · 미확인", "담당자 2명 모두 미확인", end, Urgency.SOON, link)),
+              new HomeCardItem("신한은행 · 미확인", "담당자 3명 중 1명 확인", end, Urgency.SOON, link),
+              new HomeCardItem("삼성증권 · 미확인", "담당자 2명 모두 미확인", end, Urgency.SOON, link)),
           null);
     }
   }

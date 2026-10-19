@@ -28,7 +28,7 @@ function seoulDate(days: number) {
   return new Date(Date.now() + 9 * 3_600_000 + days * 86_400_000).toISOString().slice(0, 10);
 }
 
-/** 홍길동으로 가나은행 대상 계좌통합관리 기관 테스트를 API 로 만든다. request 의 세션은 홍길동으로 바뀐다. */
+/** 홍길동으로 KB국민은행 대상 계좌통합관리 기관 테스트를 API 로 만든다. request 의 세션은 홍길동으로 바뀐다. */
 async function createAsHong(request: APIRequestContext, title: string): Promise<number> {
   const login = await request.post('/api/v1/auth/login', {
     data: { email: 'hong.gildong@kftc.example.com', password: DEMO_PASSWORD },
@@ -53,7 +53,7 @@ async function createAsHong(request: APIRequestContext, title: string): Promise<
         },
         { title: '해지 결과 통보 전문 확인', description: null },
       ],
-      organizationIds: [organizations.find((o) => o.code === 'GANA')!.id],
+      organizationIds: [organizations.find((o) => o.code === '004')!.id],
     },
     headers: await csrf(request),
   });
@@ -91,8 +91,8 @@ test.describe('다. 기관 테스트', () => {
     await page.getByRole('button', { name: '요구사항 더하기' }).click();
     await items.nth(1).getByRole('textbox', { name: '요구사항' }).fill('해지 결과 통보 전문 확인');
     await items.nth(1).getByRole('textbox', { name: '확인 사항' }).fill('결과코드 0000 을 받는지');
-    await page.getByRole('checkbox', { name: '가나은행 대상' }).check();
-    await page.getByRole('checkbox', { name: '사아증권 대상' }).check();
+    await page.getByRole('checkbox', { name: 'KB국민은행 대상' }).check();
+    await page.getByRole('checkbox', { name: '삼성증권 대상' }).check();
     await expect(page.getByTestId('target-summary')).toHaveText('대상 2곳');
     await page.locator('input[type="file"]').setInputFiles({
       name: '테스트가이드.pdf',
@@ -107,8 +107,8 @@ test.describe('다. 기관 테스트', () => {
     await expect(page.getByTestId('test-plan-state')).toHaveText('진행 중');
     await expect(page.getByTestId('plan-progress')).toContainText('0%');
     const targets = page.getByTestId('target-table');
-    await expect(targets).toContainText('가나은행');
-    await expect(targets).toContainText('사아증권');
+    await expect(targets).toContainText('KB국민은행');
+    await expect(targets).toContainText('삼성증권');
     await shot(page, 'test-plan-detail');
 
     // 알림 설정: 만든 사람(홍길동)에 김운영을 더한다.
@@ -124,7 +124,7 @@ test.describe('다. 기관 테스트', () => {
     await expect(page.getByText('테스트가이드.pdf')).toBeVisible();
 
     // 대상 기관 담당자에게 열림 메일이 간다.
-    const mails = await mailbox(request, 'kim.gana@gana.example.com');
+    const mails = await mailbox(request, 'kim.gana@kb.example.com');
     expect(mails.some((m) => m.subject.includes(`${title} 기관 테스트가 열렸습니다`))).toBeTruthy();
   });
 
@@ -161,7 +161,7 @@ test.describe('다. 기관 테스트', () => {
     };
     expect(
       notifications.content.some((n) =>
-        n.title.includes(`가나은행 계좌통합관리 ${title} 결과 등록`),
+        n.title.includes(`KB국민은행 계좌통합관리 ${title} 결과 등록`),
       ),
     ).toBeTruthy();
     await page.goto(`/account-info/tests/${id}`);
@@ -211,8 +211,8 @@ test.describe('다. 기관 테스트', () => {
     // 변경 이력: 기관별 결과 이력에 등록과 결제원 의견이 남는다.
     await page.getByRole('tab', { name: '변경 이력' }).click();
     await page.getByRole('textbox', { name: '이력 대상' }).click();
-    await page.getByRole('option', { name: '가나은행 결과' }).click();
-    await expect(page.getByText('가나은행 결제원 의견').first()).toBeVisible();
-    await expect(page.getByText('가나은행 결과 등록').first()).toBeVisible();
+    await page.getByRole('option', { name: 'KB국민은행 결과' }).click();
+    await expect(page.getByText('KB국민은행 결제원 의견').first()).toBeVisible();
+    await expect(page.getByText('KB국민은행 결과 등록').first()).toBeVisible();
   });
 });

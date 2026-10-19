@@ -40,17 +40,17 @@ class OrganizationControllerTest {
         .andExpect(jsonPath("$[0].code").value("KFTC"))
         .andExpect(jsonPath("$[0].typeLabel").value("결제원"))
         .andExpect(jsonPath("$[0].businesses", hasSize(4)))
-        .andExpect(jsonPath("$[*].code", not(org.hamcrest.Matchers.hasItem("OLD"))));
+        .andExpect(jsonPath("$[*].code", not(org.hamcrest.Matchers.hasItem("005"))));
   }
 
   @Test
   void 기관_목록은_가입_화면이_업무를_거르도록_참여_업무를_업무_순서로_담는다() throws Exception {
     mockMvc
         .perform(get("/api/v1/organizations"))
-        .andExpect(jsonPath("$[?(@.code == 'DARA')].businesses[*]").isArray())
+        .andExpect(jsonPath("$[?(@.code == '088')].businesses[*]").isArray())
         .andExpect(
             jsonPath(
-                "$[?(@.code == 'MABA')].businesses[*]",
+                "$[?(@.code == '103')].businesses[*]",
                 org.hamcrest.Matchers.contains("ACCOUNT_INFO", "LOAN_TRANSFER")));
   }
 
@@ -89,7 +89,7 @@ class OrganizationControllerTest {
         .andExpect(jsonPath("$.content[0].code").value("KFTC"))
         .andExpect(jsonPath("$.content[0].businesses", hasSize(4)))
         .andExpect(jsonPath("$.content[0].businesses[0].slug").value("account-info"))
-        .andExpect(jsonPath("$.content[1].name").value("가나은행"))
+        .andExpect(jsonPath("$.content[1].name").value("KB국민은행"))
         .andExpect(jsonPath("$.content[11].typeLabel").value("이용기관"));
   }
 
@@ -101,9 +101,9 @@ class OrganizationControllerTest {
         .andExpect(jsonPath("$.totalElements").value(5));
     mockMvc
         .perform(
-            get("/api/v1/organizations/search").param("keyword", "gana").with(TestUsers.admin()))
+            get("/api/v1/organizations/search").param("keyword", "004").with(TestUsers.admin()))
         .andExpect(jsonPath("$.totalElements").value(1))
-        .andExpect(jsonPath("$.content[0].code").value("GANA"));
+        .andExpect(jsonPath("$.content[0].code").value("004"));
     mockMvc
         .perform(
             get("/api/v1/organizations/search")
@@ -118,12 +118,12 @@ class OrganizationControllerTest {
                 .param("active", "true")
                 .with(TestUsers.admin()))
         .andExpect(jsonPath("$.totalElements").value(5))
-        .andExpect(jsonPath("$.content[*].code", not(org.hamcrest.Matchers.hasItem("OLD"))));
+        .andExpect(jsonPath("$.content[*].code", not(org.hamcrest.Matchers.hasItem("005"))));
     mockMvc
         .perform(
             get("/api/v1/organizations/search").param("active", "false").with(TestUsers.admin()))
         .andExpect(jsonPath("$.totalElements").value(1))
-        .andExpect(jsonPath("$.content[0].code").value("OLD"));
+        .andExpect(jsonPath("$.content[0].code").value("005"));
     mockMvc
         .perform(
             get("/api/v1/organizations/search").param("business", "nope").with(TestUsers.admin()))
@@ -133,12 +133,12 @@ class OrganizationControllerTest {
 
   @Test
   void 상세는_이메일_도메인과_감사_정보를_담는다() throws Exception {
-    Long id = organizationRepository.findByCode("DARA").orElseThrow().getId();
+    Long id = organizationRepository.findByCode("088").orElseThrow().getId();
     mockMvc
         .perform(get("/api/v1/organizations/{id}", id).with(TestUsers.admin()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.name").value("다라은행"))
-        .andExpect(jsonPath("$.emailDomain").value("dara.example.com"))
+        .andExpect(jsonPath("$.name").value("신한은행"))
+        .andExpect(jsonPath("$.emailDomain").value("shinhan.example.com"))
         .andExpect(jsonPath("$.active").value(true))
         .andExpect(jsonPath("$.businesses", hasSize(3)))
         .andExpect(jsonPath("$.createdBy").value("seed"))
@@ -241,14 +241,14 @@ class OrganizationControllerTest {
         .andExpect(jsonPath("$[0].code").value("BANK"))
         .andExpect(jsonPath("$[0].label").value("은행"));
 
-    Long id = organizationRepository.findByCode("SAA").orElseThrow().getId();
+    Long id = organizationRepository.findByCode("240").orElseThrow().getId();
     mockMvc
         .perform(
             put("/api/v1/organizations/{id}", id)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"name":"사아증권","emailDomain":"saa.example.com","active":true,"businesses":["ACCOUNT_INFO","AUTO_TRANSFER"],"sector":"INSURANCE"}
+                    {"name":"삼성증권","emailDomain":"samsung.example.com","active":true,"businesses":["ACCOUNT_INFO","AUTO_TRANSFER"],"sector":"INSURANCE"}
                     """)
                 .with(TestUsers.admin())
                 .with(csrf()))
@@ -283,10 +283,10 @@ class OrganizationControllerTest {
 
   @Test
   void 참여_업무만_바꿔도_수정자와_수정_일시가_갱신된다() throws Exception {
-    Long id = organizationRepository.findByCode("SAA").orElseThrow().getId();
+    Long id = organizationRepository.findByCode("240").orElseThrow().getId();
     String body =
         """
-        {"name":"사아증권","emailDomain":"saa.example.com","active":true,
+        {"name":"삼성증권","emailDomain":"samsung.example.com","active":true,
          "businesses":["ACCOUNT_INFO","AUTO_TRANSFER","LOAN_TRANSFER"],"sector":"BANK"}
         """;
     mockMvc
@@ -303,10 +303,10 @@ class OrganizationControllerTest {
 
   @Test
   void 수정하면_바뀐_항목의_변경_전후가_이력에_남고_바뀐_것이_없으면_남지_않는다() throws Exception {
-    Long id = organizationRepository.findByCode("GANA").orElseThrow().getId();
+    Long id = organizationRepository.findByCode("004").orElseThrow().getId();
     String changed =
         """
-        {"name":"가나은행(새 이름)","emailDomain":"gana.example.com","active":true,
+        {"name":"KB국민은행(새 이름)","emailDomain":"kb.example.com","active":true,
          "businesses":["ACCOUNT_INFO","AUTO_TRANSFER","LOAN_TRANSFER"],"sector":"BANK"}
         """;
     mockMvc
@@ -336,13 +336,13 @@ class OrganizationControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.totalElements").value(1))
         .andExpect(jsonPath("$.content[0].action").value("UPDATED"))
-        .andExpect(jsonPath("$.content[0].summary").value("가나은행(새 이름) 수정"))
+        .andExpect(jsonPath("$.content[0].summary").value("KB국민은행(새 이름) 수정"))
         .andExpect(jsonPath("$.content[0].changedBy").value("admin@kftc.example.com"))
         .andExpect(jsonPath("$.content[0].changedByName").value("데모 관리자"))
         .andExpect(jsonPath("$.content[0].changes", hasSize(2)))
         .andExpect(jsonPath("$.content[0].changes[0].field").value("name"))
-        .andExpect(jsonPath("$.content[0].changes[0].before").value("가나은행"))
-        .andExpect(jsonPath("$.content[0].changes[0].after").value("가나은행(새 이름)"))
+        .andExpect(jsonPath("$.content[0].changes[0].before").value("KB국민은행"))
+        .andExpect(jsonPath("$.content[0].changes[0].after").value("KB국민은행(새 이름)"))
         .andExpect(jsonPath("$.content[0].changes[1].label").value("참여 업무"))
         .andExpect(jsonPath("$.content[0].changes[1].before").value("계좌통합관리, 자동이체통합관리, 대출이동, CMS"))
         .andExpect(jsonPath("$.content[0].changes[1].after").value("계좌통합관리, 자동이체통합관리, 대출이동"));
@@ -377,7 +377,7 @@ class OrganizationControllerTest {
 
   @Test
   void 관리자가_아니면_기준정보_관리_API는_403이다() throws Exception {
-    Long id = organizationRepository.findByCode("GANA").orElseThrow().getId();
+    Long id = organizationRepository.findByCode("004").orElseThrow().getId();
     mockMvc
         .perform(get("/api/v1/organizations/search").with(TestUsers.ganaMember()))
         .andExpect(status().isForbidden())

@@ -48,19 +48,19 @@ test.describe('첨부파일과 변경 이력', () => {
     await page.goto('/cms/admin/organizations');
     await page
       .getByTestId('organization-table')
-      .getByRole('button', { name: '나다상호금융' })
+      .getByRole('button', { name: '신협' })
       .click();
     const dialog = page.getByRole('dialog');
     await dialog.getByRole('tab', { name: '변경 이력' }).click();
     const history = dialog.getByTestId('change-history');
     // 시드 이력: 이름과 이메일 도메인을 바꾼 수정 1건.
-    await expect(history).toContainText('나다상호금융 수정');
+    await expect(history).toContainText('신협 수정');
     await expect(history).toContainText('나다신용협동조합');
     await expect(history).toContainText('nada-cu.example.com');
     await page.waitForTimeout(400);
     await page.screenshot({ path: 'screenshots/organization-history.png' });
 
-    const newName = `나다상호금융(${Date.now() % 1000})`;
+    const newName = `신협(${Date.now() % 1000})`;
     await rename(page, newName);
     await dialog.getByRole('tab', { name: '변경 이력' }).click();
     const latest = dialog.getByTestId('change-history').locator('.mantine-Timeline-item').first();
@@ -70,9 +70,9 @@ test.describe('첨부파일과 변경 이력', () => {
     await expect(latest).toContainText('데모 관리자 (admin@kftc.example.com)');
 
     // 다른 시나리오가 원래 이름에 기대므로 되돌려 둔다(이력이 한 건 더 남는다).
-    await rename(page, '나다상호금융');
+    await rename(page, '신협');
     await dialog.getByRole('button', { name: '닫기' }).click();
-    await expect(page.getByTestId('organization-table').getByText('나다상호금융')).toBeVisible();
+    await expect(page.getByTestId('organization-table').getByText('신협')).toBeVisible();
   });
 
   test('변경 이력 API 는 권한 빈이 없는 대상을, 첨부 API 는 없는 일시중단을 거부한다', async ({

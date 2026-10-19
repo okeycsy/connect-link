@@ -104,7 +104,7 @@ class OpinionControllerTest {
         .orElseThrow();
   }
 
-  /** 가나은행(김가나)과 사아증권(최사아)이 대상인 새 요청. 질문은 객관식(필수, 1월/7월), 체크박스(정산/안내/개발), 주관식(월 조회 건수) 세 개다. */
+  /** KB국민은행(김가나)과 삼성증권(최사아)이 대상인 새 요청. 질문은 객관식(필수, 1월/7월), 체크박스(정산/안내/개발), 주관식(월 조회 건수) 세 개다. */
   private Map<String, Object> newRequest(String title) {
     Map<String, Object> body = new HashMap<>();
     body.put("business", "ACCOUNT_INFO");
@@ -138,14 +138,14 @@ class OpinionControllerTest {
         List.of(
             Map.of(
                 "organizationId",
-                orgId("GANA"),
+                orgId("004"),
                 "recipientAccountIds",
-                List.of(accountId("kim.gana@gana.example.com"))),
+                List.of(accountId("kim.gana@kb.example.com"))),
             Map.of(
                 "organizationId",
-                orgId("SAA"),
+                orgId("240"),
                 "recipientAccountIds",
-                List.of(accountId("choi.saa@saa.example.com")))));
+                List.of(accountId("choi.saa@samsung.example.com")))));
     return body;
   }
 
@@ -215,7 +215,7 @@ class OpinionControllerTest {
     send(get(BASE + "/" + id), null, kim())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.targets.length()").value(1))
-        .andExpect(jsonPath("$.targets[0].organizationCode").value("GANA"))
+        .andExpect(jsonPath("$.targets[0].organizationCode").value("004"))
         .andExpect(jsonPath("$.permissions.reply").value(true))
         .andExpect(jsonPath("$.permissions.manage").value(false));
   }
@@ -230,9 +230,9 @@ class OpinionControllerTest {
   void 회신_담당자_후보는_그_업무의_결제원_담당자만_본다() throws Exception {
     send(get(BASE + "/recipient-candidates").param("business", "account-info"), null, hong())
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[?(@.organizationCode == 'GANA')].members[0].name").value("김가나"))
-        .andExpect(jsonPath("$[?(@.organizationCode == 'GANA')].sectorLabel").value("은행"))
-        .andExpect(jsonPath("$[?(@.organizationCode == 'SAA')].sector").value("SECURITIES"))
+        .andExpect(jsonPath("$[?(@.organizationCode == '004')].members[0].name").value("김가나"))
+        .andExpect(jsonPath("$[?(@.organizationCode == '004')].sectorLabel").value("은행"))
+        .andExpect(jsonPath("$[?(@.organizationCode == '240')].sector").value("SECURITIES"))
         .andExpect(jsonPath("$[*].organizationCode").value(not(hasItem("KFTC"))))
         .andExpect(jsonPath("$[*].organizationCode").value(not(hasItem("HAHA"))));
     send(get(BASE + "/recipient-candidates").param("business", "account-info"), null, kim())
@@ -253,11 +253,10 @@ class OpinionControllerTest {
                 .filter(n -> n.getType() == NotificationType.OPINION_REQUEST_OPENED)
                 .filter(n -> n.getTitle().contains("알림 확인 요청"))
                 .map(n -> n.getRecipientEmail()))
-        .containsExactlyInAnyOrder("kim.gana@gana.example.com", "choi.saa@saa.example.com");
+        .containsExactlyInAnyOrder("kim.gana@kb.example.com", "choi.saa@samsung.example.com");
     JsonNode mails =
         json(
-            mockMvc.perform(
-                get("/api/v1/demo/mailbox").param("email", "kim.gana@gana.example.com")));
+            mockMvc.perform(get("/api/v1/demo/mailbox").param("email", "kim.gana@kb.example.com")));
     assertThat(mails.get(0).get("subject").asText()).contains("알림 확인 요청");
   }
 
@@ -286,9 +285,9 @@ class OpinionControllerTest {
         List.of(
             Map.of(
                 "organizationId",
-                orgId("SAA"),
+                orgId("240"),
                 "recipientAccountIds",
-                List.of(accountId("kim.gana@gana.example.com")))));
+                List.of(accountId("kim.gana@kb.example.com")))));
     send(post(BASE), wrong, hong())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("OPINION_RECIPIENT_INVALID"));
@@ -319,9 +318,9 @@ class OpinionControllerTest {
         List.of(
             Map.of(
                 "organizationId",
-                orgId("SAA"),
+                orgId("240"),
                 "recipientAccountIds",
-                List.of(accountId("choi.saa@saa.example.com")))));
+                List.of(accountId("choi.saa@samsung.example.com")))));
     send(put(BASE + "/" + id), body, hong())
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("OPINION_TARGET_HAS_REPLY"));
@@ -386,7 +385,7 @@ class OpinionControllerTest {
     Map<String, Object> body = newRequest("가나만 대상");
     body.put(
         "targets",
-        List.of(Map.of("organizationId", orgId("GANA"), "recipientAccountIds", List.of())));
+        List.of(Map.of("organizationId", orgId("004"), "recipientAccountIds", List.of())));
     Long id =
         json(send(post(BASE), body, hong()).andExpect(status().isCreated())).get("id").asLong();
     send(post(BASE + "/" + id + "/opening"), null, hong()).andExpect(status().isOk());
@@ -582,9 +581,9 @@ class OpinionControllerTest {
         .andExpect(jsonPath("$.questions.length()").value(3))
         .andExpect(jsonPath("$.questions[0].answeredCount").value(1))
         .andExpect(jsonPath("$.questions[0].options[1].count").value(1))
-        .andExpect(jsonPath("$.questions[0].options[1].organizations[0]").value("가나은행"))
+        .andExpect(jsonPath("$.questions[0].options[1].organizations[0]").value("KB국민은행"))
         .andExpect(jsonPath("$.questions[0].options[0].count").value(0))
-        .andExpect(jsonPath("$.questions[2].textAnswers[0].organizationName").value("가나은행"))
+        .andExpect(jsonPath("$.questions[2].textAnswers[0].organizationName").value("KB국민은행"))
         .andExpect(jsonPath("$.questions[2].textAnswers[0].text").value("약 1만 건"))
         .andExpect(jsonPath("$.rows[0].answers[0].value").value("7월"))
         .andExpect(jsonPath("$.rows[0].answers[1].value").value("정산, 안내"))
@@ -617,9 +616,9 @@ class OpinionControllerTest {
         .andExpect(jsonPath("$.summary.targetCount").value(2))
         .andExpect(jsonPath("$.summary.repliedCount").value(1))
         .andExpect(jsonPath("$.summary.replyRate").value(50))
-        .andExpect(jsonPath("$.questions[0].options[1].organizations[0]").value("가나은행"))
+        .andExpect(jsonPath("$.questions[0].options[1].organizations[0]").value("KB국민은행"))
         .andExpect(jsonPath("$.questions[0].options[0].count").value(0))
-        .andExpect(jsonPath("$.summary.notRepliedOrganizations[0]").value("사아증권"))
+        .andExpect(jsonPath("$.summary.notRepliedOrganizations[0]").value("삼성증권"))
         .andExpect(jsonPath("$.rows[1].replied").value(false))
         .andExpect(jsonPath("$.rows[1].replyStatus").value("DRAFT"))
         .andExpect(jsonPath("$.rows[1].answers[0].value").isEmpty());
@@ -633,19 +632,19 @@ class OpinionControllerTest {
     send(post(BASE + "/" + id + "/reminders"), Map.of(), hong())
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.organizationCount").value(1))
-        .andExpect(jsonPath("$.organizationNames[0]").value("사아증권"));
+        .andExpect(jsonPath("$.organizationNames[0]").value("삼성증권"));
     assertThat(
             notificationRepository.findAll().stream()
                 .filter(n -> n.getType() == NotificationType.OPINION_REPLY_DUE)
                 .filter(n -> n.getTitle().contains("리마인드 확인"))
                 .map(n -> n.getRecipientEmail()))
-        .containsExactly("choi.saa@saa.example.com");
+        .containsExactly("choi.saa@samsung.example.com");
     send(get(BASE + "/" + id + "/reminders"), null, hong())
         .andExpect(jsonPath("$.length()").value(1))
         .andExpect(jsonPath("$[0].senderName").value("홍길동"));
     send(
             post(BASE + "/" + id + "/reminders"),
-            Map.of("organizationIds", List.of(orgId("GANA"))),
+            Map.of("organizationIds", List.of(orgId("004"))),
             hong())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("OPINION_REMINDER_NO_RECIPIENT"));
@@ -668,7 +667,7 @@ class OpinionControllerTest {
     try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(content))) {
       assertThat(workbook.getSheetName(0)).isEqualTo("결과 요약");
       assertThat(workbook.getSheet("기관별 취합표").getRow(1).getCell(1).getStringCellValue())
-          .isEqualTo("가나은행");
+          .isEqualTo("KB국민은행");
       assertThat(workbook.getSheet("기관별 취합표").getRow(1).getCell(4).getStringCellValue())
           .isEqualTo("1월");
     }

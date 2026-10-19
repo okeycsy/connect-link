@@ -33,10 +33,10 @@ function user(overrides: Record<string, unknown>) {
 
 const KFTC = user({});
 const GANA = user({
-  email: 'kim.gana@gana.example.com',
+  email: 'kim.gana@kb.example.com',
   name: '김가나',
-  organizationCode: 'GANA',
-  organizationName: '가나은행',
+  organizationCode: '004',
+  organizationName: 'KB국민은행',
   organizationType: 'FINANCE_ORGANIZATION',
 });
 

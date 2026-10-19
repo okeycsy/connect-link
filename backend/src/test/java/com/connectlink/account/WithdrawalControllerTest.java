@@ -70,7 +70,7 @@ class WithdrawalControllerTest {
               ? List.of(
                   new WithdrawalBlocker(
                       "SUCCESSOR_REQUIRED",
-                      "가나은행 계좌통합관리 담당자가 혼자입니다. 후임자를 연락처에 먼저 등록해 주세요.",
+                      "KB국민은행 계좌통합관리 담당자가 혼자입니다. 후임자를 연락처에 먼저 등록해 주세요.",
                       "/account-info/contacts"))
               : List.of();
     }
@@ -87,15 +87,15 @@ class WithdrawalControllerTest {
   @Autowired private OrganizationService organizationService;
   @Autowired private ApplicationEvents events;
 
-  /** 가나은행 계좌통합관리 현업 담당자. 가입 승인을 거친 사용 중 계정을 새로 만들고 이메일을 돌려준다. */
+  /** KB국민은행 계좌통합관리 현업 담당자. 가입 승인을 거친 사용 중 계정을 새로 만들고 이메일을 돌려준다. */
   private String activeAccount(String prefix) {
-    String email = prefix + SEQ.incrementAndGet() + "." + System.nanoTime() + "@gana.example.com";
+    String email = prefix + SEQ.incrementAndGet() + "." + System.nanoTime() + "@kb.example.com";
     UserAccount account =
         UserAccount.apply(
             email,
             passwordEncoder.encode(PASSWORD),
             "이탈퇴",
-            organizationService.getByCode("GANA"),
+            organizationService.getByCode("004"),
             JobRole.BUSINESS,
             Set.of(),
             Map.of(Business.ACCOUNT_INFO, "계좌정보 통합조회"),
@@ -185,7 +185,7 @@ class WithdrawalControllerTest {
     withdraw(session, PASSWORD)
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("WITHDRAWAL_BLOCKED"))
-        .andExpect(jsonPath("$.detail").value(startsWith("가나은행 계좌통합관리")));
+        .andExpect(jsonPath("$.detail").value(startsWith("KB국민은행 계좌통합관리")));
     assertThat(accountRepository.findByEmail(email).orElseThrow().getStatus())
         .isEqualTo(AccountStatus.ACTIVE);
   }
@@ -257,11 +257,11 @@ class WithdrawalControllerTest {
         .extracting(NotificationOutbox::getSubject)
         .containsExactly("[연결고리] 탈퇴가 완료되었습니다", "점검 안내");
     assertThat(sent).extracting(NotificationOutbox::getNotificationId).containsOnlyNulls();
-    assertThat(sent.get(0).getBody()).contains("가나은행 이탈퇴 님의 연결고리 탈퇴가 완료되었습니다");
+    assertThat(sent.get(0).getBody()).contains("KB국민은행 이탈퇴 님의 연결고리 탈퇴가 완료되었습니다");
     // 기능 모듈이 자기 데이터를 지우도록 탈퇴 전 이메일과 담당 업무를 알린다.
     assertThat(events.stream(AccountWithdrawnEvent.class))
         .containsExactly(
-            new AccountWithdrawnEvent(id, email, "GANA", Set.of(Business.ACCOUNT_INFO), null));
+            new AccountWithdrawnEvent(id, email, "004", Set.of(Business.ACCOUNT_INFO), null));
 
     // 같은 회사 이메일로 다시 가입할 수 있다(인증 코드를 새로 받는다).
     mockMvc
@@ -338,7 +338,7 @@ class WithdrawalControllerTest {
             new AccountWithdrawnEvent(
                 id,
                 email,
-                "GANA",
+                "004",
                 Set.of(Business.ACCOUNT_INFO),
                 TestUsers.KFTC_ACCOUNT_INFO.email()));
 
@@ -376,7 +376,7 @@ class WithdrawalControllerTest {
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.fieldErrors[0].field").value("reason"))
         .andExpect(jsonPath("$.fieldErrors[0].message").value("탈퇴 처리 사유를 적어 주세요."));
-    withdrawByStaff(idOf("han.gana@gana.example.com"), "사유", TestUsers.KFTC_ACCOUNT_INFO)
+    withdrawByStaff(idOf("han.gana@kb.example.com"), "사유", TestUsers.KFTC_ACCOUNT_INFO)
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("ACCOUNT_NOT_ACTIVE"));
     mockMvc

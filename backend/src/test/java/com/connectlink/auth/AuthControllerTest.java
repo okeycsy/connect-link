@@ -46,10 +46,10 @@ class AuthControllerTest {
   @Test
   void 맞는_비밀번호면_로그인되고_같은_세션으로_내_정보를_본다() throws Exception {
     MvcResult result =
-        login("kim.gana@gana.example.com", PASSWORD, null)
+        login("kim.gana@kb.example.com", PASSWORD, null)
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.email").value("kim.gana@gana.example.com"))
-            .andExpect(jsonPath("$.organizationName").value("가나은행"))
+            .andExpect(jsonPath("$.email").value("kim.gana@kb.example.com"))
+            .andExpect(jsonPath("$.organizationName").value("KB국민은행"))
             .andExpect(jsonPath("$.admin").value(false))
             .andExpect(jsonPath("$.businesses.length()").value(1))
             .andExpect(jsonPath("$.businesses[0].code").value("ACCOUNT_INFO"))
@@ -61,7 +61,7 @@ class AuthControllerTest {
     mockMvc
         .perform(get("/api/v1/me").session(session))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.email").value("kim.gana@gana.example.com"));
+        .andExpect(jsonPath("$.email").value("kim.gana@kb.example.com"));
   }
 
   @Test
@@ -69,7 +69,7 @@ class AuthControllerTest {
     MockHttpSession before = new MockHttpSession();
     String beforeId = before.getId();
     MvcResult result =
-        login("kim.gana@gana.example.com", PASSWORD, before).andExpect(status().isOk()).andReturn();
+        login("kim.gana@kb.example.com", PASSWORD, before).andExpect(status().isOk()).andReturn();
     assertThat(result.getRequest().getSession(false).getId()).isNotEqualTo(beforeId);
   }
 
@@ -85,7 +85,7 @@ class AuthControllerTest {
 
   @Test
   void 비밀번호가_틀리면_401이다() throws Exception {
-    login("kim.gana@gana.example.com", "wrong-password", null)
+    login("kim.gana@kb.example.com", "wrong-password", null)
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.code").value("INVALID_CREDENTIALS"))
         .andExpect(jsonPath("$.detail").value("이메일 또는 비밀번호가 맞지 않습니다."));
@@ -93,21 +93,21 @@ class AuthControllerTest {
 
   @Test
   void 없는_이메일도_같은_401이다() throws Exception {
-    login("nobody@gana.example.com", PASSWORD, null)
+    login("nobody@kb.example.com", PASSWORD, null)
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.code").value("INVALID_CREDENTIALS"));
   }
 
   @Test
   void 승인_대기_계정은_비밀번호가_맞으면_승인_전이라고_알려_준다() throws Exception {
-    login("jung.maba@maba.example.com", PASSWORD, null)
+    login("jung.maba@sbi.example.com", PASSWORD, null)
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("ACCOUNT_PENDING_APPROVAL"));
   }
 
   @Test
   void 승인_대기_계정도_비밀번호가_틀리면_상태를_알리지_않는다() throws Exception {
-    login("jung.maba@maba.example.com", "wrong-password", null)
+    login("jung.maba@sbi.example.com", "wrong-password", null)
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.code").value("INVALID_CREDENTIALS"));
   }
@@ -126,14 +126,14 @@ class AuthControllerTest {
         .perform(
             post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"kim.gana@gana.example.com\",\"password\":\"demo1234!\"}"))
+                .content("{\"email\":\"kim.gana@kb.example.com\",\"password\":\"demo1234!\"}"))
         .andExpect(status().isForbidden());
   }
 
   @Test
   void 로그아웃하면_세션이_끝난다() throws Exception {
     MvcResult result =
-        login("kim.gana@gana.example.com", PASSWORD, null).andExpect(status().isOk()).andReturn();
+        login("kim.gana@kb.example.com", PASSWORD, null).andExpect(status().isOk()).andReturn();
     MockHttpSession session = (MockHttpSession) result.getRequest().getSession(false);
 
     mockMvc

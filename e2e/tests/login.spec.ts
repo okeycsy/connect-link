@@ -43,12 +43,12 @@ test.describe('로그인', () => {
 
   test('틀린 비밀번호와 승인 전 계정은 서버 메시지를 보여 준다', async ({ page }) => {
     await page.goto('/login');
-    await loginWithForm(page, 'kim.gana@gana.example.com', 'wrong-password');
+    await loginWithForm(page, 'kim.gana@kb.example.com', 'wrong-password');
     await expect(page.getByTestId('login-error')).toHaveText(
       '이메일 또는 비밀번호가 맞지 않습니다.',
     );
 
-    await loginWithForm(page, 'jung.maba@maba.example.com', PASSWORD);
+    await loginWithForm(page, 'jung.maba@sbi.example.com', PASSWORD);
     await expect(page.getByTestId('login-error')).toContainText('가입 승인 전입니다.');
     await expect(page).toHaveURL(/\/login$/);
     await page.screenshot({ path: 'screenshots/login-pending.png', fullPage: true });
@@ -108,7 +108,7 @@ test.describe('로그인', () => {
     const body = await demo.json();
     expect(body.accounts[0].email).toBe('admin@kftc.example.com');
     expect(body.accounts.map((a: { email: string }) => a.email)).not.toContain(
-      'jung.maba@maba.example.com',
+      'jung.maba@sbi.example.com',
     );
   });
 });

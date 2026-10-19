@@ -63,10 +63,10 @@ async function pickDateTime(
   await expect(dropdown).toBeHidden();
 }
 
-/** 김가나로 가나은행 계좌통합관리 일시중단을 API 로 등록한다. request 의 세션은 김가나로 바뀐다. */
+/** 김가나로 KB국민은행 계좌통합관리 일시중단을 API 로 등록한다. request 의 세션은 김가나로 바뀐다. */
 async function registerAsGana(request: APIRequestContext, reason: string): Promise<number> {
   const login = await request.post('/api/v1/auth/login', {
-    data: { email: 'kim.gana@gana.example.com', password: DEMO_PASSWORD },
+    data: { email: 'kim.gana@kb.example.com', password: DEMO_PASSWORD },
     headers: await csrf(request),
   });
   expect(login.ok()).toBeTruthy();
@@ -79,10 +79,10 @@ async function registerAsGana(request: APIRequestContext, reason: string): Promi
       startAt: iso(date, '01:00'),
       endAt: iso(date, '03:00'),
       reason,
-      kftcAction: '작업 시간 동안 가나은행 조회 요청을 차단해 주세요.',
+      kftcAction: '작업 시간 동안 KB국민은행 조회 요청을 차단해 주세요.',
       contactName: '김가나',
       contactPhone: '010-0000-2101',
-      contactEmail: 'kim.gana@gana.example.com',
+      contactEmail: 'kim.gana@kb.example.com',
       extraNote: null,
     },
     headers: await csrf(request),
@@ -102,14 +102,14 @@ test.describe('라. 일시중단', () => {
     await expect(page.getByRole('heading', { name: '일시중단' })).toBeVisible();
     // 기관 담당자는 자기 기관 것만 보고, 기관 고르기는 없다.
     const table = page.getByTestId('suspension-table');
-    await expect(table).toContainText('가나은행');
-    await expect(table).not.toContainText('다라은행');
+    await expect(table).toContainText('KB국민은행');
+    await expect(table).not.toContainText('신한은행');
     await expect(page.getByRole('textbox', { name: '기관' })).toHaveCount(0);
     await shot(page, 'suspension-list-organization');
 
     await page.getByRole('link', { name: '일시중단 등록' }).click();
     await expect(page.getByRole('heading', { name: '일시중단 등록' })).toBeVisible();
-    await expect(page.getByRole('textbox', { name: '기관' })).toHaveValue('가나은행');
+    await expect(page.getByRole('textbox', { name: '기관' })).toHaveValue('KB국민은행');
     await expect(page.getByRole('textbox', { name: '이름' })).toHaveValue('김가나');
 
     const reason = `E2E 계정계 패치 작업 ${Date.now()}`;
@@ -120,7 +120,7 @@ test.describe('라. 일시중단', () => {
     await page.getByRole('textbox', { name: '중단 이유(작업 내용)' }).fill(reason);
     await page
       .getByRole('textbox', { name: '결제원 조치사항' })
-      .fill('작업 시간 동안 가나은행 조회 요청을 차단해 주세요.');
+      .fill('작업 시간 동안 KB국민은행 조회 요청을 차단해 주세요.');
     await page.getByRole('textbox', { name: '연락처' }).fill('010-0000-2101');
     await page.locator('input[type="file"]').setInputFiles({
       name: '작업공문.pdf',
@@ -132,7 +132,7 @@ test.describe('라. 일시중단', () => {
 
     await page.getByRole('button', { name: '저장' }).click();
     await expect(page).toHaveURL(/\/account-info\/suspensions\/\d+$/);
-    await expect(page.getByRole('heading', { name: '가나은행 일시중단' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'KB국민은행 일시중단' })).toBeVisible();
     await expect(page.getByTestId('suspension-status')).toHaveText('검토 대기');
     await expect(page.getByTestId('suspension-period')).toContainText('02:00 ~ 04:30');
     await expect(page.getByText('작업공문.pdf')).toBeVisible();
@@ -145,7 +145,7 @@ test.describe('라. 일시중단', () => {
     // 그 업무 결제원 담당자에게 등록 메일이 간다(매터모스트는 발송함에 함께 남는다).
     const mails = await mailbox(request, 'hong.gildong@kftc.example.com');
     expect(
-      mails.some((m) => m.subject.includes('가나은행 계좌통합관리 일시중단이 등록되었습니다')),
+      mails.some((m) => m.subject.includes('KB국민은행 계좌통합관리 일시중단이 등록되었습니다')),
     ).toBeTruthy();
   });
 
@@ -160,7 +160,7 @@ test.describe('라. 일시중단', () => {
     await page.getByRole('navigation').getByRole('link', { name: '일시중단', exact: true }).click();
     await expect(page.getByTestId('pending-review-count')).toContainText('확정 전');
     // 진행 중에는 전 기관이 보인다.
-    await expect(page.getByTestId('suspension-table')).toContainText('가나은행');
+    await expect(page.getByTestId('suspension-table')).toContainText('KB국민은행');
     await shot(page, 'suspension-list');
 
     await page
@@ -189,7 +189,7 @@ test.describe('라. 일시중단', () => {
     await handover
       .getByRole('textbox', { name: '조치 및 인수인계 사항' })
       .fill(
-        '운영팀이 01:00 에 가나은행 조회를 차단하고, 재개 연락을 받으면 풀고 상황실에 알립니다.',
+        '운영팀이 01:00 에 KB국민은행 조회를 차단하고, 재개 연락을 받으면 풀고 상황실에 알립니다.',
       );
     await page.waitForTimeout(300);
     await shot(page, 'suspension-handover');
@@ -203,10 +203,10 @@ test.describe('라. 일시중단', () => {
     await page.getByRole('tab', { name: '변경 이력' }).click();
     await expect(page.getByText('조치 및 인수인계', { exact: false }).first()).toBeVisible();
 
-    // 기관별 과거 이력: 가나은행을 골라 지난 일시중단을 본다.
+    // 기관별 과거 이력: KB국민은행을 골라 지난 일시중단을 본다.
     await page.getByRole('navigation').getByRole('link', { name: '일시중단', exact: true }).click();
     await page.getByRole('textbox', { name: '기관' }).click();
-    await page.getByRole('option', { name: '가나은행' }).click();
+    await page.getByRole('option', { name: 'KB국민은행' }).click();
     await expect(page).toHaveURL(/org=\d+/);
     await page
       .getByRole('group', { name: '시기' })
@@ -214,7 +214,7 @@ test.describe('라. 일시중단', () => {
       .click();
     const history = page.getByTestId('suspension-table');
     await expect(history).toContainText('재해복구 전환 훈련');
-    await expect(history).not.toContainText('마바저축은행');
+    await expect(history).not.toContainText('SBI저축은행');
     await shot(page, 'suspension-organization-history');
 
     // 전 영업일 취합을 확인 뒤 운영·관제 채널로 수동으로 보낸다.

@@ -18,8 +18,8 @@ vi.mock('../../../api/client', () => ({
                 source: 'LIVE',
                 hits: [
                   {
-                    title: '다라은행',
-                    subtitle: '참가기관 · DARA',
+                    title: '신한은행',
+                    subtitle: '참가기관 · 088',
                     link: '/cms/admin/organizations?org=3',
                   },
                 ],
@@ -29,7 +29,7 @@ vi.mock('../../../api/client', () => ({
                 label: '담당자',
                 source: 'SAMPLE',
                 hits: [
-                  { title: '이다라', subtitle: '다라은행 · 전산(대외계)', link: '/cms/contacts' },
+                  { title: '이다라', subtitle: '신한은행 · 전산(대외계)', link: '/cms/contacts' },
                 ],
               },
             ]
@@ -51,14 +51,14 @@ describe('CommandPalette', () => {
     expect(screen.getByRole('option', { name: '관리 › 기관·업무 기준정보' })).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('검색어'), { target: { value: '다라' } });
-    expect(await screen.findByRole('option', { name: '다라은행' })).toBeInTheDocument();
-    expect(screen.getByText('참가기관 · DARA')).toBeInTheDocument();
+    expect(await screen.findByRole('option', { name: '신한은행' })).toBeInTheDocument();
+    expect(screen.getByText('참가기관 · 088')).toBeInTheDocument();
     expect(screen.getByRole('option', { name: '이다라' })).toBeInTheDocument();
     expect(screen.getByText('샘플')).toBeInTheDocument();
     // 바로 가기는 검색어에 맞는 것만 남는다.
     expect(screen.queryByRole('option', { name: '연락처' })).not.toBeInTheDocument();
     // 첫 결과가 선택돼 있다.
-    expect(screen.getByRole('option', { name: '다라은행' })).toHaveAttribute(
+    expect(screen.getByRole('option', { name: '신한은행' })).toHaveAttribute(
       'aria-selected',
       'true',
     );
@@ -76,7 +76,7 @@ describe('CommandPalette', () => {
     expect(await screen.findByText("'zzz' 에 맞는 결과가 없습니다.")).toBeInTheDocument();
 
     fireEvent.change(input, { target: { value: '다라' } });
-    await screen.findByRole('option', { name: '다라은행' });
+    await screen.findByRole('option', { name: '신한은행' });
     fireEvent.keyDown(input, { key: 'ArrowDown' });
     await waitFor(() =>
       expect(screen.getByRole('option', { name: '이다라' })).toHaveAttribute(

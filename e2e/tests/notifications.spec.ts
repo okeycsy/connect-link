@@ -15,7 +15,7 @@ test.describe('알림 센터와 발송함', () => {
     await expect(page).toHaveURL(/\/account-info\/notifications$/);
     await expect(page.getByRole('heading', { name: '알림 센터' })).toBeVisible();
     const list = page.getByTestId('notification-list');
-    await expect(list.getByText('마바저축은행 정마바 님이 가입을 신청했습니다')).toBeVisible();
+    await expect(list.getByText('SBI저축은행 정마바 님이 가입을 신청했습니다')).toBeVisible();
     await page.screenshot({
       path: 'screenshots/notification-center.png',
       fullPage: true,
@@ -32,7 +32,7 @@ test.describe('알림 센터와 발송함', () => {
 
     await page
       .getByTestId('notification-list')
-      .getByRole('button', { name: '다라은행 CMS 일시중단이 확정되었습니다' })
+      .getByRole('button', { name: '신한은행 CMS 일시중단이 확정되었습니다' })
       .click();
     await expect(page).toHaveURL(/\/cms\/suspensions$/);
 
@@ -41,7 +41,7 @@ test.describe('알림 센터와 발송함', () => {
     await expect(page.getByText(/읽지 않은 알림 \d+건/)).toBeVisible();
     const list = await (await page.request.get('/api/v1/notifications?size=50')).json();
     const clicked = list.content.find(
-      (n: { title: string }) => n.title === '다라은행 CMS 일시중단이 확정되었습니다',
+      (n: { title: string }) => n.title === '신한은행 CMS 일시중단이 확정되었습니다',
     );
     expect(clicked.read).toBe(true);
   });

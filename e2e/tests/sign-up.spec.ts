@@ -27,7 +27,7 @@ test.describe('회원가입', () => {
   test('로그인 화면에서 4단계로 가입을 신청하면 승인 대기가 되고 승인 전에는 로그인할 수 없다', async ({
     page,
   }) => {
-    const email = `e2e.${Date.now()}@gana.example.com`;
+    const email = `e2e.${Date.now()}@kb.example.com`;
     await page.goto('/login');
     await page.getByRole('link', { name: '회원가입' }).click();
     await expect(page).toHaveURL(/\/sign-up$/);
@@ -41,9 +41,9 @@ test.describe('회원가입', () => {
     await expect(page.getByTestId('email-verified')).toBeVisible();
     await page.getByRole('button', { name: '다음' }).click();
 
-    // ② 이메일 도메인이 같은 가나은행이 미리 골라져 있다.
+    // ② 이메일 도메인이 같은 KB국민은행이 미리 골라져 있다.
     const step2 = page.getByTestId('sign-up-step-2');
-    await expect(step2.getByRole('textbox', { name: '소속 기관' })).toHaveValue('가나은행');
+    await expect(step2.getByRole('textbox', { name: '소속 기관' })).toHaveValue('KB국민은행');
     await expect(step2.getByText('회사 이메일 도메인과 맞는 기관입니다.')).toBeVisible();
     await step2.getByRole('checkbox', { name: '계좌통합관리' }).check();
     await step2.getByLabel('계좌통합관리 세부업무').fill('어카운트인포 앱');
@@ -90,7 +90,7 @@ test.describe('회원가입', () => {
     await expect(page).toHaveURL(/\/sign-up\/pending$/);
     const applied = page.getByTestId('sign-up-applied');
     await expect(applied).toContainText(email);
-    await expect(applied).toContainText('가나은행 · 참가기관');
+    await expect(applied).toContainText('KB국민은행 · 참가기관');
     await expect(applied).toContainText('계좌통합관리');
     await expect(applied).toContainText('CMS');
     await expect(applied).toContainText('전산(운영, 상황실)');
@@ -108,7 +108,7 @@ test.describe('회원가입', () => {
     page,
   }) => {
     await page.goto('/sign-up');
-    await page.getByLabel('회사 이메일').fill('kim.gana@gana.example.com');
+    await page.getByLabel('회사 이메일').fill('kim.gana@kb.example.com');
     await page.getByRole('button', { name: '인증 코드 받기' }).click();
     await expect(page.getByText('이미 가입했거나 가입을 신청한 이메일입니다.')).toBeVisible();
 
@@ -128,7 +128,7 @@ test.describe('회원가입', () => {
     const select = step2.getByRole('textbox', { name: '소속 기관' });
     await expect(select).toHaveValue('');
     await select.click();
-    await page.getByRole('option', { name: '다라은행' }).click();
+    await page.getByRole('option', { name: '신한은행' }).click();
     await expect(step2.getByTestId('domain-mismatch')).toBeVisible();
     await expect(step2.getByRole('checkbox', { name: '대출이동' })).toBeDisabled();
   });

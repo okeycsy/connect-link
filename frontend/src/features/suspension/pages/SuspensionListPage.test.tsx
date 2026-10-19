@@ -28,10 +28,10 @@ function user(overrides: Record<string, unknown>) {
 
 const KFTC = user({});
 const DARA = user({
-  email: 'park.dara@dara.example.com',
+  email: 'park.dara@shinhan.example.com',
   name: '박다라',
-  organizationCode: 'DARA',
-  organizationName: '다라은행',
+  organizationCode: '088',
+  organizationName: '신한은행',
   organizationType: 'FINANCE_ORGANIZATION',
 });
 
@@ -41,7 +41,7 @@ const ROW = {
   businessLabel: 'CMS',
   subBusiness: '출금이체',
   organizationId: 3,
-  organizationName: '다라은행',
+  organizationName: '신한은행',
   startAt: '2026-10-17T22:00:00',
   endAt: '2026-10-17T23:30:00',
   period: 'CURRENT',
@@ -74,7 +74,7 @@ vi.mock('../../../api/client', async (importOriginal) => {
             return ok({ current: 1, upcoming: 3, past: 5, pendingReview: 2 });
           }
           if (path === '/api/v1/suspensions/organizations') {
-            return ok([{ id: 3, code: 'DARA', name: '다라은행' }]);
+            return ok([{ id: 3, code: '088', name: '신한은행' }]);
           }
           if (path === '/api/v1/suspensions') {
             state.queries.push(options?.params?.query ?? {});
@@ -111,7 +111,7 @@ describe('SuspensionListPage', () => {
     renderPage();
 
     const table = await screen.findByTestId('suspension-table');
-    expect(await within(table).findByText('다라은행')).toBeInTheDocument();
+    expect(await within(table).findByText('신한은행')).toBeInTheDocument();
     expect(within(table).getByText('2026-10-17 22:00 ~ 23:30')).toBeInTheDocument();
     expect(within(table).getByText('검토 중')).toBeInTheDocument();
     expect(within(table).getByText('중단 중')).toBeInTheDocument();

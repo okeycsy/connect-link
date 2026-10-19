@@ -26,7 +26,7 @@ const home = {
       progress: null,
       items: [
         {
-          title: '가나은행 · 김가나 (현업)',
+          title: 'KB국민은행 · 김가나 (현업)',
           subtitle: '최근 확인 2026-02-02',
           dueAt: null,
           urgency: 'OVERDUE',
@@ -56,7 +56,7 @@ const home = {
       progress: null,
       items: [
         {
-          title: '다라은행 23:00',
+          title: '신한은행 23:00',
           subtitle: '코어뱅킹 점검 · 확정',
           dueAt: TODAY,
           urgency: 'SOON',
@@ -134,7 +134,7 @@ describe('HomePage', () => {
 
     // 확인이 필요한 담당자: 한 줄 띠로 작게, 항목 목록은 보이지 않는다.
     expect(screen.getByTestId('home-card-CONTACT_CONFIRM')).toHaveAttribute('data-compact');
-    expect(screen.queryByText('가나은행 · 김가나 (현업)')).not.toBeInTheDocument();
+    expect(screen.queryByText('KB국민은행 · 김가나 (현업)')).not.toBeInTheDocument();
     expect(screen.getByText('초과')).toBeInTheDocument();
 
     // 최근 소식: 알림 센터와 같은 내용
@@ -148,7 +148,7 @@ describe('HomePage', () => {
     );
 
     // 이번 주 일시중단: 오늘 칸에 칩
-    expect(screen.getByTestId('suspension-week')).toHaveTextContent('다라은행 23:00');
+    expect(screen.getByTestId('suspension-week')).toHaveTextContent('신한은행 23:00');
     expect(
       screen.getByText('해당 기능 프로젝트가 이 카드를 연결하면 여기에 보입니다.'),
     ).toBeInTheDocument();

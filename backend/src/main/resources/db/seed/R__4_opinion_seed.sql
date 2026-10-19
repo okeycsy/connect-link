@@ -83,34 +83,34 @@ JOIN opinion_question q ON q.sort_order = 0 AND q.title = '이 안에 동의하�
 INSERT INTO opinion_target (request_id, organization_id, created_at, created_by, updated_at, updated_by)
 SELECT r.id, o.id, r.created_at, r.created_by, r.created_at, r.created_by
 FROM (VALUES
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'GANA'),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'DARA'),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'MABA'),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'CHAKA'),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'SAA'),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'NADA'),
-  ('오픈뱅킹 연계 전문 항목 추가 검토',       'GANA'),
-  ('오픈뱅킹 연계 전문 항목 추가 검토',       'SAA'),
-  ('오픈뱅킹 연계 전문 항목 추가 검토',       'DARA'),
-  ('오픈뱅킹 연계 전문 항목 추가 검토',       'CHAKA'),
-  ('계좌정보 일괄해지 화면 문구 개선',        'GANA'),
-  ('계좌정보 일괄해지 화면 문구 개선',        'SAA'),
-  ('계좌정보 일괄해지 화면 문구 개선',        'DARA'),
-  ('계좌정보 일괄해지 화면 문구 개선',        'MABA'),
-  ('계좌통합관리 수수료 고지 방식 변경',      'GANA'),
-  ('계좌통합관리 수수료 고지 방식 변경',      'SAA'),
-  ('야간 배치 시간 조정 의견 요청',           'GANA'),
-  ('야간 배치 시간 조정 의견 요청',           'DARA'),
-  ('자동이체 통합조회 해지 절차 개선',        'DARA'),
-  ('자동이체 통합조회 해지 절차 개선',        'GANA'),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '004'),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '088'),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '103'),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '050'),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '240'),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '048'),
+  ('오픈뱅킹 연계 전문 항목 추가 검토',       '004'),
+  ('오픈뱅킹 연계 전문 항목 추가 검토',       '240'),
+  ('오픈뱅킹 연계 전문 항목 추가 검토',       '088'),
+  ('오픈뱅킹 연계 전문 항목 추가 검토',       '050'),
+  ('계좌정보 일괄해지 화면 문구 개선',        '004'),
+  ('계좌정보 일괄해지 화면 문구 개선',        '240'),
+  ('계좌정보 일괄해지 화면 문구 개선',        '088'),
+  ('계좌정보 일괄해지 화면 문구 개선',        '103'),
+  ('계좌통합관리 수수료 고지 방식 변경',      '004'),
+  ('계좌통합관리 수수료 고지 방식 변경',      '240'),
+  ('야간 배치 시간 조정 의견 요청',           '004'),
+  ('야간 배치 시간 조정 의견 요청',           '088'),
+  ('자동이체 통합조회 해지 절차 개선',        '088'),
+  ('자동이체 통합조회 해지 절차 개선',        '004'),
   ('자동이체 통합조회 해지 절차 개선',        'JACHA'),
-  ('자동이체 통합조회 해지 절차 개선',        'NADA'),
-  ('CMS 출금이체 전문 개정 의견 요청',        'DARA'),
+  ('자동이체 통합조회 해지 절차 개선',        '048'),
+  ('CMS 출금이체 전문 개정 의견 요청',        '088'),
   ('CMS 출금이체 전문 개정 의견 요청',        'JACHA'),
   ('CMS 출금이체 전문 개정 의견 요청',        'TAPA'),
-  ('CMS 출금이체 전문 개정 의견 요청',        'NADA'),
-  ('대출이동 신규기관 접수시간 연장',         'GANA'),
-  ('대출이동 신규기관 접수시간 연장',         'MABA'),
+  ('CMS 출금이체 전문 개정 의견 요청',        '048'),
+  ('대출이동 신규기관 접수시간 연장',         '004'),
+  ('대출이동 신규기관 접수시간 연장',         '103'),
   ('대출이동 신규기관 접수시간 연장',         'TAPA'),
   ('대출이동 신규기관 접수시간 연장',         'PAHA')
 ) AS t (title, org_code)
@@ -121,23 +121,23 @@ JOIN organization o ON o.code = t.org_code;
 INSERT INTO opinion_target_recipient (target_id, account_id, email, name, sub_business, created_at, created_by, updated_at, updated_by)
 SELECT t.id, u.id, u.email, u.name, b.sub_business, t.created_at, t.created_by, t.created_at, t.created_by
 FROM (VALUES
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'kim.gana@gana.example.com'),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'choi.saa@saa.example.com'),
-  ('오픈뱅킹 연계 전문 항목 추가 검토',       'kim.gana@gana.example.com'),
-  ('오픈뱅킹 연계 전문 항목 추가 검토',       'choi.saa@saa.example.com'),
-  ('계좌정보 일괄해지 화면 문구 개선',        'kim.gana@gana.example.com'),
-  ('계좌정보 일괄해지 화면 문구 개선',        'choi.saa@saa.example.com'),
-  ('계좌통합관리 수수료 고지 방식 변경',      'kim.gana@gana.example.com'),
-  ('야간 배치 시간 조정 의견 요청',           'kim.gana@gana.example.com'),
-  ('자동이체 통합조회 해지 절차 개선',        'lee.dara@dara.example.com'),
-  ('CMS 출금이체 전문 개정 의견 요청',        'lee.dara@dara.example.com')
+  ('계좌통합관리 수수료 체계 개편 의견 요청', 'kim.gana@kb.example.com'),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', 'choi.saa@samsung.example.com'),
+  ('오픈뱅킹 연계 전문 항목 추가 검토',       'kim.gana@kb.example.com'),
+  ('오픈뱅킹 연계 전문 항목 추가 검토',       'choi.saa@samsung.example.com'),
+  ('계좌정보 일괄해지 화면 문구 개선',        'kim.gana@kb.example.com'),
+  ('계좌정보 일괄해지 화면 문구 개선',        'choi.saa@samsung.example.com'),
+  ('계좌통합관리 수수료 고지 방식 변경',      'kim.gana@kb.example.com'),
+  ('야간 배치 시간 조정 의견 요청',           'kim.gana@kb.example.com'),
+  ('자동이체 통합조회 해지 절차 개선',        'lee.dara@shinhan.example.com'),
+  ('CMS 출금이체 전문 개정 의견 요청',        'lee.dara@shinhan.example.com')
 ) AS p (title, email)
 JOIN opinion_request r ON r.title = p.title
 JOIN user_account u ON u.email = p.email
 JOIN opinion_target t ON t.request_id = r.id AND t.organization_id = u.organization_id
 JOIN user_account_business b ON b.account_id = u.id AND b.business = r.business;
 
--- 기관 회신. submitted_days 가 있으면 제출한 회신이다. 사아증권은 수수료 개편 회신을 제출한 뒤 수정 요청을 해 두었다.
+-- 기관 회신. submitted_days 가 있으면 제출한 회신이다. 삼성증권은 수수료 개편 회신을 제출한 뒤 수정 요청을 해 두었다.
 INSERT INTO opinion_reply (target_id, status, replier_email, replier_name, submitted_at,
                            revision_reason, revision_requested_at, revision_rejection_reason, created_at, created_by, updated_at, updated_by)
 SELECT t.id, p.status, p.replier_email, p.replier_name,
@@ -148,60 +148,60 @@ SELECT t.id, p.status, p.replier_email, p.replier_name,
        CURRENT_TIMESTAMP - COALESCE(p.submitted_days, 1) * INTERVAL '1' DAY, p.replier_email,
        CURRENT_TIMESTAMP - COALESCE(p.submitted_days, 1) * INTERVAL '1' DAY, p.replier_email
 FROM (VALUES
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'DARA', 'SUBMITTED', 'park.dara@dara.example.com', '박다라', 5, CAST(NULL AS VARCHAR(500))),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'MABA', 'SUBMITTED', 'jung.maba@maba.example.com', '정마바', 4, NULL),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'CHAKA', 'SUBMITTED', 'yoon.chaka@chaka.example.com', '윤차카', 3, NULL),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'SAA', 'REVISION_REQUESTED', 'choi.saa@saa.example.com', '최사아', 2, '내부 검토 결과 적용 시기를 내년 7월로 바꾸고 싶습니다.'),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'NADA', 'DRAFT', 'kang.nada@nada.example.com', '강나다', NULL, NULL),
-  ('오픈뱅킹 연계 전문 항목 추가 검토', 'DARA', 'SUBMITTED', 'park.dara@dara.example.com', '박다라', 1, NULL),
-  ('계좌정보 일괄해지 화면 문구 개선', 'GANA', 'SUBMITTED', 'kim.gana@gana.example.com', '김가나', 30, NULL),
-  ('계좌정보 일괄해지 화면 문구 개선', 'SAA', 'SUBMITTED', 'choi.saa@saa.example.com', '최사아', 29, NULL),
-  ('계좌정보 일괄해지 화면 문구 개선', 'DARA', 'SUBMITTED', 'park.dara@dara.example.com', '박다라', 27, NULL),
-  ('계좌정보 일괄해지 화면 문구 개선', 'MABA', 'SUBMITTED', 'jung.maba@maba.example.com', '정마바', 26, NULL),
-  ('자동이체 통합조회 해지 절차 개선', 'GANA', 'SUBMITTED', 'han.gana2@gana.example.com', '한가람', 6, NULL),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '088', 'SUBMITTED', 'park.dara@shinhan.example.com', '박다라', 5, CAST(NULL AS VARCHAR(500))),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '103', 'SUBMITTED', 'jung.maba@sbi.example.com', '정마바', 4, NULL),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '050', 'SUBMITTED', 'yoon.chaka@fsb.example.com', '윤차카', 3, NULL),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '240', 'REVISION_REQUESTED', 'choi.saa@samsung.example.com', '최사아', 2, '내부 검토 결과 적용 시기를 내년 7월로 바꾸고 싶습니다.'),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '048', 'DRAFT', 'kang.nada@cu.example.com', '강나다', NULL, NULL),
+  ('오픈뱅킹 연계 전문 항목 추가 검토', '088', 'SUBMITTED', 'park.dara@shinhan.example.com', '박다라', 1, NULL),
+  ('계좌정보 일괄해지 화면 문구 개선', '004', 'SUBMITTED', 'kim.gana@kb.example.com', '김가나', 30, NULL),
+  ('계좌정보 일괄해지 화면 문구 개선', '240', 'SUBMITTED', 'choi.saa@samsung.example.com', '최사아', 29, NULL),
+  ('계좌정보 일괄해지 화면 문구 개선', '088', 'SUBMITTED', 'park.dara@shinhan.example.com', '박다라', 27, NULL),
+  ('계좌정보 일괄해지 화면 문구 개선', '103', 'SUBMITTED', 'jung.maba@sbi.example.com', '정마바', 26, NULL),
+  ('자동이체 통합조회 해지 절차 개선', '004', 'SUBMITTED', 'han.gana2@kb.example.com', '한가람', 6, NULL),
   ('자동이체 통합조회 해지 절차 개선', 'JACHA', 'SUBMITTED', 'yoon.jacha@jacha.example.com', '윤자차', 4, NULL),
   ('CMS 출금이체 전문 개정 의견 요청', 'TAPA', 'SUBMITTED', 'jung.tapa@tapa.example.com', '정타파', 1, NULL),
-  ('대출이동 신규기관 접수시간 연장', 'GANA', 'SUBMITTED', 'kim.gana@gana.example.com', '김가나', 35, NULL),
-  ('대출이동 신규기관 접수시간 연장', 'MABA', 'SUBMITTED', 'jung.maba@maba.example.com', '정마바', 34, NULL),
+  ('대출이동 신규기관 접수시간 연장', '004', 'SUBMITTED', 'kim.gana@kb.example.com', '김가나', 35, NULL),
+  ('대출이동 신규기관 접수시간 연장', '103', 'SUBMITTED', 'jung.maba@sbi.example.com', '정마바', 34, NULL),
   ('대출이동 신규기관 접수시간 연장', 'TAPA', 'SUBMITTED', 'jung.tapa@tapa.example.com', '정타파', 33, NULL)
 ) AS p (title, org_code, status, replier_email, replier_name, submitted_days, revision_reason)
 JOIN opinion_request r ON r.title = p.title
 JOIN organization o ON o.code = p.org_code
 JOIN opinion_target t ON t.request_id = r.id AND t.organization_id = o.id;
 
--- 질문 답. 제출한 기관의 답과 나다상호금융이 수수료 개편 요청에 임시저장한 답이다. 객관식은 고른 선택지마다 한 행이다.
+-- 질문 답. 제출한 기관의 답과 신협이 수수료 개편 요청에 임시저장한 답이다. 객관식은 고른 선택지마다 한 행이다.
 INSERT INTO opinion_reply_answer (reply_id, question_id, stage, option_id, text_value, created_at, created_by, updated_at, updated_by)
 SELECT p.id, q.id, a.stage, o.id, a.text_value, p.created_at, p.created_by, p.created_at, p.created_by
 FROM (VALUES
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'DARA', 'SUBMITTED', 0, '내년 1월', CAST(NULL AS VARCHAR(4000))),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'DARA', 'SUBMITTED', 1, '수수료 정산', NULL),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'DARA', 'SUBMITTED', 2, NULL, '약 12만 건'),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'MABA', 'SUBMITTED', 0, '내년 7월', NULL),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'MABA', 'SUBMITTED', 1, '수수료 정산', NULL),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'MABA', 'SUBMITTED', 1, '고객 안내', NULL),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'MABA', 'SUBMITTED', 2, NULL, '약 8천 건'),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'CHAKA', 'SUBMITTED', 0, '내년 7월', NULL),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'CHAKA', 'SUBMITTED', 1, '수수료 정산', NULL),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'CHAKA', 'SUBMITTED', 1, '전산 개발', NULL),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'SAA', 'SUBMITTED', 0, '내년 1월', NULL),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'SAA', 'SUBMITTED', 1, '영향 없음', NULL),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'SAA', 'SUBMITTED', 2, NULL, '약 3만 건'),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', 'NADA', 'DRAFT', 0, '내후년 1월', NULL),
-  ('오픈뱅킹 연계 전문 항목 추가 검토', 'DARA', 'SUBMITTED', 0, '동의', NULL),
-  ('오픈뱅킹 연계 전문 항목 추가 검토', 'DARA', 'SUBMITTED', 1, NULL, '다음 분기 정기 배포에 반영할 수 있습니다.'),
-  ('계좌정보 일괄해지 화면 문구 개선', 'GANA', 'SUBMITTED', 0, '동의', NULL),
-  ('계좌정보 일괄해지 화면 문구 개선', 'SAA', 'SUBMITTED', 0, '조건부 동의', NULL),
-  ('계좌정보 일괄해지 화면 문구 개선', 'SAA', 'SUBMITTED', 1, NULL, '"해지" 대신 "연결 끊기" 표현을 함께 써 주세요.'),
-  ('계좌정보 일괄해지 화면 문구 개선', 'DARA', 'SUBMITTED', 0, '동의', NULL),
-  ('계좌정보 일괄해지 화면 문구 개선', 'MABA', 'SUBMITTED', 0, '이견', NULL),
-  ('계좌정보 일괄해지 화면 문구 개선', 'MABA', 'SUBMITTED', 1, NULL, '고객 문의가 늘 수 있어 지금 문구를 유지하기를 바랍니다.'),
-  ('자동이체 통합조회 해지 절차 개선', 'GANA', 'SUBMITTED', 0, '동의', NULL),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '088', 'SUBMITTED', 0, '내년 1월', CAST(NULL AS VARCHAR(4000))),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '088', 'SUBMITTED', 1, '수수료 정산', NULL),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '088', 'SUBMITTED', 2, NULL, '약 12만 건'),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '103', 'SUBMITTED', 0, '내년 7월', NULL),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '103', 'SUBMITTED', 1, '수수료 정산', NULL),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '103', 'SUBMITTED', 1, '고객 안내', NULL),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '103', 'SUBMITTED', 2, NULL, '약 8천 건'),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '050', 'SUBMITTED', 0, '내년 7월', NULL),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '050', 'SUBMITTED', 1, '수수료 정산', NULL),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '050', 'SUBMITTED', 1, '전산 개발', NULL),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '240', 'SUBMITTED', 0, '내년 1월', NULL),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '240', 'SUBMITTED', 1, '영향 없음', NULL),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '240', 'SUBMITTED', 2, NULL, '약 3만 건'),
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '048', 'DRAFT', 0, '내후년 1월', NULL),
+  ('오픈뱅킹 연계 전문 항목 추가 검토', '088', 'SUBMITTED', 0, '동의', NULL),
+  ('오픈뱅킹 연계 전문 항목 추가 검토', '088', 'SUBMITTED', 1, NULL, '다음 분기 정기 배포에 반영할 수 있습니다.'),
+  ('계좌정보 일괄해지 화면 문구 개선', '004', 'SUBMITTED', 0, '동의', NULL),
+  ('계좌정보 일괄해지 화면 문구 개선', '240', 'SUBMITTED', 0, '조건부 동의', NULL),
+  ('계좌정보 일괄해지 화면 문구 개선', '240', 'SUBMITTED', 1, NULL, '"해지" 대신 "연결 끊기" 표현을 함께 써 주세요.'),
+  ('계좌정보 일괄해지 화면 문구 개선', '088', 'SUBMITTED', 0, '동의', NULL),
+  ('계좌정보 일괄해지 화면 문구 개선', '103', 'SUBMITTED', 0, '이견', NULL),
+  ('계좌정보 일괄해지 화면 문구 개선', '103', 'SUBMITTED', 1, NULL, '고객 문의가 늘 수 있어 지금 문구를 유지하기를 바랍니다.'),
+  ('자동이체 통합조회 해지 절차 개선', '004', 'SUBMITTED', 0, '동의', NULL),
   ('자동이체 통합조회 해지 절차 개선', 'JACHA', 'SUBMITTED', 0, '조건부 동의', NULL),
   ('자동이체 통합조회 해지 절차 개선', 'JACHA', 'SUBMITTED', 1, NULL, '처리 결과 통지는 영업일 기준 2일 안으로 해 주세요.'),
   ('CMS 출금이체 전문 개정 의견 요청', 'TAPA', 'SUBMITTED', 0, '동의', NULL),
-  ('대출이동 신규기관 접수시간 연장', 'GANA', 'SUBMITTED', 0, '동의', NULL),
-  ('대출이동 신규기관 접수시간 연장', 'MABA', 'SUBMITTED', 0, '조건부 동의', NULL),
-  ('대출이동 신규기관 접수시간 연장', 'MABA', 'SUBMITTED', 1, NULL, '18시 연장 시 상담 인력 배치가 필요해 시행을 한 달 늦춰 주세요.'),
+  ('대출이동 신규기관 접수시간 연장', '004', 'SUBMITTED', 0, '동의', NULL),
+  ('대출이동 신규기관 접수시간 연장', '103', 'SUBMITTED', 0, '조건부 동의', NULL),
+  ('대출이동 신규기관 접수시간 연장', '103', 'SUBMITTED', 1, NULL, '18시 연장 시 상담 인력 배치가 필요해 시행을 한 달 늦춰 주세요.'),
   ('대출이동 신규기관 접수시간 연장', 'TAPA', 'SUBMITTED', 0, '동의', NULL)
 ) AS a (title, org_code, stage, question_order, option_label, text_value)
 JOIN opinion_request r ON r.title = a.title
@@ -216,7 +216,7 @@ INSERT INTO opinion_reminder (request_id, sender_name, organization_count, recip
 SELECT r.id, m.sender_name, m.organization_count, m.recipient_count, m.organization_names,
        CURRENT_TIMESTAMP - m.sent_days * INTERVAL '1' DAY, r.owner_email, CURRENT_TIMESTAMP - m.sent_days * INTERVAL '1' DAY, r.owner_email
 FROM (VALUES
-  ('계좌통합관리 수수료 체계 개편 의견 요청', '홍길동', 2, 1, '가나은행, 나다상호금융', 2),
-  ('자동이체 통합조회 해지 절차 개선',        '홍길동', 1, 1, '다라은행', 1)
+  ('계좌통합관리 수수료 체계 개편 의견 요청', '홍길동', 2, 1, 'KB국민은행, 신협', 2),
+  ('자동이체 통합조회 해지 절차 개선',        '홍길동', 1, 1, '신한은행', 1)
 ) AS m (title, sender_name, organization_count, recipient_count, organization_names, sent_days)
 JOIN opinion_request r ON r.title = m.title;

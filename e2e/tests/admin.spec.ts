@@ -18,10 +18,10 @@ test.describe('관리 > 기관·업무 기준정보', () => {
     await expect(page.getByRole('heading', { name: '기관·업무 기준정보' })).toBeVisible();
 
     const table = page.getByTestId('organization-table');
-    // 대출이동 참여 기관(사용 중)만: 금융결제원, 가나은행, 마바저축은행, 타파보험, 파하캐피탈
+    // 대출이동 참여 기관(사용 중)만: 금융결제원, KB국민은행, SBI저축은행, 타파보험, 파하캐피탈
     await expect(page.getByTestId('organization-count')).toHaveText('5곳');
     await expect(table.getByText('파하캐피탈')).toBeVisible();
-    await expect(table.getByText('다라은행')).toHaveCount(0);
+    await expect(table.getByText('신한은행')).toHaveCount(0);
     await page.screenshot({ path: 'screenshots/admin-organizations.png', fullPage: true });
   });
 
@@ -34,21 +34,21 @@ test.describe('관리 > 기관·업무 기준정보', () => {
 
     await chip(page, '상태', '전체').click();
     await expect(page.getByTestId('organization-count')).toHaveText('12곳');
-    await expect(page.getByTestId('organization-table').getByText('옛날은행')).toBeVisible();
+    await expect(page.getByTestId('organization-table').getByText('외환은행')).toBeVisible();
 
     await page.getByLabel('기관 검색').fill('저축');
     await expect(page.getByTestId('organization-count')).toHaveText('2곳');
-    await expect(page.getByTestId('organization-table').getByText('차카저축은행')).toBeVisible();
+    await expect(page.getByTestId('organization-table').getByText('저축은행중앙회')).toBeVisible();
   });
 
   test('행을 누르면 오른쪽 패널에서 참여 업무를 고쳐 저장한다', async ({ page }) => {
     await page.goto('/loan-transfer/admin/organizations');
     await chip(page, '업무', '전체 업무').click();
-    await page.getByTestId('organization-table').getByRole('button', { name: '사아증권' }).click();
+    await page.getByTestId('organization-table').getByRole('button', { name: '삼성증권' }).click();
 
     const dialog = page.getByRole('dialog');
-    await expect(dialog).toContainText('SAA · 참가기관');
-    await expect(dialog.getByLabel(/기관명/)).toHaveValue('사아증권');
+    await expect(dialog).toContainText('240 · 참가기관');
+    await expect(dialog.getByLabel(/기관명/)).toHaveValue('삼성증권');
     await page.waitForTimeout(400);
     await page.screenshot({ path: 'screenshots/admin-organization-detail.png' });
 
@@ -58,9 +58,9 @@ test.describe('관리 > 기관·업무 기준정보', () => {
     await expect(dialog).toContainText('(admin@kftc.example.com)');
     await dialog.getByRole('button', { name: '닫기' }).click();
 
-    // 이 업무(대출이동)로 좁혀도 이제 사아증권이 보인다.
+    // 이 업무(대출이동)로 좁혀도 이제 삼성증권이 보인다.
     await chip(page, '업무', '대출').click();
-    await expect(page.getByTestId('organization-table').getByText('사아증권')).toBeVisible();
+    await expect(page.getByTestId('organization-table').getByText('삼성증권')).toBeVisible();
   });
 
   test('기관을 등록하면 목록에 바로 나타나고, 같은 코드는 서버 메시지를 보여 준다', async ({
@@ -71,10 +71,10 @@ test.describe('관리 > 기관·업무 기준정보', () => {
     const dialog = page.getByRole('dialog');
     await expect(dialog).toContainText('기관 등록');
 
-    await dialog.getByLabel(/기관 코드/).fill('gana');
+    await dialog.getByLabel(/기관 코드/).fill('004');
     await dialog.getByLabel(/기관명/).fill('중복 코드 기관');
     await dialog.getByRole('button', { name: '등록' }).click();
-    await expect(page.getByText('이미 있는 기관 코드입니다: GANA')).toBeVisible();
+    await expect(page.getByText('이미 있는 기관 코드입니다: 004')).toBeVisible();
 
     await dialog.getByLabel(/기관 코드/).fill('e2e');
     await dialog.getByLabel(/기관명/).fill('이투이캐피탈');

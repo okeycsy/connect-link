@@ -19,13 +19,13 @@ class SuspensionAccessPolicyTest {
 
   private final SuspensionAccessPolicy policy = new SuspensionAccessPolicy();
 
-  /** 가나은행의 다른 계좌통합관리 담당자(같은 기관, 등록한 사람 아님). */
+  /** KB국민은행의 다른 계좌통합관리 담당자(같은 기관, 등록한 사람 아님). */
   private static final CurrentUser GANA_COLLEAGUE =
       new CurrentUser(
-          "han.gana@gana.example.com",
+          "han.gana@kb.example.com",
           "한가나",
-          "GANA",
-          "가나은행",
+          "004",
+          "KB국민은행",
           OrganizationType.FINANCE_ORGANIZATION,
           false,
           Set.of(Business.ACCOUNT_INFO),
@@ -44,11 +44,11 @@ class SuspensionAccessPolicyTest {
           JobRole.BUSINESS,
           Set.of());
 
-  /** 김가나가 올린 가나은행 계좌통합관리 일시중단. */
+  /** 김가나가 올린 KB국민은행 계좌통합관리 일시중단. */
   private static Suspension ganaSuspension() {
     LocalDateTime start = LocalDateTime.now().plusDays(1);
     return Suspension.register(
-        new Organization("GANA", "가나은행", OrganizationType.FINANCE_ORGANIZATION, null),
+        new Organization("004", "KB국민은행", OrganizationType.FINANCE_ORGANIZATION, null),
         new Suspension.Content(
             Business.ACCOUNT_INFO,
             null,
@@ -60,7 +60,7 @@ class SuspensionAccessPolicyTest {
             "010-0000-2101",
             null,
             null),
-        "kim.gana@gana.example.com",
+        "kim.gana@kb.example.com",
         "김가나",
         false);
   }

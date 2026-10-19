@@ -24,16 +24,16 @@ class SearchControllerTest {
   void 기관과_일시중단은_실제_데이터로_연락처는_샘플로_묶여_돌아온다() throws Exception {
     mockMvc
         .perform(
-            get("/api/v1/search").param("business", "cms").param("q", "다라").with(TestUsers.admin()))
+            get("/api/v1/search").param("business", "cms").param("q", "신한").with(TestUsers.admin()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.query").value("다라"))
+        .andExpect(jsonPath("$.query").value("신한"))
         .andExpect(jsonPath("$.business").value("CMS"))
         .andExpect(jsonPath("$.groups[0].category").value("ORGANIZATION"))
         .andExpect(jsonPath("$.groups[0].label").value("기관"))
         .andExpect(jsonPath("$.groups[0].source").value("LIVE"))
         .andExpect(jsonPath("$.groups[0].hits", hasSize(1)))
-        .andExpect(jsonPath("$.groups[0].hits[0].title").value("다라은행"))
-        .andExpect(jsonPath("$.groups[0].hits[0].subtitle").value("참가기관 · DARA"))
+        .andExpect(jsonPath("$.groups[0].hits[0].title").value("신한은행"))
+        .andExpect(jsonPath("$.groups[0].hits[0].subtitle").value("참가기관 · 088"))
         .andExpect(
             jsonPath("$.groups[0].hits[0].link")
                 .value(org.hamcrest.Matchers.startsWith("/cms/admin/organizations?org=")))
@@ -49,12 +49,12 @@ class SearchControllerTest {
 
   @Test
   void 레일의_업무에_참여하지_않는_기관은_나오지_않는다() throws Exception {
-    // 다라은행은 대출이동에 참여하지 않는다.
+    // 신한은행은 대출이동에 참여하지 않는다.
     mockMvc
         .perform(
             get("/api/v1/search")
                 .param("business", "loan-transfer")
-                .param("q", "다라은행")
+                .param("q", "신한은행")
                 .with(TestUsers.admin()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.groups[?(@.category=='ORGANIZATION')]").doesNotExist());

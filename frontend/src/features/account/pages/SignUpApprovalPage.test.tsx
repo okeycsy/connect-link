@@ -12,13 +12,13 @@ const businesses = [
 function application(overrides: Record<string, unknown>) {
   return {
     id: 1,
-    email: 'han.gana@gana.example.com',
+    email: 'han.gana@kb.example.com',
     name: '한가나',
     organizationId: 2,
-    organizationName: '가나은행',
+    organizationName: 'KB국민은행',
     organizationType: 'FINANCE_ORGANIZATION',
     organizationTypeLabel: '참가기관',
-    organizationEmailDomain: 'gana.example.com',
+    organizationEmailDomain: 'kb.example.com',
     emailDomainMatches: true,
     businesses: [{ ...businesses[0], subBusiness: '계좌정보 통합조회' }],
     jobRole: 'BUSINESS',
@@ -44,8 +44,8 @@ const pending = [
     email: 'oh.dara@mail.example.com',
     name: '오다라',
     organizationId: 3,
-    organizationName: '다라은행',
-    organizationEmailDomain: 'dara.example.com',
+    organizationName: '신한은행',
+    organizationEmailDomain: 'shinhan.example.com',
     emailDomainMatches: false,
     businesses: [
       { ...businesses[0], subBusiness: null },
@@ -61,9 +61,9 @@ const pending = [
 const rejected = [
   application({
     id: 3,
-    email: 'seo.saa@saa.example.com',
+    email: 'seo.saa@samsung.example.com',
     name: '서사아',
-    organizationName: '사아증권',
+    organizationName: '삼성증권',
     status: 'REJECTED',
     statusLabel: '반려',
     reviewedAt: '2026-10-13T14:00:00',
@@ -75,7 +75,7 @@ const rejected = [
 const approved = [
   application({
     id: 4,
-    email: 'kim.gana@gana.example.com',
+    email: 'kim.gana@kb.example.com',
     name: '김가나',
     status: 'ACTIVE',
     statusLabel: '사용 중',
@@ -219,7 +219,7 @@ describe('SignUpApprovalPage', () => {
 
     const detail = await screen.findByTestId('sign-up-detail');
     expect(detail).toHaveTextContent('oh.dara@mail.example.com');
-    expect(detail).toHaveTextContent('등록된 도메인(dara.example.com)과 다릅니다');
+    expect(detail).toHaveTextContent('등록된 도메인(shinhan.example.com)과 다릅니다');
     expect(detail).toHaveTextContent('자동이체 전문 개발');
     expect(screen.getByRole('button', { name: '승인' })).toBeInTheDocument();
   });
@@ -252,7 +252,7 @@ describe('SignUpApprovalPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: '오다라 가입 신청' }));
     fireEvent.click(await screen.findByRole('button', { name: '승인' }));
     const confirm = await screen.findByRole('dialog', { name: '가입 승인' });
-    expect(confirm).toHaveTextContent('다라은행 오다라 님의 가입을 승인합니다.');
+    expect(confirm).toHaveTextContent('신한은행 오다라 님의 가입을 승인합니다.');
     expect(confirm).toHaveTextContent('이메일 도메인이 기관과 다릅니다.');
     expect(calls.post).toHaveLength(0);
 
@@ -268,11 +268,11 @@ describe('SignUpApprovalPage', () => {
     renderPage('/account-info/admin/sign-ups?id=4');
 
     const detail = await screen.findByTestId('sign-up-detail');
-    expect(detail).toHaveTextContent('kim.gana@gana.example.com');
+    expect(detail).toHaveTextContent('kim.gana@kb.example.com');
     expect(screen.queryByRole('button', { name: '승인' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '탈퇴 처리' }));
     const dialog = await screen.findByRole('dialog', { name: '탈퇴 처리' });
-    expect(dialog).toHaveTextContent('가나은행 김가나 님의 계정을 탈퇴 처리합니다.');
+    expect(dialog).toHaveTextContent('KB국민은행 김가나 님의 계정을 탈퇴 처리합니다.');
 
     const submit = within(dialog).getByRole('button', { name: '탈퇴 처리' });
     await waitFor(() => expect(submit).toBeEnabled());
