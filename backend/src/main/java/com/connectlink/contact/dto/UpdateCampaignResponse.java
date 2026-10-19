@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
  * @param completedCount "현행화 완료" 를 누른 기관 수
  * @param changedCount 주간 동안 담당자 정보가 바뀐 기관 수
  * @param progressRate 전체 진행률(완료 기관 / 대상 기관, 0~100 정수)
+ * @param autoCreated 6개월 주기 예약 작업이 스스로 등록한 주간인지
  */
 public record UpdateCampaignResponse(
     Long id,
@@ -27,4 +28,5 @@ public record UpdateCampaignResponse(
     int targetCount,
     int completedCount,
     int changedCount,
-    int progressRate) {}
+    int progressRate,
+    boolean autoCreated) {}

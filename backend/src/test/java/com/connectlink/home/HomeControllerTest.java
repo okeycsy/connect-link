@@ -49,7 +49,7 @@ class HomeControllerTest {
         .andExpect(jsonPath("$.businessLabel").value("CMS"))
         // CMS 는 차민결(우리은행) 한 명이 6개월을 넘겼고, 진행 중인 정기 변경 주간이 없다(연락처 시드).
         .andExpect(jsonPath("$.kpis[0].value").value(1))
-        .andExpect(jsonPath("$.cards[1].link").value("/cms/admin/update-campaigns"));
+        .andExpect(jsonPath("$.cards[1].link").value("/cms/contacts/update-campaigns"));
   }
 
   @Test

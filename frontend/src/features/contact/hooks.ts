@@ -54,6 +54,7 @@ export const campaignKeys = {
   current: (business: string) => ['update-campaigns', 'current', business] as const,
   progress: (id: number, filter: UpdateCampaignProgressFilter) =>
     ['update-campaigns', 'progress', id, filter] as const,
+  schedule: (business: string) => ['update-campaigns', 'schedule', business] as const,
 };
 
 /** 이 업무에서 결제원 담당자로서 연락처를 관리하는지(전 기관 수정·삭제, 정기 변경 주간). 서버도 같은 규칙으로 막는다. */
@@ -276,6 +277,33 @@ export function useDeleteUpdateCampaign() {
         throw new ApiError(result.response.status, result.error);
       }
     },
+    onSuccess: () => invalidateCampaigns(queryClient),
+  });
+}
+
+/** 정기 변경 주기(기본 6개월)와 다음 요청일, 리마인드 간격. 결제원 담당자만 본다. */
+export function useUpdateCampaignSchedule(business: string) {
+  return useQuery({
+    queryKey: campaignKeys.schedule(business),
+    queryFn: async () =>
+      unwrap(
+        await api.GET('/api/v1/update-campaigns/schedule', { params: { query: { business } } }),
+      ),
+    enabled: Boolean(business),
+  });
+}
+
+/** 진행 중 주간의 미회신 기관에 리마인드 메일을 지금 보낸다. 기관을 비우면 미완료 기관 전부다. */
+export function useSendCampaignReminders() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, organizationIds }: { id: number; organizationIds?: number[] }) =>
+      unwrap(
+        await api.POST('/api/v1/update-campaigns/{id}/reminders', {
+          params: { path: { id } },
+          body: { organizationIds: organizationIds ?? null },
+        }),
+      ),
     onSuccess: () => invalidateCampaigns(queryClient),
   });
 }

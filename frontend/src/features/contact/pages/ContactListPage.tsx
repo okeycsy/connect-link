@@ -14,9 +14,9 @@ import {
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { IconDownload, IconPlus, IconSearch } from '@tabler/icons-react';
+import { IconCalendarEvent, IconDownload, IconPlus, IconSearch } from '@tabler/icons-react';
 import { Fragment, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import { formatDate, formatPhone } from '../../../shared/format';
 import { ChipFilter } from '../../../shared/list/ChipFilter';
@@ -111,6 +111,16 @@ export function ContactListPage() {
         }
         actions={
           <>
+            {manager && (
+              <Button
+                component={Link}
+                to={`/${slug}/contacts/update-campaigns`}
+                variant="light"
+                leftSection={<IconCalendarEvent size={16} stroke={1.8} />}
+              >
+                정기 변경 주간
+              </Button>
+            )}
             {internal && (
               <Button
                 variant="light"

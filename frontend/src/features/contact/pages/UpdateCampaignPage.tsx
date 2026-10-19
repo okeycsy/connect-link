@@ -18,10 +18,16 @@ import {
 import { DatePickerInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { IconPencil, IconPlus, IconTrash } from '@tabler/icons-react';
+import {
+  IconArrowLeft,
+  IconMailForward,
+  IconPencil,
+  IconPlus,
+  IconTrash,
+} from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useParams, useSearchParams } from 'react-router-dom';
 
 import { ApiError, fieldErrorsOf } from '../../../api/client';
 import { ConfirmModal } from '../../../shared/ConfirmModal';
@@ -36,19 +42,30 @@ import classes from '../components/ContactTable.module.css';
 import {
   type BusinessCode,
   type UpdateCampaign,
+  type UpdateCampaignOrganization,
   type UpdateCampaignProgressFilter,
   canManageContacts,
   useDeleteUpdateCampaign,
   useSaveUpdateCampaign,
+  useSendCampaignReminders,
   useUpdateCampaignProgress,
+  useUpdateCampaignSchedule,
   useUpdateCampaigns,
 } from '../hooks';
+
+/** 예전 주소(관리 메뉴 아래 `/{업무}/admin/update-campaigns`)를 연락처 메뉴 아래 새 주소로 보낸다. ?id= 는 그대로 넘긴다. */
+export function UpdateCampaignLegacyRedirect() {
+  const { business: slug = '' } = useParams<{ business: string }>();
+  const { search } = useLocation();
+  return <Navigate to={`/${slug}/contacts/update-campaigns${search}`} replace />;
+}
 
 const STATUS_COLOR = { UPCOMING: 'gray', OPEN: 'sky', CLOSED: 'gray' } as const;
 
 /**
- * 정기 변경(현행화) 주간 관리. 결제원 담당자가 업무별 주간을 등록하면 그 업무 참가기관 담당자에게 메일 알림이 간다. 주간을 고르면
- * 전체 진행률과 기관별 현행화(완료·미확인·정보 변경)를 본다. 담당자는 주간과 상관없이 아무 때나 고칠 수 있다.
+ * 정기 변경(현행화) 주간 관리. 결제원 담당자가 업무별 주간을 등록하면 그 업무 참가기관 담당자에게 변경 요청 메일이 간다. 주기(기본
+ * 6개월)가 돌아오면 서버가 주간을 스스로 등록하고, 미확인 기관에는 간격마다 리마인드 메일을 다시 보낸다(여기서 바로 보낼 수도 있다).
+ * 주간을 고르면 전체 진행률과 기관별 현행화(완료·미확인·정보 변경)를 본다. 담당자는 주간과 상관없이 아무 때나 고칠 수 있다.
  */
 export function UpdateCampaignPage() {
   const { business: slug = '' } = useParams<{ business: string }>();
@@ -57,6 +74,7 @@ export function UpdateCampaignPage() {
   const manager = canManageContacts(me, slug);
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: campaigns, isPending, isError, error } = useUpdateCampaigns(manager ? slug : '');
+  const { data: schedule } = useUpdateCampaignSchedule(manager ? slug : '');
   const [editing, setEditing] = useState<UpdateCampaign | 'new' | null>(null);
 
   const idParam = Number(searchParams.get('id')) || null;
@@ -78,14 +96,24 @@ export function UpdateCampaignPage() {
     <Stack gap="md">
       <PageHeader
         title="정기 변경 주간"
-        description={`${current?.label ?? '이 업무'} 담당자 현행화 주간입니다. 등록하면 참가기관 담당자에게 메일로 알립니다.`}
+        description={`${current?.label ?? '이 업무'} 담당자 현행화 주간입니다. 등록하면 참가기관 담당자에게 변경 요청 메일을 보냅니다.`}
         actions={
-          <Button
-            leftSection={<IconPlus size={18} stroke={1.8} />}
-            onClick={() => setEditing('new')}
-          >
-            주간 등록
-          </Button>
+          <>
+            <Button
+              component={Link}
+              to={`/${slug}/contacts`}
+              variant="light"
+              leftSection={<IconArrowLeft size={16} stroke={1.8} />}
+            >
+              담당자 목록
+            </Button>
+            <Button
+              leftSection={<IconPlus size={18} stroke={1.8} />}
+              onClick={() => setEditing('new')}
+            >
+              주간 등록
+            </Button>
+          </>
         }
       />
 
@@ -94,9 +122,18 @@ export function UpdateCampaignPage() {
         <Grid gutter="md">
           <Grid.Col span={{ base: 12, md: 4 }}>
             <Card data-testid="campaign-list">
-              <Text fw={700} size="lg" mb="sm">
+              <Text fw={700} size="lg" mb={4}>
                 주간 목록
               </Text>
+              {schedule && (
+                <Text size="xs" c="dimmed" mb="sm" data-testid="campaign-schedule">
+                  {schedule.cycleMonths}개월 주기
+                  {schedule.nextCycleDate
+                    ? ` · 다음 요청 ${formatDate(schedule.nextCycleDate)}${schedule.autoCreate ? '(자동 등록)' : ''}`
+                    : ' · 첫 주간을 등록하면 다음 요청일이 정해집니다'}
+                  {` · 미확인 기관은 ${schedule.reminderIntervalDays}일마다 리마인드`}
+                </Text>
+              )}
               {isPending && <Skeleton h={120} />}
               {campaigns && campaigns.length === 0 && (
                 <Text size="sm" c="dimmed">
@@ -126,6 +163,7 @@ export function UpdateCampaignPage() {
                     </Group>
                     <Text size="xs" c="dimmed" className={classes.numeric}>
                       {formatDate(c.startDate)} ~ {formatDate(c.endDate)} · 진행률 {c.progressRate}%
+                      {c.autoCreated && ' · 자동 등록'}
                     </Text>
                   </UnstyledButton>
                 ))}
@@ -189,6 +227,9 @@ function CampaignProgress({
   const { data, isError, error, isFetching } = useUpdateCampaignProgress(campaign.id, filter);
   const remove = useDeleteUpdateCampaign();
   const [deleting, setDeleting] = useState(false);
+  const remind = useSendCampaignReminders();
+  // 리마인드 확인 창: 'all' 은 미확인 기관 전부, 기관을 고르면 그 기관 하나.
+  const [reminding, setReminding] = useState<'all' | UpdateCampaignOrganization | null>(null);
   const summary = data?.campaign ?? campaign;
   const incomplete = summary.targetCount - summary.completedCount;
 
@@ -213,6 +254,19 @@ function CampaignProgress({
           </Text>
         </div>
         <Group gap="xs" wrap="nowrap">
+          {summary.status === 'OPEN' && incomplete > 0 && (
+            <Button
+              variant="light"
+              size="xs"
+              leftSection={<IconMailForward size={14} stroke={1.8} />}
+              onClick={() => {
+                remind.reset();
+                setReminding('all');
+              }}
+            >
+              미확인 기관 리마인드
+            </Button>
+          )}
           {summary.status !== 'CLOSED' && (
             <Button
               variant="light"
@@ -280,6 +334,7 @@ function CampaignProgress({
               <Table.Th w={80}>담당자</Table.Th>
               <Table.Th w={170}>현행화</Table.Th>
               <Table.Th w={150}>정보 변경</Table.Th>
+              <Table.Th w={150}>리마인드</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -330,14 +385,76 @@ function CampaignProgress({
                     </Text>
                   )}
                 </Table.Td>
+                <Table.Td>
+                  <Stack gap={2} align="flex-start">
+                    {o.reminderCount > 0 ? (
+                      <Text size="xs" c="dimmed" className={classes.numeric}>
+                        {o.reminderCount}회 · 최근 {formatDate(o.lastRemindedAt)}
+                      </Text>
+                    ) : (
+                      <Text size="sm" c="dimmed">
+                        -
+                      </Text>
+                    )}
+                    {summary.status === 'OPEN' && !o.completed && (
+                      <Button
+                        variant="subtle"
+                        size="compact-xs"
+                        aria-label={`${o.organizationName} 리마인드`}
+                        onClick={() => {
+                          remind.reset();
+                          setReminding(o);
+                        }}
+                      >
+                        보내기
+                      </Button>
+                    )}
+                  </Stack>
+                </Table.Td>
               </Table.Tr>
             ))}
             {data && data.organizations.length === 0 && (
-              <TableEmpty colSpan={4} message="조건에 맞는 기관이 없습니다." />
+              <TableEmpty colSpan={5} message="조건에 맞는 기관이 없습니다." />
             )}
           </Table.Tbody>
         </Table>
       </div>
+
+      <ConfirmModal
+        opened={reminding != null}
+        onClose={() => setReminding(null)}
+        title="리마인드 메일 보내기"
+        message={
+          reminding === 'all'
+            ? `아직 현행화 완료를 누르지 않은 ${incomplete}개 기관의 담당자에게 리마인드 메일을 보냅니다.`
+            : `${reminding?.organizationName ?? ''} 담당자에게 리마인드 메일을 보냅니다.`
+        }
+        confirmLabel="보내기"
+        pending={remind.isPending}
+        error={remind.error}
+        onConfirm={() =>
+          remind.mutate(
+            {
+              id: campaign.id,
+              organizationIds:
+                reminding && reminding !== 'all' ? [reminding.organizationId] : undefined,
+            },
+            {
+              onSuccess: (result) => {
+                setReminding(null);
+                notifications.show({
+                  message:
+                    `${result.organizationCount}개 기관 ${result.recipientCount}명에게 리마인드 메일을 보냈습니다.` +
+                    (result.skippedOrganizationCount > 0
+                      ? ` 받을 사람이 없는 기관 ${result.skippedOrganizationCount}곳은 건너뛰었습니다.`
+                      : ''),
+                  color: 'clay',
+                });
+              },
+            },
+          )
+        }
+      />
 
       <ConfirmModal
         opened={deleting}

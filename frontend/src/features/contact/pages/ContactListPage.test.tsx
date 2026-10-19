@@ -220,7 +220,7 @@ describe('ContactListPage', () => {
     expect(banner).toHaveTextContent('완료 2 / 대상 6개 기관');
     expect(within(banner).getByRole('link', { name: '진행 현황 보기' })).toHaveAttribute(
       'href',
-      '/account-info/admin/update-campaigns?id=9',
+      '/account-info/contacts/update-campaigns?id=9',
     );
 
     fireEvent.change(screen.getByRole('textbox', { name: '담당자 검색' }), {

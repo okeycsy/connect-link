@@ -83,7 +83,7 @@ export function CampaignBanner({ slug, business, manager, member }: Props) {
               </Text>
               <Anchor
                 component={Link}
-                to={`/${slug}/admin/update-campaigns?id=${campaign.id}`}
+                to={`/${slug}/contacts/update-campaigns?id=${campaign.id}`}
                 size="sm"
                 fw={600}
               >

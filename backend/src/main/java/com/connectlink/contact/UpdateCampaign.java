@@ -40,6 +40,10 @@ public class UpdateCampaign extends AuditedEntity {
   @Column(name = "registrant_name", nullable = false, length = 100)
   private String registrantName;
 
+  /** 6개월 주기 예약 작업이 스스로 등록한 주간인지. */
+  @Column(name = "auto_created", nullable = false)
+  private boolean autoCreated;
+
   protected UpdateCampaign() {}
 
   public UpdateCampaign(
@@ -53,6 +57,14 @@ public class UpdateCampaign extends AuditedEntity {
     this.startDate = startDate;
     this.endDate = endDate;
     this.registrantName = registrantName;
+  }
+
+  /** 주기가 돌아와 예약 작업이 스스로 등록하는 주간. */
+  static UpdateCampaign autoCreated(
+      Business business, String title, LocalDate startDate, LocalDate endDate, String registrant) {
+    UpdateCampaign campaign = new UpdateCampaign(business, title, startDate, endDate, registrant);
+    campaign.autoCreated = true;
+    return campaign;
   }
 
   public void change(String title, LocalDate startDate, LocalDate endDate) {
@@ -87,5 +99,9 @@ public class UpdateCampaign extends AuditedEntity {
 
   public String getRegistrantName() {
     return registrantName;
+  }
+
+  public boolean isAutoCreated() {
+    return autoCreated;
   }
 }

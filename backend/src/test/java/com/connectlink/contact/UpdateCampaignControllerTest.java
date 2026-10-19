@@ -18,6 +18,7 @@ import com.connectlink.notification.NotificationType;
 import com.connectlink.organization.Business;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +31,10 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.transaction.annotation.Transactional;
 
-/** 정기 변경(현행화) 주간: 등록·수정·삭제와 권한, 기간 겹침, 진행률과 완료·미확인·정보 변경 기관 거르기, 기관 담당자의 진행 중 주간 안내. 테스트마다 되돌린다. */
+/**
+ * 정기 변경(현행화) 주간: 등록·수정·삭제와 권한, 기간 겹침, 진행률과 완료·미확인·정보 변경 기관 거르기, 기관 담당자의 진행 중 주간 안내, 미회신 기관 리마인드와
+ * 6개월 주기 예약 작업. 테스트마다 되돌린다.
+ */
 @SpringBootTest(
     properties =
         "spring.datasource.url=jdbc:h2:mem:update-campaign-test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1")
@@ -45,6 +49,7 @@ class UpdateCampaignControllerTest {
   @Autowired private ObjectMapper objectMapper;
   @Autowired private UpdateCampaignRepository campaignRepository;
   @Autowired private NotificationRepository notificationRepository;
+  @Autowired private UpdateCampaignReminderRepository reminderRepository;
 
   private static RequestPostProcessor hong() {
     return TestUsers.as(TestUsers.KFTC_ACCOUNT_INFO);
@@ -214,5 +219,136 @@ class UpdateCampaignControllerTest {
     mockMvc
         .perform(get(BASE + "/current").param("business", "cms").with(park()))
         .andExpect(jsonPath("$.campaign").doesNotExist());
+  }
+
+  private long remindersTo(String email) {
+    return notificationRepository.findByRecipientEmailAndReadAtIsNull(email).stream()
+        .filter(n -> n.getType() == NotificationType.CONTACT_CHANGE_REMINDER)
+        .count();
+  }
+
+  private long remindersOf(Long campaignId, String organizationCode) {
+    return reminderRepository.findByCampaignIdOrderBySentAtAscIdAsc(campaignId).stream()
+        .filter(r -> r.getOrganization().getCode().equals(organizationCode))
+        .count();
+  }
+
+  @Test
+  void 결제원_담당자는_미회신_기관에만_리마인드를_보낸다() throws Exception {
+    Long id = campaignId("하반기 담당자 정기 변경");
+    mockMvc
+        .perform(post(BASE + "/" + id + "/reminders").with(csrf()).with(hong()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.organizationCount").value(4))
+        .andExpect(jsonPath("$.skippedOrganizationCount").value(0));
+    // 미완료 KB국민은행 담당자는 받고, 현행화 완료한 신한은행 담당자는 받지 않는다.
+    assertThat(remindersTo("kim.minjun@kb.example.com")).isEqualTo(1);
+    assertThat(remindersTo("lee.junho@shinhan.example.com")).isZero();
+    mockMvc
+        .perform(get(BASE + "/" + id + "/progress").param("filter", "INCOMPLETE").with(hong()))
+        .andExpect(
+            jsonPath("$.organizations[?(@.organizationCode == '004')].reminderCount").value(2));
+  }
+
+  @Test
+  void 고른_기관에만_리마인드를_보낸다() throws Exception {
+    Long id = campaignId("하반기 담당자 정기 변경");
+    Long kb =
+        reminderRepository
+            .findByCampaignIdOrderBySentAtAscIdAsc(id)
+            .get(0)
+            .getOrganization()
+            .getId();
+    mockMvc
+        .perform(
+            json(post(BASE + "/" + id + "/reminders"), Map.of("organizationIds", List.of(kb)))
+                .with(hong()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.organizationCount").value(1));
+    assertThat(remindersOf(id, "004")).isEqualTo(2);
+    assertThat(remindersOf(id, "048")).isZero();
+  }
+
+  @Test
+  void 기관_담당자와_다른_업무_담당자는_리마인드를_보내지_못한다() throws Exception {
+    Long id = campaignId("하반기 담당자 정기 변경");
+    mockMvc
+        .perform(post(BASE + "/" + id + "/reminders").with(csrf()).with(TestUsers.ganaMember()))
+        .andExpect(status().isForbidden());
+    mockMvc
+        .perform(post(BASE + "/" + id + "/reminders").with(csrf()).with(park()))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void 진행_중이_아닌_주간에는_리마인드를_보내지_못한다() throws Exception {
+    Long id = campaignId("상반기 담당자 정기 변경");
+    mockMvc
+        .perform(post(BASE + "/" + id + "/reminders").with(csrf()).with(hong()))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("UPDATE_CAMPAIGN_NOT_OPEN"));
+  }
+
+  @Test
+  void 예약_작업은_간격이_지난_미회신_기관에만_리마인드를_보낸다() throws Exception {
+    Long id = campaignId("하반기 담당자 정기 변경");
+    // 주간은 사흘 전 시작했다(간격 3일). KB국민은행은 어제 리마인드를 받아 이번에는 건너뛴다.
+    mockMvc
+        .perform(post("/api/v1/demo/update-campaign-runs").with(csrf()).with(hong()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.remindedOrganizationCount").value(3));
+    assertThat(remindersOf(id, "004")).isEqualTo(1);
+    assertThat(remindersOf(id, "048")).isEqualTo(1);
+    assertThat(remindersOf(id, "088")).isZero();
+    // 같은 날 다시 돌려도 간격이 지나지 않아 보내지 않는다.
+    mockMvc
+        .perform(post("/api/v1/demo/update-campaign-runs").with(csrf()).with(hong()))
+        .andExpect(jsonPath("$.remindedOrganizationCount").value(0));
+  }
+
+  @Test
+  void 주기가_지난_업무는_예약_작업이_주간을_등록하고_변경_요청_메일을_보낸다() throws Exception {
+    LocalDate today = LocalDate.now();
+    campaignRepository.saveAndFlush(
+        new UpdateCampaign(
+            Business.LOAN_TRANSFER,
+            "지난 정기 변경",
+            today.minusMonths(6).minusDays(1),
+            today.minusMonths(6).plusDays(6),
+            "홍성민"));
+    mockMvc
+        .perform(post("/api/v1/demo/update-campaign-runs").with(csrf()).with(hong()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.createdCampaignCount").value(1));
+    UpdateCampaign created =
+        campaignRepository.findByBusinessOrderByStartDateDescIdDesc(Business.LOAN_TRANSFER).get(0);
+    assertThat(created.isAutoCreated()).isTrue();
+    assertThat(created.getStartDate()).isEqualTo(today);
+    assertThat(created.getEndDate()).isEqualTo(today.plusDays(13));
+    assertThat(created.getRegistrantName()).isEqualTo(UpdateCampaignService.AUTO_REGISTRANT);
+    assertThat(notificationRepository.findAll())
+        .anyMatch(
+            n ->
+                n.getType() == NotificationType.CONTACT_CHANGE_REQUESTED
+                    && n.getBusiness() == Business.LOAN_TRANSFER);
+    // 진행 중 주간이 생겼으니 다시 돌려도 더 만들지 않는다. 주간이 하나도 없는 업무(자동이체)도 만들지 않는다.
+    mockMvc
+        .perform(post("/api/v1/demo/update-campaign-runs").with(csrf()).with(hong()))
+        .andExpect(jsonPath("$.createdCampaignCount").value(0));
+  }
+
+  @Test
+  void 결제원_담당자는_다음_정기_변경_요청일을_본다() throws Exception {
+    LocalDate start = LocalDate.now().minusDays(3);
+    mockMvc
+        .perform(get(BASE + "/schedule").param("business", "account-info").with(hong()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.cycleMonths").value(6))
+        .andExpect(jsonPath("$.reminderIntervalDays").value(3))
+        .andExpect(jsonPath("$.nextCycleDate").value(start.plusMonths(6).toString()));
+    mockMvc
+        .perform(
+            get(BASE + "/schedule").param("business", "account-info").with(TestUsers.ganaMember()))
+        .andExpect(status().isForbidden());
   }
 }

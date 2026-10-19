@@ -3,8 +3,11 @@ package com.connectlink.contact;
 import com.connectlink.auth.CurrentUserProvider;
 import com.connectlink.contact.dto.CurrentUpdateCampaignResponse;
 import com.connectlink.contact.dto.UpdateCampaignProgressResponse;
+import com.connectlink.contact.dto.UpdateCampaignReminderRequest;
+import com.connectlink.contact.dto.UpdateCampaignReminderResultResponse;
 import com.connectlink.contact.dto.UpdateCampaignResponse;
 import com.connectlink.contact.dto.UpdateCampaignSaveRequest;
+import com.connectlink.contact.dto.UpdateCampaignScheduleResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -95,5 +98,26 @@ public class UpdateCampaignController {
           @RequestParam(defaultValue = "ALL")
           UpdateCampaignProgressFilter filter) {
     return campaignService.progress(currentUserProvider.require(), id, filter);
+  }
+
+  @GetMapping("/schedule")
+  @Operation(
+      summary = "정기 변경 주기 조회",
+      description =
+          "주기(기본 6개월)와 다음 정기 변경 요청일, 자동 등록 여부, 리마인드 간격. 다음 요청일은 최근 주간 시작일 + 주기이고, 주간이 없으면 null. 결제원 담당자만 본다.")
+  public UpdateCampaignScheduleResponse schedule(
+      @Parameter(description = "업무 영역 slug (예: account-info)") @RequestParam String business) {
+    return campaignService.schedule(
+        currentUserProvider.require(), ContactController.resolveBusiness(business));
+  }
+
+  @PostMapping("/{id}/reminders")
+  @Operation(
+      summary = "미회신 기관에 리마인드 메일 보내기",
+      description =
+          "진행 중 주간에서 아직 현행화 완료를 누르지 않은 기관에 지금 리마인드 메일을 보낸다. organizationIds 를 비우면 미완료 기관 전부. 받는 사람은 그 기관·업무의 사용 중 계정과 담당자 연락처 이메일. 진행 중이 아니면 409 UPDATE_CAMPAIGN_NOT_OPEN. 결제원 담당자만 보낸다.")
+  public UpdateCampaignReminderResultResponse remind(
+      @PathVariable Long id, @RequestBody(required = false) UpdateCampaignReminderRequest request) {
+    return campaignService.sendReminders(currentUserProvider.require(), id, request);
   }
 }
