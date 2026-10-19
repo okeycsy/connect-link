@@ -14,6 +14,10 @@ import { OpinionListPage } from '../features/opinion/pages/OpinionListPage';
 import { SuspensionDetailPage } from '../features/suspension/pages/SuspensionDetailPage';
 import { SuspensionEditorPage } from '../features/suspension/pages/SuspensionEditorPage';
 import { SuspensionListPage } from '../features/suspension/pages/SuspensionListPage';
+import { TestPlanDetailPage } from '../features/testplan/pages/TestPlanDetailPage';
+import { TestPlanEditorPage } from '../features/testplan/pages/TestPlanEditorPage';
+import { TestPlanListPage } from '../features/testplan/pages/TestPlanListPage';
+import { TestPlanRecipientsPage } from '../features/testplan/pages/TestPlanRecipientsPage';
 import { OrganizationAdminPage } from '../features/organization/pages/OrganizationAdminPage';
 import { AdminGuard } from './layout/AdminGuard';
 import { AdminHubPage } from './layout/AdminHubPage';
@@ -27,7 +31,13 @@ import { PlaceholderPage } from './layout/PlaceholderPage';
 import { DEFAULT_BUSINESS_SLUG, FEATURE_MENU, type FeatureMenuItem } from './navigation';
 
 /** 화면이 있는 기능. 나머지 기능은 "준비 중" 자리를 보인다. */
-const BUILT_FEATURES: FeatureMenuItem['key'][] = ['home', 'admin', 'opinions', 'suspensions'];
+const BUILT_FEATURES: FeatureMenuItem['key'][] = [
+  'home',
+  'admin',
+  'opinions',
+  'tests',
+  'suspensions',
+];
 
 /**
  * 주소 구조: /{업무 영역 slug}/{기능}.
@@ -75,6 +85,12 @@ export const router = createBrowserRouter([
           { path: 'opinions/new', element: <OpinionEditorPage /> },
           { path: 'opinions/:id', element: <OpinionDetailPage /> },
           { path: 'opinions/:id/edit', element: <OpinionEditorPage /> },
+          // 다. 기관 테스트: 목록, 만들기, 수행·결과 관리(결과·내용·이력 탭), 고치기, 테스트별 결과 등록 알림 설정.
+          { path: 'tests', element: <TestPlanListPage /> },
+          { path: 'tests/new', element: <TestPlanEditorPage /> },
+          { path: 'tests/:id', element: <TestPlanDetailPage /> },
+          { path: 'tests/:id/edit', element: <TestPlanEditorPage /> },
+          { path: 'tests/:id/recipients', element: <TestPlanRecipientsPage /> },
           { path: 'suspensions', element: <SuspensionListPage /> },
           { path: 'suspensions/new', element: <SuspensionEditorPage /> },
           { path: 'suspensions/:id', element: <SuspensionDetailPage /> },

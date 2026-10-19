@@ -80,20 +80,24 @@
 | 리마인드 이력 | `OpinionReminder` | 미회신 기관에 보낸 리마인드 메일 한 번 |
 | 회신 현황·취합표 | `OpinionCollationService` | 회신율, 질문별 답 집계, 기관별 취합표와 엑셀(`OpinionExcel`, 내부망 전용) |
 | 기관 회신 | `OpinionReply` | 대상 기관 하나에 하나. 내용은 요청 질문에 대한 답(`OpinionReplyAnswer`)뿐이다(의견 유형·세부의견 칸 없음). 상태 `OpinionReplyStatus` = `DRAFT`(임시저장), `SUBMITTED`(제출), `REVISION_REQUESTED`(수정 요청), `REVISING`(수정 중) |
-| 기관 테스트(페이지) | `TestPlan` | 단위업무/개발 건별 |
-| 테스트 요구사항 | `TestItem` | |
+| 기관 테스트(페이지) | `TestPlan` | 단위업무/개발 건별 "기관 테스트 수행·결과 관리" 페이지 한 건. 만들면 바로 대상 기관에 열린다. 진행 구분 `TestPlanState` = `IN_PROGRESS`(진행 중), `COMPLETED`(수행 완료, 저장하지 않고 완료 일시로 정한다). 권한 `TestPlanAccessPolicy`. API `/api/v1/test-plans`, 화면 `/{업무}/tests` |
+| 테스트 요구사항 | `TestItem` | 번호(001, 002 …)는 순서로 붙는다 |
+| 대상 기관(테스트) | `TestPlanTarget` | 테스트의 대상 참가기관 하나. 기관 수행률·완료 요구사항 수를 둔다. API `/api/v1/test-plans/{id}/targets/{organizationId}` |
+| 기관 테스트 결과 | `TestItemResult` | 대상 기관 × 요구사항 한 칸. 기관 결과·특이사항과 결제원 의견(미니 수행률 0~100 `feedbackRate`, 특이사항 `feedbackNote`). 기관 정상 + 미니 수행률 100 이면 테스트 수행 완료, 의견 뒤에 기관이 바꾸면 "다시 확인"(`feedbackOutdated`) |
 | 테스트 결과 | `TestResult` | `PASSED`(정상), `FAILED`(오류), `IN_PROGRESS`(수행중), `NOT_STARTED`(미수행) |
+| 수행률 | `TestProgress` | 요구사항 수행률(결제원 의견, 없으면 정상 100 그 밖 0)의 기관별·전체 평균과 수행 완료 계산. 결과가 바뀔 때마다 `progress_rate` 에 다시 계산해 둔다 |
+| 결과 등록 알림 대상 | `TestPlanRecipient` | 기관이 결과를 등록하면 매터모스트 알림을 받을 결제원 담당자(테스트별). 화면 `/{업무}/tests/{id}/recipients` |
 | 일시중단 | `Suspension` | 참가기관 하나의 업무 중단 한 건(일시, 대상 업무·세부업무, 중단 이유, 결제원 조치사항, 담당자 연락처, 추가 사항, 공문 첨부). 상태 `SuspensionStatus` = `PENDING_REVIEW`(검토 대기), `IN_REVIEW`(검토 중), `CONFIRMED`(확정), `COMPLETED`(완료). 권한 `SuspensionAccessPolicy`. API `/api/v1/suspensions`, 화면 `/{업무}/suspensions` |
 | 일시중단 시기 | `SuspensionPeriod` | 지금 기준 `CURRENT`(진행 중), `UPCOMING`(예정), `PAST`(지난). 저장하지 않고 일시로 계산한다 |
 | 일시중단 확인자 | `SuspensionReviewer` | 확인을 시작한 결제원 담당자 한 명(이름·이메일·직무 표시·시작 일시). 조치 및 인수인계 사항(`handover`)을 쓰면 확정이다 |
 | 전 영업일 취합 | `SuspensionDigest`, `SuspensionDigestService`, `SuspensionDigestFormatter` | 작업일 전 영업일에 확정 일시중단을 모아 운영·관제 매터모스트 채널로 보낸 한 번. 설정 `app.suspension.digest.*`, 영업일 `BusinessDayCalendar`. 전달 양식은 미결이라 `SuspensionDigestFormatter` 빈을 바꿔 끼운다 |
-| 알림 | `Notification` | 알림 센터 항목. 종류 `NotificationType` (`SIGNUP_REQUESTED`, `SIGNUP_APPROVED`, `CONTACT_CHANGE_REQUESTED`, `CONTACT_RECONFIRM_DUE`, `OPINION_REQUEST_OPENED`, `OPINION_REQUEST_CHANGED`, `OPINION_REPLY_DUE`, `OPINION_REPLY_REVISION`, `TEST_PLAN_OPENED`, `SUSPENSION_CHANGED`, `SYSTEM`) |
+| 알림 | `Notification` | 알림 센터 항목. 종류 `NotificationType` (`SIGNUP_REQUESTED`, `SIGNUP_APPROVED`, `CONTACT_CHANGE_REQUESTED`, `CONTACT_RECONFIRM_DUE`, `OPINION_REQUEST_OPENED`, `OPINION_REQUEST_CHANGED`, `OPINION_REPLY_DUE`, `OPINION_REPLY_REVISION`, `TEST_PLAN_OPENED`, `TEST_RESULT_REPORTED`, `TEST_RESULT_FEEDBACK`, `SUSPENSION_CHANGED`, `SYSTEM`) |
 | 알림 채널 | `NotificationChannel` | `EMAIL`, `MATTERMOST` |
 | 발송함 | `NotificationOutbox` | 프로토타입에서 실제 발송 대신 기록. 상태 `OutboxStatus` = `PENDING`(발송 대기), `SENT`, `FAILED` |
 | 로그인 사용자 | `CurrentUser` | Service 권한 판단에 넘기는 값. 로그인할 때 계정에서 만들어 세션에 둔다. 업무 영역(레일) 조회 범위는 `BusinessAccessPolicy`(관리자는 전 업무, 그 밖에는 담당 업무). 테스트는 `TestUsers` |
 | 내부망/인터넷망 | `NetworkZone` | `INTERNAL`, `EXTERNAL`. 판단은 `NetworkZoneResolver`(헤더 `X-Network-Zone` 은 local·demo 만, 운영은 `app.network.internal-cidrs`). 내부망 전용 위반은 403 `INTERNAL_ONLY` |
-| 첨부파일 | `Attachment` | 대상은 `AttachmentOwnerType`(`OPINION_REQUEST`, `OPINION_REPLY`, `SUSPENSION`, `DEMO`) + `ownerId`. 파일 저장소 `FileStorage` |
-| 변경 이력 | `ChangeHistory` | 대상은 `HistoryTargetType`(`ORGANIZATION`, `CONTACT`, `OPINION_REQUEST`, `OPINION_REPLY`, `TEST_PLAN`, `SUSPENSION`) + `targetId`. 종류 `ChangeAction` = `CREATED`/`UPDATED`/`DELETED`, 항목 `FieldChange`(field, label, before, after) |
+| 첨부파일 | `Attachment` | 대상은 `AttachmentOwnerType`(`OPINION_REQUEST`, `OPINION_REPLY`, `TEST_PLAN`, `SUSPENSION`, `DEMO`) + `ownerId`. 파일 저장소 `FileStorage` |
+| 변경 이력 | `ChangeHistory` | 대상은 `HistoryTargetType`(`ORGANIZATION`, `CONTACT`, `OPINION_REQUEST`, `OPINION_REPLY`, `TEST_PLAN`, `TEST_PLAN_TARGET`(기관별 결과), `SUSPENSION`) + `targetId`. 종류 `ChangeAction` = `CREATED`/`UPDATED`/`DELETED`, 항목 `FieldChange`(field, label, before, after) |
 | 전역 검색 묶음 | `SearchCategory` | `ORGANIZATION`, `CONTACT`, `OPINION_REQUEST`, `TEST_PLAN`, `SUSPENSION`. 기능 모듈은 `SearchProvider` 빈 하나로 자기 묶음을 채운다 |
 
 용어집에 없는 개념이 필요하면 이름을 정해 이 표에 추가하는 것까지 같은 작업에 포함한다.

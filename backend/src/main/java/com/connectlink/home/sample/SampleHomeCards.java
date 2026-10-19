@@ -147,37 +147,4 @@ public final class SampleHomeCards {
           null);
     }
   }
-
-  /** 다. 진행 중 기관 테스트. */
-  @Component
-  @Profile({"local", "demo", "test"})
-  public static class TestProgress implements HomeCardContributor {
-    @Override
-    public HomeCardKey key() {
-      return HomeCardKey.TEST_PROGRESS;
-    }
-
-    @Override
-    public HomeContribution contribute(CurrentUser user, Business business) {
-      int running = 1 + (shift(business) % 2);
-      int passed = 9 + shift(business) * 2;
-      String link = link(business, key());
-      return card(
-          key(),
-          business,
-          Urgency.NONE,
-          "요구사항별 결과(정상·오류·수행중·미수행)를 기관이 등록하면 수행률이 올라갑니다.",
-          List.of(new HomeCardMetric("진행 중", running, "건"), new HomeCardMetric("오류 보고", 2, "건")),
-          new HomeCardProgress(passed, 28, "요구사항 정상"),
-          List.of(
-              new HomeCardItem(
-                  business.getLabel() + " 전문 개정 2차 테스트",
-                  "대상 7개 기관 · 수행률 " + (passed * 100 / 28) + "%",
-                  null,
-                  Urgency.NONE,
-                  link),
-              new HomeCardItem("자차카드 오류 2건 피드백 대기", "요구사항 #7, #12", null, Urgency.NONE, link)),
-          new HomeCardKpi("진행 중 기관 테스트", running, "건", false));
-    }
-  }
 }

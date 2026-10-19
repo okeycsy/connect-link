@@ -11,6 +11,8 @@ public enum NotificationType {
   OPINION_REPLY_DUE("회신 기한 임박"),
   OPINION_REPLY_REVISION("회신 수정 요청"),
   TEST_PLAN_OPENED("기관 테스트 등록"),
+  TEST_RESULT_REPORTED("기관 테스트 결과 등록"),
+  TEST_RESULT_FEEDBACK("기관 테스트 결제원 의견"),
   SUSPENSION_CHANGED("일시중단 변경"),
   SYSTEM("안내");
 

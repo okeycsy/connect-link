@@ -70,17 +70,4 @@ public final class SampleSearchProviders {
               new String[] {"윤자차", "자차카드 · 전산(운영) · 부담당"}));
     }
   }
-
-  @Component
-  @Profile({"local", "demo", "test"})
-  static class TestPlans extends SampleProvider {
-    TestPlans() {
-      super(
-          SearchCategory.TEST_PLAN,
-          "tests",
-          List.of(
-              new String[] {"전문 규격 v2.1 기관 테스트", "수행중 · 8/12 기관 정상"},
-              new String[] {"재해복구 전환 테스트", "미수행 · 다음 달 시작"}));
-    }
-  }
 }

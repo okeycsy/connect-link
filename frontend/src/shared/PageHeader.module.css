@@ -6,7 +6,9 @@
   border-bottom: 1px solid var(--cl-line);
 }
 
+/* 글자 쪽이 줄어들며 줄바꿈해서 동작 버튼이 넓은 화면에서는 늘 오른쪽 위에 남는다. 좁으면 버튼이 아래 줄로 내려간다. */
 .text {
+  flex: 1 1 320px;
   min-width: 0;
 }
 
