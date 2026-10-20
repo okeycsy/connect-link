@@ -1,6 +1,7 @@
 import { Badge, Group, Skeleton, Stack, Table, Text } from '@mantine/core';
 
 import { formatDate } from '../../../shared/format';
+import tableClasses from '../../../shared/list/ResponsiveTable.module.css';
 import { TableEmpty } from '../../../shared/list/TableEmpty';
 import { OrgMonogram } from '../../../shared/OrgMonogram';
 import type { BusinessCode, OrganizationDetail } from '../hooks';
@@ -27,7 +28,12 @@ export function OrganizationTable({ rows, loading, selectedId, currentBusiness, 
     );
   }
   return (
-    <Table verticalSpacing="sm" highlightOnHover data-testid="organization-table">
+    <Table
+      verticalSpacing="sm"
+      highlightOnHover
+      data-testid="organization-table"
+      className={tableClasses.stack}
+    >
       <Table.Thead>
         <Table.Tr>
           <Table.Th>기관</Table.Th>
@@ -69,13 +75,13 @@ export function OrganizationTable({ rows, loading, selectedId, currentBusiness, 
                 </div>
               </Group>
             </Table.Td>
-            <Table.Td>
+            <Table.Td data-label="구분">
               <Text size="sm">
                 {o.typeLabel}
                 {o.sectorLabel ? ` · ${o.sectorLabel}` : ''}
               </Text>
             </Table.Td>
-            <Table.Td>
+            <Table.Td data-label="참여 업무">
               <Group gap={4}>
                 {o.businesses.map((b) => (
                   <Badge
@@ -95,12 +101,12 @@ export function OrganizationTable({ rows, loading, selectedId, currentBusiness, 
                 )}
               </Group>
             </Table.Td>
-            <Table.Td>
+            <Table.Td data-label="이메일 도메인">
               <Text size="sm" ff="monospace" c={o.emailDomain ? undefined : 'dimmed'}>
                 {o.emailDomain ?? '-'}
               </Text>
             </Table.Td>
-            <Table.Td>
+            <Table.Td data-label="상태">
               {o.active ? (
                 <Badge size="sm" color="sky">
                   사용 중
@@ -111,7 +117,7 @@ export function OrganizationTable({ rows, loading, selectedId, currentBusiness, 
                 </Badge>
               )}
             </Table.Td>
-            <Table.Td>
+            <Table.Td data-label="최근 수정">
               <Text size="sm" c="dimmed">
                 {formatDate(o.updatedAt)}
               </Text>

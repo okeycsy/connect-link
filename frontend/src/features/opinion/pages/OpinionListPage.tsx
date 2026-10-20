@@ -15,6 +15,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { formatDate } from '../../../shared/format';
 import { ChipFilter } from '../../../shared/list/ChipFilter';
+import tableClasses from '../../../shared/list/ResponsiveTable.module.css';
 import { TableEmpty } from '../../../shared/list/TableEmpty';
 import { PageHeader } from '../../../shared/PageHeader';
 import { ErrorState } from '../../../shared/state/StateView';
@@ -162,7 +163,12 @@ function OpinionRequestTable({
     );
   }
   return (
-    <Table verticalSpacing="sm" highlightOnHover data-testid="opinion-table">
+    <Table
+      verticalSpacing="sm"
+      highlightOnHover
+      data-testid="opinion-table"
+      className={tableClasses.stack}
+    >
       <Table.Thead>
         <Table.Tr>
           <Table.Th>요청명</Table.Th>
@@ -202,7 +208,7 @@ function OpinionRequestTable({
                   {r.cancelled && <OpinionStatusBadge status={r.status} cancelled size="xs" />}
                 </Group>
               </Table.Td>
-              <Table.Td>
+              <Table.Td data-label="회신 기한">
                 <Group gap={6} wrap="nowrap">
                   <Text size="sm" className={classes.numeric}>
                     {formatDate(r.dueDate)}
@@ -210,7 +216,7 @@ function OpinionRequestTable({
                   <DueBadge status={r.status} daysLeft={r.daysLeft} size="xs" />
                 </Group>
               </Table.Td>
-              <Table.Td>
+              <Table.Td data-label="회신">
                 {manager ? (
                   status === 'DRAFT' ? (
                     <Text size="sm" c="dimmed">
@@ -235,7 +241,7 @@ function OpinionRequestTable({
                   <ReplyStatusBadge status={r.myReplyStatus} size="xs" />
                 )}
               </Table.Td>
-              <Table.Td>
+              <Table.Td data-label="담당">
                 <Text size="sm">{r.ownerName}</Text>
               </Table.Td>
             </Table.Tr>

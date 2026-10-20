@@ -26,6 +26,13 @@
   --cl-page-gutter: 24px;
 }
 
+/* 휴대폰 폭(sm, 48em 미만)에서는 본문 안쪽 여백을 줄인다. 머리 막대(PageHeader)도 이 값을 따라간다. */
+@media (max-width: 48em) {
+  :root {
+    --cl-page-gutter: 16px;
+  }
+}
+
 html,
 body,
 #root {

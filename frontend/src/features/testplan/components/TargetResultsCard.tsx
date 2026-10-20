@@ -158,7 +158,7 @@ function TargetHeader({ summary: s, manager }: { summary: TestTargetSummary; man
     <Group justify="space-between" align="center" gap="md">
       <Group gap="sm" wrap="nowrap">
         <OrgMonogram name={s.organizationName} type="FINANCE_ORGANIZATION" />
-        <div>
+        <div style={{ minWidth: 0 }}>
           <Group gap="xs">
             <Text fw={700} size="xl">
               {s.organizationName}
@@ -170,7 +170,7 @@ function TargetHeader({ summary: s, manager }: { summary: TestTargetSummary; man
               </Badge>
             )}
           </Group>
-          <Text size="sm" c="dimmed" className={classes.numeric}>
+          <Text size="sm" c="dimmed" className={classes.counts}>
             {counts.map((c) => `${c.label} ${c.n}`).join(' · ')}
             {s.lastReportedAt && ` · 마지막 등록 ${formatDateTime(s.lastReportedAt)}`}
           </Text>
@@ -228,7 +228,7 @@ function ResultRow({
     >
       <Stack gap="sm">
         <Group justify="space-between" align="flex-start" wrap="nowrap" gap="sm">
-          <Group gap="sm" align="flex-start" wrap="nowrap">
+          <Group gap="sm" align="flex-start" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
             <Text fw={700} className={classes.numeric}>
               {row.number}
             </Text>
@@ -241,7 +241,7 @@ function ResultRow({
               )}
             </div>
           </Group>
-          <Group gap={6} wrap="nowrap">
+          <Group gap={6} wrap="nowrap" style={{ flexShrink: 0 }}>
             {row.completed && (
               <Badge color="sky" data-testid="item-completed">
                 테스트 수행 완료

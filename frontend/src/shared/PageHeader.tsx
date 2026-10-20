@@ -20,7 +20,7 @@ export function PageHeader({ title, description, status, actions }: Props) {
   return (
     <Group className={classes.bar} justify="space-between" align="center" gap="md">
       <div className={classes.text}>
-        <Group gap="sm" wrap="nowrap">
+        <Group gap="sm">
           <Title order={1} className={classes.title}>
             {title}
           </Title>
@@ -33,7 +33,7 @@ export function PageHeader({ title, description, status, actions }: Props) {
         )}
       </div>
       {actions && (
-        <Group gap="xs" wrap="nowrap">
+        <Group gap="xs" className={classes.actions}>
           {actions}
         </Group>
       )}

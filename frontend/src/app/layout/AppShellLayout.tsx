@@ -1,7 +1,9 @@
 import {
+  ActionIcon,
   AppShell,
   Badge,
   Box,
+  Burger,
   Button,
   Center,
   Group,
@@ -16,6 +18,7 @@ import {
   useMantineTheme,
 } from '@mantine/core';
 import { useDisclosure, useHotkeys } from '@mantine/hooks';
+import { useEffect } from 'react';
 import {
   IconFlask,
   IconLayoutGrid,
@@ -54,6 +57,7 @@ import classes from './AppShellLayout.module.css';
  * 레일 = 업무 영역(조회 범위), 사이드바 = 기능. 구조와 치수는 frontend/CLAUDE.md "앱 셸" 이 기준이다. 상단 가로 메뉴로 바꾸지 않는다.
  * 로그인한 사용자만 들어온다. 로그인 전이거나 세션이 끝났으면(401) 지금 주소를 next 로 달고 로그인 화면으로 보낸다.
  * 레일은 사용자가 볼 수 있는 업무 영역만, 관리 묶음은 관리자에게만 보인다(서버도 같은 규칙으로 막는다).
+ * 휴대폰 폭(sm 미만)에서는 레일·사이드바를 접어 두고 상단 바 왼쪽 메뉴 버튼으로 연다. 메뉴를 고르면 다시 닫힌다.
  */
 export function AppShellLayout() {
   const theme = useMantineTheme();
@@ -68,7 +72,10 @@ export function AppShellLayout() {
   const demo = isDemoProfile(serverInfo?.profile);
   const [searchOpened, { open: openSearch, close: closeSearch }] = useDisclosure(false);
   const [demoZone, setDemoZone] = useDemoNetworkZone();
+  const [navOpened, { toggle: toggleNav, close: closeNav }] = useDisclosure(false);
   useHotkeys([['mod+K', openSearch]]);
+  // 휴대폰에서 메뉴를 고르거나 주소가 바뀌면 열어 둔 메뉴를 닫는다.
+  useEffect(closeNav, [location.pathname, closeNav]);
 
   const railWidth = theme.other.railWidth as number;
   const sidebarWidth = theme.other.sidebarWidth as number;
@@ -100,20 +107,36 @@ export function AppShellLayout() {
   return (
     <AppShell
       header={{ height: headerHeight }}
-      navbar={{ width: railWidth + sidebarWidth, breakpoint: 'sm' }}
+      navbar={{
+        width: railWidth + sidebarWidth,
+        breakpoint: 'sm',
+        collapsed: { mobile: !navOpened },
+      }}
       padding={0}
     >
       <AppShell.Header className={classes.header}>
-        <Group h="100%" px="md" gap="lg" wrap="nowrap">
+        <Group h="100%" px={{ base: 'xs', sm: 'md' }} gap="sm" wrap="nowrap">
+          <Burger
+            opened={navOpened}
+            onClick={toggleNav}
+            hiddenFrom="sm"
+            size="sm"
+            aria-label={navOpened ? '메뉴 닫기' : '메뉴 열기'}
+          />
           <Box
             component={Link}
             to={`${base}/home`}
             className={classes.brand}
             aria-label="연결고리 홈"
           >
-            <BrandMark />
+            <BrandMark className={classes.logo} />
           </Box>
-          <UnstyledButton className={classes.search} aria-label="전역 검색" onClick={openSearch}>
+          <UnstyledButton
+            className={classes.search}
+            aria-label="전역 검색"
+            onClick={openSearch}
+            visibleFrom="sm"
+          >
             <Group gap="xs" wrap="nowrap">
               <IconSearch size={16} />
               <Text size="md" c="dimmed" style={{ flex: 1 }} truncate>
@@ -123,7 +146,17 @@ export function AppShellLayout() {
               <Kbd size="xs">K</Kbd>
             </Group>
           </UnstyledButton>
-          <Group gap="sm" wrap="nowrap">
+          <Group gap="sm" wrap="nowrap" className={classes.tools}>
+            <ActionIcon
+              variant="subtle"
+              color="dark"
+              size="lg"
+              hiddenFrom="sm"
+              aria-label="전역 검색"
+              onClick={openSearch}
+            >
+              <IconSearch size={20} />
+            </ActionIcon>
             {demo && (
               <Menu position="bottom-end" width={220}>
                 <Menu.Target>

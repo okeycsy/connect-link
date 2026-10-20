@@ -18,6 +18,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { ConfirmModal } from '../../../shared/ConfirmModal';
 import { formatDate, formatDateTime } from '../../../shared/format';
+import tableClasses from '../../../shared/list/ResponsiveTable.module.css';
 import { PageHeader } from '../../../shared/PageHeader';
 import { ErrorState, StateView } from '../../../shared/state/StateView';
 import { AttachmentPanel } from '../../attachment/components/AttachmentPanel';
@@ -235,7 +236,12 @@ function TargetTable({
       <Text fw={700} size="xl" mb="sm">
         기관별 현황
       </Text>
-      <Table verticalSpacing="sm" highlightOnHover data-testid="target-table">
+      <Table
+        verticalSpacing="sm"
+        highlightOnHover
+        data-testid="target-table"
+        className={tableClasses.stack}
+      >
         <Table.Thead>
           <Table.Tr>
             <Table.Th>기관</Table.Th>
@@ -274,7 +280,7 @@ function TargetTable({
                   )}
                 </Group>
               </Table.Td>
-              <Table.Td>
+              <Table.Td data-label="수행률">
                 <Group gap="xs" wrap="nowrap">
                   <Progress
                     value={t.progressRate}
@@ -292,13 +298,13 @@ function TargetTable({
                   </Text>
                 </Group>
               </Table.Td>
-              <Table.Td>
+              <Table.Td data-label="결과">
                 <Text size="sm" className={classes.numeric}>
                   정상 {t.passed} · 오류 {t.failed} · 수행중 {t.inProgress} · 미수행 {t.notStarted}
                   {t.unreported > 0 && ` · 미등록 ${t.unreported}`}
                 </Text>
               </Table.Td>
-              <Table.Td>
+              <Table.Td data-label="확인할 결과">
                 {t.awaitingReview > 0 ? (
                   <Text size="sm" fw={600} c="amber.7" className={classes.numeric}>
                     {t.awaitingReview}건
@@ -309,7 +315,7 @@ function TargetTable({
                   </Text>
                 )}
               </Table.Td>
-              <Table.Td>
+              <Table.Td data-label="마지막 등록">
                 <Text
                   size="sm"
                   c={t.lastReportedAt ? undefined : 'dimmed'}

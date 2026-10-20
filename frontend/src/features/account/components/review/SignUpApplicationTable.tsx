@@ -1,6 +1,7 @@
 import { Badge, Group, Skeleton, Stack, Table, Text } from '@mantine/core';
 
 import { formatDate, formatDateTime } from '../../../../shared/format';
+import tableClasses from '../../../../shared/list/ResponsiveTable.module.css';
 import { TableEmpty } from '../../../../shared/list/TableEmpty';
 import { OrgMonogram } from '../../../../shared/OrgMonogram';
 import type { SignUpApplicationResponse, SignUpReviewStatus } from '../../hooks';
@@ -43,7 +44,12 @@ export function SignUpApplicationTable({
   }
   const reviewed = status !== 'PENDING_APPROVAL';
   return (
-    <Table verticalSpacing="sm" highlightOnHover data-testid="sign-up-table">
+    <Table
+      verticalSpacing="sm"
+      highlightOnHover
+      data-testid="sign-up-table"
+      className={tableClasses.stack}
+    >
       <Table.Thead>
         <Table.Tr>
           <Table.Th>신청자</Table.Th>
@@ -79,7 +85,7 @@ export function SignUpApplicationTable({
                 {a.email}
               </Text>
             </Table.Td>
-            <Table.Td>
+            <Table.Td data-label="기관">
               <Group gap="sm" wrap="nowrap">
                 <OrgMonogram name={a.organizationName} type={a.organizationType} />
                 <div>
@@ -92,7 +98,7 @@ export function SignUpApplicationTable({
                 </div>
               </Group>
             </Table.Td>
-            <Table.Td>
+            <Table.Td data-label="담당 업무">
               <Group gap={4}>
                 {a.businesses.map((b) => (
                   <Badge
@@ -107,16 +113,16 @@ export function SignUpApplicationTable({
                 ))}
               </Group>
             </Table.Td>
-            <Table.Td>
+            <Table.Td data-label="직무">
               <Text size="sm">{a.jobRoleLabel}</Text>
             </Table.Td>
-            <Table.Td>
+            <Table.Td data-label="신청 일시">
               <Text size="sm" className={classes.numeric}>
                 {formatDateTime(a.appliedAt)}
               </Text>
             </Table.Td>
             {reviewed && (
-              <Table.Td>
+              <Table.Td data-label="처리">
                 <Group gap={6} wrap="nowrap">
                   <SignUpStatusBadge application={a} size="xs" />
                   <Text size="sm" c="dimmed" className={classes.numeric}>
