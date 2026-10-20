@@ -71,7 +71,7 @@ export function HomeCardView({ card, compact = false, stacked = false }: Props) 
         data-urgency={card.urgency !== 'NONE' ? card.urgency : undefined}
         data-testid={`home-card-${card.key}`}
       >
-        <Group justify="space-between" wrap="nowrap" gap="lg">
+        <Group justify="space-between" gap="sm">
           <Group gap="lg" wrap="nowrap" style={{ minWidth: 0 }}>
             {header}
             <Text size="sm" c="dimmed" truncate visibleFrom="md">

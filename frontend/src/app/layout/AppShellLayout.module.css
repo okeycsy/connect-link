@@ -33,6 +33,16 @@
   }
 }
 
+/* 오른쪽 도구 묶음. 휴대폰 폭에서는 검색 칸이 아이콘으로 바뀌어 로고 다음 자리부터 오른쪽으로 붙는다. */
+.tools {
+  margin-left: auto;
+  flex: 0 0 auto;
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    gap: 4px;
+  }
+}
+
 .user {
   display: flex;
   align-items: center;
@@ -115,6 +125,12 @@
     radial-gradient(circle 160px at 60% 102%, var(--cl-pastel-butter) 0%, transparent 100%),
     var(--cl-page);
   border-right: 1px solid var(--cl-line);
+
+  /* 휴대폰 폭: 메뉴가 화면 전체로 열리므로 사이드바가 레일 옆 남은 폭을 다 쓴다. */
+  @media (max-width: $mantine-breakpoint-sm) {
+    flex: 1 1 auto;
+    border-right: 0;
+  }
 }
 
 .groupTitle {
@@ -139,6 +155,11 @@
 
   &:hover {
     background: rgba(255, 255, 255, 0.7);
+  }
+
+  /* 손가락으로 누르기 쉽게 휴대폰 폭에서는 한 줄을 44px 로 키운다. */
+  @media (max-width: $mantine-breakpoint-sm) {
+    min-height: 44px;
   }
 
   &[data-unread] {
@@ -174,4 +195,13 @@
 .page {
   min-height: calc(100vh - 56px);
   padding: var(--cl-page-gutter);
+}
+
+/* 상단 바 로고 높이 40, 휴대폰 폭에서는 32. */
+.logo {
+  height: 40px;
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    height: 32px;
+  }
 }

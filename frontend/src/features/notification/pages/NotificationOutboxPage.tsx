@@ -3,6 +3,7 @@ import { useState } from 'react';
 
 import { formatDateTime } from '../../../shared/format';
 import { useNotificationOutbox } from '../hooks';
+import tableClasses from '../../../shared/list/ResponsiveTable.module.css';
 import { PageHeader } from '../../../shared/PageHeader';
 
 const PAGE_SIZE = 20;
@@ -32,7 +33,7 @@ export function NotificationOutboxPage() {
             ))}
           </Stack>
         ) : (
-          <Table verticalSpacing="sm" highlightOnHover>
+          <Table verticalSpacing="sm" highlightOnHover className={tableClasses.stack}>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th w={110}>채널</Table.Th>
@@ -45,10 +46,10 @@ export function NotificationOutboxPage() {
             <Table.Tbody>
               {data?.content.map((o) => (
                 <Table.Tr key={o.id}>
-                  <Table.Td>
+                  <Table.Td data-label="채널">
                     <Badge color={o.channel === 'EMAIL' ? 'sky' : 'clay'}>{o.channelLabel}</Badge>
                   </Table.Td>
-                  <Table.Td>
+                  <Table.Td data-label="받는 사람">
                     <Text size="sm" ff="monospace">
                       {o.recipient}
                     </Text>
@@ -63,12 +64,12 @@ export function NotificationOutboxPage() {
                       </Text>
                     )}
                   </Table.Td>
-                  <Table.Td>
+                  <Table.Td data-label="상태">
                     <Badge variant="outline" color="gray">
                       {o.statusLabel}
                     </Badge>
                   </Table.Td>
-                  <Table.Td>
+                  <Table.Td data-label="기록 일시">
                     <Text size="sm" c="dimmed">
                       {formatDateTime(o.createdAt)}
                     </Text>

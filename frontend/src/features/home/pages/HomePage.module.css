@@ -7,6 +7,17 @@
     radial-gradient(circle 420px at 100% 0%, var(--cl-pastel-peach) 0%, transparent 100%),
     radial-gradient(circle 360px at 78% -10%, var(--cl-pastel-sky) 0%, transparent 100%),
     var(--cl-page);
+
+  /* 휴대폰 폭: 여백을 본문 여백(16)에 맞추고 인사말을 한 단계 줄인다. */
+  @media (max-width: $mantine-breakpoint-sm) {
+    padding: 20px var(--cl-page-gutter) 32px;
+  }
+}
+
+.greeting {
+  @media (max-width: $mantine-breakpoint-sm) {
+    font-size: 26px;
+  }
 }
 
 /* 날짜 태그: sky-2 바탕, radius 4 */

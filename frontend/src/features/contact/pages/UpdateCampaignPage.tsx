@@ -33,6 +33,7 @@ import { ApiError, fieldErrorsOf } from '../../../api/client';
 import { ConfirmModal } from '../../../shared/ConfirmModal';
 import { formatDate, formatDateTime } from '../../../shared/format';
 import { ChipFilter } from '../../../shared/list/ChipFilter';
+import tableClasses from '../../../shared/list/ResponsiveTable.module.css';
 import { TableEmpty } from '../../../shared/list/TableEmpty';
 import { PageHeader } from '../../../shared/PageHeader';
 import { ErrorState, StateView } from '../../../shared/state/StateView';
@@ -235,7 +236,7 @@ function CampaignProgress({
 
   return (
     <Card data-testid="campaign-progress">
-      <Group justify="space-between" align="flex-start" mb="md" wrap="nowrap">
+      <Group justify="space-between" align="flex-start" mb="md" gap="sm">
         <div>
           <Group gap="xs">
             <Text fw={700} size="xl">
@@ -327,7 +328,11 @@ function CampaignProgress({
       </Group>
       {isError && <ErrorState error={error} />}
       <div style={{ opacity: isFetching ? 0.6 : 1, transition: 'opacity 120ms' }}>
-        <Table verticalSpacing="sm" data-testid="campaign-organizations">
+        <Table
+          verticalSpacing="sm"
+          data-testid="campaign-organizations"
+          className={tableClasses.stack}
+        >
           <Table.Thead>
             <Table.Tr>
               <Table.Th>기관</Table.Th>
@@ -348,12 +353,12 @@ function CampaignProgress({
                     {o.organizationCode}
                   </Text>
                 </Table.Td>
-                <Table.Td>
+                <Table.Td data-label="담당자">
                   <Text size="sm" className={classes.numeric}>
                     {o.contactCount}명
                   </Text>
                 </Table.Td>
-                <Table.Td>
+                <Table.Td data-label="현행화">
                   {o.completed ? (
                     <Stack gap={2} align="flex-start">
                       <Badge color="sky" size="sm">
@@ -369,7 +374,7 @@ function CampaignProgress({
                     </Badge>
                   )}
                 </Table.Td>
-                <Table.Td>
+                <Table.Td data-label="정보 변경">
                   {o.changed ? (
                     <Stack gap={2} align="flex-start">
                       <Badge color="clay" size="sm">
@@ -385,7 +390,7 @@ function CampaignProgress({
                     </Text>
                   )}
                 </Table.Td>
-                <Table.Td>
+                <Table.Td data-label="리마인드">
                   <Stack gap={2} align="flex-start">
                     {o.reminderCount > 0 ? (
                       <Text size="xs" c="dimmed" className={classes.numeric}>

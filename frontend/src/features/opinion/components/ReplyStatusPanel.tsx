@@ -16,6 +16,7 @@ import { useState } from 'react';
 import { formatDateTime } from '../../../shared/format';
 import { ChipFilter } from '../../../shared/list/ChipFilter';
 import { DetailDrawer } from '../../../shared/list/DetailDrawer';
+import tableClasses from '../../../shared/list/ResponsiveTable.module.css';
 import { TableEmpty } from '../../../shared/list/TableEmpty';
 import { StateView } from '../../../shared/state/StateView';
 import { stateKindOf } from '../../../shared/state/stateKind';
@@ -100,7 +101,12 @@ export function ReplyStatusPanel({ request }: { request: OpinionRequestDetail })
             {sentMessage}
           </Alert>
         )}
-        <Table verticalSpacing="sm" highlightOnHover data-testid="reply-status-table">
+        <Table
+          verticalSpacing="sm"
+          highlightOnHover
+          data-testid="reply-status-table"
+          className={tableClasses.stack}
+        >
           <Table.Thead>
             <Table.Tr>
               <Table.Th>기관</Table.Th>
@@ -136,15 +142,15 @@ export function ReplyStatusPanel({ request }: { request: OpinionRequestDetail })
                     )}
                   </Group>
                 </Table.Td>
-                <Table.Td>
+                <Table.Td data-label="회신 담당자">
                   <Text size="sm" c={r.recipientNames.length ? undefined : 'dimmed'}>
                     {r.recipientNames.length ? r.recipientNames.join(', ') : '지정 안 함'}
                   </Text>
                 </Table.Td>
-                <Table.Td>
+                <Table.Td data-label="상태">
                   <ReplyStatusBadge status={r.replyStatus} size="xs" />
                 </Table.Td>
-                <Table.Td>
+                <Table.Td data-label="제출 일시">
                   <Text size="sm" className={classes.numeric}>
                     {formatDateTime(r.submittedAt)}
                   </Text>

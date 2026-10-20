@@ -20,6 +20,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import { formatDate, formatPhone } from '../../../shared/format';
 import { ChipFilter } from '../../../shared/list/ChipFilter';
+import tableClasses from '../../../shared/list/ResponsiveTable.module.css';
 import { TableEmpty } from '../../../shared/list/TableEmpty';
 import { OrgMonogram } from '../../../shared/OrgMonogram';
 import { PageHeader } from '../../../shared/PageHeader';
@@ -306,7 +307,12 @@ function ContactTable({
   }
 
   return (
-    <Table verticalSpacing="sm" highlightOnHover data-testid="contact-table">
+    <Table
+      verticalSpacing="sm"
+      highlightOnHover
+      className={tableClasses.stack}
+      data-testid="contact-table"
+    >
       <Table.Thead>
         <Table.Tr>
           <Table.Th w={150}>이름</Table.Th>
@@ -323,7 +329,7 @@ function ContactTable({
           const first = group.rows[0];
           return (
             <Fragment key={group.organizationId}>
-              <Table.Tr className={classes.group} data-testid="contact-group">
+              <Table.Tr className={classes.group} data-group data-testid="contact-group">
                 <Table.Td colSpan={7}>
                   <Group gap="xs">
                     <OrgMonogram
@@ -378,30 +384,30 @@ function ContactTable({
                       </Text>
                     )}
                   </Table.Td>
-                  <Table.Td>
+                  <Table.Td data-label="직무">
                     <Text size="sm">{r.jobRoleLabel}</Text>
                   </Table.Td>
-                  <Table.Td>
+                  <Table.Td data-label="부서 · 팀">
                     <Text size="sm" lineClamp={2}>
                       {[r.department, r.team].filter(Boolean).join(' · ')}
                     </Text>
                   </Table.Td>
-                  <Table.Td>
+                  <Table.Td data-label="세부업무">
                     <Text size="sm" lineClamp={2} c={r.subBusiness ? undefined : 'dimmed'}>
                       {r.subBusiness || '-'}
                     </Text>
                   </Table.Td>
-                  <Table.Td>
+                  <Table.Td data-label="내선">
                     <Text size="sm" className={classes.numeric}>
                       {formatPhone(r.extensionPhone)}
                     </Text>
                   </Table.Td>
-                  <Table.Td>
+                  <Table.Td data-label="휴대폰">
                     <Text size="sm" className={classes.numeric}>
                       {formatPhone(r.mobilePhone) || '-'}
                     </Text>
                   </Table.Td>
-                  <Table.Td>
+                  <Table.Td data-label="최근 확인일">
                     <Group gap={6} wrap="nowrap">
                       <Text size="sm" className={classes.numeric}>
                         {formatDate(r.lastConfirmedAt)}

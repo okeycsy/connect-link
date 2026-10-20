@@ -17,6 +17,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ConfirmModal } from '../../../shared/ConfirmModal';
 import { formatDateTime, formatDateTimeRange } from '../../../shared/format';
 import { ChipFilter } from '../../../shared/list/ChipFilter';
+import tableClasses from '../../../shared/list/ResponsiveTable.module.css';
 import { TableEmpty } from '../../../shared/list/TableEmpty';
 import { PageHeader } from '../../../shared/PageHeader';
 import { ErrorState } from '../../../shared/state/StateView';
@@ -255,7 +256,12 @@ function SuspensionTable({
     );
   }
   return (
-    <Table verticalSpacing="sm" highlightOnHover data-testid="suspension-table">
+    <Table
+      verticalSpacing="sm"
+      highlightOnHover
+      data-testid="suspension-table"
+      className={tableClasses.stack}
+    >
       <Table.Thead>
         <Table.Tr>
           <Table.Th w={150}>기관</Table.Th>
@@ -291,7 +297,7 @@ function SuspensionTable({
                 </Text>
               )}
             </Table.Td>
-            <Table.Td>
+            <Table.Td data-label="중단 일시">
               <Group gap={6} wrap="nowrap">
                 <Text size="sm" className={classes.when}>
                   {formatDateTimeRange(r.startAt, r.endAt)}
@@ -299,15 +305,15 @@ function SuspensionTable({
                 <SuspensionPeriodBadge period={r.period} size="xs" />
               </Group>
             </Table.Td>
-            <Table.Td>
+            <Table.Td data-label="중단 이유">
               <Text size="sm" lineClamp={1}>
                 {r.reason}
               </Text>
             </Table.Td>
-            <Table.Td>
+            <Table.Td data-label="상태">
               <SuspensionStatusBadge status={r.status} size="xs" />
             </Table.Td>
-            <Table.Td>
+            <Table.Td data-label="등록">
               <Text size="sm">{r.registrantName}</Text>
               <Text size="xs" c="dimmed">
                 {r.registrantKftc ? '결제원' : '기관'}

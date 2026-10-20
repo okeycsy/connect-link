@@ -15,6 +15,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { formatDate, formatDateTime } from '../../../shared/format';
 import { ChipFilter } from '../../../shared/list/ChipFilter';
+import tableClasses from '../../../shared/list/ResponsiveTable.module.css';
 import { TableEmpty } from '../../../shared/list/TableEmpty';
 import { PageHeader } from '../../../shared/PageHeader';
 import { ErrorState } from '../../../shared/state/StateView';
@@ -159,7 +160,12 @@ function TestPlanTable({
     );
   }
   return (
-    <Table verticalSpacing="sm" highlightOnHover data-testid="test-plan-table">
+    <Table
+      verticalSpacing="sm"
+      highlightOnHover
+      data-testid="test-plan-table"
+      className={tableClasses.stack}
+    >
       <Table.Thead>
         <Table.Tr>
           <Table.Th>개발 건</Table.Th>
@@ -194,12 +200,12 @@ function TestPlanTable({
                 {r.subBusiness} · 요구사항 {r.itemCount}개
               </Text>
             </Table.Td>
-            <Table.Td>
+            <Table.Td data-label="수행 기간">
               <Text size="sm" className={classes.numeric}>
                 {formatDate(r.startDate)} ~ {formatDate(r.endDate)}
               </Text>
             </Table.Td>
-            <Table.Td>
+            <Table.Td data-label="수행률">
               <Group gap="xs" wrap="nowrap">
                 <Progress
                   value={r.progressRate}
@@ -214,7 +220,7 @@ function TestPlanTable({
                 </Text>
               </Group>
             </Table.Td>
-            <Table.Td>
+            <Table.Td data-label="완료">
               {manager ? (
                 <Text size="sm" className={classes.numeric}>
                   {r.completedTargetCount ?? 0}/{r.targetCount ?? 0}곳
@@ -232,13 +238,13 @@ function TestPlanTable({
                 </>
               )}
             </Table.Td>
-            <Table.Td>
+            <Table.Td data-label="상태">
               <Group gap={6} wrap="nowrap">
                 <TestPlanStateBadge state={r.state} size="xs" />
                 {r.overdue && <OverdueBadge size="xs" />}
               </Group>
             </Table.Td>
-            <Table.Td>
+            <Table.Td data-label="담당">
               <Text size="sm">{r.ownerName}</Text>
             </Table.Td>
           </Table.Tr>

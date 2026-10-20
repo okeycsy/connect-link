@@ -1,0 +1,83 @@
+/*
+ * 휴대폰 폭(sm, 48em 미만)에서 표를 카드 목록으로 바꾼다. 데스크톱·태블릿 폭에서는 아무것도 바꾸지 않는다.
+ * 쓰는 법: <Table className={tableClasses.stack}> 에 붙이고, 각 칸에 data-label="열 이름" 을 단다.
+ * 행 하나가 카드 한 장(radius 14, 1px line)이 되고, 칸은 "열 이름 | 값" 한 줄씩 쌓인다.
+ * data-label 이 없는 칸은 이름 없이 한 줄 전체를 쓴다(첫 칸의 제목 등). 기관별 묶음 머리 행에는 data-group 을 단다.
+ */
+.stack {
+  @media (max-width: $mantine-breakpoint-sm) {
+    display: block;
+
+    & thead {
+      display: none;
+    }
+
+    & tbody {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    & tr {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 12px 14px;
+      border: 1px solid var(--cl-line);
+      border-radius: var(--mantine-radius-lg);
+      background: var(--cl-card);
+    }
+
+    & td {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      min-width: 0;
+      padding: 0;
+      border: 0;
+      overflow-wrap: anywhere;
+    }
+
+    /* 카드 안에서는 날짜·번호처럼 한 줄로 묶어 둔 값도 폭이 모자라면 줄바꿈한다(배지는 그대로). */
+    & td *:not([class*='Badge']) {
+      white-space: normal;
+    }
+
+    /* 이름 없는 칸(제목 등)은 안의 줄을 위아래로 쌓는다. */
+    & td:not([data-label]) {
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    & td[data-label]::before {
+      content: attr(data-label);
+      flex: 0 0 84px;
+      padding-top: 1px;
+      font-size: var(--mantine-font-size-sm);
+      font-weight: 600;
+      color: var(--cl-ink-muted);
+    }
+
+    /* 값이 길면 남은 폭 안에서 줄바꿈한다. */
+    & td > * {
+      min-width: 0;
+    }
+
+    /* 묶음 머리 행(data-group): 카드가 아니라 카드 묶음 위의 제목 줄로 보인다. */
+    & tr[data-group] {
+      padding: 10px 2px 0;
+      border: 0;
+      background: transparent;
+    }
+
+    & tr[data-group] td {
+      padding: 0;
+      background: transparent;
+    }
+
+    /* 비어 있는 칸(값이 없는 선택 열 등)은 카드에서 뺀다. */
+    & td:empty {
+      display: none;
+    }
+  }
+}

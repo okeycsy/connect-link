@@ -35,7 +35,7 @@ export function HomePage() {
           <Box className={classes.dateTag}>
             {formatToday()} · {data?.businessLabel ?? '업무 영역'}
           </Box>
-          <Title order={1}>
+          <Title order={1} className={classes.greeting}>
             {data ? `안녕하세요, ${data.userName} 님` : '지금 할 일을 모으는 중입니다.'}
           </Title>
           {data && (

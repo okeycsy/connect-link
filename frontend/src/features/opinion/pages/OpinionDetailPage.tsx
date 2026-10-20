@@ -15,6 +15,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { formatDate, formatDateTime } from '../../../shared/format';
+import tableClasses from '../../../shared/list/ResponsiveTable.module.css';
 import { PageHeader } from '../../../shared/PageHeader';
 import { ErrorState } from '../../../shared/state/StateView';
 import { AttachmentPanel } from '../../attachment/components/AttachmentPanel';
@@ -301,7 +302,7 @@ function RequestContent({ request }: { request: OpinionRequestDetail }) {
           <Text fw={700} size="xl" mb="sm">
             대상 기관 {request.targets.length}곳
           </Text>
-          <Table verticalSpacing="sm" data-testid="target-table">
+          <Table verticalSpacing="sm" data-testid="target-table" className={tableClasses.stack}>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th w={180}>기관</Table.Th>
@@ -315,7 +316,7 @@ function RequestContent({ request }: { request: OpinionRequestDetail }) {
                   <Table.Td>
                     <Text fw={600}>{t.organizationName}</Text>
                   </Table.Td>
-                  <Table.Td>
+                  <Table.Td data-label="회신 담당자">
                     <Text size="sm" c={t.recipients.length ? undefined : 'dimmed'}>
                       {t.recipients.length
                         ? t.recipients
@@ -324,7 +325,7 @@ function RequestContent({ request }: { request: OpinionRequestDetail }) {
                         : '지정 안 함'}
                     </Text>
                   </Table.Td>
-                  <Table.Td>
+                  <Table.Td data-label="회신">
                     <ReplyStatusBadge status={t.replyStatus} size="xs" />
                   </Table.Td>
                 </Table.Tr>
