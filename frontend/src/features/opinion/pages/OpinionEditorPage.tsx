@@ -33,13 +33,63 @@ import {
   useRecipientCandidates,
   useUpdateOpinionRequest,
 } from '../hooks';
-import { isChoice, type QuestionDraft } from '../questions';
+import {
+  backwardJumpErrors,
+  formBody,
+  JUMP_NEXT,
+  jumpValueOf,
+  type QuestionDraft,
+  type SectionDraft,
+} from '../questions';
 
 interface Values {
   title: string;
   content: string;
   dueDate: string;
+  sections: SectionDraft[];
   questions: QuestionDraft[];
+}
+
+/** 고치는 요청의 섹션·질문을 편집 값으로. 섹션 키는 서버 ID 로 만든다. */
+function initialForm(existing?: OpinionRequestDetail): Pick<Values, 'sections' | 'questions'> {
+  if (!existing) {
+    // 새 요청은 섹션 하나와 빈 객관식 질문 하나로 시작한다. 질문이 있어야 회신 요청을 시작할 수 있다.
+    return {
+      sections: [{ key: 's-first', title: '', description: '', jump: JUMP_NEXT }],
+      questions: [
+        {
+          key: 'n-first',
+          sectionKey: 's-first',
+          type: 'SINGLE_CHOICE',
+          title: '',
+          required: true,
+          branching: false,
+          options: [
+            { label: '', jump: JUMP_NEXT },
+            { label: '', jump: JUMP_NEXT },
+          ],
+        },
+      ],
+    };
+  }
+  const keys = existing.sections.map((s) => `s${s.id}`);
+  return {
+    sections: existing.sections.map((s, i) => ({
+      key: keys[i],
+      title: s.title ?? '',
+      description: s.description ?? '',
+      jump: jumpValueOf(s.jump, keys),
+    })),
+    questions: existing.questions.map((q) => ({
+      key: `q${q.id}`,
+      sectionKey: keys[q.sectionIndex] ?? keys[0],
+      type: q.type,
+      title: q.title,
+      required: q.required,
+      branching: q.options.some((o) => o.jump != null),
+      options: q.options.map((o) => ({ label: o.label, jump: jumpValueOf(o.jump, keys) })),
+    })),
+  };
 }
 
 /**
@@ -103,16 +153,7 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
       title: existing?.title ?? '',
       content: existing?.content ?? '',
       dueDate: existing?.dueDate ?? dayjs().add(7, 'day').format('YYYY-MM-DD'),
-      questions: existing?.questions.map((q) => ({
-        key: `q${q.id}`,
-        type: q.type,
-        title: q.title,
-        required: q.required,
-        options: q.options.map((o) => o.label),
-      })) ?? [
-        // 새 요청은 빈 객관식 질문 하나로 시작한다. 질문이 있어야 회신 요청을 시작할 수 있다.
-        { key: 'n-first', type: 'SINGLE_CHOICE', title: '', required: true, options: ['', ''] },
-      ],
+      ...initialForm(existing),
     },
   });
   const [targets, setTargets] = useState<TargetValue[]>(
@@ -140,7 +181,10 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
   const generalError =
     mutation.isError &&
     (Object.keys(fieldErrors).length === 0 ||
-      Object.keys(fieldErrors).some((k) => !knownFields.includes(k) && !k.startsWith('questions.')))
+      Object.keys(fieldErrors).some(
+        (k) =>
+          !knownFields.includes(k) && !k.startsWith('questions.') && !k.startsWith('sections.'),
+      ))
       ? mutation.error.message
       : undefined;
 
@@ -169,16 +213,18 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
   };
 
   const submit = (values: Values) => {
+    if (!questionsLocked) {
+      const backward = backwardJumpErrors(values.sections, values.questions);
+      if (Object.keys(backward).length > 0) {
+        form.setErrors(backward);
+        return;
+      }
+    }
     const body = {
       title: values.title,
       content: values.content,
       dueDate: values.dueDate,
-      questions: values.questions.map((q) => ({
-        type: q.type,
-        title: q.title,
-        required: q.required,
-        options: isChoice(q.type) ? q.options : [],
-      })),
+      ...formBody(values.sections, values.questions),
       targets: targets.map((t) => ({
         organizationId: t.organizationId,
         recipientEmails: t.recipientEmails,
@@ -306,7 +352,7 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
               <Text size="sm" c="dimmed">
                 {questionsLocked
                   ? '회신을 받기 시작한 요청이라 질문은 고칠 수 없습니다.'
-                  : '기관에 물을 내용을 질문으로 나눠 넣습니다. 객관식(하나 고르기), 체크박스(여러 개 고르기), 주관식(글로 답하기) 중에서 고릅니다. 기관은 이 질문에만 답해 회신합니다. 회신 요청을 시작하려면 질문이 하나 이상 있어야 합니다.'}
+                  : '기관에 물을 내용을 질문으로 나눠 넣습니다. 객관식(하나 고르기), 체크박스(여러 개 고르기), 주관식(글로 답하기) 중에서 고릅니다. 섹션을 더하면 객관식 답에 따라 다른 섹션으로 넘어가게 할 수 있고, 기관은 지나는 섹션의 질문에만 답합니다. 회신 요청을 시작하려면 질문이 하나 이상 있어야 합니다.'}
               </Text>
             </div>
             <QuestionBuilder form={form} locked={questionsLocked} newKey={newKey} />

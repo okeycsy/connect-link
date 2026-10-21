@@ -88,13 +88,22 @@ export function CollationPanel({ request }: { request: OpinionRequestDetail }) {
                     </Text>
                   )}
                 </Table.Td>
-                {questions.map((q) => (
-                  <Table.Td key={q.questionId}>
-                    <Text size="sm" className={classes.content}>
-                      {r.answers.find((a) => a.questionId === q.questionId)?.value ?? ''}
-                    </Text>
-                  </Table.Td>
-                ))}
+                {questions.map((q) => {
+                  const answer = r.answers.find((a) => a.questionId === q.questionId);
+                  return (
+                    <Table.Td key={q.questionId}>
+                      {answer?.skipped ? (
+                        <Text size="sm" c="dimmed" data-testid="answer-skipped">
+                          건너뜀
+                        </Text>
+                      ) : (
+                        <Text size="sm" className={classes.content}>
+                          {answer?.value ?? ''}
+                        </Text>
+                      )}
+                    </Table.Td>
+                  );
+                })}
                 <Table.Td>
                   {r.replied && (
                     <Text size="sm" className={classes.numeric}>

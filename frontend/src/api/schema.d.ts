@@ -2179,21 +2179,39 @@ export interface components {
       editable: boolean;
       revisionRequestable: boolean;
     };
+    OpinionJump: {
+      /** @enum {string} */
+      type: 'SECTION' | 'END';
+      /** Format: int32 */
+      sectionIndex?: number | null;
+    } | null;
+    OpinionQuestionOptionRequest: {
+      label: string;
+      jump: components['schemas']['OpinionJump'];
+    } | null;
     OpinionQuestionRequest: {
+      /** Format: int32 */
+      sectionIndex?: number | null;
       /** @enum {string} */
       type: 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TEXT';
       title: string;
       required: boolean;
-      options?: (string | null)[] | null;
+      options?: components['schemas']['OpinionQuestionOptionRequest'][] | null;
     };
     OpinionRequestUpdateRequest: {
       title: string;
       content: string;
       /** Format: date */
       dueDate: string;
+      sections?: components['schemas']['OpinionSectionRequest'][] | null;
       questions: components['schemas']['OpinionQuestionRequest'][];
       targets: components['schemas']['OpinionTargetRequest'][];
     };
+    OpinionSectionRequest: {
+      title?: string | null;
+      description?: string | null;
+      jump: components['schemas']['OpinionJump'];
+    } | null;
     OpinionTargetRequest: {
       /** Format: int64 */
       organizationId: number;
@@ -2203,10 +2221,13 @@ export interface components {
       /** Format: int64 */
       id: number;
       label: string;
+      jump: components['schemas']['OpinionJump'];
     };
     OpinionQuestionResponse: {
       /** Format: int64 */
       id: number;
+      /** Format: int32 */
+      sectionIndex: number;
       /** @enum {string} */
       type: 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TEXT';
       typeLabel: string;
@@ -2246,6 +2267,7 @@ export interface components {
       createdAt: string;
       /** Format: date-time */
       updatedAt: string;
+      sections: components['schemas']['OpinionSectionResponse'][];
       questions: components['schemas']['OpinionQuestionResponse'][];
       targets: components['schemas']['OpinionTargetResponse'][];
       permissions: components['schemas']['OpinionRequestPermissions'];
@@ -2258,6 +2280,15 @@ export interface components {
       cancel: boolean;
       delete: boolean;
       reply: boolean;
+    };
+    OpinionSectionResponse: {
+      /** Format: int64 */
+      id: number;
+      /** Format: int32 */
+      index: number;
+      title?: string | null;
+      description?: string | null;
+      jump: components['schemas']['OpinionJump'];
     };
     OpinionTargetResponse: {
       /** Format: int64 */
@@ -2504,6 +2535,7 @@ export interface components {
       content: string;
       /** Format: date */
       dueDate: string;
+      sections?: components['schemas']['OpinionSectionRequest'][] | null;
       questions: components['schemas']['OpinionQuestionRequest'][];
       targets: components['schemas']['OpinionTargetRequest'][];
     };
@@ -2945,7 +2977,11 @@ export interface components {
       typeLabel: string;
       required: boolean;
       /** Format: int32 */
+      sectionIndex: number;
+      /** Format: int32 */
       answeredCount: number;
+      /** Format: int32 */
+      skippedCount: number;
       options: components['schemas']['OpinionCollationOptionCount'][];
       textAnswers: components['schemas']['OpinionCollationTextAnswer'][];
     };
@@ -2980,6 +3016,7 @@ export interface components {
       /** Format: int64 */
       questionId: number;
       value?: string | null;
+      skipped: boolean;
     };
     OpinionCollationSummary: {
       /** Format: int32 */
