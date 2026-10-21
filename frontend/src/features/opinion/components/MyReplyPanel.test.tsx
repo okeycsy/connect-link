@@ -23,31 +23,35 @@ const request = {
   closedAt: null,
   createdAt: '2026-10-09T09:00:00',
   updatedAt: '2026-10-10T09:00:00',
+  sections: [{ id: 41, index: 0, title: null, description: null, jump: null }],
   questions: [
     {
       id: 21,
+      sectionIndex: 0,
       type: 'SINGLE_CHOICE',
       typeLabel: '객관식',
       title: '적용 시기',
       required: true,
       options: [
-        { id: 31, label: '1월' },
-        { id: 32, label: '7월' },
+        { id: 31, label: '1월', jump: null },
+        { id: 32, label: '7월', jump: null },
       ],
     },
     {
       id: 22,
+      sectionIndex: 0,
       type: 'MULTIPLE_CHOICE',
       typeLabel: '체크박스',
       title: '영향받는 업무',
       required: false,
       options: [
-        { id: 33, label: '정산' },
-        { id: 34, label: '안내' },
+        { id: 33, label: '정산', jump: null },
+        { id: 34, label: '안내', jump: null },
       ],
     },
     {
       id: 23,
+      sectionIndex: 0,
       type: 'TEXT',
       typeLabel: '주관식',
       title: '월 조회 건수',
@@ -70,6 +74,35 @@ const request = {
 type Body = {
   answers?: { questionId: number; optionIds?: number[]; text?: string }[];
 };
+
+/**
+ * 섹션 셋인 요청. 21번(필수)에서 "1월" 은 섹션 2(22번)로, "7월" 은 섹션 3(23번)으로 간다. 섹션 2 를 마치면 회신이 끝난다.
+ */
+const branching = {
+  ...request,
+  sections: [
+    { id: 41, index: 0, title: '적용 여부', description: null, jump: null },
+    {
+      id: 42,
+      index: 1,
+      title: '1월 적용',
+      description: null,
+      jump: { type: 'END', sectionIndex: null },
+    },
+    { id: 43, index: 2, title: '7월 적용', description: '7월을 고른 기관만 답합니다.', jump: null },
+  ],
+  questions: request.questions.map((q, i) => ({
+    ...q,
+    sectionIndex: i,
+    options:
+      q.id === 21
+        ? [
+            { id: 31, label: '1월', jump: { type: 'SECTION', sectionIndex: 1 } },
+            { id: 32, label: '7월', jump: { type: 'SECTION', sectionIndex: 2 } },
+          ]
+        : q.options,
+  })),
+} as OpinionRequestDetail;
 
 const empty = {
   requestId: 7,
@@ -220,6 +253,37 @@ describe('MyReplyPanel', () => {
         { questionId: 21, optionIds: [32] },
         { questionId: 22, optionIds: [33, 34] },
         { questionId: 23, text: '약 1만 건' },
+      ],
+    });
+  });
+
+  it('고른 답에 따라 지나는 섹션의 질문만 보이고 그 답만 보낸다', async () => {
+    renderWithProviders(<MyReplyPanel request={branching} />, {
+      route: '/account-info/opinions/7',
+      path: '/:business/opinions/:id',
+    });
+
+    // 아직 고르지 않으면 선택지 이동이 없으니 섹션 2 로 가고, 섹션 2 다음은 회신 끝이다.
+    expect(await screen.findByText('섹션 1. 적용 여부')).toBeInTheDocument();
+    expect(screen.getAllByTestId('reply-section')).toHaveLength(2);
+
+    fireEvent.click(screen.getByRole('radio', { name: '7월' }));
+    expect(screen.queryByText('섹션 2. 1월 적용')).toBeNull();
+    expect(screen.queryByRole('checkbox', { name: '정산' })).toBeNull();
+    expect(screen.getByText('7월을 고른 기관만 답합니다.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('radio', { name: '1월' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: '정산' }));
+    expect(screen.queryByText('섹션 3. 7월 적용')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '최종제출' }));
+
+    const submitted = await screen.findByTestId('submitted-answers');
+    expect(submitted).toHaveTextContent('2. 영향받는 업무정산');
+    expect(submitted).not.toHaveTextContent('월 조회 건수');
+    expect(calls.writes.at(-1)?.body).toEqual({
+      answers: [
+        { questionId: 21, optionIds: [31] },
+        { questionId: 22, optionIds: [33] },
       ],
     });
   });

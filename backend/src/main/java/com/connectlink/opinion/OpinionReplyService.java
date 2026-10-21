@@ -145,8 +145,9 @@ public class OpinionReplyService {
   }
 
   /**
-   * 보낸 답을 저장할 칸으로 바꾼다. 이 요청의 질문·선택지여야 하고, 하나 고르기는 한 개까지다. 제출이면 필수 질문에 모두 답했는지도 본다. 오류는 그 질문
-   * 칸({@code answers.{질문 ID}})에 붙는다.
+   * 보낸 답을 저장할 칸으로 바꾼다. 이 요청의 질문·선택지여야 하고, 하나 고르기는 한 개까지다. 고른 답으로 정해지는 경로({@link
+   * OpinionQuestionPath}) 밖의 질문, 곧 건너뛴 섹션의 답은 버린다. 제출이면 경로 안의 필수 질문에 모두 답했는지도 본다. 오류는 그 질문 칸({@code
+   * answers.{질문 ID}})에 붙는다.
    */
   static List<Answer> toAnswers(
       OpinionRequest request, List<OpinionAnswerRequest> body, boolean submit) {
@@ -187,9 +188,13 @@ public class OpinionReplyService {
         }
       }
     }
+    Set<Long> path = path(request, answers);
+    answers.removeIf(a -> !path.contains(a.questionId()));
     if (submit) {
       for (OpinionQuestion question : request.getQuestions()) {
-        if (question.isRequired() && !answered.contains(question.getId())) {
+        if (path.contains(question.getId())
+            && question.isRequired()
+            && !answered.contains(question.getId())) {
           throw BusinessException.onField(
               HttpStatus.BAD_REQUEST,
               "OPINION_ANSWER_REQUIRED",
@@ -199,6 +204,17 @@ public class OpinionReplyService {
       }
     }
     return answers;
+  }
+
+  /** 이 답들로 지나는 질문 ID(경로 순서). 답하지 않은 객관식은 이동이 없는 것으로 본다. */
+  static Set<Long> path(OpinionRequest request, List<Answer> answers) {
+    Map<Long, Set<Long>> chosen =
+        answers.stream()
+            .filter(a -> a.optionId() != null)
+            .collect(
+                Collectors.groupingBy(
+                    Answer::questionId, Collectors.mapping(Answer::optionId, Collectors.toSet())));
+    return OpinionQuestionPath.of(request.getSections(), chosen);
   }
 
   /** 답을 "1. 질문: 답" 꼴로 한 줄씩(이력·엑셀용). 답이 없으면 null. */

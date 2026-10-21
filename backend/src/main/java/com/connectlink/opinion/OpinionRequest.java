@@ -72,9 +72,10 @@ public class OpinionRequest extends AuditedEntity {
   @Column(name = "cancel_reason", length = 500)
   private String cancelReason;
 
+  /** 섹션. 질문은 섹션에 묶여 함께 저장·삭제된다. */
   @OneToMany(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true)
   @BatchSize(size = 50)
-  private List<OpinionQuestion> questions = new ArrayList<>();
+  private List<OpinionSection> sections = new ArrayList<>();
 
   @OneToMany(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true)
   @BatchSize(size = 50)
@@ -144,15 +145,22 @@ public class OpinionRequest extends AuditedEntity {
     }
   }
 
-  /** 질문을 통째로 바꾼다. 작성중에만 부른다(회신중에는 답이 질문을 가리킨다). */
-  void replaceQuestions(List<OpinionQuestion.Draft> drafts) {
+  /**
+   * 섹션과 질문을 통째로 바꾼다. 작성중에만 부른다(회신중에는 답이 질문을 가리킨다). 질문은 {@code sectionIndex} 로 섹션에 묶이고 순서는 요청 전체에서
+   * 센다.
+   */
+  void replaceForm(List<OpinionSection.Draft> sectionDrafts, List<OpinionQuestion.Draft> drafts) {
     if (status != OpinionRequestStatus.DRAFT) {
       throw new IllegalStateException("작성중 요청만 질문을 바꿀 수 있습니다: " + status);
     }
-    questions.clear();
+    sections.clear();
+    List<OpinionSection> created = new ArrayList<>();
+    for (int i = 0; i < sectionDrafts.size(); i++) {
+      created.add(new OpinionSection(this, i, sectionDrafts.get(i)));
+    }
+    sections.addAll(created);
     for (int i = 0; i < drafts.size(); i++) {
-      OpinionQuestion.Draft d = drafts.get(i);
-      questions.add(new OpinionQuestion(this, i, d.type(), d.title(), d.required(), d.options()));
+      created.get(drafts.get(i).sectionIndex()).addQuestion(i, drafts.get(i));
     }
   }
 
@@ -224,9 +232,15 @@ public class OpinionRequest extends AuditedEntity {
     return cancelReason;
   }
 
-  /** 질문. 정한 순서다. */
+  /** 섹션. 정한 순서다. */
+  public List<OpinionSection> getSections() {
+    return sections.stream().sorted(Comparator.comparingInt(OpinionSection::getSortOrder)).toList();
+  }
+
+  /** 질문. 섹션을 넘어 정한 순서다. */
   public List<OpinionQuestion> getQuestions() {
-    return questions.stream()
+    return sections.stream()
+        .flatMap(s -> s.getQuestions().stream())
         .sorted(Comparator.comparingInt(OpinionQuestion::getSortOrder))
         .toList();
   }

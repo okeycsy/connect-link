@@ -30,13 +30,13 @@ import {
   useSaveOpinionReplyDraft,
   useSubmitOpinionReply,
 } from '../hooks';
-import { answerText } from '../questions';
+import { answerText, questionPath, sectionName, sectionPath } from '../questions';
 import { ReplyStatusBadge } from './OpinionBadges';
 import { ReasonModal } from './OpinionModals';
 import classes from './OpinionTable.module.css';
 
 /**
- * 우리 기관 회신(기관 담당자). 결제원 담당자가 넣은 질문에 답하고 근거자료를 붙여 임시저장하거나 최종제출한다. 제출한 뒤에는 제출 내용을 보고,
+ * 우리 기관 회신(기관 담당자). 결제원 담당자가 넣은 질문에 답하고(섹션이 있으면 고른 답에 따라 지나는 섹션의 질문만 보인다) 근거자료를 붙여 임시저장하거나 최종제출한다. 제출한 뒤에는 제출 내용을 보고,
  * 고치려면 수정 요청을 한다(결제원 담당자가 승인하면 다시 고칠 수 있다).
  */
 export function MyReplyPanel({ request }: { request: OpinionRequestDetail }) {
@@ -121,19 +121,26 @@ function SubmittedReply({
   reply: OpinionMyReply;
 }) {
   const answers = new Map(reply.answers.map((a) => [a.questionId, a]));
+  const path = questionPath(
+    request.sections,
+    request.questions,
+    (id) => answers.get(id)?.optionIds ?? [],
+  );
   return (
     <Stack gap="sm" data-testid="submitted-reply">
       <Stack gap="sm" data-testid="submitted-answers">
-        {request.questions.map((q, index) => (
-          <div key={q.id}>
-            <Text size="sm" fw={600}>
-              {index + 1}. {q.title}
-            </Text>
-            <Text className={classes.content}>
-              {answerText(q, answers.get(q.id)) || '(답하지 않음)'}
-            </Text>
-          </div>
-        ))}
+        {request.questions.map((q, index) =>
+          !path.has(q.id) ? null : (
+            <div key={q.id}>
+              <Text size="sm" fw={600}>
+                {index + 1}. {q.title}
+              </Text>
+              <Text className={classes.content}>
+                {answerText(q, answers.get(q.id)) || '(답하지 않음)'}
+              </Text>
+            </div>
+          ),
+        )}
       </Stack>
       <Text size="sm" c="dimmed">
         {reply.replierName} · {formatDateTime(reply.submittedAt)} 제출
@@ -191,8 +198,15 @@ function ReplyEditor({ request, reply }: { request: OpinionRequestDetail; reply:
   const generalError =
     failed && Object.keys(fieldErrorsOf(failed)).length === 0 ? failed.message : undefined;
 
+  // 고른 답에 따라 지나는 질문. 건너뛴 섹션의 답은 보이지 않고 보내지도 않는다(서버도 버린다).
+  const chosen = (id: number) => form.values.answers[String(id)]?.optionIds ?? [];
+  const visited = sectionPath(request.sections, request.questions, chosen);
+  const path = questionPath(request.sections, request.questions, chosen);
+  const multiSection = request.sections.length > 1;
+
   const body = () => ({
     answers: request.questions
+      .filter((q) => path.has(q.id))
       .map((q): OpinionAnswerRequest | null => {
         const a = form.values.answers[String(q.id)];
         if (q.type === 'TEXT') {
@@ -205,19 +219,38 @@ function ReplyEditor({ request, reply }: { request: OpinionRequestDetail; reply:
 
   return (
     <Stack gap="md">
-      {request.questions.map((q, index) => (
-        <QuestionAnswer
-          key={q.id}
-          number={index + 1}
-          question={q}
-          value={form.values.answers[String(q.id)]}
-          error={form.errors[`answers.${q.id}`]}
-          onChange={(v) => {
-            form.setFieldValue('answers', { ...form.values.answers, [String(q.id)]: v });
-            form.clearFieldError(`answers.${q.id}`);
-          }}
-        />
-      ))}
+      {request.sections.map((section) => {
+        // 지나지 않는 섹션은 통째로 숨긴다. 답을 바꾸면 바로 다시 정해진다.
+        if (!visited.has(section.index)) return null;
+        const mine = request.questions.filter((q) => q.sectionIndex === section.index);
+        return (
+          <Stack key={section.id} gap="md" data-testid="reply-section">
+            {multiSection && (
+              <div>
+                <Text fw={700}>{sectionName(section.index, section.title)}</Text>
+                {section.description && (
+                  <Text size="sm" c="dimmed" className={classes.content}>
+                    {section.description}
+                  </Text>
+                )}
+              </div>
+            )}
+            {mine.map((q) => (
+              <QuestionAnswer
+                key={q.id}
+                number={request.questions.indexOf(q) + 1}
+                question={q}
+                value={form.values.answers[String(q.id)]}
+                error={form.errors[`answers.${q.id}`]}
+                onChange={(v) => {
+                  form.setFieldValue('answers', { ...form.values.answers, [String(q.id)]: v });
+                  form.clearFieldError(`answers.${q.id}`);
+                }}
+              />
+            ))}
+          </Stack>
+        );
+      })}
       <div>
         <Text size="sm" fw={500} mb={4}>
           근거자료

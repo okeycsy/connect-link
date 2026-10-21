@@ -35,6 +35,7 @@ import {
   useOpenOpinionRequest,
   useOpinionRequest,
 } from '../hooks';
+import { jumpText, sectionName } from '../questions';
 
 type Tab = 'content' | 'replies' | 'collation' | 'reminders' | 'history';
 const TABS: Tab[] = ['content', 'replies', 'collation', 'reminders', 'history'];
@@ -271,24 +272,46 @@ function RequestContent({ request }: { request: OpinionRequestDetail }) {
             <Text fw={700} size="xl">
               질문 {request.questions.length}개
             </Text>
-            {request.questions.map((q, index) => (
-              <Stack key={q.id} gap={2}>
-                <Group gap="xs">
-                  <Text fw={600}>
-                    {index + 1}. {q.title}
+            {request.sections.map((section) => (
+              <Stack key={section.id} gap="xs">
+                {request.sections.length > 1 && (
+                  <Text fw={700} data-testid="detail-section">
+                    {sectionName(section.index, section.title)}
                   </Text>
-                  <Badge size="sm" color="gray" variant="outline">
-                    {q.typeLabel}
-                  </Badge>
-                  {q.required && (
-                    <Badge size="sm" color="amber">
-                      필수
-                    </Badge>
-                  )}
-                </Group>
-                {q.options.length > 0 && (
+                )}
+                {request.questions
+                  .filter((q) => q.sectionIndex === section.index)
+                  .map((q) => (
+                    <Stack key={q.id} gap={2}>
+                      <Group gap="xs">
+                        <Text fw={600}>
+                          {request.questions.indexOf(q) + 1}. {q.title}
+                        </Text>
+                        <Badge size="sm" color="gray" variant="outline">
+                          {q.typeLabel}
+                        </Badge>
+                        {q.required && (
+                          <Badge size="sm" color="amber">
+                            필수
+                          </Badge>
+                        )}
+                      </Group>
+                      {q.options.length > 0 && (
+                        <Text size="sm" c="dimmed">
+                          {q.options
+                            .map((o) => {
+                              const jump = jumpText(o.jump, request.sections);
+                              return jump ? `${o.label} → ${jump}` : o.label;
+                            })
+                            .join(' / ')}
+                        </Text>
+                      )}
+                    </Stack>
+                  ))}
+                {request.sections.length > 1 && section.index < request.sections.length - 1 && (
                   <Text size="sm" c="dimmed">
-                    {q.options.map((o) => o.label).join(' / ')}
+                    섹션 {section.index + 1} 다음:{' '}
+                    {jumpText(section.jump, request.sections) ?? '다음 섹션으로 계속'}
                   </Text>
                 )}
               </Stack>

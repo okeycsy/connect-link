@@ -4,7 +4,7 @@ import type { OpinionCollation } from '../hooks';
 import classes from './OpinionTable.module.css';
 
 /**
- * 질문별 답 집계(결제원 담당자). 제출한 기관의 답만 센다. 객관식·체크박스는 선택지마다 고른 기관 수와 이름, 주관식은 기관별 답을 보인다.
+ * 질문별 답 집계(결제원 담당자). 제출한 기관의 답만 센다. 섹션 이동으로 질문을 건너뛴 기관은 따로 센다. 객관식·체크박스는 선택지마다 고른 기관 수와 이름, 주관식은 기관별 답을 보인다.
  * 막대 폭은 제출 기관 수 대비다.
  */
 export function QuestionSummary({ collation }: { collation: OpinionCollation }) {
@@ -32,6 +32,7 @@ export function QuestionSummary({ collation }: { collation: OpinionCollation }) 
               )}
               <Text size="sm" c="dimmed">
                 답한 기관 {q.answeredCount}곳
+                {q.skippedCount > 0 && ` · 고른 답에 따라 건너뛴 기관 ${q.skippedCount}곳`}
               </Text>
             </Group>
             {q.type === 'TEXT' ? (

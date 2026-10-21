@@ -303,9 +303,16 @@ function ReplyDrawer({
                         <Text size="sm" fw={600}>
                           {index + 1}. {q.title}
                         </Text>
-                        <Text size="md" className={classes.content}>
-                          {row.answers.find((a) => a.questionId === q.id)?.value ?? '(답하지 않음)'}
-                        </Text>
+                        {row.answers.find((a) => a.questionId === q.id)?.skipped ? (
+                          <Text size="md" c="dimmed">
+                            (고른 답에 따라 건너뜀)
+                          </Text>
+                        ) : (
+                          <Text size="md" className={classes.content}>
+                            {row.answers.find((a) => a.questionId === q.id)?.value ??
+                              '(답하지 않음)'}
+                          </Text>
+                        )}
                       </div>
                     ))}
                   </Stack>
