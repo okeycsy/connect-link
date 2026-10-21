@@ -69,6 +69,9 @@ public class TestDataService {
       CurrentUser user, Long planId, Long organizationId, TestDataSaveRequest body) {
     TestPlanTarget target = loadTarget(user, planId, organizationId);
     accessPolicy.ensureCanReport(user, target);
+    if (!target.getPlan().isTestDataRequested()) {
+      throw BusinessException.conflict("TEST_DATA_NOT_REQUESTED", "테스트데이터를 요청하지 않은 기관 테스트입니다.");
+    }
     TestDataStatus beforeStatus = target.getTestDataStatus();
     String beforeNote = target.getTestDataNote();
     String note = blankToNull(body.note());
@@ -123,7 +126,7 @@ public class TestDataService {
         fileCount(target),
         target.getTestDataReportedByName(),
         target.getTestDataReportedAt(),
-        accessPolicy.canReport(user, target));
+        target.getPlan().isTestDataRequested() && accessPolicy.canReport(user, target));
   }
 
   /** 테스트를 볼 수 있는지 먼저 확인한 뒤 대상 기관을 찾는다(볼 수 없는 테스트의 대상 여부를 드러내지 않는다). */

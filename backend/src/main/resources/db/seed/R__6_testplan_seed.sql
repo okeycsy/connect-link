@@ -177,6 +177,18 @@ FROM (VALUES
 JOIN test_plan p ON p.title = r.plan_title
 JOIN user_account u ON u.email = r.email;
 
+-- 테스트 전 테스트데이터 사전 요청(V21). 회신 기한은 수행 시작일 앞이다. 요청 메일은 테스트를 만들 때 함께 갔다.
+UPDATE test_plan
+SET test_data_requested = TRUE, test_data_due_date = CAST(CURRENT_DATE - 9 * INTERVAL '1' DAY AS DATE),
+    test_data_instruction = '해지 예정 계좌를 포함해 테스트 계좌를 10개 이상 만들고 첨부 양식에 계좌번호·상태를 적어 올려 주세요.',
+    test_data_requested_at = created_at
+WHERE title = '계좌정보 통합조회 전문 개선 2차';
+UPDATE test_plan
+SET test_data_requested = TRUE, test_data_due_date = CAST(CURRENT_DATE - 4 * INTERVAL '1' DAY AS DATE),
+    test_data_instruction = '자동이체 등록 계좌 3개(수납기관 서로 다르게)를 만들어 주세요.',
+    test_data_requested_at = created_at
+WHERE title = '자동이체 통합조회 응답 항목 추가';
+
 -- 테스트 전 테스트데이터 준비(V21). 기관별 생성 여부·메모. 시각은 오늘 0시 기준 시간이다. 나머지 대상 기관은 미생성 그대로 둔다.
 -- 파일은 임시 디렉터리 저장소에 두므로 샘플로 넣지 않는다(시연 때 올려 보인다).
 UPDATE test_plan_target

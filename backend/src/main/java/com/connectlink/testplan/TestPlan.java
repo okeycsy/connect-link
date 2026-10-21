@@ -85,7 +85,26 @@ public class TestPlan extends AuditedEntity {
   @BatchSize(size = 50)
   private List<TestPlanRecipient> recipients = new ArrayList<>();
 
+  /** 수행 기간 전에 기관별 테스트데이터를 받는지. */
+  @Column(name = "test_data_requested", nullable = false)
+  private boolean testDataRequested;
+
+  /** 테스트데이터 회신 기한(수행 시작일 이전). 요청하지 않으면 null. */
+  @Column(name = "test_data_due_date")
+  private LocalDate testDataDueDate;
+
+  /** 테스트데이터 요청 사항(어떤 데이터를 몇 건 만들지 등). */
+  @Column(name = "test_data_instruction", length = 2000)
+  private String testDataInstruction;
+
+  /** 테스트데이터 요청 메일을 마지막으로 보낸 일시. */
+  @Column(name = "test_data_requested_at")
+  private LocalDateTime testDataRequestedAt;
+
   protected TestPlan() {}
+
+  /** 테스트데이터 사전 요청. 회신 기한과 요청 사항. */
+  public record TestDataRequest(LocalDate dueDate, String instruction) {}
 
   /** 만들기·고치기 양식의 기본 정보. 업무는 만든 뒤 바꾸지 않는다. */
   public record Content(
@@ -118,6 +137,21 @@ public class TestPlan extends AuditedEntity {
     this.description = content.description();
     this.startDate = content.startDate();
     this.endDate = content.endDate();
+  }
+
+  /** 테스트데이터 사전 요청을 정한다. null 이면 요청하지 않는다. */
+  void changeTestDataRequest(TestDataRequest request) {
+    this.testDataRequested = request != null;
+    this.testDataDueDate = request == null ? null : request.dueDate();
+    this.testDataInstruction = request == null ? null : request.instruction();
+    if (request == null) {
+      this.testDataRequestedAt = null;
+    }
+  }
+
+  /** 테스트데이터 요청 메일을 보냈다. */
+  void testDataRequestSent(LocalDateTime now) {
+    this.testDataRequestedAt = now;
   }
 
   /**
@@ -232,6 +266,22 @@ public class TestPlan extends AuditedEntity {
 
   public LocalDate getStartDate() {
     return startDate;
+  }
+
+  public boolean isTestDataRequested() {
+    return testDataRequested;
+  }
+
+  public LocalDate getTestDataDueDate() {
+    return testDataDueDate;
+  }
+
+  public String getTestDataInstruction() {
+    return testDataInstruction;
+  }
+
+  public LocalDateTime getTestDataRequestedAt() {
+    return testDataRequestedAt;
   }
 
   public LocalDate getEndDate() {

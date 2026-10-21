@@ -43,7 +43,7 @@ class TestPlanNotifier {
     return plan.getBusiness().getLabel() + " " + plan.getTitle();
   }
 
-  /** 테스트가 열렸다(만들었거나 대상 기관으로 더해졌다). 대상 기관 담당자에게 알림과 메일. */
+  /** 테스트가 열렸다(만들었거나 대상 기관으로 더해졌다). 대상 기관 담당자에게 알림과 메일. 테스트데이터를 요청했으면 함께 알린다. */
   void opened(TestPlan plan, Collection<String> organizationEmails) {
     publish(
         organizationEmails,
@@ -55,8 +55,30 @@ class TestPlanNotifier {
             + periodText(plan)
             + " · 요구사항 "
             + plan.getItems().size()
-            + "개. 요구사항별 결과를 등록해 주세요.",
+            + "개. "
+            + (plan.isTestDataRequested()
+                ? testDataText(plan) + " 수행 기간에는 요구사항별 결과를 등록해 주세요."
+                : "요구사항별 결과를 등록해 주세요."),
         EnumSet.of(NotificationChannel.EMAIL));
+  }
+
+  /** 테스트데이터를 요청한다(새로 요청했거나 미생성 기관에 다시 보냈다). 대상 기관 담당자에게 알림과 메일. */
+  void testDataRequested(TestPlan plan, Collection<String> organizationEmails) {
+    publish(
+        organizationEmails,
+        plan,
+        NotificationType.TEST_DATA_REQUESTED,
+        headline(plan) + " 테스트데이터를 요청합니다",
+        plan.getSubBusiness() + " · 수행 기간 " + periodText(plan) + ". " + testDataText(plan),
+        EnumSet.of(NotificationChannel.EMAIL));
+  }
+
+  /** "수행 전 테스트데이터를 2026-10-25 까지 만들어 올려 주세요(요청 사항: …)." */
+  private static String testDataText(TestPlan plan) {
+    String text = "수행 전 테스트데이터를 " + plan.getTestDataDueDate().format(DATE) + " 까지 만들어 올려 주세요";
+    return plan.getTestDataInstruction() == null
+        ? text + "."
+        : text + "(요청 사항: " + plan.getTestDataInstruction() + ").";
   }
 
   /**

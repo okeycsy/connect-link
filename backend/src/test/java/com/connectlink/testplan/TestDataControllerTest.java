@@ -106,6 +106,9 @@ class TestDataControllerTest {
     body.put("endDate", LocalDate.now().plusDays(7).toString());
     body.put("items", List.of(Map.of("title", "잔액 조회 확인")));
     body.put("organizationIds", organizationIds);
+    body.put(
+        "testDataRequest",
+        Map.of("dueDate", LocalDate.now().toString(), "instruction", "테스트 계좌 10개"));
     return body;
   }
 
@@ -195,6 +198,82 @@ class TestDataControllerTest {
             hong())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content[0].changes[0].label").value("테스트데이터 메모"));
+  }
+
+  @Test
+  void 테스트데이터_회신_기한은_수행_시작일보다_뒤일_수_없다() throws Exception {
+    Map<String, Object> body = planBody("기한 검증", List.of(orgId("004")));
+    body.put("testDataRequest", Map.of("dueDate", LocalDate.now().plusDays(1).toString()));
+    send(post(BASE), body, hong())
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("TEST_DATA_DUE_DATE_INVALID"))
+        .andExpect(jsonPath("$.fieldErrors[0].field").value("testDataRequest.dueDate"));
+  }
+
+  @Test
+  void 테스트를_만들면_열림_메일에_테스트데이터_요청이_담기고_상세에_요청_현황이_보인다() throws Exception {
+    Long planId = create("요청 메일");
+    assertThat(outboxRepository.findAll())
+        .filteredOn(o -> o.getSubject().contains("요청 메일"))
+        .filteredOn(o -> o.getChannel() == NotificationChannel.EMAIL)
+        .allMatch(o -> o.getBody().contains("수행 전 테스트데이터를"))
+        .isNotEmpty();
+    send(get(BASE + "/" + planId), null, hong())
+        .andExpect(jsonPath("$.testDataRequest.instruction").value("테스트 계좌 10개"))
+        .andExpect(jsonPath("$.testDataRequest.targetCount").value(2))
+        .andExpect(jsonPath("$.testDataRequest.createdCount").value(0))
+        .andExpect(jsonPath("$.testDataRequest.requestedAt").isNotEmpty());
+    send(get(BASE + "/" + planId), null, kim())
+        .andExpect(jsonPath("$.testDataRequest.targetCount").value(1));
+  }
+
+  @Test
+  void 결제원은_미생성_기관에만_요청을_다시_보내고_기관은_보내지_못한다() throws Exception {
+    Long planId = create("요청 다시 보내기");
+    send(put(testData(planId, "004")), data("CREATED", null), kim()).andExpect(status().isOk());
+    send(post(BASE + "/" + planId + "/test-data-requests"), null, kim())
+        .andExpect(status().isForbidden());
+    send(post(BASE + "/" + planId + "/test-data-requests"), null, hong())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.organizationCount").value(1));
+    assertThat(
+            notificationRepository.findAll().stream()
+                .filter(n -> n.getType() == NotificationType.TEST_DATA_REQUESTED)
+                .filter(n -> n.getTitle().contains("요청 다시 보내기"))
+                .map(n -> n.getRecipientEmail()))
+        .containsExactly("choi.yujin@samsung.example.com");
+    send(put(testData(planId, "240")), data("CREATED", null), choi()).andExpect(status().isOk());
+    send(post(BASE + "/" + planId + "/test-data-requests"), null, hong())
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("TEST_DATA_ALL_CREATED"));
+  }
+
+  @Test
+  void 요청하지_않은_테스트에는_테스트데이터를_올리지_못하고_등록이_있으면_요청을_거둘_수_없다() throws Exception {
+    Map<String, Object> body = planBody("요청 없음", List.of(orgId("004")));
+    body.remove("testDataRequest");
+    Long planId =
+        json(send(post(BASE), body, hong()).andExpect(status().isCreated())).get("id").asLong();
+    send(get(BASE + "/" + planId), null, hong())
+        .andExpect(jsonPath("$.testDataRequest").doesNotExist());
+    send(put(testData(planId, "004")), data("CREATED", null), kim())
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("TEST_DATA_NOT_REQUESTED"));
+    Long target = json(send(get(testData(planId, "004")), null, kim())).get("targetId").asLong();
+    upload("TEST_DATA", target, kim()).andExpect(status().isForbidden());
+
+    // 나중에 요청하면 대상 기관에 요청 메일이 간다.
+    send(put(BASE + "/" + planId), planBody("요청 없음", List.of(orgId("004"))), hong())
+        .andExpect(status().isOk());
+    assertThat(
+            notificationRepository.findAll().stream()
+                .filter(n -> n.getType() == NotificationType.TEST_DATA_REQUESTED)
+                .filter(n -> n.getTitle().contains("요청 없음")))
+        .hasSize(1);
+    send(put(testData(planId, "004")), data("CREATED", null), kim()).andExpect(status().isOk());
+    send(put(BASE + "/" + planId), body, hong())
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("TEST_DATA_ALREADY_REPORTED"));
   }
 
   @Test

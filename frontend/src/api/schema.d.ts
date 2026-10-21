@@ -365,6 +365,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/test-plans/{id}/test-data-requests': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 테스트데이터 요청 다시 보내기
+     * @description 그 업무 결제원 담당자가 아직 생성 완료가 아닌 대상 기관 담당자에게 테스트데이터 요청 메일을 다시 보낸다. 요청하지 않은 테스트면 409 TEST_DATA_NOT_REQUESTED, 모두 생성 완료면 409 TEST_DATA_ALL_CREATED.
+     */
+    post: operations['sendRequest'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/suspensions': {
     parameters: {
       query?: never;
@@ -1899,6 +1919,11 @@ export interface components {
       progressRate: number;
       autoCreated: boolean;
     };
+    TestDataRequestForm: {
+      /** Format: date */
+      dueDate: string;
+      instruction?: string | null;
+    } | null;
     TestItemRequest: {
       /** Format: int64 */
       id?: number | null;
@@ -1917,7 +1942,20 @@ export interface components {
       endDate: string;
       items: components['schemas']['TestItemRequest'][];
       organizationIds: number[];
+      testDataRequest: components['schemas']['TestDataRequestForm'];
     };
+    TestDataRequestResponse: {
+      /** Format: date */
+      dueDate: string;
+      instruction?: string | null;
+      /** Format: date-time */
+      requestedAt?: string | null;
+      overdue: boolean;
+      /** Format: int32 */
+      createdCount: number;
+      /** Format: int32 */
+      targetCount: number;
+    } | null;
     TestItemResponse: {
       /** Format: int64 */
       id: number;
@@ -1953,6 +1991,7 @@ export interface components {
       /** Format: int64 */
       ownOrganizationId?: number | null;
       recipients: string[];
+      testDataRequest: components['schemas']['TestDataRequestResponse'];
       /** Format: date-time */
       createdAt: string;
       /** Format: date-time */
@@ -2446,6 +2485,12 @@ export interface components {
       /** Format: int32 */
       skippedOrganizationCount: number;
     };
+    TestDataRequestSentResponse: {
+      /** Format: int32 */
+      organizationCount: number;
+      /** Format: date-time */
+      requestedAt: string;
+    };
     SuspensionHandoverRequest: {
       handover: string;
     };
@@ -2600,6 +2645,7 @@ export interface components {
         | 'TEST_PLAN_OPENED'
         | 'TEST_RESULT_REPORTED'
         | 'TEST_RESULT_FEEDBACK'
+        | 'TEST_DATA_REQUESTED'
         | 'TEST_DATA_REPORTED'
         | 'SUSPENSION_CHANGED'
         | 'SYSTEM';
@@ -4087,6 +4133,28 @@ export interface operations {
         };
         content: {
           '*/*': components['schemas']['TestPlanDetailResponse'];
+        };
+      };
+    };
+  };
+  sendRequest: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['TestDataRequestSentResponse'];
         };
       };
     };
