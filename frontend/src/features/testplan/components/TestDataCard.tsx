@@ -14,10 +14,16 @@ import { IconCheck } from '@tabler/icons-react';
 import { useState } from 'react';
 
 import { fieldErrorsOf } from '../../../api/client';
-import { formatDateTime } from '../../../shared/format';
+import { formatDate, formatDateTime } from '../../../shared/format';
 import { ErrorState } from '../../../shared/state/StateView';
 import { AttachmentPanel } from '../../attachment/components/AttachmentPanel';
-import { type TestData, type TestDataStatus, useSaveTestData, useTestData } from '../hooks';
+import {
+  type TestData,
+  type TestDataRequestInfo,
+  type TestDataStatus,
+  useSaveTestData,
+  useTestData,
+} from '../hooks';
 
 const STATUS_OPTIONS: { value: TestDataStatus; label: string }[] = [
   { value: 'NOT_CREATED', label: '미생성' },
@@ -34,23 +40,40 @@ export function TestDataBadge({ status, label }: { status: TestDataStatus; label
 }
 
 /**
- * 테스트 전 대상 기관 한 곳의 테스트데이터 준비. 기관 담당자는 결제원이 지정한 회신 양식을 내려받아 테스트데이터를 만들고, 생성 여부·메모를 저장하고
+ * 수행 전 대상 기관 한 곳의 테스트데이터 준비. 회신 기한과 결제원 요청 사항을 보이고, 기관 담당자는 결제원이 지정한 회신 양식을 내려받아 테스트데이터를 만들고, 생성 여부·메모를 저장하고
  * 만든 파일을 올린다. 결제원 담당자는 같은 내용을 읽기만 한다.
  */
 export function TestDataCard({
   planId,
   organizationId,
+  request,
 }: {
   planId: number;
   organizationId: number;
+  request: TestDataRequestInfo;
 }) {
   const { data, isError, error } = useTestData(planId, organizationId);
   if (isError) return <ErrorState error={error} />;
   if (!data) return <Skeleton h={160} />;
-  return <TestDataView key={`${data.status}-${data.note ?? ''}`} planId={planId} data={data} />;
+  return (
+    <TestDataView
+      key={`${data.status}-${data.note ?? ''}`}
+      planId={planId}
+      data={data}
+      request={request}
+    />
+  );
 }
 
-function TestDataView({ planId, data }: { planId: number; data: TestData }) {
+function TestDataView({
+  planId,
+  data,
+  request,
+}: {
+  planId: number;
+  data: TestData;
+  request: TestDataRequestInfo;
+}) {
   const save = useSaveTestData(planId, data.organizationId);
   const [status, setStatus] = useState<TestDataStatus>(data.status);
   const [note, setNote] = useState(data.note ?? '');
@@ -74,6 +97,36 @@ function TestDataView({ planId, data }: { planId: number; data: TestData }) {
           )}
         </Group>
 
+        <Group gap="xl" align="flex-start">
+          <div>
+            <Text size="sm" c="dimmed" fw={600} mb={2}>
+              회신 기한
+            </Text>
+            <Group gap={6}>
+              <Text size="md" fw={600} data-testid="test-data-due">
+                {formatDate(request.dueDate)}
+              </Text>
+              {request.overdue && data.status !== 'CREATED' && (
+                <Badge color="red" variant="light">
+                  기한 지남
+                </Badge>
+              )}
+            </Group>
+          </div>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <Text size="sm" c="dimmed" fw={600} mb={2}>
+              결제원 요청 사항
+            </Text>
+            <Text
+              size="md"
+              c={request.instruction ? undefined : 'dimmed'}
+              style={{ whiteSpace: 'pre-wrap' }}
+            >
+              {request.instruction ?? '없음'}
+            </Text>
+          </div>
+        </Group>
+
         <div>
           <Text size="sm" c="dimmed" fw={600} mb={4}>
             결제원 회신 양식
@@ -88,7 +141,7 @@ function TestDataView({ planId, data }: { planId: number; data: TestData }) {
         {data.canEdit ? (
           <Stack gap="sm">
             <Text size="sm" c="dimmed">
-              테스트 전에 테스트데이터를 만들었는지 알려 주세요. 생성 완료로 저장하면 결제원 알림
+              수행 기간 전에 테스트데이터를 만들었는지 알려 주세요. 생성 완료로 저장하면 결제원 알림
               대상 담당자에게 매터모스트 알림이 갑니다.
             </Text>
             <SegmentedControl

@@ -25,6 +25,7 @@ export type TestFeedbackRequest = components['schemas']['TestFeedbackRequest'];
 export type TestData = components['schemas']['TestDataResponse'];
 export type TestDataSaveRequest = components['schemas']['TestDataSaveRequest'];
 export type TestDataStatus = TestDataSaveRequest['status'];
+export type TestDataRequestInfo = components['schemas']['TestDataRequestResponse'];
 export type TestPlanRecipient = components['schemas']['TestPlanRecipientResponse'];
 export type TestPlanState = TestPlanSummary['state'];
 export type TestResult = TestResultSaveRequest['results'][number]['result'];
@@ -230,6 +231,18 @@ export function useSaveTestData(id: number, organizationId: number) {
       queryClient.setQueryData(testPlanKeys.testData(id, organizationId), data);
       invalidate(queryClient);
     },
+  });
+}
+
+/** 결제원 담당자가 아직 생성 완료가 아닌 대상 기관에 테스트데이터 요청 메일을 다시 보낸다. */
+export function useSendTestDataRequest(id: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () =>
+      unwrap(
+        await api.POST('/api/v1/test-plans/{id}/test-data-requests', { params: { path: { id } } }),
+      ),
+    onSuccess: () => invalidate(queryClient),
   });
 }
 

@@ -29,7 +29,11 @@ function seoulDate(days: number) {
 }
 
 /** 홍성민으로 KB국민은행 대상 계좌통합관리 기관 테스트를 API 로 만든다. request 의 세션은 홍성민으로 바뀐다. */
-async function createAsHong(request: APIRequestContext, title: string): Promise<number> {
+async function createAsHong(
+  request: APIRequestContext,
+  title: string,
+  testDataRequest: { dueDate: string; instruction: string | null } | null = null,
+): Promise<number> {
   const login = await request.post('/api/v1/auth/login', {
     data: { email: 'hong.sungmin@kftc.example.com', password: DEMO_PASSWORD },
     headers: await csrf(request),
@@ -54,6 +58,7 @@ async function createAsHong(request: APIRequestContext, title: string): Promise<
         { title: '해지 결과 통보 전문 확인', description: null },
       ],
       organizationIds: [organizations.find((o) => o.code === '004')!.id],
+      testDataRequest,
     },
     headers: await csrf(request),
   });
@@ -96,18 +101,25 @@ test.describe('다. 기관 테스트', () => {
     await page.getByRole('checkbox', { name: 'KB국민은행 대상' }).check();
     await page.getByRole('checkbox', { name: '삼성증권 대상' }).check();
     await expect(page.getByTestId('target-summary')).toHaveText('대상 2곳');
-    // 파일 고르기는 가이드·참고자료, 테스트데이터 회신 양식 순서다.
-    const fileInputs = page.locator('input[type="file"]');
-    await fileInputs.nth(0).setInputFiles({
-      name: '테스트가이드.pdf',
-      mimeType: 'application/pdf',
-      buffer: Buffer.from('%PDF-1.4 sample'),
-    });
-    await fileInputs.nth(1).setInputFiles({
+    // 맨 위 테스트데이터 사전 요청: 켜면 회신 기한(기본은 수행 시작일)·요청 사항·회신 양식이 보인다.
+    const dataRequest = page.getByTestId('test-data-request');
+    await dataRequest.getByRole('switch', { name: '테스트데이터를 먼저 받습니다' }).check();
+    await dataRequest
+      .getByRole('textbox', { name: '요청 사항' })
+      .fill('해지 예정 계좌를 포함해 테스트 계좌 10개를 만들어 주세요.');
+    await dataRequest.locator('input[type="file"]').setInputFiles({
       name: '테스트데이터 양식.csv',
       mimeType: 'text/csv',
       buffer: Buffer.from('계좌번호,예금주,상태\n'),
     });
+    await page
+      .locator('input[type="file"]')
+      .nth(1)
+      .setInputFiles({
+        name: '테스트가이드.pdf',
+        mimeType: 'application/pdf',
+        buffer: Buffer.from('%PDF-1.4 sample'),
+      });
     await shot(page, 'test-plan-editor');
 
     await page.getByRole('button', { name: '저장' }).click();
@@ -118,6 +130,8 @@ test.describe('다. 기관 테스트', () => {
     const targets = page.getByTestId('target-table');
     await expect(targets).toContainText('KB국민은행');
     await expect(targets).toContainText('삼성증권');
+    await expect(targets).toContainText('미생성');
+    await expect(page.getByTestId('test-data-request-bar')).toContainText('생성 완료 0/2');
     await shot(page, 'test-plan-detail');
 
     // 알림 설정: 만든 사람(홍성민)에 김태호을 더한다.
@@ -225,12 +239,15 @@ test.describe('다. 기관 테스트', () => {
     await expect(page.getByText('KB국민은행 결과 등록').first()).toBeVisible();
   });
 
-  test('결제원이 테스트데이터 회신 양식을 지정하면 기관이 내려받아 생성 여부와 테스트데이터를 올리고 결제원이 현황을 본다', async ({
+  test('결제원이 수행 전에 테스트데이터를 요청하면 기관이 양식을 내려받아 생성 여부와 테스트데이터를 올리고 결제원이 현황을 본다', async ({
     page,
     request,
   }) => {
     const title = `E2E 테스트데이터 ${Date.now()}`;
-    const id = await createAsHong(request, title);
+    const id = await createAsHong(request, title, {
+      dueDate: seoulDate(0),
+      instruction: '해지 예정 계좌를 포함해 테스트 계좌 10개',
+    });
     const form = await request.post('/api/v1/attachments', {
       multipart: {
         ownerType: 'TEST_DATA_FORM',
@@ -251,6 +268,8 @@ test.describe('다. 기관 테스트', () => {
     const card = page.getByTestId('test-data');
     await expect(card).toContainText('테스트데이터 회신 양식.csv');
     await expect(card).toContainText('미생성');
+    await expect(card.getByTestId('test-data-due')).toHaveText(seoulDate(0));
+    await expect(card).toContainText('해지 예정 계좌를 포함해 테스트 계좌 10개');
     await card.getByText('생성 완료', { exact: true }).click();
     await card.getByRole('textbox', { name: '메모' }).fill('테스트 계좌 10개(해지 예정 2개 포함)');
     await card.getByRole('button', { name: '테스트데이터 저장' }).click();
@@ -273,6 +292,10 @@ test.describe('다. 기관 테스트', () => {
     ).toBeTruthy();
     await page.goto(`/account-info/tests/${id}`);
     await expect(page.getByTestId('target-table')).toContainText('생성 완료');
+    await expect(page.getByTestId('test-data-request-bar')).toContainText('생성 완료 1/1');
+    await expect(
+      page.getByTestId('test-data-request-bar').getByRole('button', { name: /다시 요청/ }),
+    ).toHaveCount(0);
     await expect(card).toContainText('테스트 계좌 10개(해지 예정 2개 포함)');
     await expect(card).toContainText('KB 테스트데이터.csv');
     await expect(card.getByRole('button', { name: '테스트데이터 저장' })).toHaveCount(0);

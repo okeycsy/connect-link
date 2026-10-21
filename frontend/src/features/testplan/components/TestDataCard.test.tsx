@@ -77,7 +77,15 @@ beforeEach(() => {
 });
 
 function renderCard() {
-  return renderWithProviders(<TestDataCard planId={5} organizationId={3} />, {
+  const request = {
+    dueDate: '2026-10-25',
+    instruction: '테스트 계좌 10개 이상',
+    requestedAt: '2026-10-20T09:00:00',
+    overdue: false,
+    createdCount: 0,
+    targetCount: 1,
+  };
+  return renderWithProviders(<TestDataCard planId={5} organizationId={3} request={request} />, {
     route: '/account-info/tests/5',
     path: '/:business/tests/:id',
   });
@@ -89,6 +97,8 @@ describe('TestDataCard', () => {
     renderCard();
 
     expect(await screen.findByText('테스트데이터 양식.xlsx')).toBeInTheDocument();
+    expect(screen.getByTestId('test-data-due')).toHaveTextContent('2026-10-25');
+    expect(screen.getByText('테스트 계좌 10개 이상')).toBeInTheDocument();
     const save = screen.getByRole('button', { name: '테스트데이터 저장' });
     expect(save).toBeDisabled();
 
