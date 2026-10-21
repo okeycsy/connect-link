@@ -119,7 +119,7 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
     () =>
       existing?.targets.map((t) => ({
         organizationId: t.organizationId,
-        recipientAccountIds: t.recipients.map((r) => r.accountId),
+        recipientEmails: t.recipients.map((r) => r.email),
       })) ?? [],
   );
   const locked = useMemo(
@@ -181,7 +181,7 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
       })),
       targets: targets.map((t) => ({
         organizationId: t.organizationId,
-        recipientAccountIds: t.recipientAccountIds,
+        recipientEmails: t.recipientEmails,
       })),
     };
     if (existing) {

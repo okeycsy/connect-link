@@ -20,6 +20,10 @@ public interface ContactRepository
   List<Contact> findByBusinessAndOrganizationIdOrderByRankAscNameAsc(
       Business business, Long organizationId);
 
+  /** 한 업무의 전 기관 담당자. 다른 모듈이 담당자를 고를 때 쓴다. */
+  @EntityGraph(attributePaths = "organization")
+  List<Contact> findByBusinessOrderByRankAscNameAsc(Business business);
+
   boolean existsByOrganizationIdAndBusinessAndEmail(
       Long organizationId, Business business, String email);
 

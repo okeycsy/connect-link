@@ -1,12 +1,12 @@
 package com.connectlink.opinion;
 
-import com.connectlink.account.AccountService;
-import com.connectlink.account.BusinessMember;
 import com.connectlink.attachment.AttachmentOwnerType;
 import com.connectlink.attachment.AttachmentService;
 import com.connectlink.auth.CurrentUser;
 import com.connectlink.common.BusinessException;
 import com.connectlink.common.PageResponse;
+import com.connectlink.contact.BusinessContact;
+import com.connectlink.contact.ContactService;
 import com.connectlink.history.ChangeHistoryCommand;
 import com.connectlink.history.ChangeHistoryService;
 import com.connectlink.history.FieldChanges;
@@ -67,7 +67,7 @@ public class OpinionRequestService {
   private final OpinionReplyRepository replyRepository;
   private final OpinionAccessPolicy accessPolicy;
   private final OrganizationService organizationService;
-  private final AccountService accountService;
+  private final ContactService contactService;
   private final AttachmentService attachmentService;
   private final ChangeHistoryService changeHistoryService;
   private final OpinionNotifier notifier;
@@ -78,7 +78,7 @@ public class OpinionRequestService {
       OpinionReplyRepository replyRepository,
       OpinionAccessPolicy accessPolicy,
       OrganizationService organizationService,
-      AccountService accountService,
+      ContactService contactService,
       AttachmentService attachmentService,
       ChangeHistoryService changeHistoryService,
       OpinionNotifier notifier,
@@ -87,7 +87,7 @@ public class OpinionRequestService {
     this.replyRepository = replyRepository;
     this.accessPolicy = accessPolicy;
     this.organizationService = organizationService;
-    this.accountService = accountService;
+    this.contactService = contactService;
     this.attachmentService = attachmentService;
     this.changeHistoryService = changeHistoryService;
     this.notifier = notifier;
@@ -281,9 +281,9 @@ public class OpinionRequestService {
   @Transactional(readOnly = true)
   public List<OpinionRecipientCandidateResponse> candidates(CurrentUser user, Business business) {
     accessPolicy.ensureCanManage(user, business);
-    Map<Long, List<BusinessMember>> membersByOrganization =
-        accountService.listActiveMembers(business).stream()
-            .collect(Collectors.groupingBy(BusinessMember::organizationId));
+    Map<Long, List<BusinessContact>> membersByOrganization =
+        contactService.listByBusiness(business).stream()
+            .collect(Collectors.groupingBy(BusinessContact::organizationId));
     return organizationService.listActive().stream()
         .filter(o -> o.type() == OrganizationType.FINANCE_ORGANIZATION)
         .filter(o -> o.businesses().contains(business))
@@ -299,7 +299,7 @@ public class OpinionRequestService {
                         .map(
                             m ->
                                 new OpinionRecipientCandidateResponse.Member(
-                                    m.accountId(),
+                                    m.contactId(),
                                     m.name(),
                                     m.email(),
                                     m.subBusiness(),
@@ -369,20 +369,21 @@ public class OpinionRequestService {
         request.removeTarget(target);
       }
     }
-    Map<Long, Map<Long, BusinessMember>> members = new HashMap<>();
-    accountService
-        .listActiveMembers(business)
+    Map<Long, Map<String, BusinessContact>> members = new HashMap<>();
+    contactService
+        .listByBusiness(business)
         .forEach(
             m ->
                 members
                     .computeIfAbsent(m.organizationId(), k -> new HashMap<>())
-                    .put(m.accountId(), m));
+                    .put(m.email(), m));
     for (OpinionTargetRequest body : targets) {
       Organization organization = loadTargetOrganization(body.organizationId(), business);
-      Map<Long, BusinessMember> candidates = members.getOrDefault(organization.getId(), Map.of());
-      Map<Long, RecipientSnapshot> recipients = new LinkedHashMap<>();
-      for (Long accountId : body.recipientAccountIds()) {
-        BusinessMember member = candidates.get(accountId);
+      Map<String, BusinessContact> candidates =
+          members.getOrDefault(organization.getId(), Map.of());
+      Map<String, RecipientSnapshot> recipients = new LinkedHashMap<>();
+      for (String email : body.recipientEmails()) {
+        BusinessContact member = candidates.get(email);
         if (member == null) {
           throw BusinessException.onField(
               HttpStatus.BAD_REQUEST,
@@ -391,7 +392,7 @@ public class OpinionRequestService {
               organization.getName() + " 의 " + business.getLabel() + " 담당자가 아닌 사람을 회신 담당자로 골랐습니다.");
         }
         recipients.put(
-            accountId, new RecipientSnapshot(member.email(), member.name(), member.subBusiness()));
+            email, new RecipientSnapshot(member.email(), member.name(), member.subBusiness()));
       }
       OpinionTarget target =
           request.findTarget(organization.getId()).orElseGet(() -> request.addTarget(organization));
@@ -519,10 +520,7 @@ public class OpinionRequestService {
         organization.getCode(),
         organization.getName(),
         target.getRecipients().stream()
-            .map(
-                r ->
-                    new OpinionRecipientResponse(
-                        r.getAccountId(), r.getName(), r.getEmail(), r.getSubBusiness()))
+            .map(r -> new OpinionRecipientResponse(r.getName(), r.getEmail(), r.getSubBusiness()))
             .toList(),
         reply != null && reply.isReplied(),
         reply == null ? null : reply.getStatus());

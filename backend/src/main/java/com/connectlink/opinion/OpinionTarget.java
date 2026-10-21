@@ -47,23 +47,23 @@ public class OpinionTarget extends AuditedEntity {
   }
 
   /**
-   * 회신 담당자를 바꾼다. 남는 사람은 행을 그대로 둔다(지우고 다시 넣으면 (대상, 계정) 유일 제약에 걸린다).
+   * 회신 담당자를 바꾼다. 남는 사람은 행을 그대로 둔다(지우고 다시 넣으면 (대상, 이메일) 유일 제약에 걸린다).
    *
-   * @param requested 계정 ID → 고를 때의 담당자 정보
+   * @param requested 회사 이메일 → 고를 때의 담당자 정보
    */
-  void replaceRecipients(Map<Long, RecipientSnapshot> requested) {
-    recipients.removeIf(r -> !requested.containsKey(r.getAccountId()));
+  void replaceRecipients(Map<String, RecipientSnapshot> requested) {
+    recipients.removeIf(r -> !requested.containsKey(r.getEmail()));
     requested.forEach(
-        (accountId, snapshot) -> {
-          if (recipients.stream().noneMatch(r -> r.getAccountId().equals(accountId))) {
-            recipients.add(new OpinionTargetRecipient(this, accountId, snapshot));
+        (email, snapshot) -> {
+          if (recipients.stream().noneMatch(r -> r.getEmail().equals(email))) {
+            recipients.add(new OpinionTargetRecipient(this, snapshot));
           }
         });
   }
 
-  /** 탈퇴한 계정을 회신 담당자에서 뺀다. 뺐으면 true. */
-  boolean removeRecipient(Long accountId) {
-    return recipients.removeIf(r -> r.getAccountId().equals(accountId));
+  /** 탈퇴한 사람을 회신 담당자에서 뺀다. 뺐으면 true. */
+  boolean removeRecipient(String email) {
+    return recipients.removeIf(r -> r.getEmail().equals(email));
   }
 
   public Long getId() {
