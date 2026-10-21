@@ -203,7 +203,7 @@ test.describe('나. 의견 요청', () => {
     await expect(page.getByRole('checkbox', { name: '신한은행 박지훈' })).not.toBeChecked();
     await page.getByRole('checkbox', { name: 'KB국민은행 김민준' }).check();
     await expect(page.getByTestId('target-summary')).toHaveText('대상 3곳 · 회신 담당자 3명');
-    // 업권을 고르면 그 업권 기관이 모두 대상이 된다(담당자 계정이 없는 기관도).
+    // 업권을 고르면 그 업권 기관이 담당자 연락처와 함께 모두 대상이 된다(계정이 없는 담당자도 고른다).
     await page
       .getByRole('group', { name: '업권으로 고르기' })
       .getByText(/^서민금융기관 \d+곳$/)
@@ -211,7 +211,8 @@ test.describe('나. 의견 요청', () => {
     await expect(page.getByRole('checkbox', { name: 'SBI저축은행 대상' })).toBeChecked();
     await expect(page.getByRole('checkbox', { name: '신협 대상' })).toBeChecked();
     await expect(page.getByRole('checkbox', { name: '신협 정현우' })).toBeChecked();
-    await expect(page.getByTestId('target-summary')).toHaveText('대상 5곳 · 회신 담당자 4명');
+    await expect(page.getByRole('checkbox', { name: 'SBI저축은행 문하린' })).toBeChecked();
+    await expect(page.getByTestId('target-summary')).toHaveText('대상 5곳 · 회신 담당자 6명');
     await shot(page, 'opinion-editor');
     await page.getByRole('button', { name: '저장', exact: true }).click();
 
