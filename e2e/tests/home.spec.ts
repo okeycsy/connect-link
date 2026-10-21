@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('홈 대시보드', () => {
-  test('KPI 타일, 최근 소식, 이번 주 일시중단과 카드 여섯 장이 보이고 확인 필요 담당자는 작다', async ({
+  test('KPI 타일, 이번 주 일시중단과 카드 여섯 장이 보이고 확인 필요 담당자는 작다', async ({
     page,
   }) => {
     await page.goto('/account-info/home');
@@ -23,15 +23,13 @@ test.describe('홈 대시보드', () => {
       'true',
     );
     // 왼쪽 큰 칸은 이번 주 일시중단(월~금 요일 칸), 오른쪽은 회신 대기 의견 요청이고 한 화면에 들어온다.
-    // 알림 센터와 같은 최근 소식은 맨 아래에 둔다.
+    // 최근 알림은 홈에 두지 않고 상단 바의 알림 벨에서 본다.
     await expect(cards.getByTestId('suspension-week')).toBeVisible();
-    await expect(cards.getByTestId('home-recent-notifications')).toBeVisible();
+    await expect(cards.getByText('최근 소식')).toHaveCount(0);
     const suspensionBox = (await cards.getByTestId('home-card-SUSPENSIONS').boundingBox())!;
     const opinionBox = (await cards.getByTestId('home-card-OPINION_REPLIES').boundingBox())!;
-    const recentBox = (await cards.getByTestId('home-recent-notifications').boundingBox())!;
     expect(suspensionBox.x).toBeLessThan(opinionBox.x);
     expect(suspensionBox.height).toBeLessThan(600);
-    expect(recentBox.y).toBeGreaterThan(suspensionBox.y + suspensionBox.height);
     // 모든 카드가 실제 데이터다(샘플 카드 없음).
     await expect(cards.getByText('샘플')).toHaveCount(0);
     await page.screenshot({ path: 'screenshots/home.png', fullPage: true });
@@ -60,11 +58,11 @@ test.describe('홈 대시보드', () => {
     await expect(page).toHaveURL(/\/account-info\/opinions$/);
   });
 
-  test('최근 소식은 4건 이상 채워 보이고 더보기는 알림 센터로 간다', async ({ page }) => {
+  test('최근 알림은 상단 바의 알림 벨에서 보고 알림 센터로 간다', async ({ page }) => {
     await page.goto('/account-info/home');
-    const recent = page.getByTestId('home-recent-notifications');
-    await expect(recent.getByRole('button').nth(3)).toBeVisible();
-    await recent.getByRole('link', { name: '더보기' }).click();
+    await page.getByRole('button', { name: /^알림/ }).click();
+    await expect(page.getByText(/^읽지 않은 알림/)).toBeVisible();
+    await page.getByRole('link', { name: '알림 센터에서 모두 보기' }).click();
     await expect(page).toHaveURL(/\/account-info\/notifications$/);
   });
 });

@@ -2,7 +2,6 @@ import { Box, Grid, Group, SimpleGrid, Skeleton, Stack, Text, Title } from '@man
 import { useParams } from 'react-router-dom';
 
 import { HomeCardView } from '../components/HomeCardView';
-import { RecentNotificationsCard } from '../components/RecentNotificationsCard';
 import { useHome, type HomeCard, type HomeKpi } from '../hooks';
 import classes from './HomePage.module.css';
 
@@ -16,7 +15,8 @@ const COMPACT_KEYS: HomeCard['key'][] = ['CONTACT_CONFIRM'];
 /**
  * 홈: "지금 할 일". 파스텔 번짐 위에 인사말과 흰 KPI 타일 네 개.
  * 그 아래 왼쪽 큰 칸은 이번 주 일시중단, 오른쪽은 회신 대기 의견 요청이다. 두 칸은 높이를 맞춰 한 화면에 들어온다.
- * 아래 줄은 나머지 카드이고 확인이 필요한 담당자는 끝에 작게, 최근 소식(알림 센터와 같은 내용)은 맨 아래에 둔다.
+ * 아래 줄은 나머지 카드이고 확인이 필요한 담당자는 끝에 작게 둔다.
+ * 최근 알림은 홈에 두지 않고 상단 바의 알림 벨에서 본다. SHY 요청(2026-10-21).
  * 카드 내용은 서버(/api/v1/home)가 자리별 기여자에게서 모아 준다. 업무 영역(레일)마다 다르다.
  */
 export function HomePage() {
@@ -93,7 +93,6 @@ export function HomePage() {
           {compact.map((c) => (
             <HomeCardView key={c.key} card={c} compact />
           ))}
-          <RecentNotificationsCard />
         </Stack>
       )}
     </Stack>
