@@ -299,7 +299,6 @@ public class SuspensionService {
         s.getId(),
         s.getBusiness(),
         s.getBusiness().getLabel(),
-        s.getSubBusiness(),
         s.getOrganization().getId(),
         s.getOrganization().getName(),
         s.getStartAt(),
@@ -325,7 +324,6 @@ public class SuspensionService {
         s.getBusiness(),
         s.getBusiness().getSlug(),
         s.getBusiness().getLabel(),
-        s.getSubBusiness(),
         s.getOrganization().getId(),
         s.getOrganization().getName(),
         s.getStartAt(),
@@ -438,7 +436,6 @@ public class SuspensionService {
     }
     return new Suspension.Content(
         body.business(),
-        blankToNull(body.subBusiness()),
         start,
         end,
         body.reason().trim(),
@@ -506,14 +503,13 @@ public class SuspensionService {
   /** 이력 비교용 값. 일시는 "시작~종료" 한 줄이다. */
   private record Snapshot(
       String business,
-      String subBusiness,
       String period,
       String reason,
       String kftcAction,
       String contact,
       String extraNote) {
 
-    static final Snapshot EMPTY = new Snapshot(null, null, null, null, null, null, null);
+    static final Snapshot EMPTY = new Snapshot(null, null, null, null, null, null);
 
     static Snapshot of(Suspension s) {
       String contact =
@@ -523,7 +519,6 @@ public class SuspensionService {
               + (s.getContactEmail() == null ? "" : " " + s.getContactEmail());
       return new Snapshot(
           s.getBusiness().getLabel(),
-          s.getSubBusiness(),
           SuspensionNotifier.periodText(s.getStartAt(), s.getEndAt()),
           s.getReason(),
           s.getKftcAction(),
@@ -535,7 +530,6 @@ public class SuspensionService {
     List<com.connectlink.history.dto.FieldChange> diff(Snapshot before, boolean all) {
       FieldChanges changes = FieldChanges.compare();
       add(changes, all, "business", "대상 업무", before.business, business);
-      add(changes, all, "subBusiness", "세부업무", before.subBusiness, subBusiness);
       add(changes, all, "period", "중단 일시", before.period, period);
       add(changes, all, "reason", "중단 이유", before.reason, reason);
       add(changes, all, "kftcAction", "결제원 조치사항", before.kftcAction, kftcAction);
@@ -564,7 +558,6 @@ public class SuspensionService {
     String changedSummary(Snapshot after) {
       List<String> what = new ArrayList<>();
       if (!Objects.equals(business, after.business)) what.add("대상 업무");
-      if (!Objects.equals(subBusiness, after.subBusiness)) what.add("세부업무");
       if (!Objects.equals(period, after.period)) what.add("중단 일시");
       if (!Objects.equals(reason, after.reason)) what.add("중단 이유");
       if (!Objects.equals(kftcAction, after.kftcAction)) what.add("결제원 조치사항");

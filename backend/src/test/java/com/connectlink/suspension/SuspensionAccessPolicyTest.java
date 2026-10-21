@@ -51,7 +51,6 @@ class SuspensionAccessPolicyTest {
         new Organization("004", "KB국민은행", OrganizationType.FINANCE_ORGANIZATION, null),
         new Suspension.Content(
             Business.ACCOUNT_INFO,
-            null,
             start,
             start.plusHours(2),
             "점검",

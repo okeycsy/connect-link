@@ -107,7 +107,6 @@ class SuspensionControllerTest {
     LocalDateTime start = LocalDate.now().plusDays(2).atTime(2, 0);
     Map<String, Object> body = new HashMap<>();
     body.put("business", "ACCOUNT_INFO");
-    body.put("subBusiness", "계좌정보 통합조회");
     body.put("startAt", start.toString());
     body.put("endAt", start.plusHours(2).toString());
     body.put("reason", reason);

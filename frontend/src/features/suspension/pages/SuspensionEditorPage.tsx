@@ -42,7 +42,6 @@ const PICKER_FORMAT = 'YYYY-MM-DD HH:mm:ss';
 interface Values {
   business: BusinessCode;
   organizationId: string | null;
-  subBusiness: string;
   startAt: string | null;
   endAt: string | null;
   reason: string;
@@ -54,7 +53,7 @@ interface Values {
 }
 
 /**
- * 일시중단 등록과 고치기. 주소에 :id 가 있으면 고치기다. 명세의 정해진 양식(일시, 대상 업무 + 세부업무, 중단 이유, 결제원 조치사항,
+ * 일시중단 등록과 고치기. 주소에 :id 가 있으면 고치기다. 명세의 정해진 양식(일시, 대상 업무, 중단 이유, 결제원 조치사항,
  * 담당자 연락처, 공문, 추가 사항)을 그대로 받는다. 기관 담당자는 자기 기관으로, 결제원 담당자는 기관을 골라 등록한다.
  */
 export function SuspensionEditorPage() {
@@ -137,7 +136,6 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
     initialValues: {
       business: existing?.business ?? current?.code ?? 'ACCOUNT_INFO',
       organizationId: existing ? String(existing.organizationId) : null,
-      subBusiness: existing?.subBusiness ?? '',
       startAt: toPicker(existing?.startAt),
       endAt: toPicker(existing?.endAt),
       reason: existing?.reason ?? '',
@@ -186,7 +184,6 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
     const body = {
       business: values.business,
       organizationId: values.organizationId ? Number(values.organizationId) : null,
-      subBusiness: values.subBusiness || null,
       // 서버는 시간대 없는 일시(서버 시간대 Asia/Seoul)를 받는다. 빈 값은 서버가 필드 메시지로 알려 준다.
       startAt: values.startAt ? dayjs(values.startAt).format('YYYY-MM-DDTHH:mm:ss') : '',
       endAt: values.endAt ? dayjs(values.endAt).format('YYYY-MM-DDTHH:mm:ss') : '',
@@ -281,13 +278,6 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
                 data={businessOptions}
                 {...form.getInputProps('business')}
               />
-              <TextInput
-                label="세부업무"
-                placeholder="예: 계좌정보 통합조회"
-                maxLength={200}
-                {...form.getInputProps('subBusiness')}
-              />
-              <div />
               <DateTimePicker
                 label="중단 시작"
                 required

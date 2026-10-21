@@ -13,7 +13,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-/** 전역 검색의 "일시중단" 묶음. 레일의 업무에서 기관 이름, 중단 이유, 세부업무로 찾는다. 결제원 담당자는 전 기관, 기관 담당자는 자기 기관 것만 나온다. */
+/** 전역 검색의 "일시중단" 묶음. 레일의 업무에서 기관 이름, 중단 이유로 찾는다. 결제원 담당자는 전 기관, 기관 담당자는 자기 기관 것만 나온다. */
 @Component
 @Transactional(readOnly = true)
 public class SuspensionSearchProvider implements SearchProvider {

@@ -77,7 +77,6 @@ async function registerAsGana(request: APIRequestContext, reason: string): Promi
     data: {
       business: 'ACCOUNT_INFO',
       organizationId: null,
-      subBusiness: '계좌정보 통합조회',
       startAt: iso(date, '01:00'),
       endAt: iso(date, '03:00'),
       reason,
@@ -118,7 +117,6 @@ test.describe('라. 일시중단', () => {
 
     const reason = `E2E 계정계 패치 작업 ${Date.now()}`;
     const date = seoulDate(3);
-    await page.getByRole('textbox', { name: '세부업무' }).fill('계좌정보 통합조회');
     await pickDateTime(page, '중단 시작', date, '02', '00');
     await pickDateTime(page, '중단 종료', date, '04', '30');
     await page.getByRole('textbox', { name: '중단 이유(작업 내용)' }).fill(reason);
