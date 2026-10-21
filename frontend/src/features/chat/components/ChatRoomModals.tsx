@@ -1,22 +1,29 @@
 import {
   Badge,
   Button,
+  Checkbox,
+  Chip,
   Group,
   Modal,
-  MultiSelect,
   ScrollArea,
+  Select,
   Stack,
   Text,
   TextInput,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
+import { useState } from 'react';
 
 import { fieldErrorsOf } from '../../../api/client';
 import { OrgMonogram } from '../../../shared/OrgMonogram';
-import type { BusinessCode } from '../../organization/hooks';
+import { ChipFilter } from '../../../shared/list/ChipFilter';
+import { type BusinessCode, useBusinesses, useJobRoles } from '../../organization/hooks';
 import {
   type ChatMember,
   type ChatRoomDetail,
+  filterInviteCandidates,
+  groupInviteCandidates,
+  type InviteFilter,
   useCreateChatRoom,
   useInviteCandidates,
   useInviteChatMembers,
@@ -87,74 +94,224 @@ export function CreateChatRoomModal({
   );
 }
 
-/** 사람 초대. 그 업무 참가기관 담당자와 결제원 사람 중 아직 구성원이 아닌 사람을 고른다. */
+/**
+ * 사람 초대. 이름으로 찾지 않고 담당 업무 → 소속(결제원/참가기관) → 직무(현업/전산, 전산 세부 직무)로 거른 뒤, 기관 묶음이나 보이는 사람
+ * 전부를 한 번에 고른다. 고른 사람은 거르기를 바꿔도 남는다. 후보는 아직 구성원이 아닌 사람만 서버가 준다.
+ */
 export function InviteChatMembersModal({
   roomId,
+  business,
   opened,
   onClose,
 }: {
   roomId: number;
+  business: BusinessCode;
   opened: boolean;
   onClose: () => void;
 }) {
   const candidates = useInviteCandidates(roomId, opened);
+  const businesses = useBusinesses();
+  const jobRoles = useJobRoles();
   const invite = useInviteChatMembers(roomId);
-  const form = useForm<{ emails: string[] }>({
-    initialValues: { emails: [] },
-    validate: { emails: (v) => (v.length ? null : '초대할 사람을 골라 주세요.') },
-  });
+  const initialFilter: InviteFilter = { business, side: 'ALL', jobRole: 'ALL', itRoles: [] };
+  const [filter, setFilter] = useState<InviteFilter>(initialFilter);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  const groups = new Map<string, { value: string; label: string }[]>();
-  for (const c of candidates.data ?? []) {
-    const key = c.kftc ? '결제원' : c.organizationName;
-    const items = groups.get(key) ?? [];
-    items.push({ value: c.email, label: `${c.name} · ${c.roleLabel}` });
-    groups.set(key, items);
-  }
-  const data = [...groups.entries()].map(([group, items]) => ({ group, items }));
+  const visible = filterInviteCandidates(candidates.data ?? [], filter);
+  const groups = groupInviteCandidates(visible);
+  const visibleEmails = visible.map((c) => c.email);
+  const itRoleOptions = jobRoles.data?.find((r) => r.code === 'IT')?.itRoles ?? [];
+
+  const toggle = (emails: string[], on: boolean) => {
+    setError(null);
+    setSelected((prev) =>
+      on ? [...new Set([...prev, ...emails])] : prev.filter((e) => !emails.includes(e)),
+    );
+  };
 
   const close = () => {
-    form.reset();
+    setFilter(initialFilter);
+    setSelected([]);
+    setError(null);
     invite.reset();
     onClose();
   };
 
-  const submit = form.onSubmit((values) =>
-    invite.mutate(values.emails, {
+  const submit = () => {
+    if (!selected.length) {
+      setError('초대할 사람을 골라 주세요.');
+      return;
+    }
+    invite.mutate(selected, {
       onSuccess: close,
-      onError: (error) => form.setErrors(fieldErrorsOf(error)),
-    }),
-  );
+      onError: (e) => setError(fieldErrorsOf(e).emails ?? e.message),
+    });
+  };
 
   return (
-    <Modal opened={opened} onClose={close} title="사람 초대">
-      <form onSubmit={submit}>
-        <Stack gap="md">
-          <MultiSelect
-            label="초대할 사람"
-            placeholder={candidates.isLoading ? '불러오는 중…' : '이름으로 찾기'}
-            data={data}
-            searchable
-            nothingFoundMessage="초대할 수 있는 사람이 없습니다"
-            comboboxProps={{ withinPortal: true }}
-            {...form.getInputProps('emails')}
+    <Modal opened={opened} onClose={close} title="사람 초대" size="lg">
+      <Stack gap="md">
+        <Select
+          label="담당 업무"
+          data={[
+            { value: 'ALL', label: '전체 업무' },
+            ...(businesses.data ?? []).map((b) => ({ value: b.code, label: b.label })),
+          ]}
+          value={filter.business}
+          onChange={(v) => v && setFilter({ ...filter, business: v as InviteFilter['business'] })}
+          allowDeselect={false}
+          comboboxProps={{ withinPortal: true }}
+        />
+        <Group gap="md" wrap="wrap">
+          <ChipFilter
+            label="소속"
+            value={filter.side}
+            options={[
+              { value: 'ALL', label: '전체' },
+              { value: 'KFTC', label: '결제원' },
+              { value: 'ORGANIZATION', label: '참가기관' },
+            ]}
+            onChange={(side) => setFilter({ ...filter, side })}
           />
-          {invite.error && !Object.keys(fieldErrorsOf(invite.error)).length && (
-            <Text size="sm" c="red">
-              {invite.error.message}
+          <ChipFilter
+            label="직무"
+            value={filter.jobRole}
+            options={[
+              { value: 'ALL', label: '전체' },
+              ...(jobRoles.data ?? []).map((r) => ({ value: r.code, label: r.label })),
+            ]}
+            onChange={(jobRole) => setFilter({ ...filter, jobRole, itRoles: [] })}
+          />
+        </Group>
+        {filter.jobRole === 'IT' && itRoleOptions.length > 0 && (
+          <Group gap={6} role="group" aria-label="전산 세부 직무">
+            <Text size="xs" c="dimmed" fw={600}>
+              전산 세부 직무
             </Text>
-          )}
-          <Group justify="flex-end">
-            <Button variant="outline" onClick={close}>
-              취소
-            </Button>
-            <Button type="submit" loading={invite.isPending}>
-              초대
-            </Button>
+            <Chip.Group
+              multiple
+              value={filter.itRoles}
+              onChange={(v) => setFilter({ ...filter, itRoles: v as InviteFilter['itRoles'] })}
+            >
+              <Group gap={4}>
+                {itRoleOptions.map((r) => (
+                  <Chip key={r.code} value={r.code} size="xs">
+                    {r.label}
+                  </Chip>
+                ))}
+              </Group>
+            </Chip.Group>
           </Group>
-        </Stack>
-      </form>
+        )}
+
+        <Group justify="space-between" wrap="nowrap">
+          <SelectAllCheckbox
+            label={`보이는 ${visible.length}명 모두`}
+            emails={visibleEmails}
+            selected={selected}
+            onToggle={toggle}
+          />
+          <Text size="sm" fw={600} c={selected.length ? undefined : 'dimmed'}>
+            {selected.length}명 선택
+          </Text>
+        </Group>
+
+        <ScrollArea.Autosize mah={360} type="auto">
+          {candidates.isLoading ? (
+            <Text size="sm" c="dimmed">
+              불러오는 중…
+            </Text>
+          ) : groups.length === 0 ? (
+            <Text size="sm" c="dimmed">
+              조건에 맞는 초대할 사람이 없습니다.
+            </Text>
+          ) : (
+            <Stack gap="sm">
+              {groups.map((g) => (
+                <Stack key={g.organizationCode} gap={4} data-testid="invite-group">
+                  <Group gap="xs" wrap="nowrap">
+                    <OrgMonogram
+                      name={g.label}
+                      type={g.kftc ? 'KFTC' : 'FINANCE_ORGANIZATION'}
+                      size={24}
+                    />
+                    <SelectAllCheckbox
+                      label={`${g.label} ${g.items.length}명`}
+                      emails={g.items.map((c) => c.email)}
+                      selected={selected}
+                      onToggle={toggle}
+                      bold
+                    />
+                  </Group>
+                  <Stack gap={4} pl={32}>
+                    {g.items.map((c) => (
+                      <Checkbox
+                        key={c.email}
+                        checked={selected.includes(c.email)}
+                        onChange={(e) => toggle([c.email], e.currentTarget.checked)}
+                        label={
+                          <Text size="sm" span>
+                            {c.name}{' '}
+                            <Text size="sm" c="dimmed" span>
+                              · {c.roleLabel}
+                            </Text>
+                          </Text>
+                        }
+                      />
+                    ))}
+                  </Stack>
+                </Stack>
+              ))}
+            </Stack>
+          )}
+        </ScrollArea.Autosize>
+
+        {error && (
+          <Text size="sm" c="red">
+            {error}
+          </Text>
+        )}
+        <Group justify="flex-end">
+          <Button variant="outline" onClick={close}>
+            취소
+          </Button>
+          <Button onClick={submit} loading={invite.isPending}>
+            {selected.length ? `${selected.length}명 초대` : '초대'}
+          </Button>
+        </Group>
+      </Stack>
     </Modal>
+  );
+}
+
+/** 여러 사람을 한 번에 고르는 체크박스. 일부만 골랐으면 반쯤 찬 표시다. */
+function SelectAllCheckbox({
+  label,
+  emails,
+  selected,
+  onToggle,
+  bold,
+}: {
+  label: string;
+  emails: string[];
+  selected: string[];
+  onToggle: (emails: string[], on: boolean) => void;
+  bold?: boolean;
+}) {
+  const count = emails.filter((e) => selected.includes(e)).length;
+  return (
+    <Checkbox
+      label={
+        <Text size="sm" fw={bold ? 600 : undefined} span>
+          {label}
+        </Text>
+      }
+      checked={emails.length > 0 && count === emails.length}
+      indeterminate={count > 0 && count < emails.length}
+      disabled={emails.length === 0}
+      onChange={() => onToggle(emails, count < emails.length)}
+    />
   );
 }
 
