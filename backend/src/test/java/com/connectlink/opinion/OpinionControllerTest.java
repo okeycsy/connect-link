@@ -23,6 +23,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -111,7 +114,7 @@ class OpinionControllerTest {
                 "required",
                 true,
                 "options",
-                List.of("1월", "7월")),
+                options("1월", "7월")),
             Map.of(
                 "type",
                 "MULTIPLE_CHOICE",
@@ -120,7 +123,7 @@ class OpinionControllerTest {
                 "required",
                 false,
                 "options",
-                List.of("정산", "안내", "개발")),
+                options("정산", "안내", "개발")),
             Map.of("type", "TEXT", "title", "월 조회 건수", "required", false)));
     body.put(
         "targets",
@@ -136,6 +139,10 @@ class OpinionControllerTest {
                 "recipientEmails",
                 List.of("choi.yujin@samsung.example.com"))));
     return body;
+  }
+
+  private static List<Map<String, Object>> options(String... labels) {
+    return Arrays.stream(labels).map(l -> Map.<String, Object>of("label", l)).toList();
   }
 
   /** 첫 질문(적용 시기)에 고른 답 하나. 선택지 ID 는 요청 상세에서 찾는다. */
@@ -511,7 +518,7 @@ class OpinionControllerTest {
                 "required",
                 true,
                 "options",
-                List.of("하나"))));
+                options("하나"))));
     send(post(BASE), body, hong())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("OPINION_QUESTION_OPTIONS"))
@@ -614,6 +621,142 @@ class OpinionControllerTest {
       assertThat(workbook.getSheet("기관별 취합표").getRow(1).getCell(4).getStringCellValue())
           .isEqualTo("7월");
     }
+  }
+
+  // ---- 섹션과 답변에 따른 섹션 이동 ----
+
+  /**
+   * 섹션 셋인 요청. 섹션 1 의 객관식(필수) "가능" 은 섹션 2(개발 기간, 필수)로, "어려움" 은 섹션 3(어려운 이유, 필수)으로 간다. 섹션 2 를 마치면 회신이
+   * 끝난다.
+   */
+  private Map<String, Object> branchingRequest(String title) {
+    Map<String, Object> body = newRequest(title);
+    body.put(
+        "sections",
+        List.of(
+            Map.of("title", "반영 여부"),
+            Map.of("title", "반영 계획", "jump", Map.of("type", "END")),
+            Map.of("title", "어려운 이유")));
+    body.put(
+        "questions",
+        List.of(
+            Map.of(
+                "sectionIndex",
+                0,
+                "type",
+                "SINGLE_CHOICE",
+                "title",
+                "반영할 수 있습니까?",
+                "required",
+                true,
+                "options",
+                List.of(
+                    Map.of("label", "가능", "jump", Map.of("type", "SECTION", "sectionIndex", 1)),
+                    Map.of("label", "어려움", "jump", Map.of("type", "SECTION", "sectionIndex", 2)))),
+            Map.of("sectionIndex", 1, "type", "TEXT", "title", "개발 기간", "required", true),
+            Map.of("sectionIndex", 2, "type", "TEXT", "title", "어려운 이유", "required", true)));
+    return body;
+  }
+
+  @Test
+  void 섹션과_선택지별_이동을_저장한다() throws Exception {
+    Long id = json(send(post(BASE), branchingRequest("섹션 저장"), hong())).get("id").asLong();
+    send(get(BASE + "/" + id), null, hong())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.sections.length()").value(3))
+        .andExpect(jsonPath("$.sections[1].title").value("반영 계획"))
+        .andExpect(jsonPath("$.sections[1].jump.type").value("END"))
+        .andExpect(jsonPath("$.sections[0].jump").isEmpty())
+        .andExpect(jsonPath("$.questions[2].sectionIndex").value(2))
+        .andExpect(jsonPath("$.questions[0].options[1].jump.type").value("SECTION"))
+        .andExpect(jsonPath("$.questions[0].options[1].jump.sectionIndex").value(2));
+  }
+
+  @Test
+  void 섹션을_비우면_제목_없는_섹션_하나다() throws Exception {
+    Long id = create("섹션 없음");
+    send(get(BASE + "/" + id), null, hong())
+        .andExpect(jsonPath("$.sections.length()").value(1))
+        .andExpect(jsonPath("$.sections[0].title").isEmpty())
+        .andExpect(jsonPath("$.questions[2].sectionIndex").value(0));
+  }
+
+  @Test
+  void 섹션_이동은_뒤의_섹션으로만_간다() throws Exception {
+    Map<String, Object> back = branchingRequest("되돌아가기");
+    back.put(
+        "sections",
+        List.of(
+            Map.of("title", "반영 여부"),
+            Map.of("title", "반영 계획", "jump", Map.of("type", "SECTION", "sectionIndex", 0)),
+            Map.of("title", "어려운 이유")));
+    send(post(BASE), back, hong())
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("OPINION_SECTION_JUMP"))
+        .andExpect(jsonPath("$.fieldErrors[0].field").value("sections[1].jump"));
+
+    Map<String, Object> outOfOrder = branchingRequest("순서 어긋남");
+    List<Object> questions = new ArrayList<>((List<?>) outOfOrder.get("questions"));
+    Collections.swap(questions, 1, 2);
+    outOfOrder.put("questions", questions);
+    send(post(BASE), outOfOrder, hong())
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("OPINION_QUESTION_SECTION"))
+        .andExpect(jsonPath("$.fieldErrors[0].field").value("questions[2].sectionIndex"));
+  }
+
+  @Test
+  void 고른_답에_따라_섹션을_건너뛰고_건너뛴_질문은_답을_받지_않는다() throws Exception {
+    Long id = json(send(post(BASE), branchingRequest("섹션 이동"), hong())).get("id").asLong();
+    send(post(BASE + "/" + id + "/opening"), null, hong()).andExpect(status().isOk());
+    JsonNode questions = json(send(get(BASE + "/" + id), null, kim())).get("questions");
+    long first = questions.get(0).get("id").asLong();
+    long possible = questions.get(0).get("options").get(0).get("id").asLong();
+    long hard = questions.get(0).get("options").get(1).get("id").asLong();
+    long plan = questions.get(1).get("id").asLong();
+    long reason = questions.get(2).get("id").asLong();
+
+    // "어려움" 이면 섹션 3 의 필수 질문에 답해야 하고, 섹션 2 는 필수여도 건너뛴다.
+    send(
+            post(BASE + "/" + id + "/my-reply/submission"),
+            Map.of("answers", List.of(Map.of("questionId", first, "optionIds", List.of(hard)))),
+            kim())
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("OPINION_ANSWER_REQUIRED"))
+        .andExpect(jsonPath("$.fieldErrors[0].field").value("answers." + reason));
+    send(
+            post(BASE + "/" + id + "/my-reply/submission"),
+            Map.of(
+                "answers",
+                List.of(
+                    Map.of("questionId", first, "optionIds", List.of(hard)),
+                    Map.of("questionId", plan, "text", "건너뛴 섹션의 답"),
+                    Map.of("questionId", reason, "text", "전산 개편 중"))),
+            kim())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.answers.length()").value(2))
+        .andExpect(jsonPath("$.answers[1].questionId").value(reason));
+
+    // "가능" 이면 섹션 2 를 마치고 끝나므로 섹션 3 은 답하지 않아도 된다.
+    send(
+            post(BASE + "/" + id + "/my-reply/submission"),
+            Map.of(
+                "answers",
+                List.of(
+                    Map.of("questionId", first, "optionIds", List.of(possible)),
+                    Map.of("questionId", plan, "text", "2개월"))),
+            choi())
+        .andExpect(status().isOk());
+
+    send(get(BASE + "/" + id + "/collation"), null, hong())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.questions[1].sectionIndex").value(1))
+        .andExpect(jsonPath("$.questions[1].answeredCount").value(1))
+        .andExpect(jsonPath("$.questions[1].skippedCount").value(1))
+        .andExpect(jsonPath("$.questions[2].skippedCount").value(1))
+        .andExpect(jsonPath("$.rows[0].answers[1].skipped").value(true))
+        .andExpect(jsonPath("$.rows[0].answers[2].value").value("전산 개편 중"))
+        .andExpect(jsonPath("$.rows[1].answers[2].skipped").value(true));
   }
 
   // ---- 회신 현황·취합 ----

@@ -8,6 +8,7 @@ DELETE FROM opinion_target_recipient;
 DELETE FROM opinion_target;
 DELETE FROM opinion_question_option;
 DELETE FROM opinion_question;
+DELETE FROM opinion_section;
 DELETE FROM opinion_request;
 
 INSERT INTO opinion_request (business, title, content, due_date, status, owner_email, owner_name, opened_at, closed_at, cancelled, cancel_reason,
@@ -45,25 +46,55 @@ FROM (VALUES
    -30, 'CLOSED', 'admin@kftc.example.com', '데모 관리자', 45, 28, 46, FALSE, NULL)
 ) AS r (business, title, content, due_days, status, owner_email, owner_name, opened_days, closed_days, created_days, cancelled, cancel_reason);
 
+-- 섹션. 오픈뱅킹 전문 검토 요청은 반영 가능 여부(답)에 따라 "반영 계획" 이나 "반영이 어려운 이유" 섹션으로 가고,
+-- "반영 계획" 을 마치면 회신이 끝난다(구글폼의 답변에 따른 섹션 이동). 나머지 요청은 제목 없는 섹션 하나다.
+INSERT INTO opinion_section (request_id, sort_order, title, description, jump_type, jump_order, created_at, created_by, updated_at, updated_by)
+SELECT r.id, s.sort_order, s.title, s.description, s.jump_type, s.jump_order, r.created_at, r.created_by, r.created_at, r.created_by
+FROM (VALUES
+  (0, '반영 가능 여부', '계좌 별칭 항목(30바이트)을 기관 시스템에 반영할 수 있는지 알려 주세요.', CAST(NULL AS VARCHAR(10)), CAST(NULL AS INT)),
+  (1, '반영 계획', '반영할 수 있는 기관만 답합니다.', 'END', NULL),
+  (2, '반영이 어려운 이유', '반영하기 어려운 기관만 답합니다.', NULL, NULL)
+) AS s (sort_order, title, description, jump_type, jump_order)
+JOIN opinion_request r ON r.title = '오픈뱅킹 연계 전문 항목 추가 검토';
+
+INSERT INTO opinion_section (request_id, sort_order, created_at, created_by, updated_at, updated_by)
+SELECT r.id, 0, r.created_at, r.created_by, r.created_at, r.created_by
+FROM opinion_request r
+WHERE r.title <> '오픈뱅킹 연계 전문 항목 추가 검토';
+
 -- 질문. 수수료 개편 요청에 객관식(하나·여러 개)과 주관식을 하나씩 둔다.
-INSERT INTO opinion_question (request_id, sort_order, question_type, title, required, created_at, created_by, updated_at, updated_by)
-SELECT r.id, q.sort_order, q.question_type, q.title, q.required, r.created_at, r.created_by, r.created_at, r.created_by
+INSERT INTO opinion_question (request_id, section_id, sort_order, question_type, title, required, created_at, created_by, updated_at, updated_by)
+SELECT r.id, s.id, q.sort_order, q.question_type, q.title, q.required, r.created_at, r.created_by, r.created_at, r.created_by
 FROM (VALUES
   ('계좌통합관리 수수료 체계 개편 의견 요청', 0, 'SINGLE_CHOICE',   '개편안을 언제부터 적용하는 것이 좋습니까?', TRUE),
   ('계좌통합관리 수수료 체계 개편 의견 요청', 1, 'MULTIPLE_CHOICE', '기관에서 영향을 받는 업무를 모두 골라 주세요.', TRUE),
   ('계좌통합관리 수수료 체계 개편 의견 요청', 2, 'TEXT',            '월평균 계좌통합관리 조회 건수를 적어 주세요.', FALSE)
 ) AS q (title_of_request, sort_order, question_type, title, required)
-JOIN opinion_request r ON r.title = q.title_of_request;
+JOIN opinion_request r ON r.title = q.title_of_request
+JOIN opinion_section s ON s.request_id = r.id AND s.sort_order = 0;
+
+-- 오픈뱅킹 전문 검토 요청의 섹션별 질문.
+INSERT INTO opinion_question (request_id, section_id, sort_order, question_type, title, required, created_at, created_by, updated_at, updated_by)
+SELECT r.id, s.id, q.sort_order, q.question_type, q.title, q.required, r.created_at, r.created_by, r.created_at, r.created_by
+FROM (VALUES
+  (0, 0, 'SINGLE_CHOICE', '기관 시스템에 계좌 별칭 항목을 반영할 수 있습니까?', TRUE),
+  (1, 1, 'TEXT',          '반영에 필요한 개발 기간을 적어 주세요.', TRUE),
+  (1, 2, 'SINGLE_CHOICE', '반영 방식을 골라 주세요.', FALSE),
+  (2, 3, 'TEXT',          '반영하기 어려운 이유와 대안을 적어 주세요.', TRUE)
+) AS q (section_order, sort_order, question_type, title, required)
+JOIN opinion_request r ON r.title = '오픈뱅킹 연계 전문 항목 추가 검토'
+JOIN opinion_section s ON s.request_id = r.id AND s.sort_order = q.section_order;
 
 -- 나머지 요청은 동의 여부(객관식, 필수)와 의견(주관식)을 묻는다. 결제원 담당자가 흔히 넣는 질문 모양이다.
-INSERT INTO opinion_question (request_id, sort_order, question_type, title, required, created_at, created_by, updated_at, updated_by)
-SELECT r.id, q.sort_order, q.question_type, q.title, q.required, r.created_at, r.created_by, r.created_at, r.created_by
+INSERT INTO opinion_question (request_id, section_id, sort_order, question_type, title, required, created_at, created_by, updated_at, updated_by)
+SELECT r.id, s.id, q.sort_order, q.question_type, q.title, q.required, r.created_at, r.created_by, r.created_at, r.created_by
 FROM (VALUES
   (0, 'SINGLE_CHOICE', '이 안에 동의하십니까?', TRUE),
   (1, 'TEXT',          '조건이나 다른 의견이 있으면 이유와 함께 적어 주세요.', FALSE)
 ) AS q (sort_order, question_type, title, required)
 CROSS JOIN opinion_request r
-WHERE r.title <> '계좌통합관리 수수료 체계 개편 의견 요청';
+JOIN opinion_section s ON s.request_id = r.id AND s.sort_order = 0
+WHERE r.title NOT IN ('계좌통합관리 수수료 체계 개편 의견 요청', '오픈뱅킹 연계 전문 항목 추가 검토');
 
 INSERT INTO opinion_question_option (question_id, sort_order, label, created_at, created_by, updated_at, updated_by)
 SELECT q.id, o.sort_order, o.label, q.created_at, q.created_by, q.created_at, q.created_by
@@ -72,6 +103,18 @@ FROM (VALUES
   (1, 0, '수수료 정산'), (1, 1, '고객 안내'), (1, 2, '전산 개발'), (1, 3, '영향 없음')
 ) AS o (question_order, sort_order, label)
 JOIN opinion_request r ON r.title = '계좌통합관리 수수료 체계 개편 의견 요청'
+JOIN opinion_question q ON q.request_id = r.id AND q.sort_order = o.question_order;
+
+-- 오픈뱅킹 전문 검토 요청의 선택지. 첫 질문은 답에 따라 섹션 2(반영 계획) 또는 섹션 3(반영이 어려운 이유)으로 간다.
+INSERT INTO opinion_question_option (question_id, sort_order, label, jump_type, jump_order, created_at, created_by, updated_at, updated_by)
+SELECT q.id, o.sort_order, o.label, o.jump_type, o.jump_order, q.created_at, q.created_by, q.created_at, q.created_by
+FROM (VALUES
+  (0, 0, '반영 가능', 'SECTION', 1),
+  (0, 1, '반영 어려움', 'SECTION', 2),
+  (2, 0, '정기 배포', CAST(NULL AS VARCHAR(10)), CAST(NULL AS INT)),
+  (2, 1, '별도 긴급 배포', NULL, NULL)
+) AS o (question_order, sort_order, label, jump_type, jump_order)
+JOIN opinion_request r ON r.title = '오픈뱅킹 연계 전문 항목 추가 검토'
 JOIN opinion_question q ON q.request_id = r.id AND q.sort_order = o.question_order;
 
 INSERT INTO opinion_question_option (question_id, sort_order, label, created_at, created_by, updated_at, updated_by)
@@ -187,8 +230,9 @@ FROM (VALUES
   ('계좌통합관리 수수료 체계 개편 의견 요청', '240', 'SUBMITTED', 1, '영향 없음', NULL),
   ('계좌통합관리 수수료 체계 개편 의견 요청', '240', 'SUBMITTED', 2, NULL, '약 3만 건'),
   ('계좌통합관리 수수료 체계 개편 의견 요청', '048', 'DRAFT', 0, '내후년 1월', NULL),
-  ('오픈뱅킹 연계 전문 항목 추가 검토', '088', 'SUBMITTED', 0, '동의', NULL),
-  ('오픈뱅킹 연계 전문 항목 추가 검토', '088', 'SUBMITTED', 1, NULL, '다음 분기 정기 배포에 반영할 수 있습니다.'),
+  ('오픈뱅킹 연계 전문 항목 추가 검토', '088', 'SUBMITTED', 0, '반영 가능', NULL),
+  ('오픈뱅킹 연계 전문 항목 추가 검토', '088', 'SUBMITTED', 1, NULL, '약 2개월. 다음 분기 정기 배포에 반영할 수 있습니다.'),
+  ('오픈뱅킹 연계 전문 항목 추가 검토', '088', 'SUBMITTED', 2, '정기 배포', NULL),
   ('계좌정보 일괄해지 화면 문구 개선', '004', 'SUBMITTED', 0, '동의', NULL),
   ('계좌정보 일괄해지 화면 문구 개선', '240', 'SUBMITTED', 0, '조건부 동의', NULL),
   ('계좌정보 일괄해지 화면 문구 개선', '240', 'SUBMITTED', 1, NULL, '"해지" 대신 "연결 끊기" 표현을 함께 써 주세요.'),

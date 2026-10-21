@@ -17,7 +17,9 @@ public record OpinionCollationResponse(
     Summary summary, List<QuestionSummary> questions, List<Row> rows) {
 
   /**
+   * @param sectionIndex 질문이 묶인 섹션의 순서(0부터)
    * @param answeredCount 이 질문에 답한 기관 수
+   * @param skippedCount 회신했지만 고른 답에 따라 이 질문의 섹션을 건너뛴 기관 수
    * @param options 객관식이면 선택지마다 고른 기관 수와 기관 이름. 주관식이면 비어 있다
    * @param textAnswers 주관식이면 기관마다의 답. 객관식이면 비어 있다
    */
@@ -28,7 +30,9 @@ public record OpinionCollationResponse(
       OpinionQuestionType type,
       String typeLabel,
       boolean required,
+      int sectionIndex,
       int answeredCount,
+      int skippedCount,
       List<OptionCount> options,
       List<TextAnswer> textAnswers) {}
 
@@ -40,9 +44,11 @@ public record OpinionCollationResponse(
 
   /**
    * @param value 답을 글로(객관식은 고른 선택지를 ", " 로 이음). 답하지 않았으면 null
+   * @param skipped 고른 답에 따라 이 질문의 섹션을 건너뛰었는지. 미회신이면 false
    */
   @Schema(name = "OpinionCollationRowAnswer")
-  public record RowAnswer(Long questionId, @Schema(nullable = true) String value) {}
+  public record RowAnswer(
+      Long questionId, @Schema(nullable = true) String value, boolean skipped) {}
 
   /**
    * @param replyRate 회신율(%, 반올림). 대상이 없으면 0

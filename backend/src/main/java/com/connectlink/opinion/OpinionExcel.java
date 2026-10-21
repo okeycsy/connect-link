@@ -95,7 +95,12 @@ public record OpinionExcel(String fileName, byte[] content) {
       cell(
           title,
           1,
-          q.typeLabel() + (q.required() ? " · 필수" : "") + " · 답한 기관 " + q.answeredCount() + "곳",
+          q.typeLabel()
+              + (q.required() ? " · 필수" : "")
+              + " · 답한 기관 "
+              + q.answeredCount()
+              + "곳"
+              + (q.skippedCount() > 0 ? " · 건너뛴 기관 " + q.skippedCount() + "곳" : ""),
           styles.header);
       cell(title, 2, null, styles.header);
       if (q.type().isChoice()) {
@@ -146,7 +151,7 @@ public record OpinionExcel(String fileName, byte[] content) {
       cell(line, 3, row.replied() ? "회신" : "미회신", styles.body);
       int c = 4;
       for (OpinionCollationResponse.RowAnswer answer : row.answers()) {
-        cell(line, c++, answer.value(), styles.wrap);
+        cell(line, c++, answer.skipped() ? "(건너뜀)" : answer.value(), styles.wrap);
       }
       cell(line, c++, row.replied() ? row.replierName() : null, styles.body);
       cell(

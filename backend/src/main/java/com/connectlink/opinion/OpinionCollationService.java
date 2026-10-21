@@ -144,7 +144,8 @@ public class OpinionCollationService {
               replied ? reply.getSubmittedAt() : null,
               reply == null ? null : reply.getRevisionReason(),
               reply == null ? null : reply.getRevisionRequestedAt(),
-              rowAnswers(request, replied ? reply.getAnswers(Stage.SUBMITTED) : List.of())));
+              rowAnswers(
+                  request, replied, replied ? reply.getAnswers(Stage.SUBMITTED) : List.of())));
     }
     int total = rows.size();
     int repliedCount = (int) rows.stream().filter(Row::replied).count();
@@ -165,9 +166,17 @@ public class OpinionCollationService {
         rows);
   }
 
-  private static List<RowAnswer> rowAnswers(OpinionRequest request, List<Answer> answers) {
+  /** 기관 하나의 질문별 답. 제출한 답으로 지나지 않은 섹션의 질문은 건너뜀이다. 미회신이면 답도 건너뜀도 없다. */
+  private static List<RowAnswer> rowAnswers(
+      OpinionRequest request, boolean replied, List<Answer> answers) {
+    Set<Long> path = replied ? OpinionReplyService.path(request, answers) : null;
     return request.getQuestions().stream()
-        .map(q -> new RowAnswer(q.getId(), OpinionReplyService.answerText(q, answers)))
+        .map(
+            q ->
+                new RowAnswer(
+                    q.getId(),
+                    OpinionReplyService.answerText(q, answers),
+                    path != null && !path.contains(q.getId())))
         .toList();
   }
 
@@ -178,16 +187,20 @@ public class OpinionCollationService {
     question.getOptions().forEach(o -> byOption.put(o.getId(), new ArrayList<>()));
     List<TextAnswer> texts = new ArrayList<>();
     int answered = 0;
+    int skipped = 0;
     for (OpinionTarget target : request.getTargets()) {
       OpinionReply reply = replies.get(target.getId());
       if (reply == null || !reply.isReplied()) {
         continue;
       }
       String organization = target.getOrganization().getName();
+      List<Answer> submitted = reply.getAnswers(Stage.SUBMITTED);
+      if (!OpinionReplyService.path(request, submitted).contains(question.getId())) {
+        skipped++;
+        continue;
+      }
       List<Answer> mine =
-          reply.getAnswers(Stage.SUBMITTED).stream()
-              .filter(a -> a.questionId().equals(question.getId()))
-              .toList();
+          submitted.stream().filter(a -> a.questionId().equals(question.getId())).toList();
       if (mine.isEmpty()) {
         continue;
       }
@@ -206,7 +219,9 @@ public class OpinionCollationService {
         question.getType(),
         question.getType().getLabel(),
         question.isRequired(),
+        question.getSection().getSortOrder(),
         answered,
+        skipped,
         question.getOptions().stream()
             .map(
                 o -> {

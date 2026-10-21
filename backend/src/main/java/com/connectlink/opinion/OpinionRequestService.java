@@ -13,6 +13,7 @@ import com.connectlink.history.FieldChanges;
 import com.connectlink.history.HistoryTargetType;
 import com.connectlink.history.dto.FieldChange;
 import com.connectlink.opinion.OpinionTarget.RecipientSnapshot;
+import com.connectlink.opinion.dto.OpinionJump;
 import com.connectlink.opinion.dto.OpinionQuestionRequest;
 import com.connectlink.opinion.dto.OpinionQuestionResponse;
 import com.connectlink.opinion.dto.OpinionRecipientCandidateResponse;
@@ -23,6 +24,8 @@ import com.connectlink.opinion.dto.OpinionRequestDetailResponse;
 import com.connectlink.opinion.dto.OpinionRequestPermissions;
 import com.connectlink.opinion.dto.OpinionRequestSummaryResponse;
 import com.connectlink.opinion.dto.OpinionRequestUpdateRequest;
+import com.connectlink.opinion.dto.OpinionSectionRequest;
+import com.connectlink.opinion.dto.OpinionSectionResponse;
 import com.connectlink.opinion.dto.OpinionTargetRequest;
 import com.connectlink.opinion.dto.OpinionTargetResponse;
 import com.connectlink.organization.Business;
@@ -156,7 +159,7 @@ public class OpinionRequestService {
                 body.dueDate(),
                 user.email(),
                 user.name()));
-    applyQuestions(request, body.questions());
+    applyForm(request, body.sections(), body.questions());
     applyTargets(request, body.targets());
     repository.flush();
     Snapshot after = Snapshot.of(request);
@@ -186,9 +189,8 @@ public class OpinionRequestService {
     Set<String> recipientsBefore = recipientEmails(request);
     request.change(body.title().trim(), body.content().trim(), body.dueDate());
     if (request.getStatus() == OpinionRequestStatus.DRAFT) {
-      applyQuestions(request, body.questions());
-    } else if (!drafts(body.questions())
-        .equals(request.getQuestions().stream().map(OpinionQuestion.Draft::of).toList())) {
+      applyForm(request, body.sections(), body.questions());
+    } else if (!Form.of(body.sections(), body.questions()).equals(Form.of(request))) {
       throw BusinessException.conflict("OPINION_QUESTIONS_LOCKED", "회신을 받기 시작한 요청은 질문을 고칠 수 없습니다.");
     }
     applyTargets(request, body.targets());
@@ -313,37 +315,116 @@ public class OpinionRequestService {
 
   // ---- 질문·대상 반영 ----
 
-  /** 질문을 요청 목록대로 통째로 바꾼다(작성중이라 답이 없다). 객관식은 선택지가 둘 이상이고 겹치지 않아야 한다. */
-  private void applyQuestions(OpinionRequest request, List<OpinionQuestionRequest> questions) {
-    List<OpinionQuestion.Draft> drafts = drafts(questions);
-    for (int i = 0; i < drafts.size(); i++) {
-      OpinionQuestion.Draft d = drafts.get(i);
+  /**
+   * 섹션과 질문을 요청 목록대로 통째로 바꾼다(작성중이라 답이 없다). 객관식은 선택지가 둘 이상이고 겹치지 않아야 한다. 질문은 섹션 순서대로 놓이고, 이동은 지금 섹션보다
+   * 뒤의 섹션으로만 간다(되돌아가면 끝나지 않으므로).
+   */
+  private void applyForm(
+      OpinionRequest request,
+      List<OpinionSectionRequest> sectionBodies,
+      List<OpinionQuestionRequest> questionBodies) {
+    Form form = Form.of(sectionBodies, questionBodies);
+    int sectionCount = form.sections().size();
+    for (int s = 0; s < sectionCount; s++) {
+      ensureJumpForward(form.sections().get(s).jump(), s, sectionCount, "sections[" + s + "].jump");
+    }
+    int lastSection = 0;
+    for (int i = 0; i < form.questions().size(); i++) {
+      OpinionQuestion.Draft d = form.questions().get(i);
+      if (d.sectionIndex() < lastSection || d.sectionIndex() >= sectionCount) {
+        throw BusinessException.onField(
+            HttpStatus.BAD_REQUEST,
+            "OPINION_QUESTION_SECTION",
+            "questions[" + i + "].sectionIndex",
+            "질문은 섹션 순서대로 넣어 주세요.");
+      }
+      lastSection = d.sectionIndex();
+      List<String> labels = d.options().stream().map(OpinionQuestion.OptionDraft::label).toList();
       if (d.type().isChoice()
-          && (d.options().size() < 2 || new HashSet<>(d.options()).size() != d.options().size())) {
+          && (labels.size() < 2 || new HashSet<>(labels).size() != labels.size())) {
         throw BusinessException.onField(
             HttpStatus.BAD_REQUEST,
             "OPINION_QUESTION_OPTIONS",
             "questions[" + i + "].options",
             "객관식 질문은 서로 다른 선택지를 둘 이상 넣어 주세요.");
       }
+      for (int o = 0; o < d.options().size(); o++) {
+        ensureJumpForward(
+            d.options().get(o).jump(),
+            d.sectionIndex(),
+            sectionCount,
+            "questions[" + i + "].options[" + o + "].jump");
+      }
     }
-    request.replaceQuestions(drafts);
+    request.replaceForm(form.sections(), form.questions());
     repository.flush();
   }
 
-  /** 요청 본문의 질문을 저장할 모양으로. 글은 앞뒤 공백을 떼고, 주관식의 선택지는 버린다. */
-  private static List<OpinionQuestion.Draft> drafts(List<OpinionQuestionRequest> questions) {
-    return questions.stream()
-        .map(
-            q ->
-                new OpinionQuestion.Draft(
-                    q.type(),
-                    q.title().trim(),
-                    q.required(),
-                    q.type().isChoice()
-                        ? q.options().stream().map(String::trim).toList()
-                        : List.of()))
-        .toList();
+  private static void ensureJumpForward(
+      OpinionQuestion.Jump jump, int from, int size, String field) {
+    if (jump == null || jump.type() != OpinionJumpType.SECTION) {
+      return;
+    }
+    if (jump.order() == null || jump.order() <= from || jump.order() >= size) {
+      throw BusinessException.onField(
+          HttpStatus.BAD_REQUEST, "OPINION_SECTION_JUMP", field, "이 섹션보다 뒤에 있는 섹션으로만 이동할 수 있습니다.");
+    }
+  }
+
+  /** 섹션과 질문(저장할 모양). 회신중 요청에서 바뀌었는지 비교할 때도 쓴다. */
+  private record Form(List<OpinionSection.Draft> sections, List<OpinionQuestion.Draft> questions) {
+
+    static Form of(OpinionRequest request) {
+      return new Form(
+          request.getSections().stream().map(OpinionSection.Draft::of).toList(),
+          request.getQuestions().stream().map(OpinionQuestion.Draft::of).toList());
+    }
+
+    /**
+     * 요청 본문을 저장할 모양으로. 글은 앞뒤 공백을 떼고 빈 글은 비운다. 섹션이 없으면 제목 없는 섹션 하나다. 주관식의 선택지와 하나 고르기가 아닌 질문의 선택지
+     * 이동은 버린다.
+     */
+    static Form of(List<OpinionSectionRequest> sections, List<OpinionQuestionRequest> questions) {
+      List<OpinionSection.Draft> sectionDrafts =
+          sections.isEmpty()
+              ? List.of(new OpinionSection.Draft(null, null, null))
+              : sections.stream()
+                  .map(
+                      s ->
+                          new OpinionSection.Draft(
+                              trimToNull(s.title()), trimToNull(s.description()), toJump(s.jump())))
+                  .toList();
+      List<OpinionQuestion.Draft> questionDrafts =
+          questions.stream()
+              .map(
+                  q ->
+                      new OpinionQuestion.Draft(
+                          q.sectionIndex() == null ? 0 : q.sectionIndex(),
+                          q.type(),
+                          q.title().trim(),
+                          q.required(),
+                          q.type().isChoice()
+                              ? q.options().stream()
+                                  .map(
+                                      o ->
+                                          new OpinionQuestion.OptionDraft(
+                                              o.label().trim(),
+                                              q.type() == OpinionQuestionType.SINGLE_CHOICE
+                                                  ? toJump(o.jump())
+                                                  : null))
+                                  .toList()
+                              : List.of()))
+              .toList();
+      return new Form(sectionDrafts, questionDrafts);
+    }
+
+    private static OpinionQuestion.Jump toJump(OpinionJump jump) {
+      return jump == null ? null : OpinionQuestion.Jump.of(jump.type(), jump.sectionIndex());
+    }
+
+    private static String trimToNull(String value) {
+      return value == null || value.isBlank() ? null : value.trim();
+    }
   }
 
   /**
@@ -488,6 +569,7 @@ public class OpinionRequestService {
         request.getClosedAt(),
         request.getCreatedAt(),
         request.getUpdatedAt(),
+        request.getSections().stream().map(OpinionRequestService::toSectionResponse).toList(),
         request.getQuestions().stream().map(OpinionRequestService::toQuestionResponse).toList(),
         targets.stream().map(t -> toTargetResponse(t, replies.get(t.getId()))).toList(),
         new OpinionRequestPermissions(
@@ -500,16 +582,33 @@ public class OpinionRequestService {
             member));
   }
 
+  static OpinionSectionResponse toSectionResponse(OpinionSection section) {
+    return new OpinionSectionResponse(
+        section.getId(),
+        section.getSortOrder(),
+        section.getTitle(),
+        section.getDescription(),
+        toResponse(section.getJump()));
+  }
+
   static OpinionQuestionResponse toQuestionResponse(OpinionQuestion question) {
     return new OpinionQuestionResponse(
         question.getId(),
+        question.getSection().getSortOrder(),
         question.getType(),
         question.getType().getLabel(),
         question.getTitle(),
         question.isRequired(),
         question.getOptions().stream()
-            .map(o -> new OpinionQuestionResponse.Option(o.getId(), o.getLabel()))
+            .map(
+                o ->
+                    new OpinionQuestionResponse.Option(
+                        o.getId(), o.getLabel(), toResponse(o.getJump())))
             .toList());
+  }
+
+  private static OpinionJump toResponse(OpinionQuestion.Jump jump) {
+    return jump == null ? null : new OpinionJump(jump.type(), jump.order());
   }
 
   private static OpinionTargetResponse toTargetResponse(OpinionTarget target, OpinionReply reply) {
@@ -643,33 +742,56 @@ public class OpinionRequestService {
           request.getTitle(),
           request.getContent(),
           request.getDueDate(),
-          questionLines(request.getQuestions()),
+          questionLines(request),
           FieldChanges.join(targetNames),
           recipientLines.isEmpty() ? null : String.join(" / ", recipientLines));
     }
 
-    /** 질문을 "1. 질문(객관식: 가 / 나)" 꼴로 한 줄씩. 없으면 null. */
-    private static String questionLines(List<OpinionQuestion> questions) {
-      if (questions.isEmpty()) {
+    /**
+     * 질문을 "1. 질문(객관식: 가 → 섹션 2 / 나)" 꼴로 한 줄씩. 섹션이 둘 이상이면 섹션마다 "[섹션 1. 제목] → 섹션 3" 줄을 앞에 둔다. 없으면
+     * null.
+     */
+    private static String questionLines(OpinionRequest request) {
+      List<OpinionQuestion> questions = request.getQuestions();
+      List<OpinionSection> sections = request.getSections();
+      if (questions.isEmpty() && sections.size() <= 1) {
         return null;
       }
       List<String> lines = new ArrayList<>();
-      for (OpinionQuestion q : questions) {
-        String options =
-            q.getOptions().stream()
-                .map(OpinionQuestionOption::getLabel)
-                .collect(Collectors.joining(" / "));
-        lines.add(
-            (q.getSortOrder() + 1)
-                + ". "
-                + q.getTitle()
-                + "("
-                + q.getType().getLabel()
-                + (options.isEmpty() ? "" : ": " + options)
-                + (q.isRequired() ? ", 필수" : "")
-                + ")");
+      for (OpinionSection section : sections) {
+        if (sections.size() > 1) {
+          lines.add(
+              "[섹션 "
+                  + (section.getSortOrder() + 1)
+                  + (section.getTitle() == null ? "" : ". " + section.getTitle())
+                  + "]"
+                  + jumpText(section.getJump()));
+        }
+        for (OpinionQuestion q : section.getQuestions()) {
+          String options =
+              q.getOptions().stream()
+                  .map(o -> o.getLabel() + jumpText(o.getJump()))
+                  .collect(Collectors.joining(" / "));
+          lines.add(
+              (q.getSortOrder() + 1)
+                  + ". "
+                  + q.getTitle()
+                  + "("
+                  + q.getType().getLabel()
+                  + (options.isEmpty() ? "" : ": " + options)
+                  + (q.isRequired() ? ", 필수" : "")
+                  + ")");
+        }
       }
       return String.join("\n", lines);
+    }
+
+    /** 이동을 " → 섹션 3" / " → 회신 끝" 꼴로. 없으면 빈 글. */
+    private static String jumpText(OpinionQuestion.Jump jump) {
+      if (jump == null) {
+        return "";
+      }
+      return jump.type() == OpinionJumpType.END ? " → 회신 끝" : " → 섹션 " + (jump.order() + 1);
     }
 
     /** {@code before} 에서 이것으로 바뀐 항목. {@code all} 이면 같은 값도 남긴다(작성 이력). */
