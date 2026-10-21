@@ -1,7 +1,7 @@
 /* 큰 칸에서는 남는 높이를 요일 칸이 채운다 */
 .week[data-fill] {
   flex: 1 1 auto;
-  min-height: 220px;
+  min-height: 180px;
 
   & .day {
     padding: 12px 8px;

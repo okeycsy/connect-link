@@ -22,12 +22,16 @@ test.describe('홈 대시보드', () => {
       'data-compact',
       'true',
     );
-    // 왼쪽 큰 칸은 이번 주 일시중단(월~금 요일 칸), 오른쪽 열 아래는 알림 센터와 같은 최근 소식
+    // 왼쪽 큰 칸은 이번 주 일시중단(월~금 요일 칸), 오른쪽은 회신 대기 의견 요청이고 한 화면에 들어온다.
+    // 알림 센터와 같은 최근 소식은 맨 아래에 둔다.
     await expect(cards.getByTestId('suspension-week')).toBeVisible();
     await expect(cards.getByTestId('home-recent-notifications')).toBeVisible();
-    const suspensionBox = await cards.getByTestId('home-card-SUSPENSIONS').boundingBox();
-    const recentBox = await cards.getByTestId('home-recent-notifications').boundingBox();
-    expect(suspensionBox!.x).toBeLessThan(recentBox!.x);
+    const suspensionBox = (await cards.getByTestId('home-card-SUSPENSIONS').boundingBox())!;
+    const opinionBox = (await cards.getByTestId('home-card-OPINION_REPLIES').boundingBox())!;
+    const recentBox = (await cards.getByTestId('home-recent-notifications').boundingBox())!;
+    expect(suspensionBox.x).toBeLessThan(opinionBox.x);
+    expect(suspensionBox.height).toBeLessThan(600);
+    expect(recentBox.y).toBeGreaterThan(suspensionBox.y + suspensionBox.height);
     // 모든 카드가 실제 데이터다(샘플 카드 없음).
     await expect(cards.getByText('샘플')).toHaveCount(0);
     await page.screenshot({ path: 'screenshots/home.png', fullPage: true });

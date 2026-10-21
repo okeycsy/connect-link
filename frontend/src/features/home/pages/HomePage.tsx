@@ -8,15 +8,15 @@ import classes from './HomePage.module.css';
 
 /** 왼쪽 큰 칸에 두는 자리. 일시중단을 먼저 읽히게 한다. SHY 요청(2026-10-21). */
 const MAIN_KEY: HomeCard['key'] = 'SUSPENSIONS';
-/** 오른쪽 열 위에 두는 자리. 그 아래에 최근 소식이 온다. 나머지는 아래 줄에 서버 순서대로 놓는다. */
+/** 오른쪽 열에 두는 자리. 나머지는 아래 줄에 서버 순서대로 놓는다. */
 const SIDE_KEYS: HomeCard['key'][] = ['OPINION_REPLIES'];
 /** 중요도가 낮아 아래 줄 끝에 작게 두는 자리. SHY 요청(2026-10-15). */
 const COMPACT_KEYS: HomeCard['key'][] = ['CONTACT_CONFIRM'];
 
 /**
  * 홈: "지금 할 일". 파스텔 번짐 위에 인사말과 흰 KPI 타일 네 개.
- * 그 아래 왼쪽 큰 칸은 이번 주 일시중단, 오른쪽은 회신 대기 의견 요청과 최근 소식(알림 센터와 같은 내용),
- * 아래 줄은 나머지 카드이고 확인이 필요한 담당자는 끝에 작게 둔다.
+ * 그 아래 왼쪽 큰 칸은 이번 주 일시중단, 오른쪽은 회신 대기 의견 요청이다. 두 칸은 높이를 맞춰 한 화면에 들어온다.
+ * 아래 줄은 나머지 카드이고 확인이 필요한 담당자는 끝에 작게, 최근 소식(알림 센터와 같은 내용)은 맨 아래에 둔다.
  * 카드 내용은 서버(/api/v1/home)가 자리별 기여자에게서 모아 준다. 업무 영역(레일)마다 다르다.
  */
 export function HomePage() {
@@ -82,9 +82,6 @@ export function HomePage() {
                 {side.map((c) => (
                   <HomeCardView key={c.key} card={c} stacked />
                 ))}
-                <Box className={classes.recent}>
-                  <RecentNotificationsCard />
-                </Box>
               </Stack>
             </Grid.Col>
           </Grid>
@@ -96,6 +93,7 @@ export function HomePage() {
           {compact.map((c) => (
             <HomeCardView key={c.key} card={c} compact />
           ))}
+          <RecentNotificationsCard />
         </Stack>
       )}
     </Stack>
