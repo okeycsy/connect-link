@@ -354,7 +354,7 @@ function QuestionCard({
                   <Select
                     aria-label={`${index + 1}번 질문 선택지 ${optionIndex + 1} 다음`}
                     size="sm"
-                    w={{ base: 150, sm: 220 }}
+                    w={{ base: 160, sm: 280 }}
                     allowDeselect={false}
                     leftSection={<IconCornerDownRight size={14} stroke={1.8} />}
                     data={jumpChoices(sections, sectionIndex, '섹션 설정대로 계속')}
