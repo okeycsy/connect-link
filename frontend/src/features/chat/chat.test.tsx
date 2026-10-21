@@ -4,7 +4,15 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '../../test/render';
 import { ChatMessageItem } from './components/ChatMessageItem';
 import { formatChatTime, splitMentions } from './components/chatFormat';
-import { type ChatMessage, groupAcksByOrganization, mentionQueryAt } from './hooks';
+import {
+  type ChatInviteCandidate,
+  type ChatMessage,
+  filterInviteCandidates,
+  groupAcksByOrganization,
+  groupInviteCandidates,
+  type InviteFilter,
+  mentionQueryAt,
+} from './hooks';
 
 const MESSAGE: ChatMessage = {
   id: 11,
@@ -42,6 +50,71 @@ const MESSAGE: ChatMessage = {
   attachmentsExpired: false,
   canAck: true,
 };
+
+const CANDIDATES: ChatInviteCandidate[] = [
+  {
+    email: 'ops@kftc.example.com',
+    name: '이운영',
+    organizationCode: 'KFTC',
+    organizationName: '금융결제원',
+    kftc: true,
+    roleLabel: '결제원 · 전산(운영)',
+    businesses: ['ACCOUNT_INFO', 'CMS'],
+    jobRole: 'IT',
+    itRoles: ['OPS'],
+  },
+  {
+    email: 'cms@kftc.example.com',
+    name: '박하늘',
+    organizationCode: 'KFTC',
+    organizationName: '금융결제원',
+    kftc: true,
+    roleLabel: '결제원 · 현업',
+    businesses: ['CMS'],
+    jobRole: 'BUSINESS',
+    itRoles: [],
+  },
+  {
+    email: 'dev@kb.example.com',
+    name: '김개발',
+    organizationCode: '004',
+    organizationName: 'KB국민은행',
+    kftc: false,
+    roleLabel: '참가기관 · 전산(개발)',
+    businesses: ['ACCOUNT_INFO'],
+    jobRole: 'IT',
+    itRoles: ['DEV'],
+  },
+];
+
+const names = (list: ChatInviteCandidate[]) => list.map((c) => c.name);
+
+describe('초대 대상 거르기', () => {
+  it('업무·소속·직무·전산 세부 직무로 거른다', () => {
+    const all: InviteFilter = { business: 'ALL', side: 'ALL', jobRole: 'ALL', itRoles: [] };
+    expect(names(filterInviteCandidates(CANDIDATES, { ...all, business: 'ACCOUNT_INFO' }))).toEqual(
+      ['이운영', '김개발'],
+    );
+    expect(names(filterInviteCandidates(CANDIDATES, { ...all, side: 'KFTC' }))).toEqual([
+      '이운영',
+      '박하늘',
+    ]);
+    expect(names(filterInviteCandidates(CANDIDATES, { ...all, jobRole: 'BUSINESS' }))).toEqual([
+      '박하늘',
+    ]);
+    expect(
+      names(filterInviteCandidates(CANDIDATES, { ...all, jobRole: 'IT', itRoles: ['DEV'] })),
+    ).toEqual(['김개발']);
+  });
+
+  it('기관별로 묶는다', () => {
+    const groups = groupInviteCandidates(CANDIDATES);
+    expect(groups.map((g) => [g.label, g.items.length])).toEqual([
+      ['결제원', 2],
+      ['KB국민은행', 1],
+    ]);
+  });
+});
 
 describe('소통 채널 도우미', () => {
   it('입력 중인 @낱말만 멘션 검색어로 본다', () => {

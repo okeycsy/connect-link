@@ -227,7 +227,14 @@ class ChatControllerTest {
         .andExpect(jsonPath("$[*].email").value(hasItem("park.jihoon@shinhan.example.com")))
         // 업무 밖 결제원 사람(CMS)도 부를 수 있다.
         .andExpect(jsonPath("$[*].email").value(hasItem("park.cms@kftc.example.com")))
-        .andExpect(jsonPath("$[*].email").value(not(hasItem("choi.yujin@samsung.example.com"))));
+        .andExpect(jsonPath("$[*].email").value(not(hasItem("choi.yujin@samsung.example.com"))))
+        // 초대 화면이 업무·직무로 고르도록 담당 업무와 직무를 함께 준다.
+        .andExpect(
+            jsonPath("$[?(@.email == 'park.cms@kftc.example.com')].businesses[*]")
+                .value(hasItem("CMS")))
+        .andExpect(
+            jsonPath("$[?(@.email == 'park.cms@kftc.example.com')].jobRole")
+                .value(hasItem("BUSINESS")));
     send(
             post(ROOMS + "/" + id + "/members"),
             Map.of("emails", List.of("park.jihoon@shinhan.example.com")),
