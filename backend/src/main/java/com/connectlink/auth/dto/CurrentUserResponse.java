@@ -6,13 +6,15 @@ import com.connectlink.organization.ItRole;
 import com.connectlink.organization.JobRole;
 import com.connectlink.organization.OrganizationType;
 import com.connectlink.organization.dto.BusinessResponse;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Comparator;
 import java.util.List;
 
-/** 로그인 사용자와 지금 접속한 망. 담당 업무는 업무 영역 순서(enum 순)다. */
+/** 로그인 사용자와 지금 접속한 망. 담당 업무는 업무 영역 순서(enum 순)다. 직급은 글쓴이 표시("결제원(김민찬 과장)")에 쓴다. */
 public record CurrentUserResponse(
     String email,
     String name,
+    @Schema(nullable = true) String jobTitle,
     String organizationCode,
     String organizationName,
     OrganizationType organizationType,
@@ -30,6 +32,7 @@ public record CurrentUserResponse(
     return new CurrentUserResponse(
         user.email(),
         user.name(),
+        user.jobTitle(),
         user.organizationCode(),
         user.organizationName(),
         user.organizationType(),

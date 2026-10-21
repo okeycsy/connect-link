@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
  * @param targetId 대상 기관 행 ID. 테스트데이터 파일 첨부(TEST_DATA)의 ownerId 다
  * @param fileCount 올린 테스트데이터 파일 수
  * @param reportedByName 생성 여부·메모를 마지막으로 바꾼 기관 담당자
+ * @param reportedByJobTitle 그 담당자의 그때 직급
  * @param canEdit 지금 사용자가 이 기관 테스트데이터를 고치고 파일을 올릴 수 있는지(그 기관 담당자)
  */
 public record TestDataResponse(
@@ -22,5 +23,6 @@ public record TestDataResponse(
     @Schema(nullable = true) String note,
     int fileCount,
     @Schema(nullable = true) String reportedByName,
+    @Schema(nullable = true) String reportedByJobTitle,
     @Schema(nullable = true) LocalDateTime reportedAt,
     boolean canEdit) {}

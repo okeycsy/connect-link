@@ -105,3 +105,8 @@ FROM (VALUES
 JOIN organization o ON o.code = r.org_code
 JOIN suspension su ON su.organization_id = o.id AND su.business = r.business
                   AND su.end_at = CAST(CURRENT_DATE AS TIMESTAMP) + r.end_min * INTERVAL '1' MINUTE;
+
+-- 글쓴이 직급은 샘플 계정의 직급을 그대로 쓴다.
+UPDATE suspension
+SET registrant_job_title = (SELECT a.job_title FROM user_account a WHERE a.email = suspension.registrant_email),
+    confirmed_by_job_title = (SELECT a.job_title FROM user_account a WHERE a.email = suspension.confirmed_by_email);

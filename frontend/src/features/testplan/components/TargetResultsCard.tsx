@@ -19,9 +19,10 @@ import { IconCheck, IconMessage } from '@tabler/icons-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { fieldErrorsOf } from '../../../api/client';
-import { formatDateTime } from '../../../shared/format';
+import { formatAuthor, formatDateTime } from '../../../shared/format';
 import { OrgMonogram } from '../../../shared/OrgMonogram';
 import { ErrorState } from '../../../shared/state/StateView';
+import { useMe } from '../../account/hooks';
 import {
   type TestItemResultRow,
   type TestResult,
@@ -52,6 +53,7 @@ const changed = (row: TestItemResultRow, draft: Draft | undefined) =>
 /**
  * 대상 기관 한 곳의 요구사항별 결과. 기관 담당자는 결과(정상·오류·수행중·미수행)와 특이사항을 고르고 한 번에 저장한다. 결제원 담당자는 기관 결과를
  * 보고 요구사항마다 의견(미니 수행률 0~100·특이사항)을 남긴다. 기관 정상 + 결제원 100% 면 그 요구사항은 수행 완료다.
+ * 쓴 사람은 "결제원(김민찬 과장)", "KB국민은행(김민준 대리)"처럼 소속과 그때의 이름·직급으로 보인다.
  */
 export function TargetResultsCard({
   planId,
@@ -61,6 +63,9 @@ export function TargetResultsCard({
   organizationId: number;
 }) {
   const { data, isError, error } = useTestTargetResults(planId, organizationId);
+  const { data: me } = useMe();
+  // 결제원 담당자가 아직 의견이 없는 칸에 쓸 때 보이는 글쓴이(지금 로그인한 사람).
+  const myKftcLabel = formatAuthor('결제원', me?.name, me?.jobTitle);
   const save = useSaveTestResults(planId, organizationId);
   // 기관 담당자가 고친 요구사항만 담는다. 다시 읽어도 저장 전 입력은 남고, 저장하면 비운다.
   const [drafts, setDrafts] = useState<Record<number, Draft>>({});
@@ -127,6 +132,8 @@ export function TargetResultsCard({
               draft={drafts[row.itemId] ?? draftOf(row)}
               editable={data.canReport}
               feedback={data.canFeedback}
+              organizationName={data.summary.organizationName}
+              myKftcLabel={myKftcLabel}
               error={rowErrors[row.itemId]}
               onDraft={(d) => setDrafts((prev) => ({ ...prev, [row.itemId]: d }))}
               onFeedback={() => setFeedbackRow(row)}
@@ -139,6 +146,7 @@ export function TargetResultsCard({
       <FeedbackModal
         row={feedbackRow}
         onClose={() => setFeedbackRow(null)}
+        writer={myKftcLabel}
         planId={planId}
         organizationId={organizationId}
       />
@@ -201,6 +209,8 @@ function ResultRow({
   draft,
   editable,
   feedback,
+  organizationName,
+  myKftcLabel,
   error,
   onDraft,
   onFeedback,
@@ -211,6 +221,8 @@ function ResultRow({
   draft: Draft;
   editable: boolean;
   feedback: boolean;
+  organizationName: string;
+  myKftcLabel: string;
   error: string | undefined;
   onDraft: (draft: Draft) => void;
   onFeedback: () => void;
@@ -219,6 +231,13 @@ function ResultRow({
 }) {
   const quick = useSaveTestFeedback(planId, organizationId);
   const hasFeedback = row.feedbackRate != null || row.feedbackNote != null;
+  const reporter = formatAuthor(organizationName, row.reportedByName, row.reportedByJobTitle);
+  // 남긴 의견은 쓴 사람, 아직 없으면 지금 쓸 사람(결제원 담당자)이다.
+  const feedbackAuthor = hasFeedback
+    ? formatAuthor('결제원', row.feedbackByName, row.feedbackByJobTitle)
+    : feedback
+      ? myKftcLabel
+      : '결제원';
   return (
     <Paper
       p="md"
@@ -275,7 +294,7 @@ function ResultRow({
             />
             {row.reportedAt && (
               <Text size="xs" c="dimmed">
-                {row.reportedByName} · {formatDateTime(row.reportedAt)} 등록
+                {reporter} · {formatDateTime(row.reportedAt)} 등록
               </Text>
             )}
           </Stack>
@@ -287,7 +306,7 @@ function ResultRow({
               </Text>
             )}
             <Text size="xs" c="dimmed">
-              {row.reportedByName} · {row.reportedAt && formatDateTime(row.reportedAt)} 등록
+              {reporter} · {row.reportedAt && formatDateTime(row.reportedAt)} 등록
             </Text>
           </Stack>
         ) : (
@@ -301,8 +320,8 @@ function ResultRow({
             <Group justify="space-between" align="flex-start" gap="sm" wrap="nowrap">
               <div>
                 <Group gap="xs">
-                  <Text size="sm" fw={600}>
-                    결제원 의견
+                  <Text size="sm" fw={600} data-testid="item-feedback-author">
+                    {feedbackAuthor}
                   </Text>
                   {row.feedbackRate != null && (
                     <Text size="sm" fw={700} c="clay.6" className={classes.numeric}>
@@ -323,7 +342,7 @@ function ResultRow({
                       </Text>
                     )}
                     <Text size="xs" c="dimmed">
-                      {row.feedbackByName} · {row.feedbackAt && formatDateTime(row.feedbackAt)}
+                      {row.feedbackAt && formatDateTime(row.feedbackAt)}
                       {row.feedbackOutdated && ' · 기관이 그 뒤에 결과를 바꿨습니다'}
                     </Text>
                   </>
@@ -376,11 +395,13 @@ function ResultRow({
 function FeedbackModal({
   row,
   onClose,
+  writer,
   planId,
   organizationId,
 }: {
   row: TestItemResultRow | null;
   onClose: () => void;
+  writer: string;
   planId: number;
   organizationId: number;
 }) {
@@ -404,7 +425,7 @@ function FeedbackModal({
     <Modal
       opened={row != null}
       onClose={onClose}
-      title={row ? `${row.number} ${row.title} 결제원 의견` : ''}
+      title={row ? `${row.number} ${row.title} · ${writer} 의견` : ''}
       centered
       size="lg"
     >

@@ -14,7 +14,7 @@ import { IconCheck } from '@tabler/icons-react';
 import { useState } from 'react';
 
 import { fieldErrorsOf } from '../../../api/client';
-import { formatDate, formatDateTime } from '../../../shared/format';
+import { formatAuthor, formatDate, formatDateTime } from '../../../shared/format';
 import { ErrorState } from '../../../shared/state/StateView';
 import { AttachmentPanel } from '../../attachment/components/AttachmentPanel';
 import {
@@ -92,7 +92,8 @@ function TestDataView({
           </Group>
           {data.reportedAt && (
             <Text size="sm" c="dimmed">
-              {data.reportedByName} · {formatDateTime(data.reportedAt)}
+              {formatAuthor(data.organizationName, data.reportedByName, data.reportedByJobTitle)} ·{' '}
+              {formatDateTime(data.reportedAt)}
             </Text>
           )}
         </Group>

@@ -52,3 +52,16 @@ export function formatBytes(bytes: number | null | undefined): string {
     unit === 0 ? String(value) : value < 10 ? value.toFixed(1) : String(Math.round(value));
   return `${text} ${units[unit]}`;
 }
+
+/**
+ * 글쓴이 표기 "결제원(김민찬 과장)", "KB국민은행(김민준 대리)". 직급이 없으면(예전 기록) 이름만, 이름도 없으면 소속만 보인다.
+ * 소속은 결제원 쪽이면 "결제원", 기관 쪽이면 기관 이름을 넘긴다.
+ */
+export function formatAuthor(
+  affiliation: string,
+  name: string | null | undefined,
+  jobTitle?: string | null,
+): string {
+  const person = [name, jobTitle].filter((v) => v && v.trim()).join(' ');
+  return person ? `${affiliation}(${person})` : affiliation;
+}

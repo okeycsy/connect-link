@@ -120,7 +120,8 @@ public class AccountService {
         account.isAdmin(),
         account.getBusinesses(),
         account.getJobRole(),
-        account.getItRoles());
+        account.getItRoles(),
+        account.getJobTitle());
   }
 
   /** 이메일은 앞뒤 공백을 떼고 소문자로 비교·저장한다. */

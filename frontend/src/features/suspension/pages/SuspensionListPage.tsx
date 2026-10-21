@@ -309,7 +309,10 @@ function SuspensionTable({
               <SuspensionStatusBadge status={r.status} size="xs" />
             </Table.Td>
             <Table.Td data-label="등록">
-              <Text size="sm">{r.registrantName}</Text>
+              <Text size="sm">
+                {r.registrantName}
+                {r.registrantJobTitle && ` ${r.registrantJobTitle}`}
+              </Text>
               <Text size="xs" c="dimmed">
                 {r.registrantKftc ? '결제원' : '기관'}
               </Text>

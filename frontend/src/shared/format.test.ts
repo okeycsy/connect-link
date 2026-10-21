@@ -4,6 +4,7 @@ import {
   formatBytes,
   formatDate,
   formatDateTime,
+  formatAuthor,
   formatDateTimeRange,
   formatPhone,
 } from './format';
@@ -40,5 +41,11 @@ describe('formatBytes', () => {
     expect(formatBytes(2048)).toBe('2.0 KB');
     expect(formatBytes(15 * 1024 * 1024)).toBe('15 MB');
     expect(formatBytes(null)).toBe('');
+  });
+
+  it('글쓴이는 소속 뒤 괄호에 이름과 직급을 붙인다', () => {
+    expect(formatAuthor('결제원', '김민찬', '과장')).toBe('결제원(김민찬 과장)');
+    expect(formatAuthor('KB국민은행', '김민준', null)).toBe('KB국민은행(김민준)');
+    expect(formatAuthor('결제원', undefined)).toBe('결제원');
   });
 });

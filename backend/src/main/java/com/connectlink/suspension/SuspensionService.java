@@ -176,7 +176,8 @@ public class SuspensionService {
     Suspension.Content content = contentOf(body);
     Suspension suspension =
         repository.saveAndFlush(
-            Suspension.register(organization, content, user.email(), user.name(), kftc));
+            Suspension.register(
+                organization, content, user.email(), user.name(), user.jobTitle(), kftc));
     changeHistoryService.record(
         user,
         ChangeHistoryCommand.created(
@@ -284,7 +285,7 @@ public class SuspensionService {
     SuspensionStatus before = suspension.getStatus();
     String handoverBefore = suspension.getHandover();
     String text = handover.trim();
-    suspension.confirm(text, user.email(), user.name(), roleLabelOf(user), now());
+    suspension.confirm(text, user.email(), user.name(), user.jobTitle(), roleLabelOf(user), now());
     repository.flush();
     recordStatus(
         user,
@@ -330,6 +331,7 @@ public class SuspensionService {
         s.getStatus().getLabel(),
         s.getReason(),
         s.getRegistrantName(),
+        s.getRegistrantJobTitle(),
         s.isRegistrantKftc(),
         s.getReviewers().size());
   }
@@ -360,10 +362,12 @@ public class SuspensionService {
         s.getContactEmail(),
         s.getExtraNote(),
         s.getRegistrantName(),
+        s.getRegistrantJobTitle(),
         s.isRegistrantKftc(),
         s.getHandover(),
         s.getConfirmedAt(),
         s.getConfirmedByName(),
+        s.getConfirmedByJobTitle(),
         s.getCompletedAt(),
         s.getReviewers().stream()
             .map(
