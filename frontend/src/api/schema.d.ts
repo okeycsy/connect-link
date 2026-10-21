@@ -3297,6 +3297,10 @@ export interface components {
       organizationName: string;
       kftc: boolean;
       roleLabel: string;
+      businesses: ('ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS')[];
+      /** @enum {string} */
+      jobRole: 'BUSINESS' | 'IT';
+      itRoles: ('DEV' | 'OPS' | 'INFRA' | 'EXTERNAL_LINK' | 'CONTROL_ROOM')[];
     };
     ChangeHistoryResponse: {
       /** Format: int64 */

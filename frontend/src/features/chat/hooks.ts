@@ -212,3 +212,41 @@ export function mentionQueryAt(text: string, caret: number): string | null {
   const match = /(?:^|\s)@([^\s@]*)$/.exec(before);
   return match ? match[1] : null;
 }
+
+/** 초대 화면의 거르기. 업무는 'ALL' 이면 전부, 직무는 'ALL'/'BUSINESS'/'IT', 전산 세부 직무는 비면 전부다. */
+export interface InviteFilter {
+  business: ChatInviteCandidate['businesses'][number] | 'ALL';
+  side: 'ALL' | 'KFTC' | 'ORGANIZATION';
+  jobRole: ChatInviteCandidate['jobRole'] | 'ALL';
+  itRoles: ChatInviteCandidate['itRoles'][number][];
+}
+
+export function filterInviteCandidates(
+  candidates: ChatInviteCandidate[],
+  filter: InviteFilter,
+): ChatInviteCandidate[] {
+  return candidates.filter(
+    (c) =>
+      (filter.business === 'ALL' || c.businesses.includes(filter.business)) &&
+      (filter.side === 'ALL' || c.kftc === (filter.side === 'KFTC')) &&
+      (filter.jobRole === 'ALL' || c.jobRole === filter.jobRole) &&
+      (filter.jobRole !== 'IT' ||
+        filter.itRoles.length === 0 ||
+        c.itRoles.some((r) => filter.itRoles.includes(r))),
+  );
+}
+
+/** 초대 후보를 기관별로 묶는다(서버 순서: 결제원 먼저, 그다음 기관 이름순). 묶음마다 한 번에 고른다. */
+export function groupInviteCandidates(candidates: ChatInviteCandidate[]) {
+  const groups = new Map<string, { label: string; kftc: boolean; items: ChatInviteCandidate[] }>();
+  for (const c of candidates) {
+    const group = groups.get(c.organizationCode) ?? {
+      label: c.kftc ? '결제원' : c.organizationName,
+      kftc: c.kftc,
+      items: [],
+    };
+    group.items.push(c);
+    groups.set(c.organizationCode, group);
+  }
+  return [...groups.entries()].map(([organizationCode, g]) => ({ organizationCode, ...g }));
+}

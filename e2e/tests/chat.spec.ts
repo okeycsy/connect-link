@@ -3,7 +3,10 @@ import { expect, type Page, test } from '@playwright/test';
 import { skipContactReconfirm } from './support/account';
 
 // 이 파일은 공통 세션(데모 관리자) 없이 빈 브라우저로 시작한다. 결제원 담당자(홍성민)와 기관 담당자(김민준)로 로그인한다.
-test.use({ storageState: { cookies: [], origins: [] }, timezoneId: 'Asia/Seoul' });
+test.use({
+  storageState: { cookies: [], origins: [] },
+  timezoneId: 'Asia/Seoul',
+});
 
 /** 화면 캡처. 대화 칸은 자체 스크롤이라 보이는 화면만 찍는다. */
 async function shot(page: Page, name: string) {
@@ -34,7 +37,9 @@ test.describe('마. 소통 채널', () => {
     await openChat(page);
 
     // 업무 단체방에 결제원을 부른 읽지 않은 메시지가 있다.
-    const groupRoom = rooms(page).getByRole('link', { name: /계좌통합관리 단체방/ });
+    const groupRoom = rooms(page).getByRole('link', {
+      name: /계좌통합관리 단체방/,
+    });
     await expect(groupRoom.getByLabel('내 기관 멘션')).toBeVisible();
     await expect(groupRoom.getByLabel('읽지 않은 메시지')).toHaveText('1');
     await expect(rooms(page)).toContainText('오픈뱅킹 안심차단 전문 테스트');
@@ -79,15 +84,27 @@ test.describe('마. 소통 채널', () => {
     await page.getByLabel('방 이름').fill('E2E 장애 대응 방');
     await page.getByRole('button', { name: '만들기', exact: true }).click();
 
-    // 만들면 바로 초대 창이 열린다. 업무 밖 결제원 사람(CMS 박하늘)도 고를 수 있다.
+    // 만들면 바로 초대 창이 열린다. 이름 검색 없이 업무·소속·직무로 거르고 기관 묶음째 고른다.
     const dialog = page.getByRole('dialog', { name: '사람 초대' });
     await expect(dialog).toBeVisible();
-    await dialog.getByLabel('초대할 사람').click();
-    await page.getByRole('option', { name: /최유진/ }).click();
-    await page.getByRole('option', { name: /박하늘/ }).click();
+    await expect(dialog.getByRole('textbox', { name: '담당 업무' })).toHaveValue('계좌통합관리');
+    await dialog
+      .getByRole('group', { name: '소속' })
+      .getByText('참가기관', { exact: true })
+      .click();
+    await expect(dialog.getByText(/^결제원 \d+명$/)).toHaveCount(0);
+    await dialog.getByRole('checkbox', { name: /^삼성증권 \d+명$/ }).check();
+    await expect(dialog.getByRole('checkbox', { name: /최유진/ })).toBeChecked();
     await shot(page, 'chat-invite');
-    await page.keyboard.press('Escape');
-    await dialog.getByRole('button', { name: '초대' }).click();
+
+    // 업무 밖 결제원 사람(CMS 박하늘)도 업무를 바꿔 고른다. 앞서 고른 사람은 남는다.
+    await dialog.getByRole('textbox', { name: '담당 업무' }).click();
+    await page.getByRole('option', { name: 'CMS' }).click();
+    await dialog.getByRole('group', { name: '소속' }).getByText('결제원', { exact: true }).click();
+    await dialog.getByRole('group', { name: '직무' }).getByText('현업', { exact: true }).click();
+    await dialog.getByRole('checkbox', { name: /박하늘/ }).check();
+    await shot(page, 'chat-invite-other-business');
+    await dialog.getByRole('button', { name: /명 초대$/ }).click();
     await expect(dialog).toBeHidden();
 
     await expect(page.getByRole('heading', { name: 'E2E 장애 대응 방' })).toBeVisible();
@@ -104,7 +121,9 @@ test.describe('마. 소통 채널', () => {
     await expect(rooms(page)).not.toContainText('E2E 장애 대응 방');
     await expect(page.getByRole('button', { name: '초대방 만들기' })).toHaveCount(0);
 
-    const groupRoom = rooms(page).getByRole('link', { name: /계좌통합관리 단체방/ });
+    const groupRoom = rooms(page).getByRole('link', {
+      name: /계좌통합관리 단체방/,
+    });
     await expect(groupRoom.getByLabel('내 기관 멘션')).toBeVisible();
     await groupRoom.click();
 
@@ -124,7 +143,9 @@ test.describe('마. 소통 채널', () => {
     await loginAs(page, '김민준 (참가기관 · 현업)로 로그인');
     await page.goto('/account-info/chat');
     await expect(rooms(page)).toBeVisible();
-    await rooms(page).getByRole('link', { name: /계좌통합관리 단체방/ }).click();
+    await rooms(page)
+      .getByRole('link', { name: /계좌통합관리 단체방/ })
+      .click();
     await expect(rooms(page)).toBeHidden();
     await expect(page.getByRole('textbox', { name: '메시지 입력' })).toBeVisible();
     const overflow = await page.evaluate(

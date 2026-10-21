@@ -270,6 +270,7 @@ export function ChatConversation({
           {detail.permissions.invite && (
             <InviteChatMembersModal
               roomId={roomId}
+              business={detail.business}
               opened={inviteOpen}
               onClose={() => setInviteOpen(false)}
             />
