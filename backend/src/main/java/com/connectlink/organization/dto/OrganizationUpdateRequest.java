@@ -21,4 +21,4 @@ public record OrganizationUpdateRequest(
         String emailDomain,
     @NotNull(message = "사용 여부를 골라 주세요.") Boolean active,
     @NotNull(message = "참여 업무를 골라 주세요.") Set<Business> businesses,
-    @Schema(nullable = true, description = "업권. 참가기관은 반드시 정하고 그 밖의 기관은 무시한다") FinanceSector sector) {}
+    @Schema(nullable = true, description = "업권. 참가기관만 쓰고 그 밖의 기관은 무시한다") FinanceSector sector) {}

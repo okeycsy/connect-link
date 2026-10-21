@@ -25,4 +25,4 @@ public record OrganizationCreateRequest(
         @Size(max = 100, message = "이메일 도메인은 100자까지입니다.")
         String emailDomain,
     @NotNull(message = "참여 업무를 골라 주세요.") Set<Business> businesses,
-    @Schema(nullable = true, description = "업권. 참가기관은 반드시 정하고 그 밖의 기관은 무시한다") FinanceSector sector) {}
+    @Schema(nullable = true, description = "업권. 참가기관만 쓰고 그 밖의 기관은 무시한다") FinanceSector sector) {}
