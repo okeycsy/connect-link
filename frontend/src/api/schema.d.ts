@@ -1216,6 +1216,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/suspensions/registrable-organizations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 일시중단 등록 기관과 업무 조회
+     * @description 등록 양식에서 고를 기관과 각 기관이 참여하는 업무. 등록은 기관 기준이라 업무 영역과 상관없다. 결제원 계정은 사용 중 참가기관 전부, 참가기관 계정은 자기 기관 하나를 받는다.
+     */
+    get: operations['registrableOrganizations'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/suspensions/organizations': {
     parameters: {
       query?: never;
@@ -2035,7 +2055,6 @@ export interface components {
       business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
       /** Format: int64 */
       organizationId?: number | null;
-      subBusiness?: string | null;
       /** Format: date-time */
       startAt: string;
       /** Format: date-time */
@@ -2054,7 +2073,6 @@ export interface components {
       business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
       businessSlug: string;
       businessLabel: string;
-      subBusiness?: string | null;
       /** Format: int64 */
       organizationId: number;
       organizationName: string;
@@ -2791,7 +2809,6 @@ export interface components {
       /** @enum {string} */
       business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
       businessLabel: string;
-      subBusiness?: string | null;
       /** Format: int64 */
       organizationId: number;
       organizationName: string;
@@ -2810,6 +2827,13 @@ export interface components {
       registrantKftc: boolean;
       /** Format: int32 */
       reviewerCount: number;
+    };
+    SuspensionRegistrableOrganizationResponse: {
+      /** Format: int64 */
+      id: number;
+      code: string;
+      name: string;
+      businesses: ('ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS')[];
     };
     SuspensionOrganizationResponse: {
       /** Format: int64 */
@@ -5246,6 +5270,26 @@ export interface operations {
         };
         content: {
           '*/*': components['schemas']['TestPlanCountsResponse'];
+        };
+      };
+    };
+  };
+  registrableOrganizations: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['SuspensionRegistrableOrganizationResponse'][];
         };
       };
     };
