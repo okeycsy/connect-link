@@ -284,6 +284,30 @@ public class ContactService {
     return toResponse(user, contact);
   }
 
+  /**
+   * 한 업무의 전 기관 담당자 연락처(주담당 먼저, 이름순). 다른 모듈이 담당자를 고를 때 쓰는 읽기 전용 목록이라 권한은 부르는 쪽이 본다. 계정이 없는 담당자도 들어
+   * 있다.
+   */
+  @Transactional(readOnly = true)
+  public List<BusinessContact> listByBusiness(Business business) {
+    return repository.findByBusinessOrderByRankAscNameAsc(business).stream()
+        .map(
+            c ->
+                new BusinessContact(
+                    c.getId(),
+                    c.getOrganization().getId(),
+                    c.getEmail(),
+                    c.getName(),
+                    c.getDepartment(),
+                    c.getTeam(),
+                    c.getJobTitle(),
+                    c.getJobRole(),
+                    c.jobRoleLabel(),
+                    c.getRank(),
+                    c.getSubBusiness()))
+        .toList();
+  }
+
   /** 그 업무 결제원 담당자가 내부망에서 지운다. 삭제 이력을 남기고, 정기 변경 주간이면 그 기관을 "정보 변경" 으로 남긴다. */
   public void delete(CurrentUser user, Long id) {
     Contact contact = load(id);

@@ -9,7 +9,8 @@ import type { OpinionRecipientCandidate } from '../hooks';
 /** 화면에서 고른 대상 기관 한 곳. */
 export interface TargetValue {
   organizationId: number;
-  recipientAccountIds: number[];
+  /** 회신 담당자(담당자 연락처의 회사 이메일). */
+  recipientEmails: string[];
 }
 
 interface Props {
@@ -91,16 +92,15 @@ export function TargetPicker({
 
   const empty = (organizationId: number): TargetValue => ({
     organizationId,
-    recipientAccountIds: [],
+    recipientEmails: [],
   });
-  const isPicked = (orgId: number, accountId: number) =>
-    byOrg.get(orgId)?.recipientAccountIds.includes(accountId) ?? false;
+  const isPicked = (orgId: number, email: string) =>
+    byOrg.get(orgId)?.recipientEmails.includes(email) ?? false;
   /** 기관 전부와 그 담당자 전부가 골라져 있는가. */
   const allPicked = (orgs: OpinionRecipientCandidate[]) =>
     orgs.every(
       (o) =>
-        byOrg.has(o.organizationId) &&
-        o.members.every((m) => isPicked(o.organizationId, m.accountId)),
+        byOrg.has(o.organizationId) && o.members.every((m) => isPicked(o.organizationId, m.email)),
     );
 
   const setTarget = (organizationId: number, next: TargetValue | null) => {
@@ -115,7 +115,7 @@ export function TargetPicker({
         const current = next.get(org.organizationId) ?? empty(org.organizationId);
         next.set(org.organizationId, {
           ...current,
-          recipientAccountIds: org.members.map((m) => m.accountId),
+          recipientEmails: org.members.map((m) => m.email),
         });
       } else if (!lockedOrganizationIds.has(org.organizationId)) {
         next.delete(org.organizationId);
@@ -129,16 +129,16 @@ export function TargetPicker({
     for (const org of candidates) {
       const hits = org.members
         .filter((m) => subBusinessOf(m.subBusiness) === name)
-        .map((m) => m.accountId);
+        .map((m) => m.email);
       if (hits.length === 0) continue;
       const current = next.get(org.organizationId) ?? empty(org.organizationId);
       const ids = checked
-        ? [...new Set([...current.recipientAccountIds, ...hits])]
-        : current.recipientAccountIds.filter((id) => !hits.includes(id));
+        ? [...new Set([...current.recipientEmails, ...hits])]
+        : current.recipientEmails.filter((id) => !hits.includes(id));
       if (ids.length === 0 && !lockedOrganizationIds.has(org.organizationId)) {
         next.delete(org.organizationId);
       } else {
-        next.set(org.organizationId, { ...current, recipientAccountIds: ids });
+        next.set(org.organizationId, { ...current, recipientEmails: ids });
       }
     }
     onChange([...next.values()]);
@@ -147,14 +147,14 @@ export function TargetPicker({
     candidates.every((org) =>
       org.members
         .filter((m) => subBusinessOf(m.subBusiness) === name)
-        .every((m) => isPicked(org.organizationId, m.accountId)),
+        .every((m) => isPicked(org.organizationId, m.email)),
     );
-  const toggleMember = (org: OpinionRecipientCandidate, accountId: number, checked: boolean) => {
+  const toggleMember = (org: OpinionRecipientCandidate, email: string, checked: boolean) => {
     const current = byOrg.get(org.organizationId) ?? empty(org.organizationId);
     const ids = checked
-      ? [...current.recipientAccountIds, accountId]
-      : current.recipientAccountIds.filter((id) => id !== accountId);
-    setTarget(org.organizationId, { ...current, recipientAccountIds: ids });
+      ? [...current.recipientEmails, email]
+      : current.recipientEmails.filter((e) => e !== email);
+    setTarget(org.organizationId, { ...current, recipientEmails: ids });
   };
   const everything = allPicked(candidates);
 
@@ -166,7 +166,7 @@ export function TargetPicker({
         </Button>
         <Text size="sm" c="dimmed" data-testid="target-summary">
           대상 {value.length}곳 · 회신 담당자{' '}
-          {value.reduce((n, t) => n + t.recipientAccountIds.length, 0)}명
+          {value.reduce((n, t) => n + t.recipientEmails.length, 0)}명
         </Text>
       </Group>
 
@@ -259,19 +259,17 @@ export function TargetPicker({
                     </Group>
                     {org.members.length === 0 ? (
                       <Text size="sm" c="dimmed" pl={30}>
-                        이 업무를 맡은 담당자 계정이 없습니다. 대상으로 넣을 수는 있지만 메일은 가지
+                        이 업무 담당자 연락처가 없습니다. 대상으로 넣을 수는 있지만 메일은 가지
                         않습니다.
                       </Text>
                     ) : (
                       <Stack gap={4} pl={30}>
                         {org.members.map((m) => (
                           <Checkbox
-                            key={m.accountId}
+                            key={m.contactId}
                             size="xs"
-                            checked={target?.recipientAccountIds.includes(m.accountId) ?? false}
-                            onChange={(e) =>
-                              toggleMember(org, m.accountId, e.currentTarget.checked)
-                            }
+                            checked={target?.recipientEmails.includes(m.email) ?? false}
+                            onChange={(e) => toggleMember(org, m.email, e.currentTarget.checked)}
                             aria-label={`${org.organizationName} ${m.name}`}
                             label={
                               <Group gap={6} wrap="wrap">

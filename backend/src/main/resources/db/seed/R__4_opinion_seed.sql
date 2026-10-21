@@ -117,9 +117,9 @@ FROM (VALUES
 JOIN opinion_request r ON r.title = t.title
 JOIN organization o ON o.code = t.org_code;
 
--- 회신 담당자. 계정 시드의 기관 담당자이며 그 업무를 맡은 사람만 고른다.
-INSERT INTO opinion_target_recipient (target_id, account_id, email, name, sub_business, created_at, created_by, updated_at, updated_by)
-SELECT t.id, u.id, u.email, u.name, b.sub_business, t.created_at, t.created_by, t.created_at, t.created_by
+-- 회신 담당자. 계정 시드의 기관 담당자이며 그 업무를 맡은 사람만 고른다(연락처 시드에도 같은 이메일로 있다).
+INSERT INTO opinion_target_recipient (target_id, email, name, sub_business, created_at, created_by, updated_at, updated_by)
+SELECT t.id, u.email, u.name, b.sub_business, t.created_at, t.created_by, t.created_at, t.created_by
 FROM (VALUES
   ('계좌통합관리 수수료 체계 개편 의견 요청', 'kim.minjun@kb.example.com'),
   ('계좌통합관리 수수료 체계 개편 의견 요청', 'choi.yujin@samsung.example.com'),

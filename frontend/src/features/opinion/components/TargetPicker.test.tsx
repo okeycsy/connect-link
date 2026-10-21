@@ -6,10 +6,10 @@ import { renderWithProviders } from '../../../test/render';
 import type { OpinionRecipientCandidate } from '../hooks';
 import { type TargetValue, TargetPicker } from './TargetPicker';
 
-const member = (accountId: number, name: string, subBusiness: string | null) => ({
-  accountId,
+const member = (contactId: number, name: string, subBusiness: string | null) => ({
+  contactId,
   name,
-  email: `${accountId}@example.com`,
+  email: `${contactId}@example.com`,
   subBusiness,
   jobRoleLabel: '현업',
   department: '디지털부',
