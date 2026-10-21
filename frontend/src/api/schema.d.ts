@@ -56,6 +56,30 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/test-plans/{id}/targets/{organizationId}/test-data': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 대상 기관 테스트데이터 조회
+     * @description 한 대상 기관의 테스트데이터 생성 여부·메모·파일 수. 결제원 담당자는 어느 기관이든, 기관 담당자는 자기 기관만 본다.
+     */
+    get: operations['get_2'];
+    /**
+     * 대상 기관 테스트데이터 저장
+     * @description 그 기관 담당자가 테스트데이터 생성 여부(미생성·생성 완료)와 메모를 저장한다. 생성 완료로 바뀌면 테스트의 알림 대상 결제원 담당자에게 매터모스트 알림이 간다.
+     */
+    put: operations['save'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/test-plans/{id}/targets/{organizationId}/results': {
     parameters: {
       query?: never;
@@ -131,7 +155,7 @@ export interface paths {
      * 일시중단 상세 조회
      * @description permissions 가 지금 할 수 있는 일이다.
      */
-    get: operations['get_2'];
+    get: operations['get_3'];
     /**
      * 일시중단 수정
      * @description 등록한 기관 담당자나 그 업무 결제원 담당자가 고친다. 기관 담당자가 확인이 시작된 건을 고치면 검토 대기로 돌아간다. 결제원 담당자에게 매터모스트 알림이 간다. 완료한 건이면 409 SUSPENSION_COMPLETED.
@@ -156,7 +180,7 @@ export interface paths {
       cookie?: never;
     };
     /** 기관 기준정보 상세 조회 (관리자) */
-    get: operations['get_4'];
+    get: operations['get_5'];
     /**
      * 기관 수정 (관리자)
      * @description 이름, 이메일 도메인, 사용 여부, 참여 업무를 통째로 바꾼다.
@@ -204,7 +228,7 @@ export interface paths {
      * 의견 요청 상세 조회
      * @description 결제원 담당자는 대상 전부를, 기관 담당자는 자기 기관의 대상 행만 본다. permissions 가 지금 할 수 있는 일이다.
      */
-    get: operations['get_5'];
+    get: operations['get_6'];
     /**
      * 의견 요청 수정
      * @description 작성중·회신중에 고친다. 질문(작성중일 때만)·대상은 보낸 목록으로 바뀐다. 회신중이면 새 회신 담당자에게 요청 메일, 남은 담당자에게 변경 알림이 간다. 회신을 저장한 기관을 빼면 409 OPINION_TARGET_HAS_REPLY.
@@ -232,7 +256,7 @@ export interface paths {
      * 담당자 상세 조회
      * @description permissions 가 지금 할 수 있는 일이다. 변경 이력은 변경 이력 API 로 본다.
      */
-    get: operations['get_6'];
+    get: operations['get_7'];
     /**
      * 담당자 수정
      * @description 본인과 소속 기관의 같은 업무 담당자, 또는 그 업무 결제원 담당자(내부망)가 고친다. 저장하면 최근 확인일이 갱신되고 바뀐 항목은 변경 전·후 이력으로 남는다. 기관과 업무는 바뀌지 않는다.
@@ -335,6 +359,26 @@ export interface paths {
      * @description 그 업무 결제원 담당자가 단위업무/개발 건마다 만든다. 요구사항과 대상 기관이 하나 이상 있어야 한다(TEST_PLAN_ITEMS_REQUIRED, TEST_PLAN_TARGETS_REQUIRED). 바로 대상 기관에 열리고 대상 기관 담당자에게 알림·메일이 간다. 만든 사람이 결과 등록 알림 대상이 된다. 가이드·참고자료(TEST_PLAN)는 저장한 뒤 첨부 API 로 올린다.
      */
     post: operations['create_1'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/test-plans/{id}/test-data-requests': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 테스트데이터 요청 다시 보내기
+     * @description 그 업무 결제원 담당자가 아직 생성 완료가 아닌 대상 기관 담당자에게 테스트데이터 요청 메일을 다시 보낸다. 요청하지 않은 테스트면 409 TEST_DATA_NOT_REQUESTED, 모두 생성 완료면 409 TEST_DATA_ALL_CREATED.
+     */
+    post: operations['sendRequest'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1287,7 +1331,7 @@ export interface paths {
      * 가입 신청 상세 조회
      * @description 신청한 업무 중 하나라도 맡은 결제원 담당자나 관리자만 본다.
      */
-    get: operations['get_3'];
+    get: operations['get_4'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1735,7 +1779,7 @@ export interface paths {
      * 채팅방 상세 조회
      * @description 구성원, 멘션할 수 있는 기관, 지금 할 수 있는 일(permissions). 구성원만 본다.
      */
-    get: operations['get_7'];
+    get: operations['get_8'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1895,6 +1939,11 @@ export interface components {
       progressRate: number;
       autoCreated: boolean;
     };
+    TestDataRequestForm: {
+      /** Format: date */
+      dueDate: string;
+      instruction?: string | null;
+    } | null;
     TestItemRequest: {
       /** Format: int64 */
       id?: number | null;
@@ -1913,7 +1962,20 @@ export interface components {
       endDate: string;
       items: components['schemas']['TestItemRequest'][];
       organizationIds: number[];
+      testDataRequest: components['schemas']['TestDataRequestForm'];
     };
+    TestDataRequestResponse: {
+      /** Format: date */
+      dueDate: string;
+      instruction?: string | null;
+      /** Format: date-time */
+      requestedAt?: string | null;
+      overdue: boolean;
+      /** Format: int32 */
+      createdCount: number;
+      /** Format: int32 */
+      targetCount: number;
+    } | null;
     TestItemResponse: {
       /** Format: int64 */
       id: number;
@@ -1949,6 +2011,7 @@ export interface components {
       /** Format: int64 */
       ownOrganizationId?: number | null;
       recipients: string[];
+      testDataRequest: components['schemas']['TestDataRequestResponse'];
       /** Format: date-time */
       createdAt: string;
       /** Format: date-time */
@@ -1988,6 +2051,33 @@ export interface components {
       completed: boolean;
       /** Format: date-time */
       lastReportedAt?: string | null;
+      /** @enum {string} */
+      testDataStatus: 'NOT_CREATED' | 'CREATED';
+      testDataStatusLabel: string;
+    };
+    TestDataSaveRequest: {
+      /** @enum {string} */
+      status: 'NOT_CREATED' | 'CREATED';
+      note?: string | null;
+    };
+    TestDataResponse: {
+      /** Format: int64 */
+      planId: number;
+      /** Format: int64 */
+      targetId: number;
+      /** Format: int64 */
+      organizationId: number;
+      organizationName: string;
+      /** @enum {string} */
+      status: 'NOT_CREATED' | 'CREATED';
+      statusLabel: string;
+      note?: string | null;
+      /** Format: int32 */
+      fileCount: number;
+      reportedByName?: string | null;
+      /** Format: date-time */
+      reportedAt?: string | null;
+      canEdit: boolean;
     };
     Entry: {
       /** Format: int64 */
@@ -2383,7 +2473,14 @@ export interface components {
       id: number;
       /** @enum {string} */
       ownerType:
-        'OPINION_REQUEST' | 'OPINION_REPLY' | 'SUSPENSION' | 'TEST_PLAN' | 'CHAT_MESSAGE' | 'DEMO';
+        | 'OPINION_REQUEST'
+        | 'OPINION_REPLY'
+        | 'SUSPENSION'
+        | 'TEST_PLAN'
+        | 'TEST_DATA_FORM'
+        | 'TEST_DATA'
+        | 'CHAT_MESSAGE'
+        | 'DEMO';
       /** Format: int64 */
       ownerId: number;
       name: string;
@@ -2436,6 +2533,12 @@ export interface components {
       recipientCount: number;
       /** Format: int32 */
       skippedOrganizationCount: number;
+    };
+    TestDataRequestSentResponse: {
+      /** Format: int32 */
+      organizationCount: number;
+      /** Format: date-time */
+      requestedAt: string;
     };
     SuspensionHandoverRequest: {
       handover: string;
@@ -2592,6 +2695,8 @@ export interface components {
         | 'TEST_PLAN_OPENED'
         | 'TEST_RESULT_REPORTED'
         | 'TEST_RESULT_FEEDBACK'
+        | 'TEST_DATA_REQUESTED'
+        | 'TEST_DATA_REPORTED'
         | 'SUSPENSION_CHANGED'
         | 'SYSTEM';
       typeLabel: string;
@@ -3471,6 +3576,56 @@ export interface operations {
       };
     };
   };
+  get_2: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+        organizationId: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['TestDataResponse'];
+        };
+      };
+    };
+  };
+  save: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+        organizationId: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TestDataSaveRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['TestDataResponse'];
+        };
+      };
+    };
+  };
   report: {
     parameters: {
       query?: never;
@@ -3574,7 +3729,7 @@ export interface operations {
       };
     };
   };
-  get_2: {
+  get_3: {
     parameters: {
       query?: never;
       header?: never;
@@ -3642,7 +3797,7 @@ export interface operations {
       };
     };
   };
-  get_4: {
+  get_5: {
     parameters: {
       query?: never;
       header?: never;
@@ -3738,7 +3893,7 @@ export interface operations {
       };
     };
   };
-  get_5: {
+  get_6: {
     parameters: {
       query?: never;
       header?: never;
@@ -3806,7 +3961,7 @@ export interface operations {
       };
     };
   };
-  get_6: {
+  get_7: {
     parameters: {
       query?: never;
       header?: never;
@@ -4039,6 +4194,28 @@ export interface operations {
         };
         content: {
           '*/*': components['schemas']['TestPlanDetailResponse'];
+        };
+      };
+    };
+  };
+  sendRequest: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['TestDataRequestSentResponse'];
         };
       };
     };
@@ -5068,6 +5245,8 @@ export interface operations {
           | 'OPINION_REPLY'
           | 'SUSPENSION'
           | 'TEST_PLAN'
+          | 'TEST_DATA_FORM'
+          | 'TEST_DATA'
           | 'CHAT_MESSAGE'
           | 'DEMO';
         ownerId: number;
@@ -5097,6 +5276,8 @@ export interface operations {
           | 'OPINION_REPLY'
           | 'SUSPENSION'
           | 'TEST_PLAN'
+          | 'TEST_DATA_FORM'
+          | 'TEST_DATA'
           | 'CHAT_MESSAGE'
           | 'DEMO';
         ownerId: number;
@@ -5379,7 +5560,7 @@ export interface operations {
       };
     };
   };
-  get_3: {
+  get_4: {
     parameters: {
       query?: never;
       header?: never;
@@ -5896,7 +6077,7 @@ export interface operations {
       };
     };
   };
-  get_7: {
+  get_8: {
     parameters: {
       query?: never;
       header?: never;

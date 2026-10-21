@@ -3,6 +3,7 @@ import {
   Alert,
   Button,
   Card,
+  Checkbox,
   Group,
   SimpleGrid,
   Skeleton,
@@ -55,11 +56,15 @@ interface Values {
   startDate: string | null;
   endDate: string | null;
   items: ItemDraft[];
+  /** 수행 전에 기관별 테스트데이터를 받는지. */
+  testDataRequested: boolean;
+  testDataDueDate: string | null;
+  testDataInstruction: string;
 }
 
 /**
  * 기관 테스트 만들기와 고치기. 주소에 :id 가 있으면 고치기다. 단위업무/개발 건, 테스트 내용과 수행 기간, 요구사항(번호 001, 002 … 순서),
- * 대상 참가기관, 가이드·참고자료를 받는다. 저장하면 바로 대상 기관에 열리고 대상 기관 담당자에게 메일이 간다.
+ * 대상 참가기관, 가이드·참고자료를 받는다. 테스트데이터는 수행 전에 받으므로 그 요청(회신 기한·요청 사항·회신 양식)을 맨 위에 둔다. 저장하면 바로 대상 기관에 열리고 대상 기관 담당자에게 메일이 간다.
  */
 export function TestPlanEditorPage() {
   const { business: slug = '', id } = useParams<{ business: string; id?: string }>();
@@ -112,6 +117,7 @@ function TestPlanEditor({ slug, existing }: { slug: string; existing?: TestPlanD
   const newKey = () => `n${nextKey.current++}`;
   // 새 테스트의 가이드·참고자료. 저장해 번호가 생긴 뒤 올린다.
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [pendingFormFiles, setPendingFormFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [organizationIds, setOrganizationIds] = useState<number[]>(
     () => existing?.targets.map((t) => t.organizationId) ?? [],
@@ -132,6 +138,11 @@ function TestPlanEditor({ slug, existing }: { slug: string; existing?: TestPlanD
       description: existing?.description ?? '',
       startDate: existing?.startDate ?? dayjs().format('YYYY-MM-DD'),
       endDate: existing?.endDate ?? dayjs().add(14, 'day').format('YYYY-MM-DD'),
+      // 새 테스트는 요청 칸을 펼쳐 둔다. 필요 없으면 "필요 없음" 을 체크해 넘어간다.
+      testDataRequested: existing ? existing.testDataRequest != null : true,
+      testDataDueDate:
+        existing?.testDataRequest?.dueDate ?? existing?.startDate ?? dayjs().format('YYYY-MM-DD'),
+      testDataInstruction: existing?.testDataRequest?.instruction ?? '',
       items: existing?.items.map((i) => ({
         key: `i${i.id}`,
         id: i.id,
@@ -147,7 +158,15 @@ function TestPlanEditor({ slug, existing }: { slug: string; existing?: TestPlanD
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mutation.isError, mutation.error]);
   const fieldErrors = mutation.isError ? fieldErrorsOf(mutation.error) : {};
-  const knownFields = ['subBusiness', 'title', 'description', 'startDate', 'endDate'];
+  const knownFields = [
+    'subBusiness',
+    'title',
+    'description',
+    'startDate',
+    'endDate',
+    'testDataRequest.dueDate',
+    'testDataRequest.instruction',
+  ];
   const generalError =
     mutation.isError &&
     (Object.keys(fieldErrors).length === 0 ||
@@ -157,12 +176,18 @@ function TestPlanEditor({ slug, existing }: { slug: string; existing?: TestPlanD
       ? (fieldErrors.items ?? fieldErrors.organizationIds ?? mutation.error.message)
       : undefined;
 
-  const uploadPending = async (planId: number) => {
-    if (pendingFiles.length === 0) return;
-    const owner = { ownerType: 'TEST_PLAN' as const, ownerId: planId };
+  /** 저장 뒤 고른 파일을 올린다. 가이드(TEST_PLAN)와 테스트데이터 회신 양식(TEST_DATA_FORM)이 같은 길을 쓴다. */
+  const uploadPending = async (
+    ownerType: 'TEST_PLAN' | 'TEST_DATA_FORM',
+    planId: number,
+    files: File[],
+    what: string,
+  ) => {
+    if (files.length === 0) return;
+    const owner = { ownerType, ownerId: planId };
     setUploading(true);
     const failed: string[] = [];
-    for (const file of pendingFiles) {
+    for (const file of files) {
       try {
         await uploadAttachmentFile(owner, file);
       } catch (e) {
@@ -173,7 +198,7 @@ function TestPlanEditor({ slug, existing }: { slug: string; existing?: TestPlanD
     await queryClient.invalidateQueries({ queryKey: attachmentKeys.list(owner) });
     if (failed.length > 0) {
       notifications.show({
-        title: '가이드 일부를 올리지 못했습니다',
+        title: `${what} 일부를 올리지 못했습니다`,
         message: `${failed.join(', ')}. 상세 화면에서 다시 올려 주세요.`,
         color: 'red',
       });
@@ -195,13 +220,23 @@ function TestPlanEditor({ slug, existing }: { slug: string; existing?: TestPlanD
         description: i.description || null,
       })),
       organizationIds,
+      testDataRequest: values.testDataRequested
+        ? {
+            // 빈 날짜는 서버가 필드 메시지로 알려 준다.
+            dueDate: values.testDataDueDate ?? '',
+            instruction: values.testDataInstruction.trim() || null,
+          }
+        : null,
     };
     if (existing) {
       update.mutate(body, { onSuccess: (d) => navigate(`/${slug}/tests/${d.id}`) });
     } else {
       create.mutate(body, {
         onSuccess: async (d) => {
-          await uploadPending(d.id);
+          await uploadPending('TEST_PLAN', d.id, pendingFiles, '가이드');
+          if (values.testDataRequested) {
+            await uploadPending('TEST_DATA_FORM', d.id, pendingFormFiles, '테스트데이터 회신 양식');
+          }
           navigate(`/${slug}/tests/${d.id}`);
         },
       });
@@ -240,6 +275,76 @@ function TestPlanEditor({ slug, existing }: { slug: string; existing?: TestPlanD
             {generalError}
           </Alert>
         )}
+
+        <Card data-testid="test-data-request">
+          <Stack gap="sm">
+            <div>
+              <Text fw={700} size="xl">
+                테스트데이터 사전 요청
+              </Text>
+              <Text size="sm" c="dimmed">
+                수행 기간 전에 기관마다 테스트데이터를 만들어 올리게 합니다. 저장하면 대상 기관
+                담당자에게 요청 메일이 갑니다.
+              </Text>
+            </div>
+            <Checkbox
+              label="이 테스트는 테스트데이터 사전 요청이 필요 없습니다"
+              checked={!form.values.testDataRequested}
+              onChange={(e) => form.setFieldValue('testDataRequested', !e.currentTarget.checked)}
+            />
+            {!form.values.testDataRequested ? (
+              <Text size="sm" c="dimmed" data-testid="test-data-skipped">
+                사전 요청 없이 바로 수행합니다. 기관에는 테스트데이터 칸이 보이지 않습니다.
+              </Text>
+            ) : (
+              <>
+                <DatePickerInput
+                  label="회신 기한"
+                  description={`수행 시작일(${form.values.startDate ?? '-'})과 같거나 앞이어야 합니다.`}
+                  required
+                  w={{ base: '100%', sm: 260 }}
+                  valueFormat="YYYY-MM-DD"
+                  {...form.getInputProps('testDataDueDate')}
+                  error={form.errors.testDataDueDate ?? fieldErrors['testDataRequest.dueDate']}
+                />
+                <Textarea
+                  label="요청 사항"
+                  placeholder="예: 해지 예정 계좌를 포함해 테스트 계좌 10개 이상을 만들고 양식에 계좌번호·상태를 적어 주세요."
+                  autosize
+                  minRows={2}
+                  maxLength={2000}
+                  {...form.getInputProps('testDataInstruction')}
+                  error={
+                    form.errors.testDataInstruction ?? fieldErrors['testDataRequest.instruction']
+                  }
+                />
+                <div>
+                  <Text size="sm" fw={500} mb={4}>
+                    회신 양식
+                  </Text>
+                  <Text size="xs" c="dimmed" mb={6}>
+                    선택입니다. 기관은 이 양식을 내려받아 채운 뒤 테스트데이터로 올립니다.
+                  </Text>
+                  {existing ? (
+                    <AttachmentPanel
+                      ownerType="TEST_DATA_FORM"
+                      ownerId={existing.id}
+                      editable
+                      uploadLabel="양식 올리기"
+                      emptyMessage="지정한 양식이 없습니다."
+                    />
+                  ) : (
+                    <PendingAttachments
+                      files={pendingFormFiles}
+                      onChange={setPendingFormFiles}
+                      pickLabel="양식 고르기"
+                    />
+                  )}
+                </div>
+              </>
+            )}
+          </Stack>
+        </Card>
 
         <Card>
           <Stack gap="sm">

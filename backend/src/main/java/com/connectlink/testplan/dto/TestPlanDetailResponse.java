@@ -14,6 +14,7 @@ import java.util.List;
  * @param progressRate 결제원 담당자는 전체, 기관 담당자는 자기 기관 수행률(0~100)
  * @param completedAt 수행 완료 일시(모든 대상 기관의 모든 요구사항이 완료된 때)
  * @param ownOrganizationId 기관 담당자의 자기 기관 ID. 결제원 담당자면 null
+ * @param testDataRequest 수행 기간 전 테스트데이터 요청. 요청하지 않았으면 null
  * @param recipients 결과 등록 매터모스트 알림을 받는 결제원 담당자 이름(결제원 담당자만, 아니면 비어 있다)
  */
 public record TestPlanDetailResponse(
@@ -36,6 +37,7 @@ public record TestPlanDetailResponse(
     List<TestTargetSummaryResponse> targets,
     @Schema(nullable = true) Long ownOrganizationId,
     List<String> recipients,
+    @Schema(nullable = true) TestDataRequestResponse testDataRequest,
     LocalDateTime createdAt,
     LocalDateTime updatedAt,
     TestPlanPermissions permissions) {}

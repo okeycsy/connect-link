@@ -176,3 +176,42 @@ FROM (VALUES
 ) AS r (plan_title, email)
 JOIN test_plan p ON p.title = r.plan_title
 JOIN user_account u ON u.email = r.email;
+
+-- 테스트 전 테스트데이터 사전 요청(V21). 회신 기한은 수행 시작일 앞이다. 요청 메일은 테스트를 만들 때 함께 갔다.
+UPDATE test_plan
+SET test_data_requested = TRUE, test_data_due_date = CAST(CURRENT_DATE - 9 * INTERVAL '1' DAY AS DATE),
+    test_data_instruction = '해지 예정 계좌를 포함해 테스트 계좌를 10개 이상 만들고 첨부 양식에 계좌번호·상태를 적어 올려 주세요.',
+    test_data_requested_at = created_at
+WHERE title = '계좌정보 통합조회 전문 개선 2차';
+UPDATE test_plan
+SET test_data_requested = TRUE, test_data_due_date = CAST(CURRENT_DATE - 4 * INTERVAL '1' DAY AS DATE),
+    test_data_instruction = '자동이체 등록 계좌 3개(수납기관 서로 다르게)를 만들어 주세요.',
+    test_data_requested_at = created_at
+WHERE title = '자동이체 통합조회 응답 항목 추가';
+
+-- 테스트 전 테스트데이터 준비(V21). 기관별 생성 여부·메모. 시각은 오늘 0시 기준 시간이다. 나머지 대상 기관은 미생성 그대로 둔다.
+-- 파일은 임시 디렉터리 저장소에 두므로 샘플로 넣지 않는다(시연 때 올려 보인다).
+UPDATE test_plan_target
+SET test_data_status = 'CREATED', test_data_note = '테스트 계좌 10개(해지 예정 2개 포함) 생성했습니다.',
+    test_data_reported_by_email = 'kim.minjun@kb.example.com', test_data_reported_by_name = '김민준',
+    test_data_reported_at = CAST(CURRENT_DATE AS TIMESTAMP) + -80 * INTERVAL '1' HOUR
+WHERE test_plan_id = (SELECT id FROM test_plan WHERE title = '계좌정보 통합조회 전문 개선 2차')
+  AND organization_id = (SELECT id FROM organization WHERE code = '004');
+UPDATE test_plan_target
+SET test_data_status = 'CREATED', test_data_note = '휴면 계좌 시나리오용 3개 포함.',
+    test_data_reported_by_email = 'lee.junho@shinhan.example.com', test_data_reported_by_name = '이준호',
+    test_data_reported_at = CAST(CURRENT_DATE AS TIMESTAMP) + -90 * INTERVAL '1' HOUR
+WHERE test_plan_id = (SELECT id FROM test_plan WHERE title = '계좌정보 통합조회 전문 개선 2차')
+  AND organization_id = (SELECT id FROM organization WHERE code = '088');
+UPDATE test_plan_target
+SET test_data_status = 'CREATED', test_data_note = NULL,
+    test_data_reported_by_email = 'yoon.seoyeon@fsb.example.com', test_data_reported_by_name = '윤서연',
+    test_data_reported_at = CAST(CURRENT_DATE AS TIMESTAMP) + -100 * INTERVAL '1' HOUR
+WHERE test_plan_id = (SELECT id FROM test_plan WHERE title = '계좌정보 통합조회 전문 개선 2차')
+  AND organization_id = (SELECT id FROM organization WHERE code = '050');
+UPDATE test_plan_target
+SET test_data_status = 'NOT_CREATED', test_data_note = '출금 계좌 개설 승인 대기 중이라 다음 주에 만들겠습니다.',
+    test_data_reported_by_email = 'park.jihoon@shinhan.example.com', test_data_reported_by_name = '박지훈',
+    test_data_reported_at = CAST(CURRENT_DATE AS TIMESTAMP) + -40 * INTERVAL '1' HOUR
+WHERE test_plan_id = (SELECT id FROM test_plan WHERE title = '자동이체 통합조회 응답 항목 추가')
+  AND organization_id = (SELECT id FROM organization WHERE code = '088');
