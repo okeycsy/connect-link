@@ -346,7 +346,10 @@ public class ChatService {
                     u.organizationCode(),
                     u.organizationName(),
                     u.organizationType() == OrganizationType.KFTC,
-                    u.roleLabel()))
+                    u.roleLabel(),
+                    u.businesses().stream().sorted().toList(),
+                    u.jobRole(),
+                    u.itRoles().stream().sorted().toList()))
         .collect(
             Collectors.toMap(
                 ChatInviteCandidateResponse::email,
