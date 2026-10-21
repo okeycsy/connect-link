@@ -1,3 +1,18 @@
+/* 큰 칸에서는 남는 높이를 요일 칸이 채운다 */
+.week[data-fill] {
+  flex: 1 1 auto;
+  min-height: 180px;
+
+  & .day {
+    padding: 12px 8px;
+  }
+
+  & .chip {
+    font-size: 13px;
+    padding: 6px 8px;
+  }
+}
+
 /* 요일 칸: sunken 바탕 radius 12, 오늘은 clay-1 */
 .day {
   display: flex;

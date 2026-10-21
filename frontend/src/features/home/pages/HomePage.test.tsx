@@ -79,30 +79,8 @@ const home = {
   ],
 };
 
-const notifications = {
-  content: [
-    {
-      id: 1,
-      type: 'OPINION_REQUEST_OPENED',
-      typeLabel: '의견 요청',
-      businessLabel: '계좌통합관리',
-      title: '수수료 체계 개편 의견 요청이 등록되었습니다',
-      body: null,
-      link: null,
-      read: false,
-      createdAt: '2026-10-15T09:00:00',
-    },
-  ],
-  page: 0,
-  size: 6,
-  totalElements: 1,
-  totalPages: 1,
-};
-
 const RESPONSES: Record<string, unknown> = {
   '/api/v1/home': home,
-  '/api/v1/notifications': notifications,
-  '/api/v1/notifications/unread-count': { count: 1 },
 };
 
 vi.mock('../../../api/client', () => ({
@@ -122,7 +100,7 @@ describe('HomePage', () => {
     vi.useRealTimers();
   });
 
-  it('업무 영역, 인사말, KPI, 최근 소식, 이번 주 일시중단을 보여 주고 확인 필요 담당자는 작게 둔다', async () => {
+  it('업무 영역, 인사말, KPI, 이번 주 일시중단을 보여 주고 확인 필요 담당자는 작게 둔다', async () => {
     renderWithProviders(<HomePage />);
 
     expect(await screen.findByText(/· 계좌통합관리$/)).toBeInTheDocument();
@@ -137,15 +115,8 @@ describe('HomePage', () => {
     expect(screen.queryByText('KB국민은행 · 김민준 (현업)')).not.toBeInTheDocument();
     expect(screen.getByText('초과')).toBeInTheDocument();
 
-    // 최근 소식: 알림 센터와 같은 내용
-    expect(
-      await screen.findByText('수수료 체계 개편 의견 요청이 등록되었습니다'),
-    ).toBeInTheDocument();
-
-    expect(screen.getByRole('link', { name: '더보기' })).toHaveAttribute(
-      'href',
-      '/account-info/notifications',
-    );
+    // 최근 알림은 홈에 두지 않는다(알림 벨에서 본다).
+    expect(screen.queryByText('최근 소식')).not.toBeInTheDocument();
 
     // 이번 주 일시중단: 오늘 칸에 칩
     expect(screen.getByTestId('suspension-week')).toHaveTextContent('신한은행 23:00');
