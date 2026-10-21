@@ -268,7 +268,7 @@ class OrganizationControllerTest {
     Long id = organizationRepository.findByCode("090").orElseThrow().getId();
     String body =
         """
-        {"name":"카카오뱅크(변경)","emailDomain":"  ","active":false,"businesses":["LOAN_TRANSFER","CMS"]}
+        {"name":"카카오뱅크(변경)","emailDomain":"  ","active":false,"businesses":["LOAN_TRANSFER","CMS"],"sector":"BANK"}
         """;
     mockMvc
         .perform(
