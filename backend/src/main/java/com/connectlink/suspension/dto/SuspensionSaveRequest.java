@@ -19,7 +19,6 @@ import javax.validation.constraints.Size;
 public record SuspensionSaveRequest(
     @NotNull(message = "대상 업무를 골라 주세요.") Business business,
     @Schema(nullable = true) Long organizationId,
-    @Schema(nullable = true) @Size(max = 200, message = "세부업무는 200자까지입니다.") String subBusiness,
     @NotNull(message = "중단 시작 일시를 골라 주세요.") LocalDateTime startAt,
     @NotNull(message = "중단 종료 일시를 골라 주세요.") LocalDateTime endAt,
     @NotBlank(message = "중단 이유(작업 내용)를 입력해 주세요.") @Size(max = 2000, message = "중단 이유는 2000자까지입니다.")

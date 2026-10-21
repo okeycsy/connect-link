@@ -107,7 +107,6 @@ class SuspensionControllerTest {
     LocalDateTime start = LocalDate.now().plusDays(2).atTime(2, 0);
     Map<String, Object> body = new HashMap<>();
     body.put("business", "ACCOUNT_INFO");
-    body.put("subBusiness", "계좌정보 통합조회");
     body.put("startAt", start.toString());
     body.put("endAt", start.plusHours(2).toString());
     body.put("reason", reason);
@@ -195,13 +194,59 @@ class SuspensionControllerTest {
   }
 
   @Test
-  void 담당_업무가_아니면_등록하지_못한다() throws Exception {
-    Map<String, Object> body = form("담당 아님");
-    body.put("business", "CMS");
-    send(post(BASE), body, kim()).andExpect(status().isForbidden());
-    Map<String, Object> other = form("다른 업무 결제원");
-    other.put("organizationId", orgId("004"));
-    send(post(BASE), other, park()).andExpect(status().isForbidden());
+  void 기관_담당자는_자기_기관이_참여하는_업무면_맡지_않아도_등록하고_본인_건을_본다() throws Exception {
+    Map<String, Object> body = form("기관 기준 CMS 등록");
+    body.put("business", "CMS"); // 김민준은 계좌통합관리 담당이지만 KB국민은행은 CMS 에도 참여한다.
+    Long id =
+        json(send(post(BASE), body, kim())
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.business").value("CMS"))
+                .andExpect(jsonPath("$.organizationName").value("KB국민은행")))
+            .get("id")
+            .asLong();
+    send(get(BASE + "/" + id), null, kim())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.permissions.edit").value(true));
+    send(get(BASE + "/" + id), null, park()).andExpect(status().isOk());
+    send(get(BASE + "/" + id), null, hong()).andExpect(status().isForbidden());
+    assertThat(outbox("기관 기준 CMS 등록")).isNotEmpty();
+  }
+
+  @Test
+  void 기관이_참여하지_않는_업무로는_등록하지_못한다() throws Exception {
+    Map<String, Object> body = form("참여 안 하는 업무");
+    body.put("business", "LOAN_TRANSFER"); // 삼성증권은 대출이동에 참여하지 않는다.
+    send(post(BASE), body, choi())
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("SUSPENSION_ORGANIZATION_INVALID"));
+  }
+
+  @Test
+  void 결제원은_맡지_않은_업무라도_기관이_참여하면_대리_등록하고_본인_건을_고친다() throws Exception {
+    Map<String, Object> body = form("다른 업무 결제원 대리 등록");
+    body.put("organizationId", orgId("004"));
+    Long id =
+        json(send(post(BASE), body, park())
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.registrantKftc").value(true)))
+            .get("id")
+            .asLong();
+    send(get(BASE + "/" + id), null, park())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.permissions.edit").value(true))
+        .andExpect(jsonPath("$.permissions.confirm").value(false));
+    send(get(BASE + "/" + id), null, hong()).andExpect(status().isOk());
+  }
+
+  @Test
+  void 등록_기관_목록은_기관이_참여하는_업무를_함께_준다() throws Exception {
+    send(get(BASE + "/registrable-organizations"), null, kim())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(1))
+        .andExpect(jsonPath("$[0].code").value("004"))
+        .andExpect(jsonPath("$[0].businesses.length()").value(4));
+    JsonNode all = json(send(get(BASE + "/registrable-organizations"), null, park()));
+    assertThat(all.findValuesAsText("code")).contains("004", "088", "071");
   }
 
   @Test

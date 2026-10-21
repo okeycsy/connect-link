@@ -94,10 +94,8 @@ function SuspensionView({ slug, suspension }: { slug: string; suspension: Suspen
         title={`${suspension.organizationName} 일시중단`}
         description={
           <>
-            {suspension.businessLabel}
-            {suspension.subBusiness && ` · ${suspension.subBusiness}`} · 등록{' '}
-            {suspension.registrantName}({suspension.registrantKftc ? '결제원' : '기관'}){' '}
-            {formatDate(suspension.createdAt)}
+            {suspension.businessLabel} · 등록 {suspension.registrantName}(
+            {suspension.registrantKftc ? '결제원' : '기관'}) {formatDate(suspension.createdAt)}
           </>
         }
         status={
@@ -237,14 +235,9 @@ function SuspensionContent({ suspension: s }: { suspension: SuspensionDetail }) 
             {formatDateTimeRange(s.startAt, s.endAt)}
           </Text>
         </Field>
-        <Group gap="xl" align="flex-start">
-          <Field label="대상 업무">
-            <Text size="md">{s.businessLabel}</Text>
-          </Field>
-          <Field label="세부업무">
-            <Body text={s.subBusiness} />
-          </Field>
-        </Group>
+        <Field label="대상 업무">
+          <Text size="md">{s.businessLabel}</Text>
+        </Field>
         <Field label="중단 이유(작업 내용)">
           <Body text={s.reason} />
         </Field>

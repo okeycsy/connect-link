@@ -38,9 +38,6 @@ public class Suspension extends AuditedEntity {
   @Column(name = "business", nullable = false, length = 30)
   private Business business;
 
-  @Column(name = "sub_business", length = 200)
-  private String subBusiness;
-
   /** 중단하는 참가기관. 등록한 뒤에는 바꾸지 않는다. */
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "organization_id")
@@ -113,7 +110,6 @@ public class Suspension extends AuditedEntity {
   /** 등록 양식의 내용. 기관은 등록할 때 정하고 바꾸지 않는다. */
   public record Content(
       Business business,
-      String subBusiness,
       LocalDateTime startAt,
       LocalDateTime endAt,
       String reason,
@@ -152,7 +148,6 @@ public class Suspension extends AuditedEntity {
 
   private void apply(Content content) {
     this.business = content.business();
-    this.subBusiness = content.subBusiness();
     this.startAt = content.startAt();
     this.endAt = content.endAt();
     this.reason = content.reason();
@@ -232,7 +227,6 @@ public class Suspension extends AuditedEntity {
   public Content content() {
     return new Content(
         business,
-        subBusiness,
         startAt,
         endAt,
         reason,
@@ -249,10 +243,6 @@ public class Suspension extends AuditedEntity {
 
   public Business getBusiness() {
     return business;
-  }
-
-  public String getSubBusiness() {
-    return subBusiness;
   }
 
   public Organization getOrganization() {

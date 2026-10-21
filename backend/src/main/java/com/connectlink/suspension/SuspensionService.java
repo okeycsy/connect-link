@@ -20,6 +20,7 @@ import com.connectlink.suspension.dto.SuspensionCountsResponse;
 import com.connectlink.suspension.dto.SuspensionDetailResponse;
 import com.connectlink.suspension.dto.SuspensionOrganizationResponse;
 import com.connectlink.suspension.dto.SuspensionPermissions;
+import com.connectlink.suspension.dto.SuspensionRegistrableOrganizationResponse;
 import com.connectlink.suspension.dto.SuspensionReviewerResponse;
 import com.connectlink.suspension.dto.SuspensionSaveRequest;
 import com.connectlink.suspension.dto.SuspensionSummaryResponse;
@@ -143,16 +144,35 @@ public class SuspensionService {
     throw new AccessDeniedException(SuspensionAccessPolicy.VIEW_DENIED);
   }
 
+  /**
+   * 등록 양식에서 고를 수 있는 기관과 각 기관이 참여하는 업무. 등록은 기관 기준이라 업무 영역과 상관없다. 결제원 계정에게는 사용 중 참가기관 전부(이름순), 참가기관
+   * 계정에게는 자기 기관 하나다.
+   */
+  @Transactional(readOnly = true)
+  public List<SuspensionRegistrableOrganizationResponse> registrableOrganizations(
+      CurrentUser user) {
+    accessPolicy.ensureCanRegister(user);
+    return organizationService.listActive().stream()
+        .filter(o -> o.type() == OrganizationType.FINANCE_ORGANIZATION)
+        .filter(o -> accessPolicy.registersAsKftc(user) || o.code().equals(user.organizationCode()))
+        .map(
+            o ->
+                new SuspensionRegistrableOrganizationResponse(
+                    o.id(), o.code(), o.name(), o.businesses()))
+        .toList();
+  }
+
   // ---- 등록·수정·삭제 ----
 
   /** 검토 대기로 등록하고 그 업무 결제원 담당자에게 메일·매터모스트로 알린다. 공문은 저장한 뒤 첨부 API 로 올린다. */
   public SuspensionDetailResponse create(CurrentUser user, SuspensionSaveRequest body) {
-    accessPolicy.ensureCanRegister(user, body.business());
-    boolean kftc = accessPolicy.canManage(user, body.business());
+    accessPolicy.ensureCanRegister(user);
+    boolean kftc = accessPolicy.registersAsKftc(user);
     Organization organization =
         kftc
             ? loadOrganization(body.organizationId(), body.business())
             : ownOrganization(user, body.business());
+    accessPolicy.ensureCanRegister(user, organization, body.business());
     Suspension.Content content = contentOf(body);
     Suspension suspension =
         repository.saveAndFlush(
@@ -178,9 +198,9 @@ public class SuspensionService {
     ensureNotCompleted(suspension);
     accessPolicy.ensureCanEdit(user, suspension);
     if (body.business() != suspension.getBusiness()) {
-      // 업무를 옮기면 옮긴 업무에서도 등록할 수 있어야 하고 기관이 그 업무에 참여해야 한다.
-      accessPolicy.ensureCanRegister(user, body.business());
+      // 업무를 옮기면 기관이 그 업무에 참여해야 하고 그 업무로도 올릴 수 있어야 한다.
       ensureParticipates(suspension.getOrganization(), body.business());
+      accessPolicy.ensureCanRegister(user, suspension.getOrganization(), body.business());
     }
     Snapshot before = Snapshot.of(suspension);
     Business businessBefore = suspension.getBusiness();
@@ -190,7 +210,8 @@ public class SuspensionService {
     if (changes.isEmpty()) {
       return toDetail(user, suspension);
     }
-    boolean manager = accessPolicy.canManage(user, businessBefore);
+    // 고칠 수 있는 결제원 계정은 그 업무 담당자이거나 등록한 본인이다. 결제원이 고치면 상태는 그대로다.
+    boolean manager = accessPolicy.registersAsKftc(user);
     boolean reopened = false;
     if (!manager && suspension.getStatus() != SuspensionStatus.PENDING_REVIEW) {
       suspension.reopenReview();
@@ -299,7 +320,6 @@ public class SuspensionService {
         s.getId(),
         s.getBusiness(),
         s.getBusiness().getLabel(),
-        s.getSubBusiness(),
         s.getOrganization().getId(),
         s.getOrganization().getName(),
         s.getStartAt(),
@@ -325,7 +345,6 @@ public class SuspensionService {
         s.getBusiness(),
         s.getBusiness().getSlug(),
         s.getBusiness().getLabel(),
-        s.getSubBusiness(),
         s.getOrganization().getId(),
         s.getOrganization().getName(),
         s.getStartAt(),
@@ -438,7 +457,6 @@ public class SuspensionService {
     }
     return new Suspension.Content(
         body.business(),
-        blankToNull(body.subBusiness()),
         start,
         end,
         body.reason().trim(),
@@ -506,14 +524,13 @@ public class SuspensionService {
   /** 이력 비교용 값. 일시는 "시작~종료" 한 줄이다. */
   private record Snapshot(
       String business,
-      String subBusiness,
       String period,
       String reason,
       String kftcAction,
       String contact,
       String extraNote) {
 
-    static final Snapshot EMPTY = new Snapshot(null, null, null, null, null, null, null);
+    static final Snapshot EMPTY = new Snapshot(null, null, null, null, null, null);
 
     static Snapshot of(Suspension s) {
       String contact =
@@ -523,7 +540,6 @@ public class SuspensionService {
               + (s.getContactEmail() == null ? "" : " " + s.getContactEmail());
       return new Snapshot(
           s.getBusiness().getLabel(),
-          s.getSubBusiness(),
           SuspensionNotifier.periodText(s.getStartAt(), s.getEndAt()),
           s.getReason(),
           s.getKftcAction(),
@@ -535,7 +551,6 @@ public class SuspensionService {
     List<com.connectlink.history.dto.FieldChange> diff(Snapshot before, boolean all) {
       FieldChanges changes = FieldChanges.compare();
       add(changes, all, "business", "대상 업무", before.business, business);
-      add(changes, all, "subBusiness", "세부업무", before.subBusiness, subBusiness);
       add(changes, all, "period", "중단 일시", before.period, period);
       add(changes, all, "reason", "중단 이유", before.reason, reason);
       add(changes, all, "kftcAction", "결제원 조치사항", before.kftcAction, kftcAction);
@@ -564,7 +579,6 @@ public class SuspensionService {
     String changedSummary(Snapshot after) {
       List<String> what = new ArrayList<>();
       if (!Objects.equals(business, after.business)) what.add("대상 업무");
-      if (!Objects.equals(subBusiness, after.subBusiness)) what.add("세부업무");
       if (!Objects.equals(period, after.period)) what.add("중단 일시");
       if (!Objects.equals(reason, after.reason)) what.add("중단 이유");
       if (!Objects.equals(kftcAction, after.kftcAction)) what.add("결제원 조치사항");

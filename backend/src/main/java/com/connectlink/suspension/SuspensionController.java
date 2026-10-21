@@ -8,6 +8,7 @@ import com.connectlink.suspension.dto.SuspensionCountsResponse;
 import com.connectlink.suspension.dto.SuspensionDetailResponse;
 import com.connectlink.suspension.dto.SuspensionHandoverRequest;
 import com.connectlink.suspension.dto.SuspensionOrganizationResponse;
+import com.connectlink.suspension.dto.SuspensionRegistrableOrganizationResponse;
 import com.connectlink.suspension.dto.SuspensionSaveRequest;
 import com.connectlink.suspension.dto.SuspensionSummaryResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -85,6 +86,15 @@ public class SuspensionController {
       @Parameter(description = "업무 영역 slug (예: account-info)") @RequestParam String business) {
     return suspensionService.organizations(
         currentUserProvider.require(), resolveBusiness(business));
+  }
+
+  @GetMapping("/registrable-organizations")
+  @Operation(
+      summary = "일시중단 등록 기관과 업무 조회",
+      description =
+          "등록 양식에서 고를 기관과 각 기관이 참여하는 업무. 등록은 기관 기준이라 업무 영역과 상관없다. 결제원 계정은 사용 중 참가기관 전부, 참가기관 계정은 자기 기관 하나를 받는다.")
+  public List<SuspensionRegistrableOrganizationResponse> registrableOrganizations() {
+    return suspensionService.registrableOrganizations(currentUserProvider.require());
   }
 
   @PostMapping

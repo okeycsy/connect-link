@@ -25,7 +25,7 @@ interface Props {
 
 type Sector = NonNullable<OpinionRecipientCandidate['sector']>;
 
-/** 업권 묶음 순서. 서버 FinanceSector 선언 순서와 같다. 업권이 없는 기관은 맨 뒤 "업권 미지정"에 둔다. */
+/** 업권 묶음 순서. 서버 FinanceSector 선언 순서와 같다. 참가기관은 서버가 업권을 반드시 두게 하므로 업권 없는 묶음은 생기지 않는다(혹시 있으면 맨 뒤에 둔다). */
 const SECTOR_ORDER: Sector[] = ['BANK', 'SECURITIES', 'MICROFINANCE', 'INSURANCE'];
 
 interface SectorGroup {

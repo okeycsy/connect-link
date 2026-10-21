@@ -80,12 +80,18 @@ test.describe('관리 > 기관·업무 기준정보', () => {
     await expect(page.getByText('이미 있는 기관 코드입니다: 004')).toBeVisible();
 
     await dialog.getByLabel(/기관 코드/).fill('e2e');
-    await dialog.getByLabel(/기관명/).fill('이투이캐피탈');
+    await dialog.getByLabel(/기관명/).fill('이투이은행');
     await dialog.getByLabel('회사 이메일 도메인').fill('e2e.example.com');
+    // 참가기관은 업권 없이 등록하지 못한다.
+    await dialog.getByRole('button', { name: '등록' }).click();
+    await expect(dialog.getByText('업권을 골라 주세요.')).toBeVisible();
+
+    await dialog.getByRole('textbox', { name: /업권/ }).click();
+    await page.getByRole('option', { name: '은행', exact: true }).click();
     await dialog.getByRole('button', { name: '등록' }).click();
     await expect(page.getByText('기관을 등록했습니다.')).toBeVisible();
-    await expect(dialog).toContainText('E2E · 참가기관');
-    await expect(page.getByTestId('organization-table').getByText('이투이캐피탈')).toBeVisible();
+    await expect(dialog).toContainText('E2E · 참가기관 · 은행');
+    await expect(page.getByTestId('organization-table').getByText('이투이은행')).toBeVisible();
   });
 
   test('기준정보 관리 API 는 관리자 전용이고 공개 목록은 조회만 열린다', async ({ request }) => {

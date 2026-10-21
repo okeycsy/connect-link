@@ -18,7 +18,6 @@ public record SuspensionDetailResponse(
     Business business,
     String businessSlug,
     String businessLabel,
-    @Schema(nullable = true) String subBusiness,
     Long organizationId,
     String organizationName,
     LocalDateTime startAt,
