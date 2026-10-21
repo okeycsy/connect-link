@@ -22,9 +22,12 @@ test.describe('홈 대시보드', () => {
       'data-compact',
       'true',
     );
-    // 큰 칸은 알림 센터와 같은 최근 소식, 일시중단은 월~금 요일 칸
-    await expect(cards.getByTestId('home-recent-notifications')).toBeVisible();
+    // 왼쪽 큰 칸은 이번 주 일시중단(월~금 요일 칸), 오른쪽 열 아래는 알림 센터와 같은 최근 소식
     await expect(cards.getByTestId('suspension-week')).toBeVisible();
+    await expect(cards.getByTestId('home-recent-notifications')).toBeVisible();
+    const suspensionBox = await cards.getByTestId('home-card-SUSPENSIONS').boundingBox();
+    const recentBox = await cards.getByTestId('home-recent-notifications').boundingBox();
+    expect(suspensionBox!.x).toBeLessThan(recentBox!.x);
     // 모든 카드가 실제 데이터다(샘플 카드 없음).
     await expect(cards.getByText('샘플')).toHaveCount(0);
     await page.screenshot({ path: 'screenshots/home.png', fullPage: true });

@@ -26,10 +26,12 @@ interface Props {
   compact?: boolean;
   /** 세로로 쌓이는 자리(오른쪽 열). 높이를 채우지 않는다. */
   stacked?: boolean;
+  /** 왼쪽 큰 칸. 남는 높이를 내용(일시중단 요일 칸)이 채운다. */
+  tall?: boolean;
 }
 
 /** 홈 "지금 할 일" 카드. 서버가 준 모양(요약, 숫자, 진행률, 항목)만 그리고 무엇을 채울지는 기능 모듈이 정한다. */
-export function HomeCardView({ card, compact = false, stacked = false }: Props) {
+export function HomeCardView({ card, compact = false, stacked = false, tall = false }: Props) {
   const unavailable = card.source === 'UNAVAILABLE';
 
   const header = (
@@ -103,6 +105,7 @@ export function HomeCardView({ card, compact = false, stacked = false }: Props) 
     <Card
       className={classes.card}
       data-stacked={stacked || undefined}
+      data-tall={tall || undefined}
       data-urgency={card.urgency !== 'NONE' ? card.urgency : undefined}
       data-testid={`home-card-${card.key}`}
     >
@@ -116,7 +119,7 @@ export function HomeCardView({ card, compact = false, stacked = false }: Props) 
           해당 기능 프로젝트가 이 카드를 연결하면 여기에 보입니다.
         </Text>
       ) : (
-        <Stack gap="sm">
+        <Stack gap="sm" className={classes.body}>
           {card.summary && (
             <Text size="sm" c="dimmed">
               {card.summary}
@@ -173,7 +176,7 @@ export function HomeCardView({ card, compact = false, stacked = false }: Props) 
           )}
 
           {week ? (
-            <SuspensionWeek items={card.items} />
+            <SuspensionWeek items={card.items} fill={tall} />
           ) : (
             card.items.length > 0 && (
               <Stack gap={8} className={classes.items}>

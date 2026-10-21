@@ -55,3 +55,14 @@
   background: var(--mantine-color-red-6);
   box-shadow: 0 0 0 3px var(--mantine-color-red-1);
 }
+
+/* 오른쪽 열 아래 최근 소식: 왼쪽 큰 칸 높이에 맞춰 남는 높이를 채운다 */
+.recent {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+
+  & > * {
+    flex: 1 1 auto;
+  }
+}

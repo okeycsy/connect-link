@@ -10,6 +10,16 @@
   padding: 24px;
 }
 
+/* 왼쪽 큰 칸: 남는 높이를 내용이 채운다 */
+.card[data-tall] {
+  border: 0;
+  padding: 24px;
+
+  & .body {
+    flex: 1 1 auto;
+  }
+}
+
 /* 작게 두는 카드: 한 줄 띠 */
 .card[data-compact] {
   padding: 14px 24px;
