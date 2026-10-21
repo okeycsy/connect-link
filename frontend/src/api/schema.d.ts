@@ -249,6 +249,30 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/chat-messages/{id}/ack': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * 확인 공감 남기기
+     * @description 답장 대신 확인했다고 남긴다. 메시지 아래에 기관 이름으로 보인다. 내가 보낸 메시지면 409 CHAT_ACK_OWN_MESSAGE.
+     */
+    put: operations['acknowledge'];
+    post?: never;
+    /**
+     * 확인 공감 거두기
+     * @description 내가 남긴 확인 공감을 거둔다.
+     */
+    delete: operations['withdrawAck'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/update-campaigns': {
     parameters: {
       query?: never;
@@ -818,6 +842,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/demo/chat-attachment-cleanup-runs': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 채팅 첨부 보관 기간 정리 지금 돌리기(데모)
+     * @description 매일 3시 30분 예약 작업과 같다. 보관 기간(기본 1년)이 지난 메시지의 첨부를 지우고 메시지에 표시한다.
+     */
+    post: operations['run_2'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/contacts': {
     parameters: {
       query?: never;
@@ -882,6 +926,94 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/chat-rooms': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 채팅방 목록 조회
+     * @description 한 업무 영역에서 내가 구성원인 방. 업무 단체방이 먼저다. 읽지 않은 메시지 수와 내 기관 멘션 여부가 함께 온다. 화면은 몇 초마다 다시 부른다.
+     */
+    get: operations['list_10'];
+    put?: never;
+    /**
+     * 초대방 만들기
+     * @description 그 업무 결제원 담당자가 만든다. 만든 사람은 저절로 들어가고, memberEmails 는 초대할 수 있는 사람이어야 한다(400 CHAT_INVITEE_INVALID).
+     */
+    post: operations['create_6'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/chat-rooms/{id}/read': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 읽음 표시
+     * @description 이 메시지까지 읽었다. 앞으로만 옮긴다.
+     */
+    post: operations['read'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/chat-rooms/{id}/messages': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 메시지 목록 조회
+     * @description 최근 메시지부터 한 쪽. 메시지마다 읽지 않은 사람 수, 멘션, 확인 공감, 첨부가 온다. 이전 메시지는 size 를 늘려 다시 부른다.
+     */
+    get: operations['messages'];
+    put?: never;
+    /**
+     * 메시지 보내기
+     * @description 본문과 멘션할 기관을 보낸다. 파일은 withAttachments 로 보낸 뒤 첨부 API(ownerType CHAT_MESSAGE)로 올린다. 본문이 비었는데 파일도 없으면 400 CHAT_MESSAGE_EMPTY.
+     */
+    post: operations['send_1'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/chat-rooms/{id}/members': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 채팅방에 초대
+     * @description 그 업무 결제원 담당자가 초대한다. 업무 단체방에도 업무 밖 사람을 더 부를 수 있다.
+     */
+    post: operations['invite'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/auth/logout': {
     parameters: {
       query?: never;
@@ -930,7 +1062,7 @@ export interface paths {
       cookie?: never;
     };
     /** 대상 하나의 첨부파일 목록(올린 순) */
-    get: operations['list_11'];
+    get: operations['list_12'];
     put?: never;
     /** 첨부파일 올리기 (multipart: file) */
     post: operations['upload'];
@@ -1572,6 +1704,46 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/chat-rooms/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 채팅방 상세 조회
+     * @description 구성원, 멘션할 수 있는 기관, 지금 할 수 있는 일(permissions). 구성원만 본다.
+     */
+    get: operations['get_7'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/chat-rooms/{id}/invite-candidates': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 초대할 수 있는 사람 조회
+     * @description 그 업무 참가기관 담당자와 결제원 사람(업무 밖 대외계 등) 중 아직 구성원이 아닌 사람. 그 업무 결제원 담당자만 부른다.
+     */
+    get: operations['inviteCandidates'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/change-histories': {
     parameters: {
       query?: never;
@@ -1580,7 +1752,7 @@ export interface paths {
       cookie?: never;
     };
     /** 대상 하나의 변경 이력(최신순) */
-    get: operations['list_10'];
+    get: operations['list_11'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1621,6 +1793,26 @@ export interface paths {
     put?: never;
     post?: never;
     delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/chat-rooms/{id}/members/me': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * 채팅방 나가기
+     * @description 따로 초대받은 방에서 나간다. 업무 단체방의 업무 담당자는 나가지 못한다(409 CHAT_CANNOT_LEAVE).
+     */
+    delete: operations['leave'];
     options?: never;
     head?: never;
     patch?: never;
@@ -2137,6 +2329,54 @@ export interface components {
       self: boolean;
       permissions: components['schemas']['ContactPermissions'];
     };
+    AttachmentResponse: {
+      /** Format: int64 */
+      id: number;
+      /** @enum {string} */
+      ownerType:
+        'OPINION_REQUEST' | 'OPINION_REPLY' | 'SUSPENSION' | 'TEST_PLAN' | 'CHAT_MESSAGE' | 'DEMO';
+      /** Format: int64 */
+      ownerId: number;
+      name: string;
+      contentType: string;
+      /** Format: int64 */
+      size: number;
+      uploadedBy: string;
+      /** Format: date-time */
+      uploadedAt: string;
+    };
+    ChatAckResponse: {
+      organizationCode: string;
+      organizationName: string;
+      name: string;
+      mine: boolean;
+    };
+    ChatMentionResponse: {
+      organizationCode: string;
+      label: string;
+    };
+    ChatMessageResponse: {
+      /** Format: int64 */
+      id: number;
+      senderEmail: string;
+      senderName: string;
+      senderOrganizationCode: string;
+      senderOrganizationName: string;
+      senderKftc: boolean;
+      mine: boolean;
+      content: string;
+      /** Format: date-time */
+      sentAt: string;
+      /** Format: int64 */
+      unreadCount: number;
+      mentions: components['schemas']['ChatMentionResponse'][];
+      mentionsMe: boolean;
+      acks: components['schemas']['ChatAckResponse'][];
+      withAttachments: boolean;
+      attachments: components['schemas']['AttachmentResponse'][];
+      attachmentsExpired: boolean;
+      canAck: boolean;
+    };
     UpdateCampaignReminderRequest: {
       organizationIds?: (number | null)[] | null;
     };
@@ -2352,6 +2592,10 @@ export interface components {
       /** Format: int32 */
       notified: number;
     };
+    ChatAttachmentCleanupResponse: {
+      /** Format: int32 */
+      expiredMessages: number;
+    };
     ContactOrganizationConfirmRequest: {
       /** @enum {string} */
       business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
@@ -2362,6 +2606,51 @@ export interface components {
       /** Format: int32 */
       confirmedCount: number;
       campaignTitle?: string | null;
+    };
+    ChatRoomCreateRequest: {
+      /** @enum {string} */
+      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
+      name: string;
+      memberEmails: string[];
+    };
+    ChatMemberResponse: {
+      email: string;
+      name: string;
+      organizationCode: string;
+      organizationName: string;
+      kftc: boolean;
+      roleLabel: string;
+      invited: boolean;
+    };
+    ChatRoomDetailResponse: {
+      /** Format: int64 */
+      id: number;
+      /** @enum {string} */
+      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
+      /** @enum {string} */
+      type: 'BUSINESS' | 'CUSTOM';
+      typeLabel: string;
+      name: string;
+      createdByName: string;
+      members: components['schemas']['ChatMemberResponse'][];
+      mentionables: components['schemas']['ChatMentionResponse'][];
+      permissions: components['schemas']['ChatRoomPermissions'];
+    };
+    ChatRoomPermissions: {
+      invite: boolean;
+      leave: boolean;
+    };
+    ChatReadRequest: {
+      /** Format: int64 */
+      lastMessageId: number;
+    };
+    ChatMessageSendRequest: {
+      content: string;
+      mentionOrganizationCodes: string[];
+      withAttachments: boolean;
+    };
+    ChatInviteRequest: {
+      emails: string[];
     };
     LoginRequest: {
       email: string;
@@ -2385,21 +2674,6 @@ export interface components {
       /** @enum {string} */
       networkZone: 'INTERNAL' | 'EXTERNAL';
       networkZoneLabel: string;
-    };
-    AttachmentResponse: {
-      /** Format: int64 */
-      id: number;
-      /** @enum {string} */
-      ownerType: 'OPINION_REQUEST' | 'OPINION_REPLY' | 'SUSPENSION' | 'TEST_PLAN' | 'DEMO';
-      /** Format: int64 */
-      ownerId: number;
-      name: string;
-      contentType: string;
-      /** Format: int64 */
-      size: number;
-      uploadedBy: string;
-      /** Format: date-time */
-      uploadedAt: string;
     };
     AccountWithdrawalRequest: {
       reason: string;
@@ -2925,6 +3199,45 @@ export interface components {
       total: number;
       /** Format: int64 */
       needsConfirm: number;
+    };
+    ChatRoomSummaryResponse: {
+      /** Format: int64 */
+      id: number;
+      /** @enum {string} */
+      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
+      /** @enum {string} */
+      type: 'BUSINESS' | 'CUSTOM';
+      typeLabel: string;
+      name: string;
+      /** Format: int32 */
+      memberCount: number;
+      lastMessagePreview?: string | null;
+      lastMessageSenderName?: string | null;
+      /** Format: date-time */
+      lastMessageAt?: string | null;
+      /** Format: int64 */
+      unreadCount: number;
+      unreadMention: boolean;
+    };
+    PageResponseChatMessageResponse: {
+      content: components['schemas']['ChatMessageResponse'][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+      last: boolean;
+    };
+    ChatInviteCandidateResponse: {
+      email: string;
+      name: string;
+      organizationCode: string;
+      organizationName: string;
+      kftc: boolean;
+      roleLabel: string;
     };
     ChangeHistoryResponse: {
       /** Format: int64 */
@@ -3493,6 +3806,50 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+    };
+  };
+  acknowledge: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['ChatMessageResponse'];
+        };
+      };
+    };
+  };
+  withdrawAck: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['ChatMessageResponse'];
+        };
       };
     };
   };
@@ -4323,6 +4680,26 @@ export interface operations {
       };
     };
   };
+  run_2: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['ChatAttachmentCleanupResponse'];
+        };
+      };
+    };
+  };
   list_9: {
     parameters: {
       query: {
@@ -4427,6 +4804,155 @@ export interface operations {
       };
     };
   };
+  list_10: {
+    parameters: {
+      query: {
+        /** @description 먼저 보일 업무 영역 slug (예: account-info) */
+        business: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['ChatRoomSummaryResponse'][];
+        };
+      };
+    };
+  };
+  create_6: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ChatRoomCreateRequest'];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['ChatRoomDetailResponse'];
+        };
+      };
+    };
+  };
+  read: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ChatReadRequest'];
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  messages: {
+    parameters: {
+      query?: {
+        /** @description 0부터 시작 */
+        page?: number;
+        size?: number;
+      };
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['PageResponseChatMessageResponse'];
+        };
+      };
+    };
+  };
+  send_1: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ChatMessageSendRequest'];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['ChatMessageResponse'];
+        };
+      };
+    };
+  };
+  invite: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ChatInviteRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['ChatRoomDetailResponse'];
+        };
+      };
+    };
+  };
   logout: {
     parameters: {
       query?: never;
@@ -4469,10 +4995,16 @@ export interface operations {
       };
     };
   };
-  list_11: {
+  list_12: {
     parameters: {
       query: {
-        ownerType: 'OPINION_REQUEST' | 'OPINION_REPLY' | 'SUSPENSION' | 'TEST_PLAN' | 'DEMO';
+        ownerType:
+          | 'OPINION_REQUEST'
+          | 'OPINION_REPLY'
+          | 'SUSPENSION'
+          | 'TEST_PLAN'
+          | 'CHAT_MESSAGE'
+          | 'DEMO';
         ownerId: number;
       };
       header?: never;
@@ -4495,7 +5027,13 @@ export interface operations {
   upload: {
     parameters: {
       query: {
-        ownerType: 'OPINION_REQUEST' | 'OPINION_REPLY' | 'SUSPENSION' | 'TEST_PLAN' | 'DEMO';
+        ownerType:
+          | 'OPINION_REQUEST'
+          | 'OPINION_REPLY'
+          | 'SUSPENSION'
+          | 'TEST_PLAN'
+          | 'CHAT_MESSAGE'
+          | 'DEMO';
         ownerId: number;
       };
       header?: never;
@@ -5273,7 +5811,51 @@ export interface operations {
       };
     };
   };
-  list_10: {
+  get_7: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['ChatRoomDetailResponse'];
+        };
+      };
+    };
+  };
+  inviteCandidates: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['ChatInviteCandidateResponse'][];
+        };
+      };
+    };
+  };
+  list_11: {
     parameters: {
       query: {
         targetType:
@@ -5344,6 +5926,26 @@ export interface operations {
         content: {
           'application/octet-stream': string;
         };
+      };
+    };
+  };
+  leave: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
     };
   };

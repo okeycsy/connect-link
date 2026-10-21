@@ -6,7 +6,10 @@ import com.connectlink.common.BusinessException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
@@ -48,6 +51,24 @@ public class AttachmentService {
     return repository.findByOwnerTypeAndOwnerIdOrderByCreatedAtAscIdAsc(ownerType, ownerId).stream()
         .map(AttachmentResponse::from)
         .toList();
+  }
+
+  /**
+   * 여러 대상의 첨부를 한 번에 읽는다(대상 ID → 첨부, 첨부가 없는 대상은 빠진다). 메시지 목록처럼 대상이 많은 화면이 쓴다. 권한은 대상을 내려 주는 쪽이 이미
+   * 확인했으므로 여기서 다시 보지 않는다.
+   */
+  public Map<Long, List<AttachmentResponse>> listOf(
+      AttachmentOwnerType ownerType, Collection<Long> ownerIds) {
+    if (ownerIds.isEmpty()) {
+      return Map.of();
+    }
+    return repository
+        .findByOwnerTypeAndOwnerIdInOrderByCreatedAtAscIdAsc(ownerType, ownerIds)
+        .stream()
+        .collect(
+            Collectors.groupingBy(
+                Attachment::getOwnerId,
+                Collectors.mapping(AttachmentResponse::from, Collectors.toList())));
   }
 
   @Transactional
