@@ -1,4 +1,5 @@
 import {
+  Badge,
   Button,
   Card,
   Grid,
@@ -12,7 +13,8 @@ import {
   Tabs,
   Text,
 } from '@mantine/core';
-import { IconBell, IconPencil } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
+import { IconBell, IconPencil, IconSend } from '@tabler/icons-react';
 import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
@@ -24,12 +26,14 @@ import { ErrorState, StateView } from '../../../shared/state/StateView';
 import { AttachmentPanel } from '../../attachment/components/AttachmentPanel';
 import { ChangeHistoryList } from '../../history/components/ChangeHistoryList';
 import { TargetResultsCard } from '../components/TargetResultsCard';
+import { TestDataBadge, TestDataCard } from '../components/TestDataCard';
 import { OverdueBadge, TestPlanStateBadge } from '../components/TestPlanBadges';
 import classes from '../components/TestPlanTable.module.css';
 import {
   type TestPlanDetail,
   type TestTargetSummary,
   useDeleteTestPlan,
+  useSendTestDataRequest,
   useTestPlan,
 } from '../hooks';
 
@@ -145,19 +149,33 @@ function TestPlanView({ slug, plan }: { slug: string; plan: TestPlanDetail }) {
         </Tabs.List>
         <Tabs.Panel value="results">
           <Stack gap="md">
+            {manage && plan.testDataRequest && (
+              <TestDataRequestBar planId={plan.id} request={plan.testDataRequest} />
+            )}
             {manage && (
               <TargetTable
+                showTestData={plan.testDataRequest != null}
                 targets={plan.targets}
                 selectedId={selectedOrg?.organizationId}
                 onSelect={(t) => setParams({ org: t.organizationId })}
               />
             )}
             {selectedOrg ? (
-              <TargetResultsCard
-                key={selectedOrg.organizationId}
-                planId={plan.id}
-                organizationId={selectedOrg.organizationId}
-              />
+              <>
+                {plan.testDataRequest && (
+                  <TestDataCard
+                    key={`data-${selectedOrg.organizationId}`}
+                    planId={plan.id}
+                    organizationId={selectedOrg.organizationId}
+                    request={plan.testDataRequest}
+                  />
+                )}
+                <TargetResultsCard
+                  key={selectedOrg.organizationId}
+                  planId={plan.id}
+                  organizationId={selectedOrg.organizationId}
+                />
+              </>
             ) : (
               <StateView kind="empty" description="대상 기관이 없습니다." />
             )}
@@ -178,7 +196,7 @@ function TestPlanView({ slug, plan }: { slug: string; plan: TestPlanDetail }) {
           setConfirmDelete(false);
         }}
         title="기관 테스트 삭제"
-        message="기관 테스트와 기관이 등록한 결과, 결제원 의견, 가이드 파일을 모두 지웁니다. 되돌릴 수 없습니다."
+        message="기관 테스트와 기관이 등록한 결과, 결제원 의견, 가이드·테스트데이터 파일을 모두 지웁니다. 되돌릴 수 없습니다."
         confirmLabel="삭제하기"
         danger
         pending={remove.isPending}
@@ -221,12 +239,73 @@ function ProgressSummary({ plan }: { plan: TestPlanDetail }) {
   );
 }
 
+/** 결제원 담당자의 테스트데이터 요청 현황: 회신 기한, 생성 완료 기관 수, 미생성 기관에 다시 요청. */
+function TestDataRequestBar({
+  planId,
+  request,
+}: {
+  planId: number;
+  request: NonNullable<TestPlanDetail['testDataRequest']>;
+}) {
+  const send = useSendTestDataRequest(planId);
+  const remaining = request.targetCount - request.createdCount;
+  return (
+    <Card data-testid="test-data-request-bar">
+      <Group justify="space-between" gap="sm">
+        <div>
+          <Group gap="xs">
+            <Text fw={700} size="lg">
+              테스트데이터 사전 요청
+            </Text>
+            {request.overdue && remaining > 0 && (
+              <Badge color="red" variant="light">
+                기한 지남
+              </Badge>
+            )}
+          </Group>
+          <Text size="sm" c="dimmed" className={classes.numeric}>
+            회신 기한 {formatDate(request.dueDate)} · 생성 완료 {request.createdCount}/
+            {request.targetCount}
+            {request.requestedAt && ` · 마지막 요청 ${formatDateTime(request.requestedAt)}`}
+          </Text>
+        </div>
+        {remaining > 0 && (
+          <Button
+            variant="light"
+            leftSection={<IconSend size={16} stroke={1.8} />}
+            loading={send.isPending}
+            onClick={() =>
+              send.mutate(undefined, {
+                onSuccess: (r) =>
+                  notifications.show({
+                    message: `미생성 기관 ${r.organizationCount}곳에 테스트데이터 요청 메일을 보냈습니다.`,
+                    color: 'clay',
+                  }),
+                onError: (e) =>
+                  notifications.show({
+                    title: '보내지 못했습니다',
+                    message: e.message,
+                    color: 'red',
+                  }),
+              })
+            }
+          >
+            미생성 기관에 다시 요청 ({remaining})
+          </Button>
+        )}
+      </Group>
+    </Card>
+  );
+}
+
 /** 결제원 담당자의 기관별 현황. 행을 누르면 아래에 그 기관의 요구사항별 결과가 보인다. */
 function TargetTable({
+  showTestData,
   targets,
   selectedId,
   onSelect,
 }: {
+  showTestData: boolean;
   targets: TestTargetSummary[];
   selectedId: number | undefined;
   onSelect: (target: TestTargetSummary) => void;
@@ -245,6 +324,7 @@ function TargetTable({
         <Table.Thead>
           <Table.Tr>
             <Table.Th>기관</Table.Th>
+            {showTestData && <Table.Th w={120}>테스트데이터</Table.Th>}
             <Table.Th w={180}>수행률</Table.Th>
             <Table.Th w={240}>결과</Table.Th>
             <Table.Th w={130}>확인할 결과</Table.Th>
@@ -280,6 +360,11 @@ function TargetTable({
                   )}
                 </Group>
               </Table.Td>
+              {showTestData && (
+                <Table.Td data-label="테스트데이터">
+                  <TestDataBadge status={t.testDataStatus} label={t.testDataStatusLabel} />
+                </Table.Td>
+              )}
               <Table.Td data-label="수행률">
                 <Group gap="xs" wrap="nowrap">
                   <Progress
@@ -420,6 +505,34 @@ function PlanContent({ slug, plan }: { slug: string; plan: TestPlanDetail }) {
               />
             </Stack>
           </Card>
+          {plan.testDataRequest && (
+            <Card>
+              <Stack gap="sm">
+                <Text fw={700} size="xl">
+                  테스트데이터 사전 요청
+                </Text>
+                <Field label="회신 기한">
+                  <Text size="md" className={classes.numeric}>
+                    {formatDate(plan.testDataRequest.dueDate)}
+                  </Text>
+                </Field>
+                <Field label="요청 사항">
+                  <Text size="md" className={classes.content}>
+                    {plan.testDataRequest.instruction ?? '없음'}
+                  </Text>
+                </Field>
+                <Field label="회신 양식">
+                  <AttachmentPanel
+                    ownerType="TEST_DATA_FORM"
+                    ownerId={plan.id}
+                    editable={manage}
+                    uploadLabel="양식 올리기"
+                    emptyMessage="지정한 양식이 없습니다."
+                  />
+                </Field>
+              </Stack>
+            </Card>
+          )}
           {manage && (
             <Card>
               <Stack gap="md">

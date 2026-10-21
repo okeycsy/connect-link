@@ -29,7 +29,11 @@ function seoulDate(days: number) {
 }
 
 /** 홍성민으로 KB국민은행 대상 계좌통합관리 기관 테스트를 API 로 만든다. request 의 세션은 홍성민으로 바뀐다. */
-async function createAsHong(request: APIRequestContext, title: string): Promise<number> {
+async function createAsHong(
+  request: APIRequestContext,
+  title: string,
+  testDataRequest: { dueDate: string; instruction: string | null } | null = null,
+): Promise<number> {
   const login = await request.post('/api/v1/auth/login', {
     data: { email: 'hong.sungmin@kftc.example.com', password: DEMO_PASSWORD },
     headers: await csrf(request),
@@ -54,6 +58,7 @@ async function createAsHong(request: APIRequestContext, title: string): Promise<
         { title: '해지 결과 통보 전문 확인', description: null },
       ],
       organizationIds: [organizations.find((o) => o.code === '004')!.id],
+      testDataRequest,
     },
     headers: await csrf(request),
   });
@@ -96,11 +101,28 @@ test.describe('다. 기관 테스트', () => {
     await page.getByRole('checkbox', { name: 'KB국민은행 대상' }).check();
     await page.getByRole('checkbox', { name: '삼성증권 대상' }).check();
     await expect(page.getByTestId('target-summary')).toHaveText('대상 2곳');
-    await page.locator('input[type="file"]').setInputFiles({
-      name: '테스트가이드.pdf',
-      mimeType: 'application/pdf',
-      buffer: Buffer.from('%PDF-1.4 sample'),
+    // 맨 위 테스트데이터 사전 요청은 늘 펼쳐져 있다. 필요 없음을 체크하면 접히고, 풀면 다시 보인다.
+    const dataRequest = page.getByTestId('test-data-request');
+    const skip = dataRequest.getByRole('checkbox', { name: /사전 요청이 필요 없습니다/ });
+    await skip.check();
+    await expect(dataRequest.getByTestId('test-data-skipped')).toBeVisible();
+    await skip.uncheck();
+    await dataRequest
+      .getByRole('textbox', { name: '요청 사항' })
+      .fill('해지 예정 계좌를 포함해 테스트 계좌 10개를 만들어 주세요.');
+    await dataRequest.locator('input[type="file"]').setInputFiles({
+      name: '테스트데이터 양식.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from('계좌번호,예금주,상태\n'),
     });
+    await page
+      .locator('input[type="file"]')
+      .nth(1)
+      .setInputFiles({
+        name: '테스트가이드.pdf',
+        mimeType: 'application/pdf',
+        buffer: Buffer.from('%PDF-1.4 sample'),
+      });
     await shot(page, 'test-plan-editor');
 
     await page.getByRole('button', { name: '저장' }).click();
@@ -111,6 +133,8 @@ test.describe('다. 기관 테스트', () => {
     const targets = page.getByTestId('target-table');
     await expect(targets).toContainText('KB국민은행');
     await expect(targets).toContainText('삼성증권');
+    await expect(targets).toContainText('미생성');
+    await expect(page.getByTestId('test-data-request-bar')).toContainText('생성 완료 0/2');
     await shot(page, 'test-plan-detail');
 
     // 알림 설정: 만든 사람(홍성민)에 김태호을 더한다.
@@ -216,5 +240,68 @@ test.describe('다. 기관 테스트', () => {
     await page.getByRole('option', { name: 'KB국민은행 결과' }).click();
     await expect(page.getByText('KB국민은행 결제원 의견').first()).toBeVisible();
     await expect(page.getByText('KB국민은행 결과 등록').first()).toBeVisible();
+  });
+
+  test('결제원이 수행 전에 테스트데이터를 요청하면 기관이 양식을 내려받아 생성 여부와 테스트데이터를 올리고 결제원이 현황을 본다', async ({
+    page,
+    request,
+  }) => {
+    const title = `E2E 테스트데이터 ${Date.now()}`;
+    const id = await createAsHong(request, title, {
+      dueDate: seoulDate(0),
+      instruction: '해지 예정 계좌를 포함해 테스트 계좌 10개',
+    });
+    const form = await request.post('/api/v1/attachments', {
+      multipart: {
+        ownerType: 'TEST_DATA_FORM',
+        ownerId: String(id),
+        file: {
+          name: '테스트데이터 회신 양식.csv',
+          mimeType: 'text/csv',
+          buffer: Buffer.from('계좌번호,예금주,상태\n'),
+        },
+      },
+      headers: await csrf(request),
+    });
+    expect(form.ok(), await form.text()).toBeTruthy();
+
+    // 기관 담당자: 결제원 양식을 보고 생성 완료와 메모를 저장한 뒤 만든 파일을 올린다.
+    await loginAs(page, '김민준 (참가기관 · 현업)로 로그인');
+    await page.goto(`/account-info/tests/${id}`);
+    const card = page.getByTestId('test-data');
+    await expect(card).toContainText('테스트데이터 회신 양식.csv');
+    await expect(card).toContainText('미생성');
+    await expect(card.getByTestId('test-data-due')).toHaveText(seoulDate(0));
+    await expect(card).toContainText('해지 예정 계좌를 포함해 테스트 계좌 10개');
+    await card.getByText('생성 완료', { exact: true }).click();
+    await card.getByRole('textbox', { name: '메모' }).fill('테스트 계좌 10개(해지 예정 2개 포함)');
+    await card.getByRole('button', { name: '테스트데이터 저장' }).click();
+    await expect(card.getByText('김민준 ·')).toBeVisible();
+    await card.locator('input[type=file]').setInputFiles({
+      name: 'KB 테스트데이터.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from('계좌번호,예금주,상태\n000-00-000000,홍길동,정상\n'),
+    });
+    await expect(card).toContainText('KB 테스트데이터.csv');
+    await shot(page, 'test-data-organization');
+
+    // 결제원 담당자: 기관별 현황에 생성 완료가 보이고, 기관 카드에서 메모와 파일을 본다. 매터모스트 알림도 받았다.
+    await loginAs(page, '홍성민 (결제원 · 현업)로 로그인');
+    const notifications = (await (await page.request.get('/api/v1/notifications')).json()) as {
+      content: { title: string }[];
+    };
+    expect(
+      notifications.content.some((n) => n.title.includes(`${title} 테스트데이터 생성 완료`)),
+    ).toBeTruthy();
+    await page.goto(`/account-info/tests/${id}`);
+    await expect(page.getByTestId('target-table')).toContainText('생성 완료');
+    await expect(page.getByTestId('test-data-request-bar')).toContainText('생성 완료 1/1');
+    await expect(
+      page.getByTestId('test-data-request-bar').getByRole('button', { name: /다시 요청/ }),
+    ).toHaveCount(0);
+    await expect(card).toContainText('테스트 계좌 10개(해지 예정 2개 포함)');
+    await expect(card).toContainText('KB 테스트데이터.csv');
+    await expect(card.getByRole('button', { name: '테스트데이터 저장' })).toHaveCount(0);
+    await shot(page, 'test-data-kftc');
   });
 });

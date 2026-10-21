@@ -17,6 +17,7 @@ import javax.validation.constraints.Size;
  * @param description 테스트 내용·수행 가이드
  * @param items 요구사항(정한 순서). 하나 이상
  * @param organizationIds 대상 참가기관. 그 업무에 참여하는 사용 중 참가기관, 하나 이상
+ * @param testDataRequest 수행 기간 전에 받을 테스트데이터 요청. 받지 않으면 null
  */
 public record TestPlanSaveRequest(
     @NotNull(message = "업무를 골라 주세요.") Business business,
@@ -28,7 +29,8 @@ public record TestPlanSaveRequest(
     @NotNull(message = "수행 시작일을 골라 주세요.") LocalDate startDate,
     @NotNull(message = "수행 종료일을 골라 주세요.") LocalDate endDate,
     @Valid @Size(max = 200, message = "요구사항은 200개까지입니다.") List<TestItemRequest> items,
-    List<Long> organizationIds) {
+    List<Long> organizationIds,
+    @Valid @Schema(nullable = true) TestDataRequestForm testDataRequest) {
 
   public TestPlanSaveRequest {
     items = items == null ? List.of() : List.copyOf(items);

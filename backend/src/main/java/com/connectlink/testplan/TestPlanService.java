@@ -17,6 +17,9 @@ import com.connectlink.organization.Organization;
 import com.connectlink.organization.OrganizationService;
 import com.connectlink.organization.OrganizationType;
 import com.connectlink.organization.dto.OrganizationResponse;
+import com.connectlink.testplan.dto.TestDataRequestForm;
+import com.connectlink.testplan.dto.TestDataRequestResponse;
+import com.connectlink.testplan.dto.TestDataRequestSentResponse;
 import com.connectlink.testplan.dto.TestItemRequest;
 import com.connectlink.testplan.dto.TestItemResponse;
 import com.connectlink.testplan.dto.TestPlanCountsResponse;
@@ -145,6 +148,11 @@ public class TestPlanService {
       plan.addTarget(organization);
     }
     plan.replaceRecipients(ownerAsRecipient(user, body.business()));
+    plan.changeTestDataRequest(testDataRequestOf(body));
+    if (plan.isTestDataRequested()) {
+      // 테스트데이터 요청은 테스트가 열렸다는 메일에 함께 담는다.
+      plan.testDataRequestSent(now());
+    }
     TestProgress.recalculate(plan, now());
     repository.saveAndFlush(plan);
     changeHistoryService.record(
@@ -172,9 +180,26 @@ public class TestPlanService {
     }
     validate(body);
     Snapshot before = Snapshot.of(plan);
+    boolean wasRequested = plan.isTestDataRequested();
+    if (wasRequested
+        && body.testDataRequest() == null
+        && plan.getTargets().stream().anyMatch(this::hasTestData)) {
+      throw BusinessException.conflict(
+          "TEST_DATA_ALREADY_REPORTED", "테스트데이터를 등록한 기관이 있어 테스트데이터 요청을 거둘 수 없습니다.");
+    }
     plan.change(contentOf(body));
+    plan.changeTestDataRequest(testDataRequestOf(body));
     applyItems(plan, body.items());
     Set<String> added = applyTargets(plan, body.organizationIds());
+    if (!wasRequested && plan.isTestDataRequested()) {
+      // 새로 요청했으면 이미 있던 대상 기관에 요청 메일을 보낸다. 새로 더한 기관은 열림 메일에 함께 담긴다.
+      Set<String> existing = targetCodes(plan.getTargets());
+      existing.removeAll(added);
+      if (!existing.isEmpty()) {
+        notifier.testDataRequested(plan, organizationEmails(plan.getBusiness(), existing));
+      }
+      plan.testDataRequestSent(now());
+    }
     TestProgress.recalculate(plan, now());
     repository.flush();
     List<FieldChange> changes = Snapshot.of(plan).diff(before, false);
@@ -192,11 +217,39 @@ public class TestPlanService {
     return toDetail(user, plan);
   }
 
-  /** 지운다. 기관 결과와 가이드 첨부도 함께 지운다. */
+  /**
+   * 아직 테스트데이터를 생성 완료하지 않은 대상 기관 담당자에게 테스트데이터 요청 메일을 다시 보낸다. 그 업무 결제원 담당자만 하고, 요청하지 않은 테스트거나 모든 기관이
+   * 생성 완료면 409 다.
+   */
+  public TestDataRequestSentResponse sendTestDataRequest(CurrentUser user, Long id) {
+    TestPlan plan = load(id);
+    accessPolicy.ensureCanManage(user, plan.getBusiness());
+    if (!plan.isTestDataRequested()) {
+      throw BusinessException.conflict("TEST_DATA_NOT_REQUESTED", "테스트데이터를 요청하지 않은 기관 테스트입니다.");
+    }
+    Set<String> codes =
+        targetCodes(
+            plan.getTargets().stream()
+                .filter(t -> t.getTestDataStatus() != TestDataStatus.CREATED)
+                .toList());
+    if (codes.isEmpty()) {
+      throw BusinessException.conflict("TEST_DATA_ALL_CREATED", "모든 대상 기관이 테스트데이터를 생성 완료했습니다.");
+    }
+    LocalDateTime now = now();
+    notifier.testDataRequested(plan, organizationEmails(plan.getBusiness(), codes));
+    plan.testDataRequestSent(now);
+    repository.flush();
+    return new TestDataRequestSentResponse(codes.size(), now);
+  }
+
+  /** 지운다. 기관 결과와 가이드·테스트데이터 양식·기관 테스트데이터 첨부도 함께 지운다. */
   public void delete(CurrentUser user, Long id) {
     TestPlan plan = load(id);
     accessPolicy.ensureCanManage(user, plan.getBusiness());
     attachmentService.deleteAllOf(AttachmentOwnerType.TEST_PLAN, plan.getId());
+    attachmentService.deleteAllOf(AttachmentOwnerType.TEST_DATA_FORM, plan.getId());
+    plan.getTargets()
+        .forEach(t -> attachmentService.deleteAllOf(AttachmentOwnerType.TEST_DATA, t.getId()));
     changeHistoryService.record(
         user,
         ChangeHistoryCommand.deleted(
@@ -351,6 +404,7 @@ public class TestPlanService {
         targets.stream().map(t -> toTargetSummary(t, items)).toList(),
         own.map(t -> t.getOrganization().getId()).orElse(null),
         manage ? plan.getRecipients().stream().map(TestPlanRecipient::getName).toList() : List.of(),
+        toTestDataRequest(plan, targets),
         plan.getCreatedAt(),
         plan.getUpdatedAt(),
         new TestPlanPermissions(
@@ -385,7 +439,9 @@ public class TestPlanService {
         items.size() - reported,
         awaiting,
         isCompleted(target, items.size()),
-        target.getLastReportedAt());
+        target.getLastReportedAt(),
+        target.getTestDataStatus(),
+        target.getTestDataStatus().getLabel());
   }
 
   /** 결제원이 확인할 결과인지: 오류이거나, 정상인데 결제원 의견이 없거나 지난 의견. 홈 카드의 집계와 같은 기준이다. */
@@ -424,6 +480,14 @@ public class TestPlanService {
           "TEST_PLAN_PERIOD_INVALID",
           "endDate",
           "수행 종료일은 시작일과 같거나 뒤여야 합니다.");
+    }
+    if (body.testDataRequest() != null
+        && body.testDataRequest().dueDate().isAfter(body.startDate())) {
+      throw BusinessException.onField(
+          HttpStatus.BAD_REQUEST,
+          "TEST_DATA_DUE_DATE_INVALID",
+          "testDataRequest.dueDate",
+          "테스트데이터는 수행 전에 받으므로 회신 기한은 수행 시작일과 같거나 앞이어야 합니다.");
     }
     if (body.items().isEmpty()) {
       throw BusinessException.onField(
@@ -482,7 +546,7 @@ public class TestPlanService {
   }
 
   /**
-   * 대상 기관을 요청 목록대로 맞춘다. 결과를 등록한 기관은 뺄 수 없다.
+   * 대상 기관을 요청 목록대로 맞춘다. 결과나 테스트데이터를 등록한 기관은 뺄 수 없다.
    *
    * @return 새로 더한 기관 코드
    */
@@ -495,6 +559,11 @@ public class TestPlanService {
           throw BusinessException.conflict(
               "TEST_TARGET_HAS_RESULTS",
               target.getOrganization().getName() + " 은(는) 결과를 등록해서 대상에서 뺄 수 없습니다.");
+        }
+        if (hasTestData(target)) {
+          throw BusinessException.conflict(
+              "TEST_TARGET_HAS_TEST_DATA",
+              target.getOrganization().getName() + " 은(는) 테스트데이터를 등록해서 대상에서 뺄 수 없습니다.");
         }
         plan.removeTarget(target);
       }
@@ -571,6 +640,36 @@ public class TestPlanService {
         .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 
+  /** 기관이 테스트데이터를 등록했는지(생성 여부·메모를 저장했거나 파일을 올렸다). */
+  private boolean hasTestData(TestPlanTarget target) {
+    return target.getTestDataStatus() != TestDataStatus.NOT_CREATED
+        || target.getTestDataNote() != null
+        || !attachmentService
+            .listOf(AttachmentOwnerType.TEST_DATA, List.of(target.getId()))
+            .isEmpty();
+  }
+
+  private static TestPlan.TestDataRequest testDataRequestOf(TestPlanSaveRequest body) {
+    TestDataRequestForm form = body.testDataRequest();
+    return form == null
+        ? null
+        : new TestPlan.TestDataRequest(form.dueDate(), blankToNull(form.instruction()));
+  }
+
+  /** 테스트데이터 요청 현황. 기관 담당자는 자기 기관만 센다. */
+  private TestDataRequestResponse toTestDataRequest(TestPlan plan, List<TestPlanTarget> targets) {
+    if (!plan.isTestDataRequested()) {
+      return null;
+    }
+    return new TestDataRequestResponse(
+        plan.getTestDataDueDate(),
+        plan.getTestDataInstruction(),
+        plan.getTestDataRequestedAt(),
+        today().isAfter(plan.getTestDataDueDate()),
+        (int) targets.stream().filter(t -> t.getTestDataStatus() == TestDataStatus.CREATED).count(),
+        targets.size());
+  }
+
   private static Set<String> targetCodes(List<TestPlanTarget> targets) {
     return targets.stream()
         .map(t -> t.getOrganization().getCode())
@@ -597,9 +696,10 @@ public class TestPlanService {
       String description,
       String period,
       String items,
-      String targets) {
+      String targets,
+      String testData) {
 
-    static final Snapshot EMPTY = new Snapshot(null, null, null, null, null, null);
+    static final Snapshot EMPTY = new Snapshot(null, null, null, null, null, null, null);
 
     static Snapshot of(TestPlan plan) {
       return new Snapshot(
@@ -611,7 +711,19 @@ public class TestPlanService {
               .map(i -> i.getNumber() + " " + i.getTitle())
               .collect(Collectors.joining("\n")),
           FieldChanges.join(
-              plan.getTargets().stream().map(t -> t.getOrganization().getName()).toList()));
+              plan.getTargets().stream().map(t -> t.getOrganization().getName()).toList()),
+          testDataText(plan));
+    }
+
+    /** "회신 기한 2026-10-25 · 요청 사항". 요청하지 않으면 null. */
+    private static String testDataText(TestPlan plan) {
+      if (!plan.isTestDataRequested()) {
+        return null;
+      }
+      String due = "회신 기한 " + plan.getTestDataDueDate();
+      return plan.getTestDataInstruction() == null
+          ? due
+          : due + " · " + plan.getTestDataInstruction();
     }
 
     /** {@code before} 에서 이것으로 바뀐 항목. {@code all} 이면 값이 있는 항목을 모두 남긴다(등록 이력). */
@@ -623,6 +735,7 @@ public class TestPlanService {
       add(changes, all, "period", "수행 기간", before.period, period);
       add(changes, all, "items", "요구사항", before.items, items);
       add(changes, all, "targets", "대상 기관", before.targets, targets);
+      add(changes, all, "testData", "테스트데이터 요청", before.testData, testData);
       return changes.toList();
     }
 

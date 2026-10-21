@@ -1,5 +1,6 @@
 package com.connectlink.testplan.dto;
 
+import com.connectlink.testplan.TestDataStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
  * @param unreported 아직 결과를 등록하지 않은 요구사항 수
  * @param awaitingReview 결제원이 확인할 결과 수(오류, 또는 정상인데 결제원 의견이 없거나 지난 의견)
  * @param completed 모든 요구사항을 완료했는지
+ * @param testDataStatus 테스트 전 테스트데이터 생성 여부
  */
 public record TestTargetSummaryResponse(
     Long targetId,
@@ -27,4 +29,6 @@ public record TestTargetSummaryResponse(
     int unreported,
     int awaitingReview,
     boolean completed,
-    @Schema(nullable = true) LocalDateTime lastReportedAt) {}
+    @Schema(nullable = true) LocalDateTime lastReportedAt,
+    TestDataStatus testDataStatus,
+    String testDataStatusLabel) {}

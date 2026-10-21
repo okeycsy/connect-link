@@ -22,6 +22,10 @@ export type TestTargetResults = components['schemas']['TestTargetResultsResponse
 export type TestItemResultRow = components['schemas']['TestItemResultResponse'];
 export type TestResultSaveRequest = components['schemas']['TestResultSaveRequest'];
 export type TestFeedbackRequest = components['schemas']['TestFeedbackRequest'];
+export type TestData = components['schemas']['TestDataResponse'];
+export type TestDataSaveRequest = components['schemas']['TestDataSaveRequest'];
+export type TestDataStatus = TestDataSaveRequest['status'];
+export type TestDataRequestInfo = NonNullable<components['schemas']['TestDataRequestResponse']>;
 export type TestPlanRecipient = components['schemas']['TestPlanRecipientResponse'];
 export type TestPlanState = TestPlanSummary['state'];
 export type TestResult = TestResultSaveRequest['results'][number]['result'];
@@ -42,6 +46,8 @@ export const testPlanKeys = {
   detail: (id: number) => ['test-plans', 'detail', id] as const,
   target: (id: number, organizationId: number) =>
     ['test-plans', 'target', id, organizationId] as const,
+  testData: (id: number, organizationId: number) =>
+    ['test-plans', 'test-data', id, organizationId] as const,
   organizations: (business: string) => ['test-plans', 'organizations', business] as const,
   recipients: (id: number) => ['test-plans', 'recipients', id] as const,
 };
@@ -194,6 +200,49 @@ export function useSaveTestFeedback(id: number, organizationId: number) {
       queryClient.setQueryData(testPlanKeys.target(id, organizationId), results);
       invalidate(queryClient);
     },
+  });
+}
+
+/** 대상 기관 한 곳의 테스트 전 테스트데이터 생성 여부·메모·파일 수. */
+export function useTestData(id: number, organizationId: number) {
+  return useQuery({
+    queryKey: testPlanKeys.testData(id, organizationId),
+    queryFn: async () =>
+      unwrap(
+        await api.GET('/api/v1/test-plans/{id}/targets/{organizationId}/test-data', {
+          params: { path: { id, organizationId } },
+        }),
+      ),
+  });
+}
+
+/** 기관 담당자가 자기 기관 테스트데이터 생성 여부와 메모를 저장한다. */
+export function useSaveTestData(id: number, organizationId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: TestDataSaveRequest) =>
+      unwrap(
+        await api.PUT('/api/v1/test-plans/{id}/targets/{organizationId}/test-data', {
+          params: { path: { id, organizationId } },
+          body,
+        }),
+      ),
+    onSuccess: (data) => {
+      queryClient.setQueryData(testPlanKeys.testData(id, organizationId), data);
+      invalidate(queryClient);
+    },
+  });
+}
+
+/** 결제원 담당자가 아직 생성 완료가 아닌 대상 기관에 테스트데이터 요청 메일을 다시 보낸다. */
+export function useSendTestDataRequest(id: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () =>
+      unwrap(
+        await api.POST('/api/v1/test-plans/{id}/test-data-requests', { params: { path: { id } } }),
+      ),
+    onSuccess: () => invalidate(queryClient),
   });
 }
 

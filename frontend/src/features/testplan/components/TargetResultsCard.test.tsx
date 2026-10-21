@@ -20,6 +20,8 @@ const summary = {
   awaitingReview: 1,
   completed: false,
   lastReportedAt: '2026-10-18T10:00:00',
+  testDataStatus: 'CREATED',
+  testDataStatusLabel: '생성 완료',
 };
 
 const reported = {
