@@ -1,5 +1,6 @@
 package com.connectlink.organization;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -154,7 +155,7 @@ class OrganizationControllerTest {
     String body =
         """
         {"code":"NEWB","name":"새로은행","type":"FINANCE_ORGANIZATION",
-         "emailDomain":"NewB.example.com","businesses":["CMS","ACCOUNT_INFO"]}
+         "emailDomain":"NewB.example.com","businesses":["CMS","ACCOUNT_INFO"],"sector":"BANK"}
         """;
     mockMvc
         .perform(
@@ -179,6 +180,63 @@ class OrganizationControllerTest {
                 .with(csrf()))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("ORGANIZATION_CODE_DUPLICATE"));
+  }
+
+  @Test
+  void 참가기관을_업권_없이_등록하거나_업권을_지우면_400이다() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/organizations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"code":"NOSEC","name":"업권없는은행","type":"FINANCE_ORGANIZATION","businesses":["CMS"]}
+                    """)
+                .with(TestUsers.admin())
+                .with(csrf()))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("ORGANIZATION_SECTOR_REQUIRED"))
+        .andExpect(jsonPath("$.fieldErrors[0].field").value("sector"));
+
+    Long id = organizationRepository.findByCode("240").orElseThrow().getId();
+    mockMvc
+        .perform(
+            put("/api/v1/organizations/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"name":"삼성증권","emailDomain":"samsung.example.com","active":true,"businesses":["ACCOUNT_INFO"],"sector":null}
+                    """)
+                .with(TestUsers.admin())
+                .with(csrf()))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("ORGANIZATION_SECTOR_REQUIRED"));
+  }
+
+  @Test
+  void 이용기관은_업권_없이_등록된다() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/organizations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"code":"USEX","name":"가나상사","type":"USE_ORGANIZATION","businesses":["CMS"]}
+                    """)
+                .with(TestUsers.admin())
+                .with(csrf()))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.sector").doesNotExist());
+  }
+
+  @Test
+  void 샘플_참가기관은_모두_업권이_있다() {
+    assertThat(
+            organizationRepository.findAll().stream()
+                .filter(o -> o.getType() == OrganizationType.FINANCE_ORGANIZATION)
+                .filter(o -> o.getSector() == null)
+                .map(Organization::getName))
+        .isEmpty();
   }
 
   @Test
@@ -210,7 +268,7 @@ class OrganizationControllerTest {
     Long id = organizationRepository.findByCode("090").orElseThrow().getId();
     String body =
         """
-        {"name":"카카오뱅크(변경)","emailDomain":"  ","active":false,"businesses":["LOAN_TRANSFER","CMS"]}
+        {"name":"카카오뱅크(변경)","emailDomain":"  ","active":false,"businesses":["LOAN_TRANSFER","CMS"],"sector":"BANK"}
         """;
     mockMvc
         .perform(

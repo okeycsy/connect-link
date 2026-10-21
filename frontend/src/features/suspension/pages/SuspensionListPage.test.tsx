@@ -39,7 +39,6 @@ const ROW = {
   id: 7,
   business: 'CMS',
   businessLabel: 'CMS',
-  subBusiness: '출금이체',
   organizationId: 3,
   organizationName: '신한은행',
   startAt: '2026-10-17T22:00:00',

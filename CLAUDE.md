@@ -68,7 +68,7 @@
 | 기관 업무 참여 | `OrganizationBusiness` | 기관이 참여하는 업무 영역 한 건. 레일별 조회 범위의 기준. 테이블 `organization_business` |
 | 업무 | `Business` | `ACCOUNT_INFO`(계좌통합관리), `AUTO_TRANSFER`(자동이체통합관리), `LOAN_TRANSFER`(대출이동), `CMS` |
 | 세부업무 | `subBusiness` | 자유 텍스트 |
-| 업권 | `FinanceSector` | 참가기관의 금융 업권. `BANK`(은행), `SECURITIES`(증권사), `MICROFINANCE`(서민금융기관: 저축은행·상호금융 등), `INSURANCE`(보험사). 넷에 들지 않는 참가기관(카드사 등)은 비워 둔다. 이용기관에는 없다. 기관 기준정보 칼럼 `organization.sector`, 선택지 API `/api/v1/finance-sectors`. 의견 요청 대상을 업권별로 고를 때 쓴다 |
+| 업권 | `FinanceSector` | 참가기관의 금융 업권. `BANK`(은행), `SECURITIES`(증권사), `MICROFINANCE`(서민금융기관: 저축은행·상호금융 등), `INSURANCE`(보험사). 참가기관은 반드시 하나를 정하고(우체국·상호금융·저축은행은 서민금융기관, 없으면 등록·수정이 400 `ORGANIZATION_SECTOR_REQUIRED`), 이용기관에는 없다. 기관 기준정보 칼럼 `organization.sector`, 선택지 API `/api/v1/finance-sectors`. 의견 요청 대상을 업권별로 고를 때 쓴다 |
 | 직무 | `JobRole` | `BUSINESS`(현업), `IT`(전산) |
 | 전산 세부 직무 | `ItRole` (복수 선택) | `DEV`, `OPS`, `INFRA`, `EXTERNAL_LINK`(대외계), `CONTROL_ROOM`(상황실) |
 | 주/부담당 | `ContactRank` | `PRIMARY`, `SECONDARY` |
@@ -90,7 +90,7 @@
 | 테스트 결과 | `TestResult` | `PASSED`(정상), `FAILED`(오류), `IN_PROGRESS`(수행중), `NOT_STARTED`(미수행) |
 | 수행률 | `TestProgress` | 요구사항 수행률(결제원 의견, 없으면 정상 100 그 밖 0)의 기관별·전체 평균과 수행 완료 계산. 결과가 바뀔 때마다 `progress_rate` 에 다시 계산해 둔다 |
 | 결과 등록 알림 대상 | `TestPlanRecipient` | 기관이 결과를 등록하면 매터모스트 알림을 받을 결제원 담당자(테스트별). 화면 `/{업무}/tests/{id}/recipients` |
-| 일시중단 | `Suspension` | 참가기관 하나의 업무 중단 한 건(일시, 대상 업무·세부업무, 중단 이유, 결제원 조치사항, 담당자 연락처, 추가 사항, 공문 첨부). 상태 `SuspensionStatus` = `PENDING_REVIEW`(검토 대기), `IN_REVIEW`(검토 중), `CONFIRMED`(확정), `COMPLETED`(완료). 권한 `SuspensionAccessPolicy`. API `/api/v1/suspensions`, 화면 `/{업무}/suspensions` |
+| 일시중단 | `Suspension` | 참가기관 하나의 업무 중단 한 건(일시, 대상 업무, 중단 이유, 결제원 조치사항, 담당자 연락처, 추가 사항, 공문 첨부). 상태 `SuspensionStatus` = `PENDING_REVIEW`(검토 대기), `IN_REVIEW`(검토 중), `CONFIRMED`(확정), `COMPLETED`(완료). 등록은 기관 기준(그 기관이 참여하는 업무 전부에서 고른다, `/registrable-organizations`). 권한 `SuspensionAccessPolicy`. API `/api/v1/suspensions`, 화면 `/{업무}/suspensions` |
 | 일시중단 시기 | `SuspensionPeriod` | 지금 기준 `CURRENT`(진행 중), `UPCOMING`(예정), `PAST`(지난). 저장하지 않고 일시로 계산한다 |
 | 일시중단 확인자 | `SuspensionReviewer` | 확인을 시작한 결제원 담당자 한 명(이름·이메일·직무 표시·시작 일시). 조치 및 인수인계 사항(`handover`)을 쓰면 확정이다 |
 | 전 영업일 취합 | `SuspensionDigest`, `SuspensionDigestService`, `SuspensionDigestFormatter` | 작업일 전 영업일에 확정 일시중단을 모아 운영·관제 매터모스트 채널로 보낸 한 번. 설정 `app.suspension.digest.*`, 영업일 `BusinessDayCalendar`. 전달 양식은 미결이라 `SuspensionDigestFormatter` 빈을 바꿔 끼운다 |

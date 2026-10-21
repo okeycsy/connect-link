@@ -24,7 +24,8 @@ INSERT INTO organization (code, name, type, email_domain, active, created_at, cr
   ('HAHA',  '하하통신',      'USE_ORGANIZATION',     'haha.example.com',      TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
   ('005',   '외환은행',      'FINANCE_ORGANIZATION', 'keb.example.com',       FALSE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed');
 
--- 업권. 의견 요청에서 대상 기관을 업권별로 고를 때 쓴다(참가기관만).
+-- 업권. 의견 요청에서 대상 기관을 업권별로 고를 때 쓴다(참가기관만, 모든 참가기관에 정한다).
+-- 이름으로 나눈다: 은행 → 은행, 우체국·상호금융(신협 등)·저축은행 → 서민금융기관, 증권사 → 증권사, 보험사 → 보험사.
 UPDATE organization SET sector = CASE code
   WHEN '004'  THEN 'BANK'
   WHEN '088'  THEN 'BANK'
@@ -35,6 +36,7 @@ UPDATE organization SET sector = CASE code
   WHEN '020'  THEN 'BANK'
   WHEN '090'  THEN 'BANK'
   WHEN '048'  THEN 'MICROFINANCE'
+  WHEN '071'  THEN 'MICROFINANCE'
 END
 WHERE type = 'FINANCE_ORGANIZATION';
 

@@ -50,7 +50,7 @@ export function SuspensionListPage() {
   const navigate = useNavigate();
   const { data: me } = useMe();
   const manager = canManageSuspensions(me, slug);
-  const register = canRegisterSuspensions(me, slug);
+  const register = canRegisterSuspensions(me);
   const [searchParams, setSearchParams] = useSearchParams();
   const periodParam = searchParams.get('period') as SuspensionPeriod | null;
   const period: SuspensionPeriod =
@@ -291,11 +291,6 @@ function SuspensionTable({
               <Text size="md" fw={600}>
                 {r.organizationName}
               </Text>
-              {r.subBusiness && (
-                <Text size="xs" c="dimmed" lineClamp={1}>
-                  {r.subBusiness}
-                </Text>
-              )}
             </Table.Td>
             <Table.Td data-label="중단 일시">
               <Group gap={6} wrap="nowrap">

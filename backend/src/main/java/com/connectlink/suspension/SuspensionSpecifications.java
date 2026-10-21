@@ -61,8 +61,7 @@ final class SuspensionSpecifications {
     return (root, query, cb) ->
         cb.or(
             cb.like(cb.lower(root.get("organization").get("name")), pattern),
-            cb.like(cb.lower(root.get("reason")), pattern),
-            cb.like(cb.lower(root.get("subBusiness")), pattern));
+            cb.like(cb.lower(root.get("reason")), pattern));
   }
 
   /** 진행 중은 먼저 끝나는 순, 예정은 먼저 시작하는 순, 지난 건과 전체는 최근 시작한 순. */
