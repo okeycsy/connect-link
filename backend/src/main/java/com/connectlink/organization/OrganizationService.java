@@ -19,6 +19,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -111,6 +112,7 @@ public class OrganizationService {
             request.name().trim(),
             request.type(),
             normalizeDomain(request.emailDomain()));
+    ensureSector(request.type(), request.sector());
     organization.changeSector(request.sector());
     organization.replaceBusinesses(orEmpty(request.businesses()));
     // 감사 컬럼(등록자·등록 일시)이 응답에 실리도록 바로 flush 한다.
@@ -138,6 +140,7 @@ public class OrganizationService {
       CurrentUser user, Long id, OrganizationUpdateRequest request) {
     accessPolicy.ensureCanManage(user);
     Organization organization = load(id);
+    ensureSector(organization.getType(), request.sector());
     FieldChanges changes =
         FieldChanges.compare()
             .field("name", "기관명", organization.getName(), request.name().trim())
@@ -183,6 +186,14 @@ public class OrganizationService {
     return organizationRepository
         .findById(id)
         .orElseThrow(() -> BusinessException.notFound("ORGANIZATION_NOT_FOUND", "기관을 찾을 수 없습니다."));
+  }
+
+  /** 참가기관은 업권 없이 저장하지 않는다. 결제원·이용기관은 업권을 쓰지 않으므로 보지 않는다. */
+  private static void ensureSector(OrganizationType type, FinanceSector sector) {
+    if (type == OrganizationType.FINANCE_ORGANIZATION && sector == null) {
+      throw BusinessException.onField(
+          HttpStatus.BAD_REQUEST, "ORGANIZATION_SECTOR_REQUIRED", "sector", "업권을 골라 주세요.");
+    }
   }
 
   private static String normalizeDomain(String emailDomain) {
