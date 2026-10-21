@@ -36,7 +36,7 @@ async function openRequestForGana(request: APIRequestContext, title: string): Pr
   ).json()) as {
     organizationId: number;
     organizationCode: string;
-    members: { accountId: number; email: string }[];
+    members: { contactId: number; email: string }[];
   }[];
   const gana = candidates.find((c) => c.organizationCode === '004')!;
   const kim = gana.members.find((m) => m.email === 'kim.minjun@kb.example.com')!;
@@ -58,7 +58,7 @@ async function openRequestForGana(request: APIRequestContext, title: string): Pr
       targets: [
         {
           organizationId: gana.organizationId,
-          recipientAccountIds: [kim.accountId],
+          recipientEmails: [kim.email],
         },
       ],
     },

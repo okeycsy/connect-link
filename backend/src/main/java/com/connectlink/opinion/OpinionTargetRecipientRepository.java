@@ -6,5 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface OpinionTargetRecipientRepository
     extends JpaRepository<OpinionTargetRecipient, Long> {
 
-  List<OpinionTargetRecipient> findByAccountId(Long accountId);
+  List<OpinionTargetRecipient> findByEmail(String email);
 }

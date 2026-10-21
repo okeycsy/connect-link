@@ -2005,7 +2005,7 @@ export interface components {
     OpinionTargetRequest: {
       /** Format: int64 */
       organizationId: number;
-      recipientAccountIds: number[];
+      recipientEmails: string[];
     };
     OpinionQuestionOption: {
       /** Format: int64 */
@@ -2023,8 +2023,6 @@ export interface components {
       options: components['schemas']['OpinionQuestionOption'][];
     };
     OpinionRecipientResponse: {
-      /** Format: int64 */
-      accountId: number;
       name: string;
       email: string;
       subBusiness?: string | null;
@@ -2726,7 +2724,7 @@ export interface components {
     };
     OpinionRecipientCandidateMember: {
       /** Format: int64 */
-      accountId: number;
+      contactId: number;
       name: string;
       email: string;
       subBusiness?: string | null;

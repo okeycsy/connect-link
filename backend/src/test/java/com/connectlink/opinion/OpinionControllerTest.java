@@ -1,6 +1,7 @@
 package com.connectlink.opinion;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -13,12 +14,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.connectlink.account.AccountService;
-import com.connectlink.account.BusinessMember;
 import com.connectlink.auth.TestUsers;
 import com.connectlink.notification.NotificationRepository;
 import com.connectlink.notification.NotificationType;
-import com.connectlink.organization.Business;
 import com.connectlink.organization.OrganizationService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -56,7 +54,6 @@ class OpinionControllerTest {
   @Autowired private MockMvc mockMvc;
   @Autowired private ObjectMapper objectMapper;
   @Autowired private OrganizationService organizationService;
-  @Autowired private AccountService accountService;
   @Autowired private NotificationRepository notificationRepository;
 
   private static RequestPostProcessor hong() {
@@ -96,14 +93,6 @@ class OpinionControllerTest {
     return organizationService.getByCode(code).getId();
   }
 
-  private Long accountId(String email) {
-    return accountService.listActiveMembers(Business.ACCOUNT_INFO).stream()
-        .filter(m -> m.email().equals(email))
-        .map(BusinessMember::accountId)
-        .findFirst()
-        .orElseThrow();
-  }
-
   /** KB국민은행(김민준)과 삼성증권(최유진)이 대상인 새 요청. 질문은 객관식(필수, 1월/7월), 체크박스(정산/안내/개발), 주관식(월 조회 건수) 세 개다. */
   private Map<String, Object> newRequest(String title) {
     Map<String, Object> body = new HashMap<>();
@@ -139,13 +128,13 @@ class OpinionControllerTest {
             Map.of(
                 "organizationId",
                 orgId("004"),
-                "recipientAccountIds",
-                List.of(accountId("kim.minjun@kb.example.com"))),
+                "recipientEmails",
+                List.of("kim.minjun@kb.example.com")),
             Map.of(
                 "organizationId",
                 orgId("240"),
-                "recipientAccountIds",
-                List.of(accountId("choi.yujin@samsung.example.com")))));
+                "recipientEmails",
+                List.of("choi.yujin@samsung.example.com"))));
     return body;
   }
 
@@ -221,6 +210,28 @@ class OpinionControllerTest {
   }
 
   @Test
+  void 계정이_없는_연락처_담당자도_회신_담당자로_고른다() throws Exception {
+    Map<String, Object> body = newRequest("후임자에게 보내는 요청");
+    body.put(
+        "targets",
+        List.of(
+            Map.of(
+                "organizationId",
+                orgId("004"),
+                "recipientEmails",
+                List.of("Namgung.Min@kb.example.com", "kim.minjun@kb.example.com"))));
+    Long id =
+        json(send(post(BASE), body, hong()).andExpect(status().isCreated())).get("id").asLong();
+    send(get(BASE + "/" + id), null, hong())
+        .andExpect(status().isOk())
+        .andExpect(
+            jsonPath("$.targets[0].recipients[*].email")
+                .value(
+                    containsInAnyOrder("namgung.min@kb.example.com", "kim.minjun@kb.example.com")))
+        .andExpect(jsonPath("$.targets[0].recipients[*].name").value(hasItem("남궁민")));
+  }
+
+  @Test
   void 작성중_요청은_대상_기관도_열지_못한다() throws Exception {
     Long id = create("작성중 숨김");
     send(get(BASE + "/" + id), null, kim()).andExpect(status().isForbidden());
@@ -231,6 +242,8 @@ class OpinionControllerTest {
     send(get(BASE + "/recipient-candidates").param("business", "account-info"), null, hong())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[?(@.organizationCode == '004')].members[0].name").value("김민준"))
+        // 계정이 없는 담당자(연락처에만 있는 남궁민)도 후보다
+        .andExpect(jsonPath("$[?(@.organizationCode == '004')].members[1].name").value("남궁민"))
         .andExpect(jsonPath("$[?(@.organizationCode == '004')].sectorLabel").value("은행"))
         .andExpect(jsonPath("$[?(@.organizationCode == '240')].sector").value("SECURITIES"))
         .andExpect(jsonPath("$[*].organizationCode").value(not(hasItem("KFTC"))))
@@ -287,16 +300,15 @@ class OpinionControllerTest {
             Map.of(
                 "organizationId",
                 orgId("240"),
-                "recipientAccountIds",
-                List.of(accountId("kim.minjun@kb.example.com")))));
+                "recipientEmails",
+                List.of("kim.minjun@kb.example.com"))));
     send(post(BASE), wrong, hong())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("OPINION_RECIPIENT_INVALID"));
 
     Map<String, Object> notParticipating = newRequest("참여하지 않는 기관");
     notParticipating.put(
-        "targets",
-        List.of(Map.of("organizationId", orgId("071"), "recipientAccountIds", List.of())));
+        "targets", List.of(Map.of("organizationId", orgId("071"), "recipientEmails", List.of())));
     send(post(BASE), notParticipating, hong())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("OPINION_TARGET_INVALID"));
@@ -320,8 +332,8 @@ class OpinionControllerTest {
             Map.of(
                 "organizationId",
                 orgId("240"),
-                "recipientAccountIds",
-                List.of(accountId("choi.yujin@samsung.example.com")))));
+                "recipientEmails",
+                List.of("choi.yujin@samsung.example.com"))));
     send(put(BASE + "/" + id), body, hong())
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("OPINION_TARGET_HAS_REPLY"));
@@ -385,8 +397,7 @@ class OpinionControllerTest {
   void 대상이_아닌_기관과_결제원은_회신하지_못한다() throws Exception {
     Map<String, Object> body = newRequest("가나만 대상");
     body.put(
-        "targets",
-        List.of(Map.of("organizationId", orgId("004"), "recipientAccountIds", List.of())));
+        "targets", List.of(Map.of("organizationId", orgId("004"), "recipientEmails", List.of())));
     Long id =
         json(send(post(BASE), body, hong()).andExpect(status().isCreated())).get("id").asLong();
     send(post(BASE + "/" + id + "/opening"), null, hong()).andExpect(status().isOk());
