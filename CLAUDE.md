@@ -12,6 +12,7 @@
   - 나. 참가기관 의견 회신 취합 관리
   - 다. 기관 테스트 수행 및 결과 관리
   - 라. 참가기관 일시중단 관리
+  - 마. 참가기관 소통 채널(업무 대화방)
   - 공통: 계정(가입, 이메일 인증, 가입 승인, 탈퇴), 알림(메일, 매터모스트)
 - **목표 상태**: "동작만 하는 데모"가 아니라 **실제 산출물에 가까운 아키텍처, 데이터만 샘플**인 상태. 프로토타입 이후 이 코드를 바탕으로 바로 본 개발이 이어진다. 임시방편 코드나 화면 전용 가짜 로직을 넣지 않는다.
 - **요구사항 원문**: 노션 "요구사항/기능 명세" 페이지(비공개, Notion 커넥터로 읽는다). 명세에 없는 동작은 추측해서 만들지 않는다. 13절을 따른다.
@@ -96,8 +97,14 @@
 | 발송함 | `NotificationOutbox` | 프로토타입에서 실제 발송 대신 기록. 상태 `OutboxStatus` = `PENDING`(발송 대기), `SENT`, `FAILED` |
 | 로그인 사용자 | `CurrentUser` | Service 권한 판단에 넘기는 값. 로그인할 때 계정에서 만들어 세션에 둔다. 업무 영역(레일) 조회 범위는 `BusinessAccessPolicy`(관리자는 전 업무, 그 밖에는 담당 업무). 테스트는 `TestUsers` |
 | 내부망/인터넷망 | `NetworkZone` | `INTERNAL`, `EXTERNAL`. 판단은 `NetworkZoneResolver`(헤더 `X-Network-Zone` 은 local·demo 만, 운영은 `app.network.internal-cidrs`). 내부망 전용 위반은 403 `INTERNAL_ONLY` |
-| 첨부파일 | `Attachment` | 대상은 `AttachmentOwnerType`(`OPINION_REQUEST`, `OPINION_REPLY`, `TEST_PLAN`, `SUSPENSION`, `DEMO`) + `ownerId`. 파일 저장소 `FileStorage` |
+| 첨부파일 | `Attachment` | 대상은 `AttachmentOwnerType`(`OPINION_REQUEST`, `OPINION_REPLY`, `TEST_PLAN`, `SUSPENSION`, `CHAT_MESSAGE`, `DEMO`) + `ownerId`. 파일 저장소 `FileStorage` |
 | 변경 이력 | `ChangeHistory` | 대상은 `HistoryTargetType`(`ORGANIZATION`, `CONTACT`, `OPINION_REQUEST`, `OPINION_REPLY`, `TEST_PLAN`, `TEST_PLAN_TARGET`(기관별 결과), `SUSPENSION`) + `targetId`. 종류 `ChangeAction` = `CREATED`/`UPDATED`/`DELETED`, 항목 `FieldChange`(field, label, before, after) |
+| 채팅방 | `ChatRoom` | 소통 채널의 방 하나. 종류 `ChatRoomType` = `BUSINESS`(업무 단체방, 업무마다 하나를 저절로 만든다), `CUSTOM`(초대방, 그 업무 결제원 담당자가 만든다). 권한 `ChatAccessPolicy`, 구성원 판단 `ChatMembership`. API `/api/v1/chat-rooms`, 화면 `/{업무}/chat/{방 id}` |
+| 채팅방 구성원 | `ChatRoomMember` | 따로 초대한 사람 한 행(이름·기관을 남긴다). 업무 단체방은 그 업무를 맡은 사용 중 계정(이용기관 빼고) 전부에 초대한 사람을 더하고, 초대방은 초대한 사람만이다. 초대받은 사람만 나간다 |
+| 채팅 메시지 | `ChatMessage` | 방의 메시지 하나(본문, 보낸 사람, 첨부 여부·보관 만료). 첨부는 `AttachmentOwnerType.CHAT_MESSAGE` 이고 `app.chat.attachment-retention`(기본 1년)이 지나면 `ChatAttachmentCleanupJob` 이 지운다 |
+| 기관 멘션 | `ChatMessageMention` | 메시지가 부른 기관 하나(`@KB국민은행`, `@결제원` 은 코드 `KFTC`). 부를 수 있는 기관은 그 방 구성원의 기관이다 |
+| 확인 공감 | `ChatMessageAck` | 메시지에 "확인" 을 누른 사람 한 명(기관 이름을 남겨 기관별로 묶어 보인다). 보낸 사람은 누르지 못한다 |
+| 읽음 표시 | `ChatReadMark` | 사람 × 방 하나의 마지막으로 읽은 메시지. 방의 읽지 않은 수, 메시지의 읽지 않은 사람 수, 읽지 않은 내 기관 멘션을 여기서 센다 |
 | 전역 검색 묶음 | `SearchCategory` | `ORGANIZATION`, `CONTACT`, `OPINION_REQUEST`, `TEST_PLAN`, `SUSPENSION`. 기능 모듈은 `SearchProvider` 빈 하나로 자기 묶음을 채운다 |
 
 용어집에 없는 개념이 필요하면 이름을 정해 이 표에 추가하는 것까지 같은 작업에 포함한다.
@@ -125,6 +132,7 @@ connect-link/
 │       │   ├── opinion/       # 나. 의견 회신 취합
 │       │   ├── testplan/      # 다. 기관 테스트
 │       │   ├── suspension/    # 라. 일시중단
+│       │   ├── chat/          # 마. 소통 채널
 │       │   └── notification/  # 알림 인터페이스와 발송함
 │       ├── main/resources/
 │       │   ├── application.yml, application-local.yml, application-demo.yml
@@ -138,7 +146,7 @@ connect-link/
 │       ├── api/               # schema.d.ts(생성물), client.ts
 │       ├── app/               # 라우터, 레이아웃(AppShell), 테마, 인증 상태
 │       ├── features/
-│       │   ├── account/ contact/ opinion/ testplan/ suspension/ notification/ attachment/ history/
+│       │   ├── account/ contact/ opinion/ testplan/ suspension/ chat/ notification/ attachment/ history/
 │       │   │   └── (각각) pages/, components/, hooks.ts(Query 훅), *.test.tsx
 │       ├── shared/            # 공통 컴포넌트(PageHeader, BrandMark, OrgMonogram), 포맷터(날짜, 전화번호), list/(목록 패턴), state/(빈·오류·권한 없음·내부망 전용 안내)
 │       └── main.tsx
@@ -181,7 +189,7 @@ connect-link/
 - **디자인 시스템은 `frontend/CLAUDE.md`(B안 메신저형)를 따른다.** 색·글꼴·radius·앱 셸 치수·컴포넌트 모양과 금지 사항이 거기 있고, 화면 모양에 관해서는 그 문서가 우선한다.
 - UI는 Mantine 컴포넌트와 Mantine 테마(`app/theme.ts`)만 쓴다. 인라인 스타일과 별도 CSS 파일은 Mantine으로 안 될 때만 최소로 쓴다.
 - 글꼴은 Pretendard Variable 을 npm 패키지(`pretendard`)로 번들해서 쓴다. 외부에서 웹폰트를 불러오지 않는다. 글꼴은 `frontend/src/app/fonts.css` 의 `--cl-font-sans` 한 곳에서만 정하고, 바꾸는 방법은 `frontend/CLAUDE.md` 3절에 있다. 숫자 서체(Geist) 도입은 확인 대기.
-- 화면 구성: Mantine `AppShell`, 왼쪽 레일(업무 영역: 계좌통합관리 / 자동이체통합관리 / 대출이동 / CMS) + 사이드바(기능: 홈 / 연락처 / 의견 요청 / 기관 테스트 / 일시중단 / 관리, 바로가기에 알림 센터), 상단 바에 전역 검색·알림·사용자 정보. 주소는 `/{업무 slug}/{기능}`. 디자인 토큰과 셸 치수는 `frontend/CLAUDE.md`, 화면 범위와 구조 결정은 `docs/design/common-screens.md`, 분류는 `docs/service-taxonomy.md`를 따른다. `demo` 프로필이면 상단에 데모 도구(계정 전환, 망 전환, 발송함)를 보인다.
+- 화면 구성: Mantine `AppShell`, 왼쪽 레일(업무 영역: 계좌통합관리 / 자동이체통합관리 / 대출이동 / CMS) + 사이드바(기능: 홈 / 연락처 / 의견 요청 / 기관 테스트 / 일시중단 / 소통 채널 / 관리, 바로가기에 알림 센터), 상단 바에 전역 검색·알림·사용자 정보. 주소는 `/{업무 slug}/{기능}`. 디자인 토큰과 셸 치수는 `frontend/CLAUDE.md`, 화면 범위와 구조 결정은 `docs/design/common-screens.md`, 분류는 `docs/service-taxonomy.md`를 따른다. `demo` 프로필이면 상단에 데모 도구(계정 전환, 망 전환, 발송함)를 보인다.
 - 날짜 표기 `YYYY-MM-DD`, 일시 `YYYY-MM-DD HH:mm`. 전화번호 표기와 마스킹 형식은 `shared/format.ts` 한 곳에서만 처리한다(마스킹 판단 자체는 서버가 한다).
 - 데스크톱 우선(1280px 기준), 태블릿 폭에서 깨지지 않게 한다. 휴대폰 폭(sm, 768px 미만)에서도 쓸 수 있게 한다(모바일 웹, `frontend/CLAUDE.md` 5.1절).
 - 화면 문구는 한국어로 컴포넌트에 직접 쓴다. 다국어 처리는 하지 않는다.

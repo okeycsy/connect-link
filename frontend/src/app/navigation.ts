@@ -1,5 +1,6 @@
 import {
   IconBell,
+  IconBubbleText,
   IconClipboardCheck,
   IconHome,
   IconMessages,
@@ -15,7 +16,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = ['바로가기', '업무 기능', 
 
 /** 보조 메뉴(기능 축). 모든 업무 영역에서 같은 구성이다. */
 export interface FeatureMenuItem {
-  key: 'home' | 'contacts' | 'opinions' | 'tests' | 'suspensions' | 'admin';
+  key: 'home' | 'contacts' | 'opinions' | 'tests' | 'suspensions' | 'chat' | 'admin';
   path: string;
   label: string;
   description: string;
@@ -67,6 +68,14 @@ export const FEATURE_MENU: FeatureMenuItem[] = [
     label: '일시중단',
     description: '기관 일시중단 등록과 현황',
     icon: IconPlayerPause,
+    group: '업무 기능',
+  },
+  {
+    key: 'chat',
+    path: 'chat',
+    label: '소통 채널',
+    description: '결제원·참가기관 업무 대화방, 기관 멘션과 확인',
+    icon: IconBubbleText,
     group: '업무 기능',
   },
   {

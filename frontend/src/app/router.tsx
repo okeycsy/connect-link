@@ -5,6 +5,7 @@ import { MyInfoPage } from '../features/account/pages/MyInfoPage';
 import { SignUpApprovalPage } from '../features/account/pages/SignUpApprovalPage';
 import { SignUpPage } from '../features/account/pages/SignUpPage';
 import { SignUpPendingPage } from '../features/account/pages/SignUpPendingPage';
+import { ChatPage } from '../features/chat/pages/ChatPage';
 import { ContactListPage } from '../features/contact/pages/ContactListPage';
 import {
   UpdateCampaignLegacyRedirect,
@@ -43,6 +44,7 @@ const BUILT_FEATURES: FeatureMenuItem['key'][] = [
   'opinions',
   'tests',
   'suspensions',
+  'chat',
 ];
 
 /**
@@ -107,6 +109,8 @@ export const router = createBrowserRouter([
           { path: 'suspensions/new', element: <SuspensionEditorPage /> },
           { path: 'suspensions/:id', element: <SuspensionDetailPage /> },
           { path: 'suspensions/:id/edit', element: <SuspensionEditorPage /> },
+          { path: 'chat', element: <ChatPage /> },
+          { path: 'chat/:roomId', element: <ChatPage /> },
           ...FEATURE_MENU.filter((m) => !BUILT_FEATURES.includes(m.key)).map((m) => ({
             path: m.path,
             element: <PlaceholderPage title={m.label} description={m.description} />,
