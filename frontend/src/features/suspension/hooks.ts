@@ -17,6 +17,8 @@ export type SuspensionDetail = components['schemas']['SuspensionDetailResponse']
 export type SuspensionCounts = components['schemas']['SuspensionCountsResponse'];
 export type SuspensionSaveRequest = components['schemas']['SuspensionSaveRequest'];
 export type SuspensionOrganization = components['schemas']['SuspensionOrganizationResponse'];
+export type SuspensionRegistrableOrganization =
+  components['schemas']['SuspensionRegistrableOrganizationResponse'];
 export type SuspensionDigest = components['schemas']['SuspensionDigestResponse'];
 export type SuspensionStatus = SuspensionSummary['status'];
 export type SuspensionPeriod = SuspensionSummary['period'];
@@ -39,6 +41,7 @@ export const suspensionKeys = {
     ['suspensions', 'counts', business, organizationId ?? null] as const,
   detail: (id: number) => ['suspensions', 'detail', id] as const,
   organizations: (business: string) => ['suspensions', 'organizations', business] as const,
+  registrableOrganizations: () => ['suspensions', 'registrable-organizations'] as const,
 };
 
 /** 이 업무의 일시중단을 결제원 담당자로서 다루는지(전 기관 조회, 확인·확정). 서버도 같은 규칙으로 막는다. */
@@ -47,13 +50,18 @@ export function canManageSuspensions(me: CurrentUserResponse | undefined, slug: 
   return me.admin || (me.organizationType === 'KFTC' && me.businesses.some((b) => b.slug === slug));
 }
 
-/** 이 업무에 일시중단을 등록할 수 있는지. 결제원 담당자와 그 업무를 맡은 참가기관 담당자다. */
-export function canRegisterSuspensions(me: CurrentUserResponse | undefined, slug: string): boolean {
+/**
+ * 일시중단을 등록할 수 있는지. 등록은 사람이 아니라 기관 기준이라 결제원 계정과 참가기관 계정 누구나 올리고, 대상 업무는 기관이 참여하는 업무
+ * 중에서 고른다(서버가 다시 막는다).
+ */
+export function canRegisterSuspensions(me: CurrentUserResponse | undefined): boolean {
   if (!me) return false;
-  if (canManageSuspensions(me, slug)) return true;
-  return (
-    me.organizationType === 'FINANCE_ORGANIZATION' && me.businesses.some((b) => b.slug === slug)
-  );
+  return registersAsKftc(me) || me.organizationType === 'FINANCE_ORGANIZATION';
+}
+
+/** 결제원 쪽(관리자, 결제원 계정)으로 등록하는지. 기관을 골라 올린다. */
+export function registersAsKftc(me: CurrentUserResponse | undefined): boolean {
+  return Boolean(me && (me.admin || me.organizationType === 'KFTC'));
 }
 
 export function useSuspensions(params: SuspensionListParams) {
@@ -97,6 +105,15 @@ export function useSuspensionOrganizations(business: string) {
         await api.GET('/api/v1/suspensions/organizations', { params: { query: { business } } }),
       ),
     enabled: Boolean(business),
+    staleTime: 60_000,
+  });
+}
+
+/** 등록 양식에서 고를 기관과 각 기관이 참여하는 업무. 결제원 계정은 참가기관 전부, 참가기관 계정은 자기 기관 하나다. */
+export function useSuspensionRegistrableOrganizations() {
+  return useQuery({
+    queryKey: suspensionKeys.registrableOrganizations(),
+    queryFn: async () => unwrap(await api.GET('/api/v1/suspensions/registrable-organizations')),
     staleTime: 60_000,
   });
 }

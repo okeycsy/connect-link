@@ -76,17 +76,78 @@ class SuspensionAccessPolicyTest {
     assertThat(policy.canManage(TestUsers.GANA_MEMBER, Business.ACCOUNT_INFO)).isFalse();
   }
 
-  @Test
-  void 참가기관_담당자는_맡은_업무에_등록한다() {
-    assertThat(policy.canRegister(TestUsers.GANA_MEMBER, Business.ACCOUNT_INFO)).isTrue();
+  /** 계좌통합관리와 CMS 에 참여하는 기관. */
+  private static Organization participating(String code, String name) {
+    Organization organization =
+        new Organization(code, name, OrganizationType.FINANCE_ORGANIZATION, null);
+    organization.replaceBusinesses(Set.of(Business.ACCOUNT_INFO, Business.CMS));
+    return organization;
   }
 
   @Test
-  void 맡지_않은_업무와_이용기관은_등록하지_못한다() {
-    assertThat(policy.canRegister(TestUsers.GANA_MEMBER, Business.CMS)).isFalse();
-    assertThat(policy.canRegister(HAHA_MEMBER, Business.ACCOUNT_INFO)).isFalse();
-    assertThatThrownBy(() -> policy.ensureCanRegister(HAHA_MEMBER, Business.ACCOUNT_INFO))
+  void 참가기관_담당자는_자기_기관이_참여하는_업무면_맡지_않아도_등록한다() {
+    Organization kb = participating("004", "KB국민은행");
+    assertThat(policy.canRegister(TestUsers.GANA_MEMBER)).isTrue();
+    assertThat(policy.canRegister(TestUsers.GANA_MEMBER, kb, Business.ACCOUNT_INFO)).isTrue();
+    assertThat(policy.canRegister(TestUsers.GANA_MEMBER, kb, Business.CMS)).isTrue();
+  }
+
+  @Test
+  void 기관이_참여하지_않는_업무나_다른_기관으로는_등록하지_못한다() {
+    Organization kb = participating("004", "KB국민은행");
+    assertThat(policy.canRegister(TestUsers.GANA_MEMBER, kb, Business.LOAN_TRANSFER)).isFalse();
+    Organization shinhan = participating("088", "신한은행");
+    assertThat(policy.canRegister(TestUsers.GANA_MEMBER, shinhan, Business.ACCOUNT_INFO)).isFalse();
+  }
+
+  @Test
+  void 결제원은_맡지_않은_업무라도_기관이_참여하면_등록한다() {
+    Organization kb = participating("004", "KB국민은행");
+    assertThat(policy.canRegister(TestUsers.KFTC_CMS, kb, Business.ACCOUNT_INFO)).isTrue();
+    assertThat(policy.canRegister(TestUsers.KFTC_CMS, kb, Business.LOAN_TRANSFER)).isFalse();
+  }
+
+  @Test
+  void 이용기관은_등록하지_못한다() {
+    assertThat(policy.canRegister(HAHA_MEMBER)).isFalse();
+    assertThatThrownBy(() -> policy.ensureCanRegister(HAHA_MEMBER))
         .isInstanceOf(AccessDeniedException.class);
+  }
+
+  @Test
+  void 등록한_사람은_맡지_않은_업무의_건이라도_보고_고친다() {
+    Suspension s = ganaSuspension();
+    CurrentUser kimWithoutBusiness =
+        new CurrentUser(
+            "kim.minjun@kb.example.com",
+            "김민준",
+            "004",
+            "KB국민은행",
+            OrganizationType.FINANCE_ORGANIZATION,
+            false,
+            Set.of(Business.CMS),
+            JobRole.IT,
+            Set.of());
+    assertThat(policy.canView(kimWithoutBusiness, s)).isTrue();
+    assertThat(policy.canEdit(kimWithoutBusiness, s)).isTrue();
+  }
+
+  @Test
+  void 다른_기관으로_옮긴_등록자는_보지_못한다() {
+    Suspension s = ganaSuspension();
+    CurrentUser movedKim =
+        new CurrentUser(
+            "kim.minjun@kb.example.com",
+            "김민준",
+            "088",
+            "신한은행",
+            OrganizationType.FINANCE_ORGANIZATION,
+            false,
+            Set.of(Business.CMS),
+            JobRole.IT,
+            Set.of());
+    assertThat(policy.canView(movedKim, s)).isFalse();
+    assertThat(policy.canEdit(movedKim, s)).isFalse();
   }
 
   @Test

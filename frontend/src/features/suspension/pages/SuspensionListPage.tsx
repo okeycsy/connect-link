@@ -50,7 +50,7 @@ export function SuspensionListPage() {
   const navigate = useNavigate();
   const { data: me } = useMe();
   const manager = canManageSuspensions(me, slug);
-  const register = canRegisterSuspensions(me, slug);
+  const register = canRegisterSuspensions(me);
   const [searchParams, setSearchParams] = useSearchParams();
   const periodParam = searchParams.get('period') as SuspensionPeriod | null;
   const period: SuspensionPeriod =

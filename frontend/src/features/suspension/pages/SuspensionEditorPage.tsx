@@ -21,18 +21,18 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ApiError, fieldErrorsOf } from '../../../api/client';
 import { PageHeader } from '../../../shared/PageHeader';
 import { ErrorState, StateView } from '../../../shared/state/StateView';
-import { useMe } from '../../account/hooks';
+import { canViewBusiness, useMe } from '../../account/hooks';
 import { AttachmentPanel } from '../../attachment/components/AttachmentPanel';
 import { PendingAttachments } from '../../attachment/components/PendingAttachments';
 import { attachmentKeys, uploadAttachmentFile } from '../../attachment/hooks';
 import { type BusinessCode, useBusinesses, useCurrentBusiness } from '../../organization/hooks';
 import {
   type SuspensionDetail,
-  canManageSuspensions,
   canRegisterSuspensions,
+  registersAsKftc,
   useCreateSuspension,
   useSuspension,
-  useSuspensionOrganizations,
+  useSuspensionRegistrableOrganizations,
   useUpdateSuspension,
 } from '../hooks';
 
@@ -40,7 +40,7 @@ import {
 const PICKER_FORMAT = 'YYYY-MM-DD HH:mm:ss';
 
 interface Values {
-  business: BusinessCode;
+  business: BusinessCode | null;
   organizationId: string | null;
   startAt: string | null;
   endAt: string | null;
@@ -54,7 +54,8 @@ interface Values {
 
 /**
  * 일시중단 등록과 고치기. 주소에 :id 가 있으면 고치기다. 명세의 정해진 양식(일시, 대상 업무, 중단 이유, 결제원 조치사항,
- * 담당자 연락처, 공문, 추가 사항)을 그대로 받는다. 기관 담당자는 자기 기관으로, 결제원 담당자는 기관을 골라 등록한다.
+ * 담당자 연락처, 공문, 추가 사항)을 그대로 받는다. 기관 담당자는 자기 기관으로, 결제원 담당자는 기관을 골라 등록한다. 등록은 사람이 아니라 기관
+ * 기준이라 대상 업무는 올리는 사람의 담당 업무가 아니라 그 기관이 참여하는 업무 전부에서 고른다(대외계·네트워크 작업은 한 업무에 국한되지 않는다).
  */
 export function SuspensionEditorPage() {
   const { business: slug = '', id } = useParams<{ business: string; id?: string }>();
@@ -63,14 +64,14 @@ export function SuspensionEditorPage() {
   const { data: me } = useMe();
 
   if (suspensionId == null) {
-    if (me && !canRegisterSuspensions(me, slug)) {
+    if (me && !canRegisterSuspensions(me)) {
       return (
         <Stack gap="md">
           <PageHeader title="일시중단 등록" />
           <StateView
             kind="forbidden"
             title="일시중단을 등록할 수 없습니다"
-            description="이 업무를 맡은 결제원 담당자나 참가기관 담당자만 등록합니다."
+            description="결제원 담당자나 참가기관 담당자만 등록합니다."
           />
         </Stack>
       );
@@ -118,8 +119,8 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
   const current = useCurrentBusiness();
   const { data: me } = useMe();
   const { data: allBusinesses } = useBusinesses();
-  const manager = canManageSuspensions(me, slug);
-  const organizations = useSuspensionOrganizations(slug);
+  const kftcSide = registersAsKftc(me);
+  const organizations = useSuspensionRegistrableOrganizations();
   const create = useCreateSuspension();
   const update = useUpdateSuspension(existing?.id ?? 0);
   const mutation = existing ? update : create;
@@ -127,26 +128,42 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
 
-  const businessOptions = (me?.admin ? (allBusinesses ?? []) : (me?.businesses ?? [])).map((b) => ({
-    value: b.code,
-    label: b.label,
-  }));
-
   const form = useForm<Values>({
     initialValues: {
-      business: existing?.business ?? current?.code ?? 'ACCOUNT_INFO',
+      business: existing?.business ?? current?.code ?? null,
       organizationId: existing ? String(existing.organizationId) : null,
       startAt: toPicker(existing?.startAt),
       endAt: toPicker(existing?.endAt),
       reason: existing?.reason ?? '',
       kftcAction: existing?.kftcAction ?? '',
       // 기관 담당자는 본인이 작업 담당자인 경우가 많아 이름·이메일을 미리 채운다.
-      contactName: existing?.contactName ?? (manager ? '' : (me?.name ?? '')),
+      contactName: existing?.contactName ?? (kftcSide ? '' : (me?.name ?? '')),
       contactPhone: existing?.contactPhone ?? '',
-      contactEmail: existing?.contactEmail ?? (manager ? '' : (me?.email ?? '')),
+      contactEmail: existing?.contactEmail ?? (kftcSide ? '' : (me?.email ?? '')),
       extraNote: existing?.extraNote ?? '',
     },
   });
+
+  // 대상 업무는 그 기관이 참여하는 업무 전부다. 고치기는 등록한 기관, 결제원은 고른 기관, 기관 담당자는 자기 기관이다.
+  const organizationId = existing
+    ? existing.organizationId
+    : kftcSide
+      ? Number(form.values.organizationId)
+      : organizations.data?.[0]?.id;
+  const selectedOrganization = organizations.data?.find((o) => o.id === organizationId);
+  const businessOptions = (allBusinesses ?? [])
+    .filter((b) => selectedOrganization?.businesses.includes(b.code))
+    .map((b) => ({ value: b.code, label: b.label }));
+  const businessCodes = businessOptions.map((b) => b.value).join(',');
+
+  // 기관을 바꿔 지금 고른 업무에 그 기관이 참여하지 않으면 첫 업무로 바꾼다.
+  useEffect(() => {
+    if (!selectedOrganization) return;
+    const codes = businessCodes.split(',').filter(Boolean) as BusinessCode[];
+    if (form.values.business && codes.includes(form.values.business)) return;
+    form.setFieldValue('business', codes[0] ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedOrganization?.id, businessCodes]);
 
   // 서버 검증 오류는 필드 메시지 그대로 칸 아래에 보인다.
   useEffect(() => {
@@ -182,7 +199,8 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
 
   const submit = (values: Values) => {
     const body = {
-      business: values.business,
+      // 비어 있으면 서버가 "대상 업무를 골라 주세요." 를 필드 메시지로 알려 준다.
+      business: values.business as BusinessCode,
       organizationId: values.organizationId ? Number(values.organizationId) : null,
       // 서버는 시간대 없는 일시(서버 시간대 Asia/Seoul)를 받는다. 빈 값은 서버가 필드 메시지로 알려 준다.
       startAt: values.startAt ? dayjs(values.startAt).format('YYYY-MM-DDTHH:mm:ss') : '',
@@ -194,21 +212,22 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
       contactEmail: values.contactEmail || null,
       extraNote: values.extraNote || null,
     };
+    // 맡지 않은 업무의 건이면 지금 업무 영역에서 상세를 연다(상세는 업무 영역과 상관없이 열린다).
+    const detailPath = (d: SuspensionDetail) =>
+      `/${me && canViewBusiness(me, d.businessSlug) ? d.businessSlug : slug}/suspensions/${d.id}`;
     if (existing) {
-      update.mutate(body, {
-        onSuccess: (d) => navigate(`/${d.businessSlug}/suspensions/${d.id}`),
-      });
+      update.mutate(body, { onSuccess: (d) => navigate(detailPath(d)) });
     } else {
       create.mutate(body, {
         onSuccess: async (d) => {
           await uploadPending(d.id);
-          navigate(`/${d.businessSlug}/suspensions/${d.id}`);
+          navigate(detailPath(d));
         },
       });
     }
   };
 
-  const ownOrganization = !manager ? organizations.data?.[0] : undefined;
+  const ownOrganization = !kftcSide ? organizations.data?.[0] : undefined;
   const title = existing ? '일시중단 고치기' : '일시중단 등록';
   return (
     <form onSubmit={form.onSubmit(submit)} noValidate>
@@ -217,10 +236,10 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
           title={title}
           description={
             existing
-              ? manager
+              ? kftcSide
                 ? '고치면 이 업무 결제원 담당자에게 매터모스트 알림이 갑니다. 기관이 올린 건이면 등록한 사람에게도 알립니다.'
                 : '고치면 결제원 담당자에게 매터모스트 알림이 가고, 확인이 시작된 건은 다시 검토 대기로 돌아갑니다.'
-              : '정해진 양식으로 등록합니다. 저장하면 검토 대기가 되고 이 업무 결제원 담당자(업무·개발·운영)에게 메일과 매터모스트 알림이 갑니다.'
+              : '정해진 양식으로 등록합니다. 저장하면 검토 대기가 되고 고른 업무의 결제원 담당자(업무·개발·운영)에게 메일과 매터모스트 알림이 갑니다.'
           }
           actions={
             <>
@@ -252,7 +271,7 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
               {existing ? (
                 <TextInput label="기관" value={existing.organizationName} readOnly />
-              ) : manager ? (
+              ) : kftcSide ? (
                 <Select
                   label="기관"
                   placeholder="중단하는 참가기관을 고르세요"
@@ -273,8 +292,11 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
               )}
               <Select
                 label="대상 업무"
+                description="이 기관이 참여하는 업무를 모두 고를 수 있습니다."
+                placeholder={selectedOrganization ? '업무를 고르세요' : '기관을 먼저 고르세요'}
                 required
                 allowDeselect={false}
+                disabled={!selectedOrganization}
                 data={businessOptions}
                 {...form.getInputProps('business')}
               />

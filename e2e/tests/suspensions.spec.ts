@@ -130,6 +130,14 @@ test.describe('라. 일시중단', () => {
       buffer: Buffer.from('%PDF-1.4 sample'),
     });
     await expect(page.getByRole('list', { name: '올릴 파일' })).toContainText('작업공문.pdf');
+    // 대상 업무는 담당 업무가 아니라 기관(KB국민은행)이 참여하는 업무 전부에서 고른다. 세부업무 칸은 없다.
+    await expect(page.getByRole('textbox', { name: '세부업무' })).toHaveCount(0);
+    await page.getByRole('textbox', { name: '대상 업무' }).click();
+    for (const name of ['계좌통합관리', '자동이체통합관리', '대출이동', 'CMS']) {
+      await expect(page.getByRole('option', { name, exact: true })).toBeVisible();
+    }
+    await shot(page, 'suspension-editor-business-options');
+    await page.getByRole('option', { name: '계좌통합관리', exact: true }).click();
     await shot(page, 'suspension-editor');
 
     await page.getByRole('button', { name: '저장' }).click();
@@ -149,6 +157,34 @@ test.describe('라. 일시중단', () => {
     expect(
       mails.some((m) => m.subject.includes('KB국민은행 계좌통합관리 일시중단이 등록되었습니다')),
     ).toBeTruthy();
+  });
+
+  test('기관 담당자는 맡지 않은 업무라도 기관이 참여하면 그 업무로 올리고, 그 업무 결제원 담당자에게 알린다', async ({
+    page,
+    request,
+  }) => {
+    await loginAs(page, '김민준 (참가기관 · 현업)로 로그인');
+    await page.goto('/account-info/suspensions/new');
+    await expect(page.getByRole('heading', { name: '일시중단 등록' })).toBeVisible();
+    await page.getByRole('textbox', { name: '대상 업무' }).click();
+    await page.getByRole('option', { name: 'CMS', exact: true }).click();
+
+    const reason = `E2E 대외계 회선 작업 ${Date.now()}`;
+    const date = seoulDate(5);
+    await pickDateTime(page, '중단 시작', date, '01', '00');
+    await pickDateTime(page, '중단 종료', date, '02', '00');
+    await page.getByRole('textbox', { name: '중단 이유(작업 내용)' }).fill(reason);
+    await page.getByRole('textbox', { name: '연락처' }).fill('010-0000-2101');
+    await page.getByRole('button', { name: '저장' }).click();
+
+    // 김민준은 CMS 레일이 없으니 지금 업무 영역에서 상세를 연다. 자기가 올린 건이라 고칠 수 있다.
+    await expect(page).toHaveURL(/\/account-info\/suspensions\/\d+$/);
+    await expect(page.getByRole('heading', { name: 'KB국민은행 일시중단' })).toBeVisible();
+    await expect(page.getByText('CMS', { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: '고치기' })).toBeVisible();
+
+    const mails = await mailbox(request, 'park.cms@kftc.example.com');
+    expect(mails.some((m) => m.subject.includes('KB국민은행 CMS 일시중단이 등록되었습니다'))).toBeTruthy();
   });
 
   test('결제원 담당자가 확인을 시작하고 조치 및 인수인계 사항을 써서 확정하고, 기관별 이력과 취합을 본다', async ({

@@ -94,9 +94,8 @@ function SuspensionView({ slug, suspension }: { slug: string; suspension: Suspen
         title={`${suspension.organizationName} 일시중단`}
         description={
           <>
-            {suspension.businessLabel} · 등록{' '}
-            {suspension.registrantName}({suspension.registrantKftc ? '결제원' : '기관'}){' '}
-            {formatDate(suspension.createdAt)}
+            {suspension.businessLabel} · 등록 {suspension.registrantName}(
+            {suspension.registrantKftc ? '결제원' : '기관'}) {formatDate(suspension.createdAt)}
           </>
         }
         status={
