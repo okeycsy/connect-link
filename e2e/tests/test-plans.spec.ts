@@ -101,9 +101,12 @@ test.describe('다. 기관 테스트', () => {
     await page.getByRole('checkbox', { name: 'KB국민은행 대상' }).check();
     await page.getByRole('checkbox', { name: '삼성증권 대상' }).check();
     await expect(page.getByTestId('target-summary')).toHaveText('대상 2곳');
-    // 맨 위 테스트데이터 사전 요청: 켜면 회신 기한(기본은 수행 시작일)·요청 사항·회신 양식이 보인다.
+    // 맨 위 테스트데이터 사전 요청은 늘 펼쳐져 있다. 필요 없음을 체크하면 접히고, 풀면 다시 보인다.
     const dataRequest = page.getByTestId('test-data-request');
-    await dataRequest.getByRole('switch', { name: '테스트데이터를 먼저 받습니다' }).check();
+    const skip = dataRequest.getByRole('checkbox', { name: /사전 요청이 필요 없습니다/ });
+    await skip.check();
+    await expect(dataRequest.getByTestId('test-data-skipped')).toBeVisible();
+    await skip.uncheck();
     await dataRequest
       .getByRole('textbox', { name: '요청 사항' })
       .fill('해지 예정 계좌를 포함해 테스트 계좌 10개를 만들어 주세요.');

@@ -3,11 +3,11 @@ import {
   Alert,
   Button,
   Card,
+  Checkbox,
   Group,
   SimpleGrid,
   Skeleton,
   Stack,
-  Switch,
   Text,
   Textarea,
   TextInput,
@@ -138,7 +138,8 @@ function TestPlanEditor({ slug, existing }: { slug: string; existing?: TestPlanD
       description: existing?.description ?? '',
       startDate: existing?.startDate ?? dayjs().format('YYYY-MM-DD'),
       endDate: existing?.endDate ?? dayjs().add(14, 'day').format('YYYY-MM-DD'),
-      testDataRequested: existing ? existing.testDataRequest != null : false,
+      // 새 테스트는 요청 칸을 펼쳐 둔다. 필요 없으면 "필요 없음" 을 체크해 넘어간다.
+      testDataRequested: existing ? existing.testDataRequest != null : true,
       testDataDueDate:
         existing?.testDataRequest?.dueDate ?? existing?.startDate ?? dayjs().format('YYYY-MM-DD'),
       testDataInstruction: existing?.testDataRequest?.instruction ?? '',
@@ -277,23 +278,25 @@ function TestPlanEditor({ slug, existing }: { slug: string; existing?: TestPlanD
 
         <Card data-testid="test-data-request">
           <Stack gap="sm">
-            <Group justify="space-between" align="flex-start" wrap="nowrap">
-              <div>
-                <Text fw={700} size="xl">
-                  테스트데이터 사전 요청
-                </Text>
-                <Text size="sm" c="dimmed">
-                  선택입니다. 수행 기간 전에 기관마다 테스트데이터를 만들어 올리게 합니다. 저장하면
-                  대상 기관 담당자에게 요청 메일이 갑니다.
-                </Text>
-              </div>
-              <Switch
-                aria-label="테스트데이터를 먼저 받습니다"
-                label="먼저 받기"
-                {...form.getInputProps('testDataRequested', { type: 'checkbox' })}
-              />
-            </Group>
-            {form.values.testDataRequested && (
+            <div>
+              <Text fw={700} size="xl">
+                테스트데이터 사전 요청
+              </Text>
+              <Text size="sm" c="dimmed">
+                수행 기간 전에 기관마다 테스트데이터를 만들어 올리게 합니다. 저장하면 대상 기관
+                담당자에게 요청 메일이 갑니다.
+              </Text>
+            </div>
+            <Checkbox
+              label="이 테스트는 테스트데이터 사전 요청이 필요 없습니다"
+              checked={!form.values.testDataRequested}
+              onChange={(e) => form.setFieldValue('testDataRequested', !e.currentTarget.checked)}
+            />
+            {!form.values.testDataRequested ? (
+              <Text size="sm" c="dimmed" data-testid="test-data-skipped">
+                사전 요청 없이 바로 수행합니다. 기관에는 테스트데이터 칸이 보이지 않습니다.
+              </Text>
+            ) : (
               <>
                 <DatePickerInput
                   label="회신 기한"
