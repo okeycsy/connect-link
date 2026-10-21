@@ -39,7 +39,8 @@ public final class TestUsers {
           false,
           Set.of(Business.ACCOUNT_INFO),
           JobRole.BUSINESS,
-          Set.of());
+          Set.of(),
+          "대리");
 
   /** 삼성증권 계좌통합관리 현업 담당자(관리자 아님). 의견 요청에서 KB국민은행과 다른 대상 기관 담당자로 쓴다. */
   public static final CurrentUser SAA_MEMBER =
@@ -65,7 +66,8 @@ public final class TestUsers {
           false,
           Set.of(Business.ACCOUNT_INFO, Business.AUTO_TRANSFER),
           JobRole.BUSINESS,
-          Set.of());
+          Set.of(),
+          "과장");
 
   /** 결제원 CMS 현업 담당자(관리자 아님). */
   public static final CurrentUser KFTC_CMS =

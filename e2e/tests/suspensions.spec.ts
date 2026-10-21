@@ -236,6 +236,7 @@ test.describe('라. 일시중단', () => {
     await handover.getByRole('button', { name: '확정하기' }).click();
     await expect(page.getByTestId('suspension-status')).toHaveText('확정');
     await expect(page.getByTestId('suspension-handover')).toContainText('운영팀이 01:00 에');
+    await expect(page.getByText(/결제원\(홍성민 과장\) · .* 확정/)).toBeVisible();
     await expect(page.getByRole('button', { name: '조치 사항 고치기' })).toBeVisible();
     await shot(page, 'suspension-detail');
 

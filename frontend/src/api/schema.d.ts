@@ -2075,6 +2075,7 @@ export interface components {
       /** Format: int32 */
       fileCount: number;
       reportedByName?: string | null;
+      reportedByJobTitle?: string | null;
       /** Format: date-time */
       reportedAt?: string | null;
       canEdit: boolean;
@@ -2100,12 +2101,14 @@ export interface components {
       resultLabel?: string | null;
       note?: string | null;
       reportedByName?: string | null;
+      reportedByJobTitle?: string | null;
       /** Format: date-time */
       reportedAt?: string | null;
       /** Format: int32 */
       feedbackRate?: number | null;
       feedbackNote?: string | null;
       feedbackByName?: string | null;
+      feedbackByJobTitle?: string | null;
       /** Format: date-time */
       feedbackAt?: string | null;
       feedbackOutdated: boolean;
@@ -2183,11 +2186,13 @@ export interface components {
       contactEmail?: string | null;
       extraNote?: string | null;
       registrantName: string;
+      registrantJobTitle?: string | null;
       registrantKftc: boolean;
       handover?: string | null;
       /** Format: date-time */
       confirmedAt?: string | null;
       confirmedByName?: string | null;
+      confirmedByJobTitle?: string | null;
       /** Format: date-time */
       completedAt?: string | null;
       reviewers: components['schemas']['SuspensionReviewerResponse'][];
@@ -2814,6 +2819,7 @@ export interface components {
     CurrentUserResponse: {
       email: string;
       name: string;
+      jobTitle?: string | null;
       organizationCode: string;
       organizationName: string;
       /** @enum {string} */
@@ -2961,6 +2967,7 @@ export interface components {
       statusLabel: string;
       reason: string;
       registrantName: string;
+      registrantJobTitle?: string | null;
       registrantKftc: boolean;
       /** Format: int32 */
       reviewerCount: number;

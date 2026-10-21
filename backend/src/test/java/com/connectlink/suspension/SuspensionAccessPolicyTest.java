@@ -61,6 +61,7 @@ class SuspensionAccessPolicyTest {
             null),
         "kim.minjun@kb.example.com",
         "김민준",
+        "대리",
         false);
   }
 
@@ -210,7 +211,7 @@ class SuspensionAccessPolicyTest {
   void 완료한_건은_아무도_고치거나_지우거나_확정하지_못한다() {
     Suspension s = ganaSuspension();
     LocalDateTime now = LocalDateTime.now();
-    s.confirm("차단", "hong.sungmin@kftc.example.com", "홍성민", "현업", now);
+    s.confirm("차단", "hong.sungmin@kftc.example.com", "홍성민", "과장", "현업", now);
     s.complete(now);
     assertThat(policy.canEdit(TestUsers.KFTC_ACCOUNT_INFO, s)).isFalse();
     assertThat(policy.canDelete(TestUsers.GANA_MEMBER, s)).isFalse();

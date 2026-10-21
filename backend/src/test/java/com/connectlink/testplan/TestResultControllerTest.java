@@ -263,6 +263,9 @@ class TestResultControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.rows[0].completed").value(true))
         .andExpect(jsonPath("$.rows[0].feedbackByName").value("홍성민"))
+        .andExpect(jsonPath("$.rows[0].feedbackByJobTitle").value("과장"))
+        .andExpect(jsonPath("$.rows[0].reportedByName").value("김민준"))
+        .andExpect(jsonPath("$.rows[0].reportedByJobTitle").value("대리"))
         .andExpect(jsonPath("$.summary.completed").value(true))
         .andExpect(jsonPath("$.summary.awaitingReview").value(0));
     // 삼성증권이 아직이라 테스트는 진행 중이다.

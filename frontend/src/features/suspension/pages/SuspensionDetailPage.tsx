@@ -20,6 +20,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { fieldErrorsOf } from '../../../api/client';
 import { ConfirmModal } from '../../../shared/ConfirmModal';
 import {
+  formatAuthor,
   formatDate,
   formatDateTime,
   formatDateTimeRange,
@@ -94,8 +95,13 @@ function SuspensionView({ slug, suspension }: { slug: string; suspension: Suspen
         title={`${suspension.organizationName} 일시중단`}
         description={
           <>
-            {suspension.businessLabel} · 등록 {suspension.registrantName}(
-            {suspension.registrantKftc ? '결제원' : '기관'}) {formatDate(suspension.createdAt)}
+            {suspension.businessLabel} · 등록{' '}
+            {formatAuthor(
+              suspension.registrantKftc ? '결제원' : suspension.organizationName,
+              suspension.registrantName,
+              suspension.registrantJobTitle,
+            )}{' '}
+            {formatDate(suspension.createdAt)}
           </>
         }
         status={
@@ -308,7 +314,8 @@ function ReviewCard({ suspension: s }: { suspension: SuspensionDetail }) {
               </Text>
               {s.confirmedAt && (
                 <Text size="xs" c="dimmed">
-                  {s.confirmedByName} · {formatDateTime(s.confirmedAt)} 확정
+                  {formatAuthor('결제원', s.confirmedByName, s.confirmedByJobTitle)} ·{' '}
+                  {formatDateTime(s.confirmedAt)} 확정
                 </Text>
               )}
             </Stack>

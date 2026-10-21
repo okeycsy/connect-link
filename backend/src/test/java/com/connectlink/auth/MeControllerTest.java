@@ -45,6 +45,7 @@ class MeControllerTest {
         .andExpect(jsonPath("$.admin").value(false))
         .andExpect(jsonPath("$.businesses.length()").value(1))
         .andExpect(jsonPath("$.businesses[0].slug").value("account-info"))
+        .andExpect(jsonPath("$.jobTitle").value("대리"))
         .andExpect(jsonPath("$.roleLabel").value("참가기관 · 현업"));
   }
 

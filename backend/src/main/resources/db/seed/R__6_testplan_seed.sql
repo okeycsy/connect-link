@@ -215,3 +215,11 @@ SET test_data_status = 'NOT_CREATED', test_data_note = '출금 계좌 개설 승
     test_data_reported_at = CAST(CURRENT_DATE AS TIMESTAMP) + -40 * INTERVAL '1' HOUR
 WHERE test_plan_id = (SELECT id FROM test_plan WHERE title = '자동이체 통합조회 응답 항목 추가')
   AND organization_id = (SELECT id FROM organization WHERE code = '088');
+
+-- 글쓴이 직급은 샘플 계정의 직급을 그대로 쓴다.
+UPDATE test_item_result
+SET reported_by_job_title = (SELECT a.job_title FROM user_account a WHERE a.email = test_item_result.reported_by_email),
+    feedback_by_job_title = (SELECT a.job_title FROM user_account a WHERE a.email = test_item_result.feedback_by_email);
+UPDATE test_plan_target
+SET test_data_reported_by_job_title = (SELECT a.job_title FROM user_account a WHERE a.email = test_plan_target.test_data_reported_by_email)
+WHERE test_data_reported_by_email IS NOT NULL;

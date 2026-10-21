@@ -81,6 +81,10 @@ public class Suspension extends AuditedEntity {
   @Column(name = "registrant_name", nullable = false, length = 50)
   private String registrantName;
 
+  /** 등록한 사람의 그때 직급. 없으면 null. */
+  @Column(name = "registrant_job_title", length = 50)
+  private String registrantJobTitle;
+
   /** 결제원 담당자가 등록했는지. 아니면 기관 담당자가 올린 건이다. */
   @Column(name = "registrant_kftc", nullable = false)
   private boolean registrantKftc;
@@ -97,6 +101,10 @@ public class Suspension extends AuditedEntity {
 
   @Column(name = "confirmed_by_name", length = 50)
   private String confirmedByName;
+
+  /** 확정한 결제원 담당자의 그때 직급. 없으면 null. */
+  @Column(name = "confirmed_by_job_title", length = 50)
+  private String confirmedByJobTitle;
 
   @Column(name = "completed_at")
   private LocalDateTime completedAt;
@@ -125,6 +133,7 @@ public class Suspension extends AuditedEntity {
       Content content,
       String registrantEmail,
       String registrantName,
+      String registrantJobTitle,
       boolean registrantKftc) {
     Suspension suspension = new Suspension();
     suspension.organization = organization;
@@ -132,6 +141,7 @@ public class Suspension extends AuditedEntity {
     suspension.status = SuspensionStatus.PENDING_REVIEW;
     suspension.registrantEmail = registrantEmail;
     suspension.registrantName = registrantName;
+    suspension.registrantJobTitle = registrantJobTitle;
     suspension.registrantKftc = registrantKftc;
     return suspension;
   }
@@ -166,6 +176,7 @@ public class Suspension extends AuditedEntity {
     this.confirmedAt = null;
     this.confirmedByEmail = null;
     this.confirmedByName = null;
+    this.confirmedByJobTitle = null;
   }
 
   /**
@@ -187,7 +198,12 @@ public class Suspension extends AuditedEntity {
 
   /** 조치·인수인계 사항을 쓰고 확정한다. 확정한 뒤 다시 부르면 사항만 바꾼다. 확인을 시작하지 않은 사람이면 확인자로도 남긴다. */
   public void confirm(
-      String handover, String email, String name, String roleLabel, LocalDateTime now) {
+      String handover,
+      String email,
+      String name,
+      String jobTitle,
+      String roleLabel,
+      LocalDateTime now) {
     ensureNotCompleted();
     startReview(email, name, roleLabel, now);
     this.handover = handover;
@@ -195,6 +211,7 @@ public class Suspension extends AuditedEntity {
     this.confirmedAt = now;
     this.confirmedByEmail = email;
     this.confirmedByName = name;
+    this.confirmedByJobTitle = jobTitle;
   }
 
   /** 종료 시각이 지난 확정 건을 완료한다. */
@@ -293,6 +310,10 @@ public class Suspension extends AuditedEntity {
     return registrantName;
   }
 
+  public String getRegistrantJobTitle() {
+    return registrantJobTitle;
+  }
+
   public boolean isRegistrantKftc() {
     return registrantKftc;
   }
@@ -307,6 +328,10 @@ public class Suspension extends AuditedEntity {
 
   public String getConfirmedByName() {
     return confirmedByName;
+  }
+
+  public String getConfirmedByJobTitle() {
+    return confirmedByJobTitle;
   }
 
   public String getConfirmedByEmail() {

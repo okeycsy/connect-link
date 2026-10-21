@@ -75,7 +75,8 @@ public class TestDataService {
     TestDataStatus beforeStatus = target.getTestDataStatus();
     String beforeNote = target.getTestDataNote();
     String note = blankToNull(body.note());
-    if (!target.reportTestData(body.status(), note, user.email(), user.name(), now())) {
+    if (!target.reportTestData(
+        body.status(), note, user.email(), user.name(), user.jobTitle(), now())) {
       return toResponse(user, target);
     }
     repository.flush();
@@ -125,6 +126,7 @@ public class TestDataService {
         target.getTestDataNote(),
         fileCount(target),
         target.getTestDataReportedByName(),
+        target.getTestDataReportedByJobTitle(),
         target.getTestDataReportedAt(),
         target.getPlan().isTestDataRequested() && accessPolicy.canReport(user, target));
   }

@@ -196,6 +196,8 @@ test.describe('다. 기관 테스트', () => {
     await expect(page.getByTestId('item-001').getByTestId('item-completed')).toBeVisible();
     await page.getByTestId('item-002').getByRole('button', { name: '002 의견' }).click();
     const dialog = page.getByRole('dialog');
+    // 의견을 쓰는 사람은 "결제원(이름 직급)" 으로 보인다.
+    await expect(dialog).toContainText('결제원(홍성민 과장)');
     await dialog.getByRole('textbox', { name: '미니 수행률' }).fill('30');
     await dialog
       .getByRole('textbox', { name: '특이사항' })
@@ -206,6 +208,9 @@ test.describe('다. 기관 테스트', () => {
     await expect(dialog).toBeHidden();
     await expect(page.getByTestId('item-002').getByTestId('item-feedback')).toContainText(
       '미니 수행률 30%',
+    );
+    await expect(page.getByTestId('item-002').getByTestId('item-feedback-author')).toHaveText(
+      '결제원(홍성민 과장)',
     );
     await expect(page.getByTestId('target-progress')).toHaveText('65%');
     await shot(page, 'test-plan-results-kftc');
@@ -276,7 +281,7 @@ test.describe('다. 기관 테스트', () => {
     await card.getByText('생성 완료', { exact: true }).click();
     await card.getByRole('textbox', { name: '메모' }).fill('테스트 계좌 10개(해지 예정 2개 포함)');
     await card.getByRole('button', { name: '테스트데이터 저장' }).click();
-    await expect(card.getByText('김민준 ·')).toBeVisible();
+    await expect(card.getByText('KB국민은행(김민준 대리) ·')).toBeVisible();
     await card.locator('input[type=file]').setInputFiles({
       name: 'KB 테스트데이터.csv',
       mimeType: 'text/csv',

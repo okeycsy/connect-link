@@ -66,6 +66,10 @@ public class TestPlanTarget extends AuditedEntity {
   @Column(name = "test_data_reported_by_name", length = 50)
   private String testDataReportedByName;
 
+  /** 테스트데이터를 마지막으로 바꾼 기관 담당자의 그때 직급. 없으면 null. */
+  @Column(name = "test_data_reported_by_job_title", length = 50)
+  private String testDataReportedByJobTitle;
+
   /** 기관이 테스트데이터 생성 여부·메모를 마지막으로 바꾼 일시. 아직 없으면 null. */
   @Column(name = "test_data_reported_at")
   private LocalDateTime testDataReportedAt;
@@ -102,7 +106,12 @@ public class TestPlanTarget extends AuditedEntity {
 
   /** 테스트데이터 생성 여부·메모를 바꾼다. 바뀐 것이 없으면 아무것도 하지 않고 false. */
   boolean reportTestData(
-      TestDataStatus status, String note, String email, String name, LocalDateTime now) {
+      TestDataStatus status,
+      String note,
+      String email,
+      String name,
+      String jobTitle,
+      LocalDateTime now) {
     if (testDataStatus == status && Objects.equals(testDataNote, note)) {
       return false;
     }
@@ -110,6 +119,7 @@ public class TestPlanTarget extends AuditedEntity {
     this.testDataNote = note;
     this.testDataReportedByEmail = email;
     this.testDataReportedByName = name;
+    this.testDataReportedByJobTitle = jobTitle;
     this.testDataReportedAt = now;
     return true;
   }
@@ -162,6 +172,10 @@ public class TestPlanTarget extends AuditedEntity {
 
   public String getTestDataReportedByName() {
     return testDataReportedByName;
+  }
+
+  public String getTestDataReportedByJobTitle() {
+    return testDataReportedByJobTitle;
   }
 
   public LocalDateTime getTestDataReportedAt() {

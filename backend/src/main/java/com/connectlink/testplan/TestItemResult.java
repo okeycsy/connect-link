@@ -53,6 +53,10 @@ public class TestItemResult extends AuditedEntity {
   @Column(name = "reported_by_name", nullable = false, length = 50)
   private String reportedByName;
 
+  /** 등록한 기관 담당자의 그때 직급. 없으면 null. */
+  @Column(name = "reported_by_job_title", length = 50)
+  private String reportedByJobTitle;
+
   @Column(name = "reported_at", nullable = false)
   private LocalDateTime reportedAt;
 
@@ -70,6 +74,10 @@ public class TestItemResult extends AuditedEntity {
   @Column(name = "feedback_by_name", length = 50)
   private String feedbackByName;
 
+  /** 의견을 남긴 결제원 담당자의 그때 직급. 없으면 null. */
+  @Column(name = "feedback_by_job_title", length = 50)
+  private String feedbackByJobTitle;
+
   @Column(name = "feedback_at")
   private LocalDateTime feedbackAt;
 
@@ -82,6 +90,7 @@ public class TestItemResult extends AuditedEntity {
       String note,
       String email,
       String name,
+      String jobTitle,
       LocalDateTime now) {
     this.item = item;
     this.target = target;
@@ -89,6 +98,7 @@ public class TestItemResult extends AuditedEntity {
     this.note = note;
     this.reportedByEmail = email;
     this.reportedByName = name;
+    this.reportedByJobTitle = jobTitle;
     this.reportedAt = now;
   }
 
@@ -97,7 +107,13 @@ public class TestItemResult extends AuditedEntity {
    *
    * @return 바뀌었으면 참
    */
-  boolean report(TestResult result, String note, String email, String name, LocalDateTime now) {
+  boolean report(
+      TestResult result,
+      String note,
+      String email,
+      String name,
+      String jobTitle,
+      LocalDateTime now) {
     if (this.result == result && Objects.equals(this.note, note)) {
       return false;
     }
@@ -105,17 +121,20 @@ public class TestItemResult extends AuditedEntity {
     this.note = note;
     this.reportedByEmail = email;
     this.reportedByName = name;
+    this.reportedByJobTitle = jobTitle;
     this.reportedAt = now;
     return true;
   }
 
   /** 결제원 의견을 남긴다. 미니 수행률과 특이사항이 모두 비면 의견을 지운다. */
-  void giveFeedback(Integer rate, String note, String email, String name, LocalDateTime now) {
+  void giveFeedback(
+      Integer rate, String note, String email, String name, String jobTitle, LocalDateTime now) {
     if (rate == null && note == null) {
       this.feedbackRate = null;
       this.feedbackNote = null;
       this.feedbackByEmail = null;
       this.feedbackByName = null;
+      this.feedbackByJobTitle = null;
       this.feedbackAt = null;
       return;
     }
@@ -123,6 +142,7 @@ public class TestItemResult extends AuditedEntity {
     this.feedbackNote = note;
     this.feedbackByEmail = email;
     this.feedbackByName = name;
+    this.feedbackByJobTitle = jobTitle;
     this.feedbackAt = now;
   }
 
@@ -180,6 +200,10 @@ public class TestItemResult extends AuditedEntity {
     return reportedByName;
   }
 
+  public String getReportedByJobTitle() {
+    return reportedByJobTitle;
+  }
+
   public LocalDateTime getReportedAt() {
     return reportedAt;
   }
@@ -198,6 +222,10 @@ public class TestItemResult extends AuditedEntity {
 
   public String getFeedbackByName() {
     return feedbackByName;
+  }
+
+  public String getFeedbackByJobTitle() {
+    return feedbackByJobTitle;
   }
 
   public LocalDateTime getFeedbackAt() {

@@ -100,10 +100,19 @@ public class TestResultService {
       boolean changed;
       if (existing == null) {
         target.addResult(
-            new TestItemResult(item, target, entry.result(), note, user.email(), user.name(), now));
+            new TestItemResult(
+                item,
+                target,
+                entry.result(),
+                note,
+                user.email(),
+                user.name(),
+                user.jobTitle(),
+                now));
         changed = true;
       } else {
-        changed = existing.report(entry.result(), note, user.email(), user.name(), now);
+        changed =
+            existing.report(entry.result(), note, user.email(), user.name(), user.jobTitle(), now);
       }
       if (changed) {
         changes.field(
@@ -163,7 +172,7 @@ public class TestResultService {
       return toResponse(user, target);
     }
     LocalDateTime now = now();
-    result.giveFeedback(body.rate(), note, user.email(), user.name(), now);
+    result.giveFeedback(body.rate(), note, user.email(), user.name(), user.jobTitle(), now);
     TestProgress.recalculate(plan, now);
     repository.flush();
     changeHistoryService.record(
@@ -210,6 +219,8 @@ public class TestResultService {
                   null,
                   null,
                   null,
+                  null,
+                  null,
                   false,
                   0,
                   false)
@@ -222,10 +233,12 @@ public class TestResultService {
                   r.getResult().getLabel(),
                   r.getNote(),
                   r.getReportedByName(),
+                  r.getReportedByJobTitle(),
                   r.getReportedAt(),
                   r.getFeedbackRate(),
                   r.getFeedbackNote(),
                   r.getFeedbackByName(),
+                  r.getFeedbackByJobTitle(),
                   r.getFeedbackAt(),
                   r.isFeedbackOutdated(),
                   r.effectiveRate(),
