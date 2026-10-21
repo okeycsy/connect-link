@@ -147,7 +147,8 @@ export function OrganizationForm({ organization, defaultBusiness, onSaved, onCan
             description="의견 요청 대상을 업권별로 고를 때 씁니다."
             placeholder="업권 고르기"
             data={sectors?.map((s) => ({ value: s.code, label: s.label })) ?? []}
-            clearable
+            allowDeselect={false}
+            required
             {...form.getInputProps('sector')}
           />
         )}
