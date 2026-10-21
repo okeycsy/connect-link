@@ -112,6 +112,7 @@ function TestPlanEditor({ slug, existing }: { slug: string; existing?: TestPlanD
   const newKey = () => `n${nextKey.current++}`;
   // 새 테스트의 가이드·참고자료. 저장해 번호가 생긴 뒤 올린다.
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [pendingFormFiles, setPendingFormFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [organizationIds, setOrganizationIds] = useState<number[]>(
     () => existing?.targets.map((t) => t.organizationId) ?? [],
@@ -157,12 +158,18 @@ function TestPlanEditor({ slug, existing }: { slug: string; existing?: TestPlanD
       ? (fieldErrors.items ?? fieldErrors.organizationIds ?? mutation.error.message)
       : undefined;
 
-  const uploadPending = async (planId: number) => {
-    if (pendingFiles.length === 0) return;
-    const owner = { ownerType: 'TEST_PLAN' as const, ownerId: planId };
+  /** 저장 뒤 고른 파일을 올린다. 가이드(TEST_PLAN)와 테스트데이터 회신 양식(TEST_DATA_FORM)이 같은 길을 쓴다. */
+  const uploadPending = async (
+    ownerType: 'TEST_PLAN' | 'TEST_DATA_FORM',
+    planId: number,
+    files: File[],
+    what: string,
+  ) => {
+    if (files.length === 0) return;
+    const owner = { ownerType, ownerId: planId };
     setUploading(true);
     const failed: string[] = [];
-    for (const file of pendingFiles) {
+    for (const file of files) {
       try {
         await uploadAttachmentFile(owner, file);
       } catch (e) {
@@ -173,7 +180,7 @@ function TestPlanEditor({ slug, existing }: { slug: string; existing?: TestPlanD
     await queryClient.invalidateQueries({ queryKey: attachmentKeys.list(owner) });
     if (failed.length > 0) {
       notifications.show({
-        title: '가이드 일부를 올리지 못했습니다',
+        title: `${what} 일부를 올리지 못했습니다`,
         message: `${failed.join(', ')}. 상세 화면에서 다시 올려 주세요.`,
         color: 'red',
       });
@@ -201,7 +208,8 @@ function TestPlanEditor({ slug, existing }: { slug: string; existing?: TestPlanD
     } else {
       create.mutate(body, {
         onSuccess: async (d) => {
-          await uploadPending(d.id);
+          await uploadPending('TEST_PLAN', d.id, pendingFiles, '가이드');
+          await uploadPending('TEST_DATA_FORM', d.id, pendingFormFiles, '테스트데이터 회신 양식');
           navigate(`/${slug}/tests/${d.id}`);
         },
       });
@@ -434,6 +442,35 @@ function TestPlanEditor({ slug, existing }: { slug: string; existing?: TestPlanD
                 files={pendingFiles}
                 onChange={setPendingFiles}
                 pickLabel="파일 고르기"
+              />
+            )}
+          </Stack>
+        </Card>
+
+        <Card>
+          <Stack gap="sm">
+            <div>
+              <Text fw={700} size="xl">
+                테스트데이터 회신 양식
+              </Text>
+              <Text size="sm" c="dimmed">
+                선택입니다. 테스트 전에 기관마다 만들어 올릴 테스트데이터 양식이 있으면 올려 주세요.
+                기관 담당자는 이 양식을 내려받아 채운 뒤 테스트데이터로 올립니다.
+              </Text>
+            </div>
+            {existing ? (
+              <AttachmentPanel
+                ownerType="TEST_DATA_FORM"
+                ownerId={existing.id}
+                editable
+                uploadLabel="양식 올리기"
+                emptyMessage="지정한 양식이 없습니다."
+              />
+            ) : (
+              <PendingAttachments
+                files={pendingFormFiles}
+                onChange={setPendingFormFiles}
+                pickLabel="양식 고르기"
               />
             )}
           </Stack>

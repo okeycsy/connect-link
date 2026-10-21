@@ -24,6 +24,7 @@ import { ErrorState, StateView } from '../../../shared/state/StateView';
 import { AttachmentPanel } from '../../attachment/components/AttachmentPanel';
 import { ChangeHistoryList } from '../../history/components/ChangeHistoryList';
 import { TargetResultsCard } from '../components/TargetResultsCard';
+import { TestDataBadge, TestDataCard } from '../components/TestDataCard';
 import { OverdueBadge, TestPlanStateBadge } from '../components/TestPlanBadges';
 import classes from '../components/TestPlanTable.module.css';
 import {
@@ -153,11 +154,18 @@ function TestPlanView({ slug, plan }: { slug: string; plan: TestPlanDetail }) {
               />
             )}
             {selectedOrg ? (
-              <TargetResultsCard
-                key={selectedOrg.organizationId}
-                planId={plan.id}
-                organizationId={selectedOrg.organizationId}
-              />
+              <>
+                <TestDataCard
+                  key={`data-${selectedOrg.organizationId}`}
+                  planId={plan.id}
+                  organizationId={selectedOrg.organizationId}
+                />
+                <TargetResultsCard
+                  key={selectedOrg.organizationId}
+                  planId={plan.id}
+                  organizationId={selectedOrg.organizationId}
+                />
+              </>
             ) : (
               <StateView kind="empty" description="대상 기관이 없습니다." />
             )}
@@ -178,7 +186,7 @@ function TestPlanView({ slug, plan }: { slug: string; plan: TestPlanDetail }) {
           setConfirmDelete(false);
         }}
         title="기관 테스트 삭제"
-        message="기관 테스트와 기관이 등록한 결과, 결제원 의견, 가이드 파일을 모두 지웁니다. 되돌릴 수 없습니다."
+        message="기관 테스트와 기관이 등록한 결과, 결제원 의견, 가이드·테스트데이터 파일을 모두 지웁니다. 되돌릴 수 없습니다."
         confirmLabel="삭제하기"
         danger
         pending={remove.isPending}
@@ -245,6 +253,7 @@ function TargetTable({
         <Table.Thead>
           <Table.Tr>
             <Table.Th>기관</Table.Th>
+            <Table.Th w={120}>테스트데이터</Table.Th>
             <Table.Th w={180}>수행률</Table.Th>
             <Table.Th w={240}>결과</Table.Th>
             <Table.Th w={130}>확인할 결과</Table.Th>
@@ -279,6 +288,9 @@ function TargetTable({
                     </Text>
                   )}
                 </Group>
+              </Table.Td>
+              <Table.Td data-label="테스트데이터">
+                <TestDataBadge status={t.testDataStatus} label={t.testDataStatusLabel} />
               </Table.Td>
               <Table.Td data-label="수행률">
                 <Group gap="xs" wrap="nowrap">
@@ -417,6 +429,24 @@ function PlanContent({ slug, plan }: { slug: string; plan: TestPlanDetail }) {
                 editable={manage}
                 uploadLabel="파일 올리기"
                 emptyMessage="올린 파일이 없습니다."
+              />
+            </Stack>
+          </Card>
+          <Card>
+            <Stack gap="sm">
+              <Text fw={700} size="xl">
+                테스트데이터 회신 양식
+              </Text>
+              <Text size="sm" c="dimmed">
+                테스트 전에 기관마다 만들어 올릴 테스트데이터의 양식입니다. 기관은 결과 탭에서
+                테스트데이터 생성 여부와 파일을 올립니다.
+              </Text>
+              <AttachmentPanel
+                ownerType="TEST_DATA_FORM"
+                ownerId={plan.id}
+                editable={manage}
+                uploadLabel="양식 올리기"
+                emptyMessage="지정한 양식이 없습니다."
               />
             </Stack>
           </Card>

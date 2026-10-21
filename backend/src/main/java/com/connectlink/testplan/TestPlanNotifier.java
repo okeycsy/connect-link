@@ -13,7 +13,8 @@ import org.springframework.stereotype.Component;
 
 /**
  * 기관 테스트 모듈의 알림. 모두 {@link NotificationService} 를 거쳐 알림 센터에 남는다. 테스트가 열리면 대상 기관 담당자에게 메일, 기관이 결과를
- * 등록하면 그 테스트의 알림 대상 결제원 담당자에게 매터모스트(명세), 결제원이 의견을 남기면 결과를 등록한 기관 담당자에게 알림 센터로만 알린다.
+ * 등록하거나 테스트데이터를 생성 완료로 바꾸면 그 테스트의 알림 대상 결제원 담당자에게 매터모스트(명세), 결제원이 의견을 남기면 결과를 등록한 기관 담당자에게 알림 센터로만
+ * 알린다.
  */
 @Component
 class TestPlanNotifier {
@@ -75,6 +76,22 @@ class TestPlanNotifier {
         NotificationType.TEST_RESULT_REPORTED,
         target.getOrganization().getName() + " " + headline(plan) + " 결과 등록",
         actorName + " 님이 결과를 등록했습니다: " + what + ". 기관 수행률 " + target.getProgressRate() + "%.",
+        EnumSet.of(NotificationChannel.MATTERMOST));
+  }
+
+  /** 기관이 테스트데이터를 생성 완료로 바꿨다. 테스트의 알림 대상 결제원 담당자에게 매터모스트. */
+  void testDataCreated(
+      TestPlan plan,
+      TestPlanTarget target,
+      Collection<String> recipientEmails,
+      String actorName,
+      int fileCount) {
+    publish(
+        recipientEmails,
+        plan,
+        NotificationType.TEST_DATA_REPORTED,
+        target.getOrganization().getName() + " " + headline(plan) + " 테스트데이터 생성 완료",
+        actorName + " 님이 테스트데이터를 생성 완료로 등록했습니다. 올린 파일 " + fileCount + "개.",
         EnumSet.of(NotificationChannel.MATTERMOST));
   }
 

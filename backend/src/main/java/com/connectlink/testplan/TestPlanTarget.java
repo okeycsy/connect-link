@@ -5,10 +5,13 @@ import com.connectlink.organization.Organization;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -48,6 +51,25 @@ public class TestPlanTarget extends AuditedEntity {
   @Column(name = "last_reported_at")
   private LocalDateTime lastReportedAt;
 
+  /** 테스트 전 테스트데이터 생성 여부. 파일은 첨부(TEST_DATA, 이 행의 ID)로 올린다. */
+  @Enumerated(EnumType.STRING)
+  @Column(name = "test_data_status", nullable = false, length = 20)
+  private TestDataStatus testDataStatus = TestDataStatus.NOT_CREATED;
+
+  /** 테스트데이터 메모(만든 데이터 설명, 못 만든 이유 등). */
+  @Column(name = "test_data_note", length = 2000)
+  private String testDataNote;
+
+  @Column(name = "test_data_reported_by_email", length = 200)
+  private String testDataReportedByEmail;
+
+  @Column(name = "test_data_reported_by_name", length = 50)
+  private String testDataReportedByName;
+
+  /** 기관이 테스트데이터 생성 여부·메모를 마지막으로 바꾼 일시. 아직 없으면 null. */
+  @Column(name = "test_data_reported_at")
+  private LocalDateTime testDataReportedAt;
+
   @OneToMany(mappedBy = "target", cascade = CascadeType.ALL, orphanRemoval = true)
   @BatchSize(size = 50)
   private List<TestItemResult> results = new ArrayList<>();
@@ -76,6 +98,20 @@ public class TestPlanTarget extends AuditedEntity {
   void updateProgress(int rate, int completed) {
     this.progressRate = rate;
     this.completedCount = completed;
+  }
+
+  /** 테스트데이터 생성 여부·메모를 바꾼다. 바뀐 것이 없으면 아무것도 하지 않고 false. */
+  boolean reportTestData(
+      TestDataStatus status, String note, String email, String name, LocalDateTime now) {
+    if (testDataStatus == status && Objects.equals(testDataNote, note)) {
+      return false;
+    }
+    this.testDataStatus = status;
+    this.testDataNote = note;
+    this.testDataReportedByEmail = email;
+    this.testDataReportedByName = name;
+    this.testDataReportedAt = now;
+    return true;
   }
 
   /** 결과를 모두 지운다. 테스트를 지울 때 요구사항보다 먼저 지우려고 쓴다. */
@@ -110,6 +146,26 @@ public class TestPlanTarget extends AuditedEntity {
 
   public LocalDateTime getLastReportedAt() {
     return lastReportedAt;
+  }
+
+  public TestDataStatus getTestDataStatus() {
+    return testDataStatus;
+  }
+
+  public String getTestDataNote() {
+    return testDataNote;
+  }
+
+  public String getTestDataReportedByEmail() {
+    return testDataReportedByEmail;
+  }
+
+  public String getTestDataReportedByName() {
+    return testDataReportedByName;
+  }
+
+  public LocalDateTime getTestDataReportedAt() {
+    return testDataReportedAt;
   }
 
   public List<TestItemResult> getResults() {

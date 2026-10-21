@@ -192,11 +192,14 @@ public class TestPlanService {
     return toDetail(user, plan);
   }
 
-  /** 지운다. 기관 결과와 가이드 첨부도 함께 지운다. */
+  /** 지운다. 기관 결과와 가이드·테스트데이터 양식·기관 테스트데이터 첨부도 함께 지운다. */
   public void delete(CurrentUser user, Long id) {
     TestPlan plan = load(id);
     accessPolicy.ensureCanManage(user, plan.getBusiness());
     attachmentService.deleteAllOf(AttachmentOwnerType.TEST_PLAN, plan.getId());
+    attachmentService.deleteAllOf(AttachmentOwnerType.TEST_DATA_FORM, plan.getId());
+    plan.getTargets()
+        .forEach(t -> attachmentService.deleteAllOf(AttachmentOwnerType.TEST_DATA, t.getId()));
     changeHistoryService.record(
         user,
         ChangeHistoryCommand.deleted(
@@ -385,7 +388,9 @@ public class TestPlanService {
         items.size() - reported,
         awaiting,
         isCompleted(target, items.size()),
-        target.getLastReportedAt());
+        target.getLastReportedAt(),
+        target.getTestDataStatus(),
+        target.getTestDataStatus().getLabel());
   }
 
   /** 결제원이 확인할 결과인지: 오류이거나, 정상인데 결제원 의견이 없거나 지난 의견. 홈 카드의 집계와 같은 기준이다. */
@@ -482,7 +487,7 @@ public class TestPlanService {
   }
 
   /**
-   * 대상 기관을 요청 목록대로 맞춘다. 결과를 등록한 기관은 뺄 수 없다.
+   * 대상 기관을 요청 목록대로 맞춘다. 결과나 테스트데이터를 등록한 기관은 뺄 수 없다.
    *
    * @return 새로 더한 기관 코드
    */
@@ -495,6 +500,15 @@ public class TestPlanService {
           throw BusinessException.conflict(
               "TEST_TARGET_HAS_RESULTS",
               target.getOrganization().getName() + " 은(는) 결과를 등록해서 대상에서 뺄 수 없습니다.");
+        }
+        if (target.getTestDataStatus() != TestDataStatus.NOT_CREATED
+            || target.getTestDataNote() != null
+            || !attachmentService
+                .listOf(AttachmentOwnerType.TEST_DATA, List.of(target.getId()))
+                .isEmpty()) {
+          throw BusinessException.conflict(
+              "TEST_TARGET_HAS_TEST_DATA",
+              target.getOrganization().getName() + " 은(는) 테스트데이터를 등록해서 대상에서 뺄 수 없습니다.");
         }
         plan.removeTarget(target);
       }
