@@ -37,7 +37,8 @@ const queryClient: QueryClient = new QueryClient({
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <MantineProvider theme={theme} defaultColorScheme="light">
-      <DatesProvider settings={{ locale: 'ko' }}>
+      {/* 달력은 우리 달력처럼 일요일부터 보인다. */}
+      <DatesProvider settings={{ locale: 'ko', firstDayOfWeek: 0 }}>
         <Notifications position="top-right" />
         <QueryClientProvider client={queryClient}>
           <RouterProvider router={router} />

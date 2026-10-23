@@ -2143,9 +2143,13 @@ export interface components {
       selected: boolean;
       candidate: boolean;
     };
+    SuspensionContactRequest: {
+      name: string;
+      phone: string;
+      email?: string | null;
+    };
     SuspensionSaveRequest: {
-      /** @enum {string} */
-      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
+      businesses: ('ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS')[];
       /** Format: int64 */
       organizationId?: number | null;
       /** Format: date-time */
@@ -2154,18 +2158,24 @@ export interface components {
       endAt: string;
       reason: string;
       kftcAction?: string | null;
-      contactName: string;
-      contactPhone: string;
-      contactEmail?: string | null;
+      contacts: components['schemas']['SuspensionContactRequest'][];
       extraNote?: string | null;
+    };
+    SuspensionBusinessResponse: {
+      /** @enum {string} */
+      code: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
+      slug: string;
+      label: string;
+    };
+    SuspensionContactResponse: {
+      name: string;
+      phone: string;
+      email?: string | null;
     };
     SuspensionDetailResponse: {
       /** Format: int64 */
       id: number;
-      /** @enum {string} */
-      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
-      businessSlug: string;
-      businessLabel: string;
+      businesses: components['schemas']['SuspensionBusinessResponse'][];
       /** Format: int64 */
       organizationId: number;
       organizationName: string;
@@ -2181,9 +2191,7 @@ export interface components {
       statusLabel: string;
       reason: string;
       kftcAction?: string | null;
-      contactName: string;
-      contactPhone: string;
-      contactEmail?: string | null;
+      contacts: components['schemas']['SuspensionContactResponse'][];
       extraNote?: string | null;
       registrantName: string;
       registrantJobTitle?: string | null;
@@ -2949,9 +2957,7 @@ export interface components {
     SuspensionSummaryResponse: {
       /** Format: int64 */
       id: number;
-      /** @enum {string} */
-      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
-      businessLabel: string;
+      businesses: components['schemas']['SuspensionBusinessResponse'][];
       /** Format: int64 */
       organizationId: number;
       organizationName: string;

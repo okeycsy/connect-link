@@ -1,7 +1,10 @@
 import {
+  ActionIcon,
   Alert,
   Button,
   Card,
+  Checkbox,
+  Group,
   Select,
   SimpleGrid,
   Skeleton,
@@ -9,10 +12,12 @@ import {
   Text,
   Textarea,
   TextInput,
+  Tooltip,
 } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
+import { IconPlus, IconTrash } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
@@ -39,17 +44,32 @@ import {
 /** DateTimePicker 의 값 꼴. */
 const PICKER_FORMAT = 'YYYY-MM-DD HH:mm:ss';
 
+/** 담당자 연락처 한 행. key 는 행을 지우거나 더할 때 입력 칸을 제자리에 두려는 화면 전용 값이다. */
+interface ContactDraft {
+  key: string;
+  name: string;
+  phone: string;
+  email: string;
+}
+
 interface Values {
-  business: BusinessCode | null;
+  businesses: BusinessCode[];
   organizationId: string | null;
   startAt: string | null;
   endAt: string | null;
   reason: string;
   kftcAction: string;
-  contactName: string;
-  contactPhone: string;
-  contactEmail: string;
+  contacts: ContactDraft[];
   extraNote: string;
+}
+
+/** 담당자는 이 수까지 더한다(서버와 같다). */
+const MAX_CONTACTS = 10;
+
+let contactKeySeq = 0;
+function contactDraft(name = '', phone = '', email = ''): ContactDraft {
+  contactKeySeq += 1;
+  return { key: `contact-${contactKeySeq}`, name, phone, email };
 }
 
 /**
@@ -130,16 +150,20 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
 
   const form = useForm<Values>({
     initialValues: {
-      business: existing?.business ?? current?.code ?? null,
+      businesses: existing
+        ? existing.businesses.map((b) => b.code)
+        : current?.code
+          ? [current.code]
+          : [],
       organizationId: existing ? String(existing.organizationId) : null,
       startAt: toPicker(existing?.startAt),
       endAt: toPicker(existing?.endAt),
       reason: existing?.reason ?? '',
       kftcAction: existing?.kftcAction ?? '',
-      // 기관 담당자는 본인이 작업 담당자인 경우가 많아 이름·이메일을 미리 채운다.
-      contactName: existing?.contactName ?? (kftcSide ? '' : (me?.name ?? '')),
-      contactPhone: existing?.contactPhone ?? '',
-      contactEmail: existing?.contactEmail ?? (kftcSide ? '' : (me?.email ?? '')),
+      // 기관 담당자는 본인이 작업 담당자인 경우가 많아 첫 행에 이름·이메일을 미리 채운다.
+      contacts: existing
+        ? existing.contacts.map((c) => contactDraft(c.name, c.phone, c.email ?? ''))
+        : [contactDraft(kftcSide ? '' : (me?.name ?? ''), '', kftcSide ? '' : (me?.email ?? ''))],
       extraNote: existing?.extraNote ?? '',
     },
   });
@@ -156,12 +180,18 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
     .map((b) => ({ value: b.code, label: b.label }));
   const businessCodes = businessOptions.map((b) => b.value).join(',');
 
-  // 기관을 바꿔 지금 고른 업무에 그 기관이 참여하지 않으면 첫 업무로 바꾼다.
+  // 기관을 바꾸면 그 기관이 참여하지 않는 업무는 고른 목록에서 뺀다. 남는 업무가 없으면 지금 업무 영역(참여하면)이나 첫 업무를 고른다.
   useEffect(() => {
     if (!selectedOrganization) return;
     const codes = businessCodes.split(',').filter(Boolean) as BusinessCode[];
-    if (form.values.business && codes.includes(form.values.business)) return;
-    form.setFieldValue('business', codes[0] ?? null);
+    const kept = form.values.businesses.filter((b) => codes.includes(b));
+    if (kept.length === form.values.businesses.length && kept.length > 0) return;
+    if (kept.length > 0) {
+      form.setFieldValue('businesses', kept);
+      return;
+    }
+    const fallback = current?.code && codes.includes(current.code) ? current.code : codes[0];
+    form.setFieldValue('businesses', fallback ? [fallback] : []);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedOrganization?.id, businessCodes]);
 
@@ -199,22 +229,30 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
 
   const submit = (values: Values) => {
     const body = {
-      // 비어 있으면 서버가 "대상 업무를 골라 주세요." 를 필드 메시지로 알려 준다.
-      business: values.business as BusinessCode,
+      // 비어 있으면 서버가 "대상 업무를 하나 이상 골라 주세요." 를 필드 메시지로 알려 준다. 업무 순서로 보낸다.
+      businesses: businessOptions.map((b) => b.value).filter((b) => values.businesses.includes(b)),
       organizationId: values.organizationId ? Number(values.organizationId) : null,
       // 서버는 시간대 없는 일시(서버 시간대 Asia/Seoul)를 받는다. 빈 값은 서버가 필드 메시지로 알려 준다.
       startAt: values.startAt ? dayjs(values.startAt).format('YYYY-MM-DDTHH:mm:ss') : '',
       endAt: values.endAt ? dayjs(values.endAt).format('YYYY-MM-DDTHH:mm:ss') : '',
       reason: values.reason,
       kftcAction: values.kftcAction || null,
-      contactName: values.contactName,
-      contactPhone: values.contactPhone,
-      contactEmail: values.contactEmail || null,
+      contacts: values.contacts.map((c) => ({
+        name: c.name,
+        phone: c.phone,
+        email: c.email || null,
+      })),
       extraNote: values.extraNote || null,
     };
-    // 맡지 않은 업무의 건이면 지금 업무 영역에서 상세를 연다(상세는 업무 영역과 상관없이 열린다).
-    const detailPath = (d: SuspensionDetail) =>
-      `/${me && canViewBusiness(me, d.businessSlug) ? d.businessSlug : slug}/suspensions/${d.id}`;
+    // 지금 업무 영역이 대상 업무에 들면 그대로, 아니면 맡은 대상 업무 영역에서 연다. 맡은 업무가 없으면 지금 업무 영역에서 연다(상세는 업무 영역과
+    // 상관없이 열린다).
+    const detailPath = (d: SuspensionDetail) => {
+      const slugs = d.businesses.map((b) => b.slug);
+      const target = slugs.includes(slug)
+        ? slug
+        : (slugs.find((s) => me && canViewBusiness(me, s)) ?? slug);
+      return `/${target}/suspensions/${d.id}`;
+    };
     if (existing) {
       update.mutate(body, { onSuccess: (d) => navigate(detailPath(d)) });
     } else {
@@ -290,16 +328,23 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
                   readOnly
                 />
               )}
-              <Select
+              <Checkbox.Group
                 label="대상 업무"
-                description="이 기관이 참여하는 업무를 모두 고를 수 있습니다."
-                placeholder={selectedOrganization ? '업무를 고르세요' : '기관을 먼저 고르세요'}
+                description={
+                  selectedOrganization
+                    ? '이 기관이 참여하는 업무입니다. 함께 멈추는 업무를 모두 고르세요.'
+                    : '기관을 먼저 고르세요.'
+                }
                 required
-                allowDeselect={false}
-                disabled={!selectedOrganization}
-                data={businessOptions}
-                {...form.getInputProps('business')}
-              />
+                data-testid="suspension-businesses"
+                {...form.getInputProps('businesses')}
+              >
+                <Group gap="md" mt={6}>
+                  {businessOptions.map((b) => (
+                    <Checkbox key={b.value} value={b.value} label={b.label} />
+                  ))}
+                </Group>
+              </Checkbox.Group>
               <DateTimePicker
                 label="중단 시작"
                 required
@@ -352,30 +397,67 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
 
         <Card>
           <Stack gap="sm">
-            <Text fw={700} size="xl">
-              담당자 연락처
-            </Text>
-            <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
-              <TextInput
-                label="이름"
-                required
-                maxLength={50}
-                {...form.getInputProps('contactName')}
-              />
-              <TextInput
-                label="연락처"
-                placeholder="010-0000-0000"
-                required
-                maxLength={30}
-                {...form.getInputProps('contactPhone')}
-              />
-              <TextInput
-                label="이메일"
-                placeholder="name@example.com"
-                maxLength={200}
-                {...form.getInputProps('contactEmail')}
-              />
-            </SimpleGrid>
+            <div>
+              <Text fw={700} size="xl">
+                담당자 연락처
+              </Text>
+              <Text size="sm" c="dimmed">
+                작업 중 연락할 사람을 모두 적습니다. 첫 행부터 연락할 순서입니다.
+              </Text>
+            </div>
+            {form.values.contacts.map((contact, index) => (
+              <Group
+                key={contact.key}
+                align="flex-start"
+                gap="sm"
+                wrap="nowrap"
+                data-testid="suspension-contact-row"
+              >
+                <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md" style={{ flex: 1 }}>
+                  <TextInput
+                    label="이름"
+                    required
+                    maxLength={50}
+                    {...form.getInputProps(`contacts.${index}.name`)}
+                  />
+                  <TextInput
+                    label="연락처"
+                    placeholder="010-0000-0000"
+                    required
+                    maxLength={30}
+                    {...form.getInputProps(`contacts.${index}.phone`)}
+                  />
+                  <TextInput
+                    label="이메일"
+                    placeholder="name@example.com"
+                    maxLength={200}
+                    {...form.getInputProps(`contacts.${index}.email`)}
+                  />
+                </SimpleGrid>
+                <Tooltip label="행 빼기">
+                  <ActionIcon
+                    variant="subtle"
+                    color="red"
+                    mt={28}
+                    disabled={form.values.contacts.length === 1}
+                    onClick={() => form.removeListItem('contacts', index)}
+                    aria-label={`담당자 ${index + 1} 빼기`}
+                  >
+                    <IconTrash size={18} stroke={1.8} />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
+            ))}
+            <Group>
+              <Button
+                variant="light"
+                leftSection={<IconPlus size={16} stroke={1.8} />}
+                disabled={form.values.contacts.length >= MAX_CONTACTS}
+                onClick={() => form.insertListItem('contacts', contactDraft())}
+              >
+                행 추가
+              </Button>
+            </Group>
           </Stack>
         </Card>
 

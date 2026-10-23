@@ -37,8 +37,7 @@ const DARA = user({
 
 const ROW = {
   id: 7,
-  business: 'CMS',
-  businessLabel: 'CMS',
+  businesses: [{ code: 'CMS', slug: 'cms', label: 'CMS' }],
   organizationId: 3,
   organizationName: '신한은행',
   startAt: '2026-10-17T22:00:00',

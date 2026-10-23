@@ -95,7 +95,7 @@ function SuspensionView({ slug, suspension }: { slug: string; suspension: Suspen
         title={`${suspension.organizationName} 일시중단`}
         description={
           <>
-            {suspension.businessLabel} · 등록{' '}
+            {suspension.businesses.map((b) => b.label).join(', ')} · 등록{' '}
             {formatAuthor(
               suspension.registrantKftc ? '결제원' : suspension.organizationName,
               suspension.registrantName,
@@ -242,7 +242,9 @@ function SuspensionContent({ suspension: s }: { suspension: SuspensionDetail }) 
           </Text>
         </Field>
         <Field label="대상 업무">
-          <Text size="md">{s.businessLabel}</Text>
+          <Text size="md" data-testid="suspension-businesses">
+            {s.businesses.map((b) => b.label).join(', ')}
+          </Text>
         </Field>
         <Field label="중단 이유(작업 내용)">
           <Body text={s.reason} />
@@ -251,10 +253,14 @@ function SuspensionContent({ suspension: s }: { suspension: SuspensionDetail }) 
           <Body text={s.kftcAction} />
         </Field>
         <Field label="담당자 연락처">
-          <Text size="md">
-            {s.contactName} · {formatPhone(s.contactPhone)}
-            {s.contactEmail && ` · ${s.contactEmail}`}
-          </Text>
+          <Stack gap={4} data-testid="suspension-contacts">
+            {s.contacts.map((c, i) => (
+              <Text key={i} size="md">
+                {c.name} · {formatPhone(c.phone)}
+                {c.email && ` · ${c.email}`}
+              </Text>
+            ))}
+          </Stack>
         </Field>
         <Field label="추가 사항">
           <Body text={s.extraNote} />
