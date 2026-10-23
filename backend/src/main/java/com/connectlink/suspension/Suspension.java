@@ -6,7 +6,9 @@ import com.connectlink.organization.Organization;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -34,10 +36,6 @@ public class Suspension extends AuditedEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Enumerated(EnumType.STRING)
-  @Column(name = "business", nullable = false, length = 30)
-  private Business business;
-
   /** 중단하는 참가기관. 등록한 뒤에는 바꾸지 않는다. */
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "organization_id")
@@ -56,16 +54,6 @@ public class Suspension extends AuditedEntity {
   /** 결제원 조치사항(중단 동안 결제원이 할 일). */
   @Column(name = "kftc_action", length = 2000)
   private String kftcAction;
-
-  /** 기관의 작업 담당자 연락처. */
-  @Column(name = "contact_name", nullable = false, length = 50)
-  private String contactName;
-
-  @Column(name = "contact_phone", nullable = false, length = 30)
-  private String contactPhone;
-
-  @Column(name = "contact_email", length = 200)
-  private String contactEmail;
 
   /** 추가 사항. */
   @Column(name = "extra_note", length = 2000)
@@ -109,23 +97,49 @@ public class Suspension extends AuditedEntity {
   @Column(name = "completed_at")
   private LocalDateTime completedAt;
 
+  /** 고른 대상 업무(기준정보). 하나 이상이다. */
+  @OneToMany(mappedBy = "suspension", cascade = CascadeType.ALL, orphanRemoval = true)
+  @BatchSize(size = 50)
+  private List<SuspensionTargetWork> targetWorks = new ArrayList<>();
+
+  /**
+   * 관련 레일 업무. 고른 대상 업무의 관련 업무를 저장할 때 모아 둔다(기준정보가 나중에 바뀌어도 그대로). 목록·알림·확인 범위의 기준이고, 비면 결제원
+   * 운영·상황실·대외계가 맡는다.
+   */
+  @OneToMany(mappedBy = "suspension", cascade = CascadeType.ALL, orphanRemoval = true)
+  @BatchSize(size = 50)
+  private List<SuspensionBusiness> businesses = new ArrayList<>();
+
+  /** 기관의 작업 담당자 연락처. 한 명 이상이고 적은 순서대로다. */
+  @OneToMany(mappedBy = "suspension", cascade = CascadeType.ALL, orphanRemoval = true)
+  @BatchSize(size = 50)
+  private List<SuspensionContact> contacts = new ArrayList<>();
+
   @OneToMany(mappedBy = "suspension", cascade = CascadeType.ALL, orphanRemoval = true)
   @BatchSize(size = 50)
   private List<SuspensionReviewer> reviewers = new ArrayList<>();
 
   protected Suspension() {}
 
-  /** 등록 양식의 내용. 기관은 등록할 때 정하고 바꾸지 않는다. */
+  /**
+   * 등록 양식의 내용. 기관은 등록할 때 정하고 바꾸지 않는다.
+   *
+   * @param targetWorks 고른 대상 업무. 하나 이상이고 기준정보 순서다
+   * @param businesses 관련 레일 업무(대상 업무의 관련 업무를 모은 것). 비어 있을 수 있다
+   * @param contacts 기관 작업 담당자 연락처. 한 명 이상이고 적은 순서다
+   */
   public record Content(
-      Business business,
+      List<TargetWork> targetWorks,
+      Set<Business> businesses,
       LocalDateTime startAt,
       LocalDateTime endAt,
       String reason,
       String kftcAction,
-      String contactName,
-      String contactPhone,
-      String contactEmail,
+      List<ContactInfo> contacts,
       String extraNote) {}
+
+  /** 담당자 연락처 한 명. 이메일은 없을 수 있다. */
+  public record ContactInfo(String name, String phone, String email) {}
 
   /** 검토 대기로 등록한다. */
   public static Suspension register(
@@ -157,15 +171,48 @@ public class Suspension extends AuditedEntity {
   }
 
   private void apply(Content content) {
-    this.business = content.business();
+    applyTargetWorks(content.targetWorks());
+    applyBusinesses(content.businesses());
+    applyContacts(content.contacts());
     this.startAt = content.startAt();
     this.endAt = content.endAt();
     this.reason = content.reason();
     this.kftcAction = content.kftcAction();
-    this.contactName = content.contactName();
-    this.contactPhone = content.contactPhone();
-    this.contactEmail = content.contactEmail();
     this.extraNote = content.extraNote();
+  }
+
+  /** 빠진 대상 업무는 지우고 새 대상 업무를 더한다. 그대로인 행(고를 때의 이름)은 둔다. */
+  private void applyTargetWorks(List<TargetWork> next) {
+    List<Long> nextIds = next.stream().map(TargetWork::getId).toList();
+    targetWorks.removeIf(w -> !nextIds.contains(w.getTargetWork().getId()));
+    List<Long> have = targetWorks.stream().map(w -> w.getTargetWork().getId()).toList();
+    next.stream()
+        .filter(w -> !have.contains(w.getId()))
+        .forEach(w -> targetWorks.add(new SuspensionTargetWork(this, w)));
+  }
+
+  /** 빠진 업무는 지우고 새 업무를 더한다. 그대로인 업무 행은 둔다. */
+  private void applyBusinesses(Set<Business> next) {
+    businesses.removeIf(b -> !next.contains(b.getBusiness()));
+    Set<Business> have = getBusinesses();
+    next.stream()
+        .filter(b -> !have.contains(b))
+        .forEach(b -> businesses.add(new SuspensionBusiness(this, b)));
+  }
+
+  /** 앞에서부터 있는 행을 고쳐 쓰고, 남는 행은 지우고 모자라면 더한다. */
+  private void applyContacts(List<ContactInfo> next) {
+    List<SuspensionContact> ordered = getContacts();
+    for (int i = 0; i < next.size(); i++) {
+      if (i < ordered.size()) {
+        ordered.get(i).apply(next.get(i));
+      } else {
+        contacts.add(new SuspensionContact(this, i, next.get(i)));
+      }
+    }
+    for (int i = next.size(); i < ordered.size(); i++) {
+      contacts.remove(ordered.get(i));
+    }
   }
 
   /** 다시 검토 대기로 돌린다. 기관이 내용을 고쳤을 때 결제원이 다시 확인하도록 확인 기록을 지운다. 쓴 조치·인수인계 사항은 남긴다. */
@@ -243,14 +290,13 @@ public class Suspension extends AuditedEntity {
 
   public Content content() {
     return new Content(
-        business,
+        getTargetWorks().stream().map(SuspensionTargetWork::getTargetWork).toList(),
+        getBusinesses(),
         startAt,
         endAt,
         reason,
         kftcAction,
-        contactName,
-        contactPhone,
-        contactEmail,
+        getContacts().stream().map(SuspensionContact::info).toList(),
         extraNote);
   }
 
@@ -258,8 +304,35 @@ public class Suspension extends AuditedEntity {
     return id;
   }
 
-  public Business getBusiness() {
-    return business;
+  /** 멈추는 업무. 업무 순서다. */
+  public Set<Business> getBusinesses() {
+    EnumSet<Business> result = EnumSet.noneOf(Business.class);
+    businesses.forEach(b -> result.add(b.getBusiness()));
+    return result;
+  }
+
+  /** 대표 업무(업무 순서로 첫째). 알림·이력처럼 업무 하나를 붙여야 하는 곳에 쓴다. 관련 레일 업무가 없으면 null. */
+  public Business getPrimaryBusiness() {
+    Set<Business> all = getBusinesses();
+    return all.isEmpty() ? null : all.iterator().next();
+  }
+
+  /** 고른 대상 업무. 기준정보 순서다. */
+  public List<SuspensionTargetWork> getTargetWorks() {
+    return targetWorks.stream()
+        .sorted(
+            Comparator.comparingInt((SuspensionTargetWork w) -> w.getTargetWork().getSortOrder())
+                .thenComparing(SuspensionTargetWork::getName))
+        .toList();
+  }
+
+  /** 고른 대상 업무 이름을 "타행환, CMS" 꼴로. */
+  public String targetWorkNames() {
+    return String.join(", ", getTargetWorks().stream().map(SuspensionTargetWork::getName).toList());
+  }
+
+  public boolean affects(Business business) {
+    return businesses.stream().anyMatch(b -> b.getBusiness() == business);
   }
 
   public Organization getOrganization() {
@@ -282,16 +355,11 @@ public class Suspension extends AuditedEntity {
     return kftcAction;
   }
 
-  public String getContactName() {
-    return contactName;
-  }
-
-  public String getContactPhone() {
-    return contactPhone;
-  }
-
-  public String getContactEmail() {
-    return contactEmail;
+  /** 담당자 연락처. 적은 순서다. */
+  public List<SuspensionContact> getContacts() {
+    return contacts.stream()
+        .sorted(Comparator.comparingInt(SuspensionContact::getSortOrder))
+        .toList();
   }
 
   public String getExtraNote() {

@@ -144,6 +144,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/target-works/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * 대상 업무 수정 (관리자)
+     * @description 이름·분류·순서·사용 여부·관련 업무를 고친다. 이미 등록한 일시중단의 업무 이름과 관련 업무는 그대로다.
+     */
+    put: operations['update_2'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/suspensions/{id}': {
     parameters: {
       query?: never;
@@ -160,7 +180,7 @@ export interface paths {
      * 일시중단 수정
      * @description 등록한 기관 담당자나 그 업무 결제원 담당자가 고친다. 기관 담당자가 확인이 시작된 건을 고치면 검토 대기로 돌아간다. 결제원 담당자에게 매터모스트 알림이 간다. 완료한 건이면 409 SUSPENSION_COMPLETED.
      */
-    put: operations['update_2'];
+    put: operations['update_3'];
     post?: never;
     /**
      * 일시중단 삭제
@@ -185,7 +205,7 @@ export interface paths {
      * 기관 수정 (관리자)
      * @description 이름, 이메일 도메인, 사용 여부, 참여 업무를 통째로 바꾼다.
      */
-    put: operations['update_3'];
+    put: operations['update_4'];
     post?: never;
     delete?: never;
     options?: never;
@@ -233,7 +253,7 @@ export interface paths {
      * 의견 요청 수정
      * @description 작성중·회신중에 고친다. 질문(작성중일 때만)·대상은 보낸 목록으로 바뀐다. 회신중이면 새 회신 담당자에게 요청 메일, 남은 담당자에게 변경 알림이 간다. 회신을 저장한 기관을 빼면 409 OPINION_TARGET_HAS_REPLY.
      */
-    put: operations['update_4'];
+    put: operations['update_5'];
     post?: never;
     /**
      * 작성중 의견 요청 삭제
@@ -261,7 +281,7 @@ export interface paths {
      * 담당자 수정
      * @description 본인과 소속 기관의 같은 업무 담당자, 또는 그 업무 결제원 담당자(내부망)가 고친다. 저장하면 최근 확인일이 갱신되고 바뀐 항목은 변경 전·후 이력으로 남는다. 기관과 업무는 바뀌지 않는다.
      */
-    put: operations['update_5'];
+    put: operations['update_6'];
     post?: never;
     /**
      * 담당자 삭제
@@ -405,6 +425,30 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/target-works': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 대상 업무 목록 조회
+     * @description 순서, 이름순. 기본은 사용 중인 것만이고, includeInactive 는 관리자만 쓴다.
+     */
+    get: operations['list_2'];
+    put?: never;
+    /**
+     * 대상 업무 등록 (관리자)
+     * @description 이름이 겹치면 409 TARGET_WORK_NAME_DUPLICATE.
+     */
+    post: operations['create_2'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/suspensions': {
     parameters: {
       query?: never;
@@ -416,13 +460,13 @@ export interface paths {
      * 일시중단 목록 조회
      * @description 한 업무 영역의 일시중단. period 가 없으면 전부(최근 시작 순)다. 결제원 담당자는 전 기관을, 기관 담당자는 자기 기관만 본다. organizationId 는 결제원 담당자의 기관별 이력 보기다.
      */
-    get: operations['list_2'];
+    get: operations['list_3'];
     put?: never;
     /**
      * 일시중단 등록
      * @description 검토 대기로 등록하고 그 업무 결제원 담당자에게 메일·매터모스트 알림을 보낸다. 공문(SUSPENSION)은 저장한 뒤 첨부 API 로 올린다.
      */
-    post: operations['create_2'];
+    post: operations['create_3'];
     delete?: never;
     options?: never;
     head?: never;
@@ -500,7 +544,7 @@ export interface paths {
      * 가입 신청 목록 조회
      * @description 한 업무 영역을 신청에 넣은 계정을 상태별로 최근 신청 순서로 돌려준다. 승인(ACTIVE)·반려(REJECTED)는 가입 승인을 거친 계정만 나온다.
      */
-    get: operations['list_3'];
+    get: operations['list_4'];
     put?: never;
     /**
      * 가입 신청
@@ -570,7 +614,7 @@ export interface paths {
      * 기관 등록 (관리자)
      * @description 같은 코드가 이미 있으면 409.
      */
-    post: operations['create_3'];
+    post: operations['create_4'];
     delete?: never;
     options?: never;
     head?: never;
@@ -588,13 +632,13 @@ export interface paths {
      * 의견 요청 목록 조회
      * @description 한 업무 영역의 요청 중 한 상태. 결제원 담당자는 그 업무의 모든 요청을, 기관 담당자는 자기 기관이 대상인 회신중·마감 요청만 본다(작성중은 빈 목록).
      */
-    get: operations['list_4'];
+    get: operations['list_5'];
     put?: never;
     /**
      * 의견 요청 작성
      * @description 작성중으로 저장한다. 첨부자료(OPINION_REQUEST)는 저장한 뒤 첨부 API 로 올린다.
      */
-    post: operations['create_4'];
+    post: operations['create_5'];
     delete?: never;
     options?: never;
     head?: never;
@@ -937,13 +981,13 @@ export interface paths {
      * 담당자 목록 조회
      * @description 한 업무의 담당자. 결제원 담당자와 결제원 운영·상황실·대외계는 전 기관을, 기관 담당자는 결제원 담당자와 자기 기관만 본다. 결제원이 맨 위, 기관 이름순, 주담당 → 부담당이다. 검색어·기관·직무·확인 필요 조건은 내부망 전용이라 인터넷망에서 쓰면 403 INTERNAL_ONLY.
      */
-    get: operations['list_9'];
+    get: operations['list_10'];
     put?: never;
     /**
      * 담당자 등록
      * @description 결제원 담당자는 결제원이나 그 업무 참가기관을 골라(내부망), 기관 담당자는 자기 기관에 후임자 등을 등록한다. 같은 기관·업무에 같은 이메일이 있으면 409 CONTACT_DUPLICATE.
      */
-    post: operations['create_5'];
+    post: operations['create_6'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1001,13 +1045,13 @@ export interface paths {
      * 채팅방 목록 조회
      * @description 한 업무 영역에서 내가 구성원인 방. 업무 단체방이 먼저다. 읽지 않은 메시지 수와 내 기관 멘션 여부가 함께 온다. 화면은 몇 초마다 다시 부른다.
      */
-    get: operations['list_10'];
+    get: operations['list_11'];
     put?: never;
     /**
      * 초대방 만들기
      * @description 그 업무 결제원 담당자가 만든다. 만든 사람은 저절로 들어가고, memberEmails 는 초대할 수 있는 사람이어야 한다(400 CHAT_INVITEE_INVALID).
      */
-    post: operations['create_6'];
+    post: operations['create_7'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1126,7 +1170,7 @@ export interface paths {
       cookie?: never;
     };
     /** 대상 하나의 첨부파일 목록(올린 순) */
-    get: operations['list_12'];
+    get: operations['list_13'];
     put?: never;
     /** 첨부파일 올리기 (multipart: file) */
     post: operations['upload'];
@@ -1511,7 +1555,7 @@ export interface paths {
      * 내 알림 목록 조회
      * @description 최신순. unreadOnly=true 면 읽지 않은 알림만 돌려준다.
      */
-    get: operations['list_5'];
+    get: operations['list_6'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1548,7 +1592,7 @@ export interface paths {
      * 발송함 조회
      * @description 최신순. 관리자만 볼 수 있다.
      */
-    get: operations['list_6'];
+    get: operations['list_7'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1662,7 +1706,7 @@ export interface paths {
       cookie?: never;
     };
     /** 받은 메일함 (받는 사람별 최근 메일 5건, 로그인 전에도 열림) */
-    get: operations['list_7'];
+    get: operations['list_8'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1679,7 +1723,7 @@ export interface paths {
       cookie?: never;
     };
     /** 데모 계정 목록 (역할별, 로그인 전에도 열림) */
-    get: operations['list_8'];
+    get: operations['list_9'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1836,7 +1880,7 @@ export interface paths {
       cookie?: never;
     };
     /** 대상 하나의 변경 이력(최신순) */
-    get: operations['list_11'];
+    get: operations['list_12'];
     put?: never;
     post?: never;
     delete?: never;
@@ -2196,9 +2240,37 @@ export interface components {
       selected: boolean;
       candidate: boolean;
     };
-    SuspensionSaveRequest: {
+    TargetWorkSaveRequest: {
+      name: string;
+      category?: string | null;
+      /** Format: int32 */
+      sortOrder: number;
+      active: boolean;
+      businesses: ('ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS')[];
+    };
+    SuspensionBusinessResponse: {
       /** @enum {string} */
-      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
+      code: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
+      slug: string;
+      label: string;
+    };
+    TargetWorkResponse: {
+      /** Format: int64 */
+      id: number;
+      name: string;
+      category?: string | null;
+      /** Format: int32 */
+      sortOrder: number;
+      active: boolean;
+      businesses: components['schemas']['SuspensionBusinessResponse'][];
+    };
+    SuspensionContactRequest: {
+      name: string;
+      phone: string;
+      email?: string | null;
+    };
+    SuspensionSaveRequest: {
+      targetWorkIds: number[];
       /** Format: int64 */
       organizationId?: number | null;
       /** Format: date-time */
@@ -2207,18 +2279,19 @@ export interface components {
       endAt: string;
       reason: string;
       kftcAction?: string | null;
-      contactName: string;
-      contactPhone: string;
-      contactEmail?: string | null;
+      contacts: components['schemas']['SuspensionContactRequest'][];
       extraNote?: string | null;
+    };
+    SuspensionContactResponse: {
+      name: string;
+      phone: string;
+      email?: string | null;
     };
     SuspensionDetailResponse: {
       /** Format: int64 */
       id: number;
-      /** @enum {string} */
-      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
-      businessSlug: string;
-      businessLabel: string;
+      targetWorks: components['schemas']['SuspensionTargetWorkResponse'][];
+      businesses: components['schemas']['SuspensionBusinessResponse'][];
       /** Format: int64 */
       organizationId: number;
       organizationName: string;
@@ -2234,9 +2307,7 @@ export interface components {
       statusLabel: string;
       reason: string;
       kftcAction?: string | null;
-      contactName: string;
-      contactPhone: string;
-      contactEmail?: string | null;
+      contacts: components['schemas']['SuspensionContactResponse'][];
       extraNote?: string | null;
       registrantName: string;
       registrantJobTitle?: string | null;
@@ -2267,6 +2338,11 @@ export interface components {
       roleLabel: string;
       /** Format: date-time */
       startedAt: string;
+    };
+    SuspensionTargetWorkResponse: {
+      /** Format: int64 */
+      id: number;
+      name: string;
     };
     OrganizationUpdateRequest: {
       name: string;
@@ -3006,9 +3082,8 @@ export interface components {
     SuspensionSummaryResponse: {
       /** Format: int64 */
       id: number;
-      /** @enum {string} */
-      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
-      businessLabel: string;
+      targetWorks: components['schemas']['SuspensionTargetWorkResponse'][];
+      businesses: components['schemas']['SuspensionBusinessResponse'][];
       /** Format: int64 */
       organizationId: number;
       organizationName: string;
@@ -3793,6 +3868,32 @@ export interface operations {
       };
     };
   };
+  update_2: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TargetWorkSaveRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['TargetWorkResponse'];
+        };
+      };
+    };
+  };
   get_3: {
     parameters: {
       query?: never;
@@ -3815,7 +3916,7 @@ export interface operations {
       };
     };
   };
-  update_2: {
+  update_3: {
     parameters: {
       query?: never;
       header?: never;
@@ -3883,7 +3984,7 @@ export interface operations {
       };
     };
   };
-  update_3: {
+  update_4: {
     parameters: {
       query?: never;
       header?: never;
@@ -3979,7 +4080,7 @@ export interface operations {
       };
     };
   };
-  update_4: {
+  update_5: {
     parameters: {
       query?: never;
       header?: never;
@@ -4047,7 +4148,7 @@ export interface operations {
       };
     };
   };
-  update_5: {
+  update_6: {
     parameters: {
       query?: never;
       header?: never;
@@ -4314,6 +4415,53 @@ export interface operations {
   };
   list_2: {
     parameters: {
+      query?: {
+        /** @description 사용 안 함까지 (관리자) */
+        includeInactive?: boolean;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['TargetWorkResponse'][];
+        };
+      };
+    };
+  };
+  create_2: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TargetWorkSaveRequest'];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['TargetWorkResponse'];
+        };
+      };
+    };
+  };
+  list_3: {
+    parameters: {
       query: {
         /** @description 업무 영역 slug (예: account-info) */
         business: string;
@@ -4342,7 +4490,7 @@ export interface operations {
       };
     };
   };
-  create_2: {
+  create_3: {
     parameters: {
       query?: never;
       header?: never;
@@ -4434,7 +4582,7 @@ export interface operations {
       };
     };
   };
-  list_3: {
+  list_4: {
     parameters: {
       query: {
         /** @description 업무 영역 slug (예: account-info) */
@@ -4553,7 +4701,7 @@ export interface operations {
       };
     };
   };
-  create_3: {
+  create_4: {
     parameters: {
       query?: never;
       header?: never;
@@ -4577,7 +4725,7 @@ export interface operations {
       };
     };
   };
-  list_4: {
+  list_5: {
     parameters: {
       query: {
         /** @description 업무 영역 slug (예: account-info) */
@@ -4604,7 +4752,7 @@ export interface operations {
       };
     };
   };
-  create_4: {
+  create_5: {
     parameters: {
       query?: never;
       header?: never;
@@ -5034,7 +5182,7 @@ export interface operations {
       };
     };
   };
-  list_9: {
+  list_10: {
     parameters: {
       query: {
         /** @description 업무 영역 slug (예: account-info) */
@@ -5068,7 +5216,7 @@ export interface operations {
       };
     };
   };
-  create_5: {
+  create_6: {
     parameters: {
       query?: never;
       header?: never;
@@ -5138,7 +5286,7 @@ export interface operations {
       };
     };
   };
-  list_10: {
+  list_11: {
     parameters: {
       query: {
         /** @description 먼저 보일 업무 영역 slug (예: account-info) */
@@ -5161,7 +5309,7 @@ export interface operations {
       };
     };
   };
-  create_6: {
+  create_7: {
     parameters: {
       query?: never;
       header?: never;
@@ -5329,7 +5477,7 @@ export interface operations {
       };
     };
   };
-  list_12: {
+  list_13: {
     parameters: {
       query: {
         ownerType:
@@ -5841,7 +5989,7 @@ export interface operations {
       };
     };
   };
-  list_5: {
+  list_6: {
     parameters: {
       query?: {
         /** @description 0부터 시작 */
@@ -5886,7 +6034,7 @@ export interface operations {
       };
     };
   };
-  list_6: {
+  list_7: {
     parameters: {
       query?: {
         /** @description 0부터 시작 */
@@ -6013,7 +6161,7 @@ export interface operations {
       };
     };
   };
-  list_7: {
+  list_8: {
     parameters: {
       query: {
         /** @description 받는 사람 이메일. 대소문자를 가리지 않는다 */
@@ -6036,7 +6184,7 @@ export interface operations {
       };
     };
   };
-  list_8: {
+  list_9: {
     parameters: {
       query?: never;
       header?: never;
@@ -6213,7 +6361,7 @@ export interface operations {
       };
     };
   };
-  list_11: {
+  list_12: {
     parameters: {
       query: {
         targetType:

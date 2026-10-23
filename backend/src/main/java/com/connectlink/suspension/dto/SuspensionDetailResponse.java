@@ -1,6 +1,5 @@
 package com.connectlink.suspension.dto;
 
-import com.connectlink.organization.Business;
 import com.connectlink.suspension.SuspensionPeriod;
 import com.connectlink.suspension.SuspensionStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -10,6 +9,9 @@ import java.util.List;
 /**
  * 일시중단 상세. 등록 양식 그대로와 검토·확정 기록, 지금 할 수 있는 일.
  *
+ * @param targetWorks 고른 대상 업무. 기준정보 순서
+ * @param businesses 관련 레일 업무. 업무 순서이고, 비면 결제원 운영·상황실·대외계가 맡는다
+ * @param contacts 기관 작업 담당자 연락처. 적은 순서
  * @param handover 결제원의 조치 및 인수인계 사항. 확정하면 생긴다
  * @param registrantJobTitle 등록한 사람의 그때 직급
  * @param confirmedByJobTitle 확정한 결제원 담당자의 그때 직급
@@ -17,9 +19,8 @@ import java.util.List;
  */
 public record SuspensionDetailResponse(
     Long id,
-    Business business,
-    String businessSlug,
-    String businessLabel,
+    List<SuspensionTargetWorkResponse> targetWorks,
+    List<SuspensionBusinessResponse> businesses,
     Long organizationId,
     String organizationName,
     LocalDateTime startAt,
@@ -30,9 +31,7 @@ public record SuspensionDetailResponse(
     String statusLabel,
     String reason,
     @Schema(nullable = true) String kftcAction,
-    String contactName,
-    String contactPhone,
-    @Schema(nullable = true) String contactEmail,
+    List<SuspensionContactResponse> contacts,
     @Schema(nullable = true) String extraNote,
     String registrantName,
     @Schema(nullable = true) String registrantJobTitle,

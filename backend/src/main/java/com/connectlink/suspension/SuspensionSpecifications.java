@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+import javax.persistence.criteria.Subquery;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -17,16 +19,31 @@ final class SuspensionSpecifications {
    * @param organizationCode 이 기관만(기관 담당자의 범위). 없으면 null
    * @param organizationId 기관별 이력에서 고른 기관. 없으면 null
    * @param period 시간 구분. 없으면 전부
+   * @param includeUnlinked 관련 레일 업무가 없는 건도 이 업무 영역에 넣을지
    */
   static Specification<Suspension> of(
       Business business,
       String organizationCode,
       Long organizationId,
       SuspensionPeriod period,
-      LocalDateTime now) {
+      LocalDateTime now,
+      boolean includeUnlinked) {
     return (root, query, cb) -> {
       List<Predicate> predicates = new ArrayList<>();
-      predicates.add(cb.equal(root.get("business"), business));
+      // 관련 레일 업무가 여럿이면 그중 하나가 이 업무면 든다.
+      Subquery<Long> affected = query.subquery(Long.class);
+      Root<SuspensionBusiness> sb = affected.from(SuspensionBusiness.class);
+      affected
+          .select(sb.get("id"))
+          .where(cb.equal(sb.get("suspension"), root), cb.equal(sb.get("business"), business));
+      if (includeUnlinked) {
+        Subquery<Long> linked = query.subquery(Long.class);
+        Root<SuspensionBusiness> any = linked.from(SuspensionBusiness.class);
+        linked.select(any.get("id")).where(cb.equal(any.get("suspension"), root));
+        predicates.add(cb.or(cb.exists(affected), cb.not(cb.exists(linked))));
+      } else {
+        predicates.add(cb.exists(affected));
+      }
       if (organizationCode != null) {
         predicates.add(cb.equal(root.get("organization").get("code"), organizationCode));
       }
@@ -55,13 +72,19 @@ final class SuspensionSpecifications {
             cb.lessThan(root.get("startAt"), to));
   }
 
-  /** 기관 이름이나 중단 이유에 검색어가 든 건. */
+  /** 기관 이름, 중단 이유, 고른 대상 업무 이름에 검색어가 든 건. */
   static Specification<Suspension> matching(String keyword) {
     String pattern = "%" + keyword.trim().toLowerCase() + "%";
-    return (root, query, cb) ->
-        cb.or(
-            cb.like(cb.lower(root.get("organization").get("name")), pattern),
-            cb.like(cb.lower(root.get("reason")), pattern));
+    return (root, query, cb) -> {
+      Subquery<Long> work = query.subquery(Long.class);
+      Root<SuspensionTargetWork> tw = work.from(SuspensionTargetWork.class);
+      work.select(tw.get("id"))
+          .where(cb.equal(tw.get("suspension"), root), cb.like(cb.lower(tw.get("name")), pattern));
+      return cb.or(
+          cb.like(cb.lower(root.get("organization").get("name")), pattern),
+          cb.like(cb.lower(root.get("reason")), pattern),
+          cb.exists(work));
+    };
   }
 
   /** 진행 중은 먼저 끝나는 순, 예정은 먼저 시작하는 순, 지난 건과 전체는 최근 시작한 순. */

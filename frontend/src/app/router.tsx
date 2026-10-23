@@ -18,6 +18,7 @@ import { OpinionDetailPage } from '../features/opinion/pages/OpinionDetailPage';
 import { OpinionEditorPage } from '../features/opinion/pages/OpinionEditorPage';
 import { OpinionListPage } from '../features/opinion/pages/OpinionListPage';
 import { SuspensionDetailPage } from '../features/suspension/pages/SuspensionDetailPage';
+import { TargetWorkAdminPage } from '../features/suspension/pages/TargetWorkAdminPage';
 import { SuspensionEditorPage } from '../features/suspension/pages/SuspensionEditorPage';
 import { SuspensionListPage } from '../features/suspension/pages/SuspensionListPage';
 import { TestPlanDetailPage } from '../features/testplan/pages/TestPlanDetailPage';
@@ -86,7 +87,11 @@ export const router = createBrowserRouter([
               { path: 'update-campaigns', element: <UpdateCampaignLegacyRedirect /> },
               {
                 element: <AdminGuard adminOnly />,
-                children: [{ path: 'organizations', element: <OrganizationAdminPage /> }],
+                children: [
+                  { path: 'organizations', element: <OrganizationAdminPage /> },
+                  // 라. 일시중단 대상 업무 기준정보.
+                  { path: 'target-works', element: <TargetWorkAdminPage /> },
+                ],
               },
             ],
           },

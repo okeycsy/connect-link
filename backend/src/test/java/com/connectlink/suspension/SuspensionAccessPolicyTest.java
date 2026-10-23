@@ -6,10 +6,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.connectlink.auth.CurrentUser;
 import com.connectlink.auth.TestUsers;
 import com.connectlink.organization.Business;
+import com.connectlink.organization.ItRole;
 import com.connectlink.organization.JobRole;
 import com.connectlink.organization.Organization;
 import com.connectlink.organization.OrganizationType;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
@@ -46,18 +48,22 @@ class SuspensionAccessPolicyTest {
 
   /** 김민준이 올린 KB국민은행 계좌통합관리 일시중단. */
   private static Suspension ganaSuspension() {
+    return ganaSuspension(Set.of(Business.ACCOUNT_INFO));
+  }
+
+  /** 김민준이 올린 KB국민은행 일시중단. 멈추는 업무를 고른다. */
+  private static Suspension ganaSuspension(Set<Business> businesses) {
     LocalDateTime start = LocalDateTime.now().plusDays(1);
     return Suspension.register(
         new Organization("004", "KB국민은행", OrganizationType.FINANCE_ORGANIZATION, null),
         new Suspension.Content(
-            Business.ACCOUNT_INFO,
+            List.of(),
+            businesses,
             start,
             start.plusHours(2),
             "점검",
             null,
-            "김민준",
-            "010-0000-2101",
-            null,
+            List.of(new Suspension.ContactInfo("김민준", "010-0000-2101", null)),
             null),
         "kim.minjun@kb.example.com",
         "김민준",
@@ -86,26 +92,25 @@ class SuspensionAccessPolicyTest {
   }
 
   @Test
-  void 참가기관_담당자는_자기_기관이_참여하는_업무면_맡지_않아도_등록한다() {
+  void 참가기관_담당자는_자기_기관으로_등록한다() {
     Organization kb = participating("004", "KB국민은행");
     assertThat(policy.canRegister(TestUsers.GANA_MEMBER)).isTrue();
-    assertThat(policy.canRegister(TestUsers.GANA_MEMBER, kb, Business.ACCOUNT_INFO)).isTrue();
-    assertThat(policy.canRegister(TestUsers.GANA_MEMBER, kb, Business.CMS)).isTrue();
+    assertThat(policy.canRegister(TestUsers.GANA_MEMBER, kb)).isTrue();
   }
 
   @Test
-  void 기관이_참여하지_않는_업무나_다른_기관으로는_등록하지_못한다() {
-    Organization kb = participating("004", "KB국민은행");
-    assertThat(policy.canRegister(TestUsers.GANA_MEMBER, kb, Business.LOAN_TRANSFER)).isFalse();
+  void 참가기관_담당자는_다른_기관으로_등록하지_못한다() {
     Organization shinhan = participating("088", "신한은행");
-    assertThat(policy.canRegister(TestUsers.GANA_MEMBER, shinhan, Business.ACCOUNT_INFO)).isFalse();
+    assertThat(policy.canRegister(TestUsers.GANA_MEMBER, shinhan)).isFalse();
   }
 
   @Test
-  void 결제원은_맡지_않은_업무라도_기관이_참여하면_등록한다() {
-    Organization kb = participating("004", "KB국민은행");
-    assertThat(policy.canRegister(TestUsers.KFTC_CMS, kb, Business.ACCOUNT_INFO)).isTrue();
-    assertThat(policy.canRegister(TestUsers.KFTC_CMS, kb, Business.LOAN_TRANSFER)).isFalse();
+  void 결제원은_어느_참가기관이나_골라_등록한다() {
+    assertThat(policy.canRegister(TestUsers.KFTC_CMS, participating("004", "KB국민은행"))).isTrue();
+    assertThat(
+            policy.canRegister(
+                TestUsers.KFTC_CMS, new Organization("KFTC", "금융결제원", OrganizationType.KFTC, null)))
+        .isFalse();
   }
 
   @Test
@@ -243,5 +248,57 @@ class SuspensionAccessPolicyTest {
     assertThat(policy.canSendDigest(TestUsers.GANA_MEMBER)).isFalse();
     assertThatThrownBy(() -> policy.ensureCanSendDigest(TestUsers.GANA_MEMBER))
         .isInstanceOf(AccessDeniedException.class);
+  }
+
+  @Test
+  void 여러_업무를_멈추는_건은_그중_한_업무의_결제원_담당자가_다룬다() {
+    Suspension s = ganaSuspension(Set.of(Business.ACCOUNT_INFO, Business.CMS));
+    assertThat(policy.canView(TestUsers.KFTC_CMS, s)).isTrue();
+    assertThat(policy.canEdit(TestUsers.KFTC_CMS, s)).isTrue();
+    assertThat(policy.canReview(TestUsers.KFTC_CMS, s)).isTrue();
+  }
+
+  @Test
+  void 여러_업무를_멈추는_건이라도_어느_업무도_맡지_않은_결제원_계정은_다루지_못한다() {
+    Suspension s = ganaSuspension(Set.of(Business.ACCOUNT_INFO, Business.AUTO_TRANSFER));
+    assertThat(policy.canView(TestUsers.KFTC_CMS, s)).isFalse();
+    assertThat(policy.canReview(TestUsers.KFTC_CMS, s)).isFalse();
+  }
+
+  /** 결제원 운영 담당자(계좌통합관리). 레일과 무관한 일시중단을 맡는다. */
+  private static final CurrentUser KFTC_OPS =
+      new CurrentUser(
+          "kim.ops@kftc.example.com",
+          "김태호",
+          "KFTC",
+          "금융결제원",
+          OrganizationType.KFTC,
+          false,
+          Set.of(Business.ACCOUNT_INFO),
+          JobRole.IT,
+          Set.of(ItRole.OPS),
+          "차장");
+
+  @Test
+  void 관련_레일_업무가_없는_건은_결제원_운영_상황실_대외계와_관리자가_다룬다() {
+    Suspension s = ganaSuspension(Set.of());
+    assertThat(policy.canReview(KFTC_OPS, s)).isTrue();
+    assertThat(policy.canView(KFTC_OPS, s)).isTrue();
+    assertThat(policy.canReview(TestUsers.ADMIN, s)).isTrue();
+    // 등록한 기관 담당자는 자기 기관 건이라 본다.
+    assertThat(policy.canView(TestUsers.GANA_MEMBER, s)).isTrue();
+  }
+
+  @Test
+  void 관련_레일_업무가_없는_건은_현업_결제원_담당자가_다루지_못한다() {
+    Suspension s = ganaSuspension(Set.of());
+    assertThat(policy.canView(TestUsers.KFTC_CMS, s)).isFalse();
+    assertThat(policy.canReview(TestUsers.KFTC_ACCOUNT_INFO, s)).isFalse();
+  }
+
+  @Test
+  void 대상_업무_기준정보는_관리자만_관리한다() {
+    assertThat(policy.canManageTargetWorks(TestUsers.ADMIN)).isTrue();
+    assertThat(policy.canManageTargetWorks(TestUsers.KFTC_ACCOUNT_INFO)).isFalse();
   }
 }

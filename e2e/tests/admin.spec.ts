@@ -109,3 +109,37 @@ test.describe('관리 > 기관·업무 기준정보', () => {
     expect(paths).toContain('/api/v1/organizations/{id}');
   });
 });
+
+test.describe('관리 > 대상 업무 기준정보', () => {
+  test('관리자가 일시중단 대상 업무를 찾고 더하면 등록 화면에서 고를 수 있다', async ({ page }) => {
+    await page.goto('/account-info/admin');
+    await page.getByTestId('admin-menu').getByRole('link', { name: /대상 업무 기준정보/ }).click();
+    await expect(page).toHaveURL(/\/account-info\/admin\/target-works$/);
+    const table = page.getByTestId('target-work-table');
+    await expect(table.getByRole('button', { name: '타행환공동망' })).toContainText('없음');
+    await page.screenshot({ path: 'screenshots/admin-target-works.png', fullPage: true });
+
+    await page.getByLabel('대상 업무 검색').fill('지로');
+    await expect(table.getByRole('button', { name: '타행환공동망' })).toHaveCount(0);
+    await page.getByLabel('대상 업무 검색').fill('');
+
+    const name = `E2E 대상 업무 ${Date.now()}`;
+    await page.getByRole('button', { name: '대상 업무 추가' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByLabel(/업무 이름/).fill(name);
+    await dialog.getByLabel(/묶음/).fill('지급결제');
+    await dialog.getByLabel('대출이동').check();
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: 'screenshots/admin-target-work-new.png' });
+    await dialog.getByRole('button', { name: '더하기' }).click();
+    await expect(page.getByText('대상 업무를 더했습니다.')).toBeVisible();
+    await expect(table.getByRole('button', { name })).toContainText('대출이동');
+
+    // 더한 업무는 일시중단 등록에서 찾아 고를 수 있다.
+    await page.goto('/account-info/suspensions/new');
+    await page.getByRole('textbox', { name: '대상 업무 찾기' }).fill('E2E 대상');
+    await expect(
+      page.getByTestId('suspension-businesses').getByRole('checkbox', { name }),
+    ).toBeVisible();
+  });
+});

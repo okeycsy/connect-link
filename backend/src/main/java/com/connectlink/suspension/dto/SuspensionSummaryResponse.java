@@ -1,16 +1,16 @@
 package com.connectlink.suspension.dto;
 
-import com.connectlink.organization.Business;
 import com.connectlink.suspension.SuspensionPeriod;
 import com.connectlink.suspension.SuspensionStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /** 일시중단 목록 한 줄. 등록한 사람은 그때의 이름·직급으로 "결제원(김민찬 과장)"처럼 보인다. */
 public record SuspensionSummaryResponse(
     Long id,
-    Business business,
-    String businessLabel,
+    List<SuspensionTargetWorkResponse> targetWorks,
+    List<SuspensionBusinessResponse> businesses,
     Long organizationId,
     String organizationName,
     LocalDateTime startAt,

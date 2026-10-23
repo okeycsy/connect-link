@@ -2,8 +2,11 @@ package com.connectlink.suspension;
 
 import com.connectlink.auth.CurrentUser;
 import com.connectlink.organization.Business;
+import com.connectlink.organization.ItRole;
 import com.connectlink.organization.Organization;
 import com.connectlink.organization.OrganizationType;
+import java.util.EnumSet;
+import java.util.Set;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
 
@@ -12,10 +15,13 @@ import org.springframework.stereotype.Component;
  *
  * <ul>
  *   <li>결제원 담당자(그 업무를 맡은 결제원 계정과 관리자): 그 업무의 모든 기관 일시중단을 보고 등록하고, 기관이 올린 것도 고친다. 확인을 시작하고 조치·인수인계
- *       사항을 써서 확정한다.
- *   <li>기관 담당자(그 업무를 맡은 참가기관 계정): 자기 기관의 그 업무 일시중단을 본다. 본인이 올린 것만 고치고 지운다.
- *   <li>등록은 사람이 아니라 기관 기준이다. 참가기관 계정은 자기 기관이 참여하는 업무 어디에나, 결제원 계정은 고른 기관이 참여하는 업무 어디에나 올린다(대외계·네트워크
- *       작업은 한 업무에 국한되지 않는다). 등록한 사람은 맡지 않은 업무의 건이라도 자기가 올린 건을 보고 고친다.
+ *       사항을 써서 확정한다. 일시중단의 업무는 고른 대상 업무(기준정보)의 관련 레일 업무이고, 여러 업무면 그중 하나라도 맡은 결제원 담당자가 다룬다.
+ *   <li>관련 레일 업무가 없는 일시중단(레일과 무관한 대상 업무만 고른 건)은 결제원 운영·상황실·대외계와 관리자가 다룬다.
+ *   <li>기관 담당자(그 업무를 맡은 참가기관 계정): 자기 기관의 그 업무 일시중단을 본다(여러 업무를 멈추는 건은 그중 하나라도 맡으면). 본인이 올린 것만 고치고
+ *       지운다.
+ *   <li>등록은 사람이 아니라 기관 기준이다. 참가기관 계정은 자기 기관으로, 결제원 계정은 참가기관을 골라 올리고, 대상 업무는 맡은 업무와 상관없이 고른다. 등록한
+ *       사람은 맡지 않은 업무의 건이라도 자기가 올린 건을 보고 고친다.
+ *   <li>대상 업무 기준정보는 관리자가 관리한다.
  *   <li>지우기는 등록한 본인만 한다(결제원 담당자도 자기가 올린 것만). 완료한 건은 아무도 고치거나 지우지 않는다.
  *   <li>이용기관 담당자는 쓰지 않는다(명세가 정하기 전까지, CLAUDE.md 용어집).
  * </ul>
@@ -29,12 +35,38 @@ public class SuspensionAccessPolicy {
   static final String DELETE_DENIED = "일시중단은 등록한 본인만 지웁니다.";
   static final String REVIEW_DENIED = "그 업무의 결제원 담당자만 확인하고 확정합니다.";
   static final String DIGEST_DENIED = "전 영업일 취합은 결제원 담당자만 보냅니다.";
+  static final String TARGET_WORK_DENIED = "대상 업무 기준정보는 관리자만 관리합니다.";
+
+  /** 레일과 무관한 일시중단을 맡는 결제원 전산 세부 직무(운영·상황실·대외계). */
+  private static final Set<ItRole> ALL_BUSINESS_ROLES =
+      EnumSet.of(ItRole.OPS, ItRole.CONTROL_ROOM, ItRole.EXTERNAL_LINK);
 
   /** 이 업무의 일시중단을 결제원 담당자로서 다루는지(전 기관 조회, 수정, 확인·확정). */
   public boolean canManage(CurrentUser user, Business business) {
     return user.admin()
         || (user.organizationType() == OrganizationType.KFTC
             && user.businesses().contains(business));
+  }
+
+  /** 이 일시중단을 결제원 담당자로서 다루는지. 관련 레일 업무 중 하나라도 맡았거나, 관련 업무가 없는 건이면 운영·상황실·대외계다. */
+  public boolean canManage(CurrentUser user, Suspension suspension) {
+    Set<Business> businesses = suspension.getBusinesses();
+    if (businesses.isEmpty()) {
+      return handlesUnlinked(user);
+    }
+    return businesses.stream().anyMatch(b -> canManage(user, b));
+  }
+
+  /** 관련 레일 업무가 없는 일시중단을 맡는지. 관리자와 결제원 운영·상황실·대외계다. */
+  public boolean handlesUnlinked(CurrentUser user) {
+    return user.admin()
+        || (user.organizationType() == OrganizationType.KFTC
+            && user.itRoles().stream().anyMatch(ALL_BUSINESS_ROLES::contains));
+  }
+
+  /** 대상 업무 기준정보를 관리하는지. 관리자다. */
+  public boolean canManageTargetWorks(CurrentUser user) {
+    return user.admin();
   }
 
   /** 이 업무에서 기관 담당자로서 자기 기관 일시중단을 다루는지. 참가기관의 그 업무 담당자다. */
@@ -55,9 +87,9 @@ public class SuspensionAccessPolicy {
         || user.organizationType() == OrganizationType.FINANCE_ORGANIZATION;
   }
 
-  /** 이 기관의 이 업무로 올릴 수 있는지. 기관이 그 업무에 참여해야 하고, 참가기관 계정은 자기 기관만이다. */
-  public boolean canRegister(CurrentUser user, Organization organization, Business business) {
-    if (!organization.participatesIn(business)) {
+  /** 이 기관으로 올릴 수 있는지. 결제원 계정은 어느 참가기관이나, 참가기관 계정은 자기 기관만이다. 대상 업무는 맡은 업무와 상관없다. */
+  public boolean canRegister(CurrentUser user, Organization organization) {
+    if (organization.getType() != OrganizationType.FINANCE_ORGANIZATION) {
       return false;
     }
     return registersAsKftc(user)
@@ -66,7 +98,7 @@ public class SuspensionAccessPolicy {
   }
 
   public boolean canView(CurrentUser user, Suspension suspension) {
-    return canManage(user, suspension.getBusiness())
+    return canManage(user, suspension)
         || isOwnOrganization(user, suspension)
         || isActiveRegistrant(user, suspension);
   }
@@ -76,7 +108,7 @@ public class SuspensionAccessPolicy {
     if (suspension.getStatus() == SuspensionStatus.COMPLETED) {
       return false;
     }
-    return canManage(user, suspension.getBusiness()) || isActiveRegistrant(user, suspension);
+    return canManage(user, suspension) || isActiveRegistrant(user, suspension);
   }
 
   /** 지울 수 있는지. 등록한 본인이 아직 같은 쪽(결제원, 그 기관)에 있을 때만. */
@@ -88,8 +120,7 @@ public class SuspensionAccessPolicy {
 
   /** 확인을 시작하거나 조치·인수인계 사항을 써서 확정할 수 있는지. */
   public boolean canReview(CurrentUser user, Suspension suspension) {
-    return suspension.getStatus() != SuspensionStatus.COMPLETED
-        && canManage(user, suspension.getBusiness());
+    return suspension.getStatus() != SuspensionStatus.COMPLETED && canManage(user, suspension);
   }
 
   /** 전 영업일 취합을 수동으로 보낼 수 있는지. 취합은 전 업무를 묶으므로 결제원 담당자 누구나와 관리자다. */
@@ -98,8 +129,12 @@ public class SuspensionAccessPolicy {
   }
 
   private boolean isOwnOrganization(CurrentUser user, Suspension suspension) {
-    return isOrganizationMember(user, suspension.getBusiness())
-        && suspension.getOrganization().getCode().equals(user.organizationCode());
+    Set<Business> businesses = suspension.getBusinesses();
+    boolean member =
+        businesses.isEmpty()
+            ? !user.admin() && user.organizationType() == OrganizationType.FINANCE_ORGANIZATION
+            : businesses.stream().anyMatch(b -> isOrganizationMember(user, b));
+    return member && suspension.getOrganization().getCode().equals(user.organizationCode());
   }
 
   private static boolean isRegistrant(CurrentUser user, Suspension suspension) {
@@ -124,8 +159,8 @@ public class SuspensionAccessPolicy {
     }
   }
 
-  public void ensureCanRegister(CurrentUser user, Organization organization, Business business) {
-    if (!canRegister(user, organization, business)) {
+  public void ensureCanRegister(CurrentUser user, Organization organization) {
+    if (!canRegister(user, organization)) {
       throw new AccessDeniedException(REGISTER_DENIED);
     }
   }

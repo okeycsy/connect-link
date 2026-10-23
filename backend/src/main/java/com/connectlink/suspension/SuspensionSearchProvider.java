@@ -47,20 +47,30 @@ public class SuspensionSearchProvider implements SearchProvider {
     LocalDateTime now = LocalDateTime.now(clock);
     return repository
         .findAll(
-            SuspensionSpecifications.of(business, organizationCode, null, null, now)
+            SuspensionSpecifications.of(
+                    business,
+                    organizationCode,
+                    null,
+                    null,
+                    now,
+                    organizationCode != null || accessPolicy.handlesUnlinked(user))
                 .and(SuspensionSpecifications.matching(query)),
             PageRequest.of(0, limit, Sort.by(Sort.Order.desc("startAt"), Sort.Order.desc("id"))))
         .stream()
         .map(
             s ->
                 new SearchHit(
-                    s.getOrganization().getName() + " 일시중단 · " + s.getReason(),
+                    s.getOrganization().getName()
+                        + " 일시중단 · "
+                        + s.targetWorkNames()
+                        + " · "
+                        + s.getReason(),
                     s.periodAt(now).getLabel()
                         + " · "
                         + s.getStatus().getLabel()
                         + " · "
                         + SuspensionNotifier.periodText(s.getStartAt(), s.getEndAt()),
-                    SuspensionNotifier.linkOf(s)))
+                    SuspensionNotifier.linkOf(s, business)))
         .toList();
   }
 }
