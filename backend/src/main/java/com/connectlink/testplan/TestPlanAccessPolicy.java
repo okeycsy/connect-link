@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
  *       수행률·특이사항)을 남기고, 알림 대상을 정한다. 운영·개발·분석·사업부서 담당자의 권한은 같아서 직무로 나누지 않는다.
  *   <li>기관 담당자(그 업무를 맡은 참가기관 계정): 자기 기관이 대상인 테스트만 보고, 자기 기관 결과만 보고 등록한다. 다른 기관 결과는 볼 수 없다.
  *   <li>결제원 담당자는 기관 대신 결과를 등록하지 않는다.
+ *   <li>결제원 의견 아래 답글은 결제원 담당자와 그 기관 담당자가 이어서 단다. 지우는 것은 쓴 사람만이다.
  *   <li>이용기관 담당자는 쓰지 않는다(명세가 정하기 전까지, CLAUDE.md 용어집).
  * </ul>
  */
@@ -25,6 +26,8 @@ public class TestPlanAccessPolicy {
   static final String TARGET_DENIED = "자기 기관의 테스트 결과만 볼 수 있습니다.";
   static final String REPORT_DENIED = "대상 기관의 그 업무 담당자만 자기 기관 결과를 등록합니다.";
   static final String FEEDBACK_DENIED = "그 업무의 결제원 담당자만 결과에 의견을 남깁니다.";
+  static final String COMMENT_DENIED = "그 업무의 결제원 담당자와 그 기관 담당자만 답글을 답니다.";
+  static final String COMMENT_DELETE_DENIED = "자기가 쓴 답글만 지울 수 있습니다.";
 
   /** 이 업무의 기관 테스트를 결제원 담당자로서 다루는지(전부 조회, 만들기·고치기·지우기, 의견, 알림 설정). */
   public boolean canManage(CurrentUser user, Business business) {
@@ -69,6 +72,17 @@ public class TestPlanAccessPolicy {
     return canManage(user, plan.getBusiness());
   }
 
+  /** 대상 기관 한 곳의 결과에 답글을 달 수 있는지. 그 업무 결제원 담당자와 그 기관의 그 업무 담당자. */
+  public boolean canComment(CurrentUser user, TestPlanTarget target) {
+    return canFeedback(user, target.getPlan()) || canReport(user, target);
+  }
+
+  /** 답글을 지울 수 있는지. 지금도 답글을 달 수 있는, 그 답글을 쓴 사람만. */
+  public boolean canDeleteComment(CurrentUser user, TestItemComment comment) {
+    return canComment(user, comment.getResult().getTarget())
+        && comment.getAuthorEmail().equals(user.email());
+  }
+
   public void ensureCanManage(CurrentUser user, Business business) {
     if (!canManage(user, business)) {
       throw new AccessDeniedException(MANAGE_DENIED);
@@ -96,6 +110,18 @@ public class TestPlanAccessPolicy {
   public void ensureCanFeedback(CurrentUser user, TestPlan plan) {
     if (!canFeedback(user, plan)) {
       throw new AccessDeniedException(FEEDBACK_DENIED);
+    }
+  }
+
+  public void ensureCanComment(CurrentUser user, TestPlanTarget target) {
+    if (!canComment(user, target)) {
+      throw new AccessDeniedException(COMMENT_DENIED);
+    }
+  }
+
+  public void ensureCanDeleteComment(CurrentUser user, TestItemComment comment) {
+    if (!canDeleteComment(user, comment)) {
+      throw new AccessDeniedException(COMMENT_DELETE_DENIED);
     }
   }
 }
