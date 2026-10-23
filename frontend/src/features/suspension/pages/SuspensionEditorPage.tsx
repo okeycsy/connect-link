@@ -29,7 +29,6 @@ import { canViewBusiness, useMe } from '../../account/hooks';
 import { AttachmentPanel } from '../../attachment/components/AttachmentPanel';
 import { PendingAttachments } from '../../attachment/components/PendingAttachments';
 import { attachmentKeys, uploadAttachmentFile } from '../../attachment/hooks';
-import { type BusinessCode, useBusinesses, useCurrentBusiness } from '../../organization/hooks';
 import { SuspensionBusinessPicker } from '../components/SuspensionBusinessPicker';
 import {
   type SuspensionDetail,
@@ -38,6 +37,7 @@ import {
   useCreateSuspension,
   useSuspension,
   useSuspensionRegistrableOrganizations,
+  useTargetWorks,
   useUpdateSuspension,
 } from '../hooks';
 
@@ -53,7 +53,8 @@ interface ContactDraft {
 }
 
 interface Values {
-  businesses: BusinessCode[];
+  /** 고른 대상 업무 id(문자열). */
+  targetWorkIds: string[];
   organizationId: string | null;
   startAt: string | null;
   endAt: string | null;
@@ -74,8 +75,8 @@ function contactDraft(name = '', phone = '', email = ''): ContactDraft {
 
 /**
  * 일시중단 등록과 고치기. 주소에 :id 가 있으면 고치기다. 명세의 정해진 양식(일시, 대상 업무, 중단 이유, 결제원 조치사항,
- * 담당자 연락처, 공문, 추가 사항)을 그대로 받는다. 기관 담당자는 자기 기관으로, 결제원 담당자는 기관을 골라 등록한다. 등록은 사람이 아니라 기관
- * 기준이라 대상 업무는 올리는 사람의 담당 업무가 아니라 그 기관이 참여하는 업무 전부에서 고른다(대외계·네트워크 작업은 한 업무에 국한되지 않는다).
+ * 담당자 연락처, 공문, 추가 사항)을 그대로 받는다. 기관 담당자는 자기 기관으로, 결제원 담당자는 기관을 골라 등록한다. 대상 업무는 레일(업무
+ * 영역)과 별개인 대상 업무 기준정보에서 올리는 사람의 담당 업무와 상관없이 고른다. 수십 개라 찾기로 고른다.
  */
 export function SuspensionEditorPage() {
   const { business: slug = '', id } = useParams<{ business: string; id?: string }>();
@@ -136,9 +137,8 @@ function toPicker(value: string | null | undefined): string | null {
 function SuspensionEditor({ slug, existing }: { slug: string; existing?: SuspensionDetail }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const current = useCurrentBusiness();
   const { data: me } = useMe();
-  const { data: allBusinesses } = useBusinesses();
+  const targetWorks = useTargetWorks();
   const kftcSide = registersAsKftc(me);
   const organizations = useSuspensionRegistrableOrganizations();
   const create = useCreateSuspension();
@@ -150,11 +150,7 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
 
   const form = useForm<Values>({
     initialValues: {
-      businesses: existing
-        ? existing.businesses.map((b) => b.code)
-        : current?.code
-          ? [current.code]
-          : [],
+      targetWorkIds: existing ? existing.targetWorks.map((w) => String(w.id)) : [],
       organizationId: existing ? String(existing.organizationId) : null,
       startAt: toPicker(existing?.startAt),
       endAt: toPicker(existing?.endAt),
@@ -168,32 +164,17 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
     },
   });
 
-  // 대상 업무는 그 기관이 참여하는 업무 전부다. 고치기는 등록한 기관, 결제원은 고른 기관, 기관 담당자는 자기 기관이다.
-  const organizationId = existing
-    ? existing.organizationId
-    : kftcSide
-      ? Number(form.values.organizationId)
-      : organizations.data?.[0]?.id;
-  const selectedOrganization = organizations.data?.find((o) => o.id === organizationId);
-  const businessOptions = (allBusinesses ?? [])
-    .filter((b) => selectedOrganization?.businesses.includes(b.code))
-    .map((b) => ({ value: b.code, label: b.label }));
-  const businessCodes = businessOptions.map((b) => b.value).join(',');
-
-  // 기관을 바꾸면 그 기관이 참여하지 않는 업무는 고른 목록에서 뺀다. 남는 업무가 없으면 지금 업무 영역(참여하면)이나 첫 업무를 고른다.
-  useEffect(() => {
-    if (!selectedOrganization) return;
-    const codes = businessCodes.split(',').filter(Boolean) as BusinessCode[];
-    const kept = form.values.businesses.filter((b) => codes.includes(b));
-    if (kept.length === form.values.businesses.length && kept.length > 0) return;
-    if (kept.length > 0) {
-      form.setFieldValue('businesses', kept);
-      return;
+  // 고를 수 있는 대상 업무는 사용 중인 기준정보 전부(기준정보 순서)다. 고치기라면 지금은 쓰지 않는 업무라도 이미 고른 것은 남긴다.
+  const workOptions = (targetWorks.data ?? []).map((w) => ({
+    value: String(w.id),
+    label: w.name,
+    group: w.category,
+  }));
+  for (const w of existing?.targetWorks ?? []) {
+    if (!workOptions.some((o) => o.value === String(w.id))) {
+      workOptions.push({ value: String(w.id), label: w.name, group: '쓰지 않는 업무' });
     }
-    const fallback = current?.code && codes.includes(current.code) ? current.code : codes[0];
-    form.setFieldValue('businesses', fallback ? [fallback] : []);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedOrganization?.id, businessCodes]);
+  }
 
   // 서버 검증 오류는 필드 메시지 그대로 칸 아래에 보인다.
   useEffect(() => {
@@ -229,8 +210,10 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
 
   const submit = (values: Values) => {
     const body = {
-      // 비어 있으면 서버가 "대상 업무를 하나 이상 골라 주세요." 를 필드 메시지로 알려 준다. 업무 순서로 보낸다.
-      businesses: businessOptions.map((b) => b.value).filter((b) => values.businesses.includes(b)),
+      // 비어 있으면 서버가 "대상 업무를 하나 이상 골라 주세요." 를 필드 메시지로 알려 준다. 기준정보 순서로 보낸다.
+      targetWorkIds: workOptions
+        .filter((o) => values.targetWorkIds.includes(o.value))
+        .map((o) => Number(o.value)),
       organizationId: values.organizationId ? Number(values.organizationId) : null,
       // 서버는 시간대 없는 일시(서버 시간대 Asia/Seoul)를 받는다. 빈 값은 서버가 필드 메시지로 알려 준다.
       startAt: values.startAt ? dayjs(values.startAt).format('YYYY-MM-DDTHH:mm:ss') : '',
@@ -244,7 +227,7 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
       })),
       extraNote: values.extraNote || null,
     };
-    // 지금 업무 영역이 대상 업무에 들면 그대로, 아니면 맡은 대상 업무 영역에서 연다. 맡은 업무가 없으면 지금 업무 영역에서 연다(상세는 업무 영역과
+    // 지금 업무 영역이 관련 업무에 들면 그대로, 아니면 맡은 관련 업무 영역에서 연다. 맡은 업무가 없으면 지금 업무 영역에서 연다(상세는 업무 영역과
     // 상관없이 열린다).
     const detailPath = (d: SuspensionDetail) => {
       const slugs = d.businesses.map((b) => b.slug);
@@ -277,7 +260,7 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
               ? kftcSide
                 ? '고치면 이 업무 결제원 담당자에게 매터모스트 알림이 갑니다. 기관이 올린 건이면 등록한 사람에게도 알립니다.'
                 : '고치면 결제원 담당자에게 매터모스트 알림이 가고, 확인이 시작된 건은 다시 검토 대기로 돌아갑니다.'
-              : '정해진 양식으로 등록합니다. 저장하면 검토 대기가 되고 고른 업무의 결제원 담당자(업무·개발·운영)에게 메일과 매터모스트 알림이 갑니다.'
+              : '정해진 양식으로 등록합니다. 저장하면 검토 대기가 되고 고른 대상 업무와 관련된 업무의 결제원 담당자에게 메일과 매터모스트 알림이 갑니다. 관련 업무가 없는 대상 업무는 결제원 운영·상황실·대외계가 받습니다.'
           }
           actions={
             <>
@@ -330,16 +313,12 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
               )}
             </SimpleGrid>
             <SuspensionBusinessPicker
-              options={businessOptions}
-              value={form.values.businesses}
-              onChange={(v) => form.setFieldValue('businesses', v)}
-              disabled={!selectedOrganization}
-              error={form.errors.businesses}
-              description={
-                selectedOrganization
-                  ? '이 기관이 참여하는 업무입니다. 함께 멈추는 업무를 모두 고르세요.'
-                  : '기관을 먼저 고르세요.'
-              }
+              options={workOptions}
+              value={form.values.targetWorkIds}
+              onChange={(v) => form.setFieldValue('targetWorkIds', v)}
+              disabled={targetWorks.isPending}
+              error={form.errors.targetWorkIds}
+              description="함께 멈추는 업무를 모두 고르세요. 맡은 업무가 아니어도 고를 수 있습니다."
             />
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
               <DateTimePicker

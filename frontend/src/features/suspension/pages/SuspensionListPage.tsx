@@ -291,6 +291,9 @@ function SuspensionTable({
               <Text size="md" fw={600}>
                 {r.organizationName}
               </Text>
+              <Text size="xs" c="dimmed" lineClamp={1}>
+                {r.targetWorks.map((w) => w.name).join(', ')}
+              </Text>
             </Table.Td>
             <Table.Td data-label="중단 일시">
               <Group gap={6} wrap="nowrap">

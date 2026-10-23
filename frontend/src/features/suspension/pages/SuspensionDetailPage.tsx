@@ -95,7 +95,7 @@ function SuspensionView({ slug, suspension }: { slug: string; suspension: Suspen
         title={`${suspension.organizationName} 일시중단`}
         description={
           <>
-            {suspension.businesses.map((b) => b.label).join(', ')} · 등록{' '}
+            {suspension.targetWorks.map((w) => w.name).join(', ')} · 등록{' '}
             {formatAuthor(
               suspension.registrantKftc ? '결제원' : suspension.organizationName,
               suspension.registrantName,
@@ -242,8 +242,15 @@ function SuspensionContent({ suspension: s }: { suspension: SuspensionDetail }) 
           </Text>
         </Field>
         <Field label="대상 업무">
+          <Text size="md" data-testid="suspension-target-works">
+            {s.targetWorks.map((w) => w.name).join(', ')}
+          </Text>
+        </Field>
+        <Field label="관련 업무">
           <Text size="md" data-testid="suspension-businesses">
-            {s.businesses.map((b) => b.label).join(', ')}
+            {s.businesses.length > 0
+              ? s.businesses.map((b) => b.label).join(', ')
+              : '없음(결제원 운영·상황실·대외계가 확인)'}
           </Text>
         </Field>
         <Field label="중단 이유(작업 내용)">

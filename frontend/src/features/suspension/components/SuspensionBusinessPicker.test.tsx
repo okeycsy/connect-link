@@ -39,4 +39,22 @@ describe('SuspensionBusinessPicker', () => {
     expect(screen.getByTestId('suspension-businesses-count')).toHaveTextContent('고른 업무 50개');
     expect(screen.getByRole('button', { name: '모두 빼기' })).toBeInTheDocument();
   });
+
+  it('묶음 이름으로도 찾고 묶음마다 제목을 단다', () => {
+    const grouped: BusinessOption<string>[] = [
+      { value: '1', label: '타행환공동망', group: '지급결제' },
+      { value: '2', label: 'CMS', group: '지급결제' },
+      { value: '3', label: '계좌통합관리', group: '정보서비스' },
+      ...options.map((o) => ({ ...o, group: '그 밖' })),
+    ];
+    function Grouped() {
+      const [value, setValue] = useState<string[]>([]);
+      return <SuspensionBusinessPicker options={grouped} value={value} onChange={setValue} />;
+    }
+    renderWithProviders(<Grouped />);
+    expect(screen.getByText('정보서비스')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('대상 업무 찾기'), { target: { value: '지급' } });
+    expect(screen.getAllByRole('checkbox')).toHaveLength(2);
+    expect(screen.queryByText('정보서비스')).not.toBeInTheDocument();
+  });
 });

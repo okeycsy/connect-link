@@ -19,6 +19,8 @@ export type SuspensionSaveRequest = components['schemas']['SuspensionSaveRequest
 export type SuspensionOrganization = components['schemas']['SuspensionOrganizationResponse'];
 export type SuspensionRegistrableOrganization =
   components['schemas']['SuspensionRegistrableOrganizationResponse'];
+export type TargetWork = components['schemas']['TargetWorkResponse'];
+export type TargetWorkSaveRequest = components['schemas']['TargetWorkSaveRequest'];
 export type SuspensionDigest = components['schemas']['SuspensionDigestResponse'];
 export type SuspensionStatus = SuspensionSummary['status'];
 export type SuspensionPeriod = SuspensionSummary['period'];
@@ -44,6 +46,11 @@ export const suspensionKeys = {
   registrableOrganizations: () => ['suspensions', 'registrable-organizations'] as const,
 };
 
+export const targetWorkKeys = {
+  all: ['target-works'] as const,
+  list: (includeInactive: boolean) => ['target-works', includeInactive] as const,
+};
+
 /** 이 업무의 일시중단을 결제원 담당자로서 다루는지(전 기관 조회, 확인·확정). 서버도 같은 규칙으로 막는다. */
 export function canManageSuspensions(me: CurrentUserResponse | undefined, slug: string): boolean {
   if (!me) return false;
@@ -51,8 +58,8 @@ export function canManageSuspensions(me: CurrentUserResponse | undefined, slug: 
 }
 
 /**
- * 일시중단을 등록할 수 있는지. 등록은 사람이 아니라 기관 기준이라 결제원 계정과 참가기관 계정 누구나 올리고, 대상 업무는 기관이 참여하는 업무
- * 중에서 고른다(서버가 다시 막는다).
+ * 일시중단을 등록할 수 있는지. 등록은 사람이 아니라 기관 기준이라 결제원 계정과 참가기관 계정 누구나 올리고, 대상 업무는 대상 업무 기준정보에서
+ * 맡은 업무와 상관없이 고른다(서버가 다시 막는다).
  */
 export function canRegisterSuspensions(me: CurrentUserResponse | undefined): boolean {
   if (!me) return false;
@@ -115,6 +122,30 @@ export function useSuspensionRegistrableOrganizations() {
     queryKey: suspensionKeys.registrableOrganizations(),
     queryFn: async () => unwrap(await api.GET('/api/v1/suspensions/registrable-organizations')),
     staleTime: 60_000,
+  });
+}
+
+/** 대상 업무 기준정보. 등록 양식은 사용 중인 것만, 관리 화면(관리자)은 쓰지 않는 것까지 읽는다. */
+export function useTargetWorks(includeInactive = false) {
+  return useQuery({
+    queryKey: targetWorkKeys.list(includeInactive),
+    queryFn: async () =>
+      unwrap(await api.GET('/api/v1/target-works', { params: { query: { includeInactive } } })),
+    staleTime: 60_000,
+  });
+}
+
+/** 대상 업무 하나를 더하거나(id 없음) 고친다. 관리자만 부른다. */
+export function useSaveTargetWork() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, body }: { id?: number; body: TargetWorkSaveRequest }) =>
+      unwrap(
+        id == null
+          ? await api.POST('/api/v1/target-works', { body })
+          : await api.PUT('/api/v1/target-works/{id}', { params: { path: { id } }, body }),
+      ),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: targetWorkKeys.all }),
   });
 }
 
