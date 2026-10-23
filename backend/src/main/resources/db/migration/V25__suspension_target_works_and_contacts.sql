@@ -32,7 +32,7 @@ INSERT INTO target_work (name, category, sort_order, active, created_at, created
   ('계좌통합관리', '정보서비스', 10, TRUE, CURRENT_TIMESTAMP, 'system', CURRENT_TIMESTAMP, 'system'),
   ('자동이체통합관리', '정보서비스', 20, TRUE, CURRENT_TIMESTAMP, 'system', CURRENT_TIMESTAMP, 'system'),
   ('대출이동', '정보서비스', 30, TRUE, CURRENT_TIMESTAMP, 'system', CURRENT_TIMESTAMP, 'system'),
-  ('CMS', '지급결제', 40, TRUE, CURRENT_TIMESTAMP, 'system', CURRENT_TIMESTAMP, 'system');
+  ('CMS', '지급결제', 90, TRUE, CURRENT_TIMESTAMP, 'system', CURRENT_TIMESTAMP, 'system');
 
 INSERT INTO target_work_business (target_work_id, business, created_at, created_by, updated_at, updated_by)
 SELECT w.id, m.business, CURRENT_TIMESTAMP, 'system', CURRENT_TIMESTAMP, 'system'

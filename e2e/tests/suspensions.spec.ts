@@ -82,10 +82,15 @@ async function registerAsGana(
     headers: await csrf(request),
   });
   expect(login.ok()).toBeTruthy();
+  const works = (await (await request.get("/api/v1/target-works")).json()) as {
+    id: number;
+    name: string;
+  }[];
+  const work = works.find((w) => w.name === "계좌통합관리")!;
   const date = seoulDate(4);
   const created = await request.post("/api/v1/suspensions", {
     data: {
-      businesses: ["ACCOUNT_INFO"],
+      targetWorkIds: [work.id],
       organizationId: null,
       startAt: iso(date, "01:00"),
       endAt: iso(date, "03:00"),
@@ -177,28 +182,33 @@ test.describe("라. 일시중단", () => {
     await expect(page.getByRole("list", { name: "올릴 파일" })).toContainText(
       "작업공문.pdf",
     );
-    // 대상 업무는 담당 업무가 아니라 기관(KB국민은행)이 참여하는 업무 전부를 목록으로 보이고 여러 개 고른다. 세부업무 칸은 없다.
+    // 대상 업무는 레일과 별개인 기준정보(수십 개)를 묶음별로 보이고, 찾아서 여러 개 고른다. 세부업무 칸은 없다.
     await expect(page.getByRole("textbox", { name: "세부업무" })).toHaveCount(
       0,
     );
     const businesses = page.getByTestId("suspension-businesses");
-    for (const name of [
-      "계좌통합관리",
-      "자동이체통합관리",
-      "대출이동",
-      "CMS",
-    ]) {
-      await expect(
-        businesses.getByRole("checkbox", { name, exact: true }),
-      ).toBeVisible();
-    }
-    // 지금 업무 영역(계좌통합관리)이 미리 골라져 있다.
+    expect(await businesses.getByRole("checkbox").count()).toBeGreaterThan(30);
     await expect(
-      businesses.getByRole("checkbox", { name: "계좌통합관리" }),
-    ).toBeChecked();
+      businesses.getByText("지급결제", { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByTestId("suspension-businesses-count")).toHaveText(
+      "고른 업무 0개",
+    );
+    const search = page.getByRole("textbox", { name: "대상 업무 찾기" });
+    await search.fill("계좌통합");
+    await expect(businesses.getByRole("checkbox")).toHaveCount(1);
+    await businesses
+      .getByRole("checkbox", { name: "계좌통합관리", exact: true })
+      .check();
+    await search.fill("CMS");
     await businesses
       .getByRole("checkbox", { name: "CMS", exact: true })
       .check();
+    await shot(page, "suspension-editor-search");
+    await page.getByRole("button", { name: "찾기 지우기" }).click();
+    await expect(page.getByTestId("suspension-businesses-count")).toHaveText(
+      "고른 업무 2개",
+    );
     await shot(page, "suspension-editor");
 
     await page.getByRole("button", { name: "저장" }).click();
@@ -211,6 +221,9 @@ test.describe("라. 일시중단", () => {
       "02:00 ~ 04:30",
     );
     await expect(page.getByText("작업공문.pdf")).toBeVisible();
+    await expect(page.getByTestId("suspension-target-works")).toHaveText(
+      "계좌통합관리, CMS",
+    );
     await expect(page.getByTestId("suspension-businesses")).toHaveText(
       "계좌통합관리, CMS",
     );
@@ -225,7 +238,7 @@ test.describe("라. 일시중단", () => {
     await expect(page.getByRole("button", { name: "삭제" })).toBeVisible();
     await shot(page, "suspension-detail-organization");
 
-    // 고른 업무들의 결제원 담당자에게 등록 메일이 간다(매터모스트는 발송함에 함께 남는다).
+    // 고른 대상 업무와 관련된 업무의 결제원 담당자에게 등록 메일이 간다(매터모스트는 발송함에 함께 남는다).
     for (const email of [
       "hong.sungmin@kftc.example.com",
       "park.cms@kftc.example.com",
@@ -234,14 +247,14 @@ test.describe("라. 일시중단", () => {
       expect(
         mails.some((m) =>
           m.subject.includes(
-            "KB국민은행 계좌통합관리·CMS 일시중단이 등록되었습니다",
+            "KB국민은행 계좌통합관리, CMS 일시중단이 등록되었습니다",
           ),
         ),
       ).toBeTruthy();
     }
   });
 
-  test("기관 담당자는 맡지 않은 업무라도 기관이 참여하면 그 업무로 올리고, 그 업무 결제원 담당자에게 알린다", async ({
+  test("기관 담당자는 맡지 않은 업무, 관련 업무가 없는 업무도 고르고, 관련 업무가 없으면 결제원 운영·상황실이 알림을 받는다", async ({
     page,
     request,
   }) => {
@@ -251,12 +264,10 @@ test.describe("라. 일시중단", () => {
       page.getByRole("heading", { name: "일시중단 등록" }),
     ).toBeVisible();
     const businesses = page.getByTestId("suspension-businesses");
+    await page.getByRole("textbox", { name: "대상 업무 찾기" }).fill("공동망");
     await businesses
-      .getByRole("checkbox", { name: "CMS", exact: true })
+      .getByRole("checkbox", { name: "타행환공동망", exact: true })
       .check();
-    await businesses
-      .getByRole("checkbox", { name: "계좌통합관리", exact: true })
-      .uncheck();
 
     const reason = `E2E 대외계 회선 작업 ${Date.now()}`;
     const date = seoulDate(5);
@@ -268,20 +279,40 @@ test.describe("라. 일시중단", () => {
     await page.getByRole("textbox", { name: "연락처" }).fill("010-0000-2101");
     await page.getByRole("button", { name: "저장" }).click();
 
-    // 김민준은 CMS 레일이 없으니 지금 업무 영역에서 상세를 연다. 자기가 올린 건이라 고칠 수 있다.
+    // 관련 업무가 없으니 지금 업무 영역에서 상세를 연다. 자기 기관 건이라 보이고, 자기가 올린 건이라 고칠 수 있다.
     await expect(page).toHaveURL(/\/account-info\/suspensions\/\d+$/);
     await expect(
       page.getByRole("heading", { name: "KB국민은행 일시중단" }),
     ).toBeVisible();
-    await expect(page.getByText("CMS", { exact: true }).first()).toBeVisible();
+    await expect(page.getByTestId("suspension-target-works")).toHaveText(
+      "타행환공동망",
+    );
+    await expect(page.getByTestId("suspension-businesses")).toContainText(
+      "없음",
+    );
     await expect(page.getByRole("link", { name: "고치기" })).toBeVisible();
+    await shot(page, "suspension-detail-unlinked");
 
-    const mails = await mailbox(request, "park.cms@kftc.example.com");
+    // 업무 담당(홍성민)이 아니라 전 업무를 보는 결제원 운영·상황실이 받는다.
+    for (const email of [
+      "kim.ops@kftc.example.com",
+      "lee.control@kftc.example.com",
+    ]) {
+      const mails = await mailbox(request, email);
+      expect(
+        mails.some((m) =>
+          m.subject.includes(
+            "KB국민은행 타행환공동망 일시중단이 등록되었습니다",
+          ),
+        ),
+      ).toBeTruthy();
+    }
+    const hong = await mailbox(request, "hong.sungmin@kftc.example.com");
     expect(
-      mails.some((m) =>
-        m.subject.includes("KB국민은행 CMS 일시중단이 등록되었습니다"),
+      hong.some((m) =>
+        m.subject.includes("KB국민은행 타행환공동망 일시중단이 등록되었습니다"),
       ),
-    ).toBeTruthy();
+    ).toBeFalsy();
   });
 
   test("결제원 담당자가 확인을 시작하고 조치 및 인수인계 사항을 써서 확정하고, 기관별 이력과 취합을 본다", async ({
