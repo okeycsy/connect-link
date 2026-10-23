@@ -67,8 +67,9 @@ function contact(overrides: Record<string, unknown>) {
     lastConfirmedAt: '2026-09-29T09:00:00',
     lastConfirmedByName: '홍성민',
     needsConfirm: false,
+    unreachable: null,
     self: false,
-    permissions: { edit: false, delete: false },
+    permissions: { edit: false, delete: false, markUnreachable: false, clearUnreachable: false },
     ...overrides,
   };
 }
@@ -87,7 +88,7 @@ const ROWS = [
     lastConfirmedAt: '2026-04-01T09:00:00',
     needsConfirm: true,
     self: true,
-    permissions: { edit: true, delete: false },
+    permissions: { edit: true, delete: false, markUnreachable: true, clearUnreachable: false },
   }),
   contact({
     id: 4,
@@ -99,7 +100,13 @@ const ROWS = [
     jobRole: 'IT',
     jobRoleLabel: '전산',
     mobilePhone: null,
-    permissions: { edit: true, delete: false },
+    unreachable: {
+      markedAt: '2026-10-23T02:10:00',
+      note: '내선·휴대폰 모두 받지 않음',
+      markedByName: '이수진',
+      markedByJobTitle: '주임',
+    },
+    permissions: { edit: true, delete: false, markUnreachable: true, clearUnreachable: true },
   }),
 ];
 
@@ -122,7 +129,8 @@ vi.mock('../../../api/client', async (importOriginal) => {
           if (path === '/api/v1/me') return ok(state.me);
           if (path === '/api/v1/businesses') return ok([accountInfo]);
           if (path === '/api/v1/job-roles') return ok([]);
-          if (path === '/api/v1/contacts/counts') return ok({ total: 3, needsConfirm: 1 });
+          if (path === '/api/v1/contacts/counts')
+            return ok({ total: 3, needsConfirm: 1, unreachable: 1 });
           if (path === '/api/v1/contacts/organizations') {
             return ok([
               { id: 1, code: 'KFTC', name: '금융결제원', type: 'KFTC' },
@@ -239,6 +247,34 @@ describe('ContactListPage', () => {
     expect(screen.queryByRole('button', { name: '엑셀' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: '담당자 등록' })).toBeInTheDocument();
     expect(Object.keys(state.queries[0]).sort()).toEqual(['business', 'page', 'size']);
+  });
+
+  it('연락 불가 담당자에 빨간 배지를 붙이고, 행 끝 버튼으로 연락 불가 창을 연다', async () => {
+    state.me = HONG;
+    renderPage();
+
+    const table = await screen.findByTestId('contact-table');
+    await within(table).findByText('남궁민');
+    expect(within(table).getAllByTestId('contact-unreachable-badge')).toHaveLength(1);
+    expect(screen.getByTestId('contact-unreachable')).toHaveTextContent('연락 불가 1명');
+    expect(within(table).queryByRole('button', { name: '홍성민 연락 불가 표시' })).toBeNull();
+
+    fireEvent.click(within(table).getByRole('button', { name: '김민준 연락 불가 표시' }));
+    expect(await screen.findByRole('button', { name: '연락 불가로 표시' })).toBeInTheDocument();
+    expect(
+      screen.getByLabelText(/KB국민은행 계좌통합관리 담당자에게도 메일로 알리기/),
+    ).not.toBeChecked();
+  });
+
+  it('상세 패널은 연락 불가 표시와 남긴 사람을 맨 위에 보이고 해제 버튼을 둔다', async () => {
+    state.me = GANA;
+    renderPage('/account-info/contacts?id=4');
+
+    const alert = await screen.findByTestId('contact-unreachable-alert');
+    expect(alert).toHaveTextContent(
+      '2026-10-23 02:10 결제원(이수진 주임) · 내선·휴대폰 모두 받지 않음',
+    );
+    expect(within(alert).getByRole('button', { name: '연락됨 · 해제' })).toBeInTheDocument();
   });
 
   it('주소의 id 로 상세 패널을 열고 권한대로 버튼을 보인다', async () => {

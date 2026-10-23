@@ -19,6 +19,8 @@ export type ContactOrganization = components['schemas']['ContactOrganizationResp
 export type ContactRank = Contact['rank'];
 export type JobRole = Contact['jobRole'];
 export type ItRole = Contact['itRoles'][number];
+export type ContactUnreachable = NonNullable<Contact['unreachable']>;
+export type ContactUnreachableRequest = components['schemas']['ContactUnreachableRequest'];
 export type BusinessCode = Contact['business'];
 export type UpdateCampaign = components['schemas']['UpdateCampaignResponse'];
 export type UpdateCampaignSaveRequest = components['schemas']['UpdateCampaignSaveRequest'];
@@ -34,6 +36,7 @@ export interface ContactListParams {
   organizationId?: number;
   jobRole?: JobRole;
   needsConfirm?: boolean;
+  unreachable?: boolean;
   page?: number;
   size?: number;
 }
@@ -178,6 +181,28 @@ export function useConfirmContact() {
   });
 }
 
+/** 연락 불가로 표시한다(결제원 쪽, 내부망). 그 업무 결제원 담당자에게 알리고, 고르면 기관 담당자에게도 알린다. */
+export function useMarkContactUnreachable() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, body }: { id: number; body: ContactUnreachableRequest }) =>
+      unwrap(
+        await api.PUT('/api/v1/contacts/{id}/unreachable', { params: { path: { id } }, body }),
+      ),
+    onSuccess: () => invalidate(queryClient),
+  });
+}
+
+/** 연락 불가 표시를 해제한다. 연락이 닿았거나 정보가 맞을 때다. */
+export function useClearContactUnreachable() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) =>
+      unwrap(await api.DELETE('/api/v1/contacts/{id}/unreachable', { params: { path: { id } } })),
+    onSuccess: () => invalidate(queryClient),
+  });
+}
+
 /** 기관 하나의 한 업무 담당자 전부를 확인하고, 진행 중인 정기 변경 주간에 "현행화 완료" 로 남긴다. */
 export function useConfirmOrganization() {
   const queryClient = useQueryClient();
@@ -198,6 +223,7 @@ export function useDownloadContactExcel() {
         organizationId: params.organizationId,
         jobRole: params.jobRole,
         needsConfirm: params.needsConfirm,
+        unreachable: params.unreachable,
       };
       const result = await api.GET('/api/v1/contacts/excel', {
         params: { query },

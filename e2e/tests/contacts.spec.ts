@@ -160,6 +160,39 @@ test.describe('가. 담당자 연락처', () => {
     await expect(page.getByRole('button', { name: '삭제' })).toHaveCount(0);
   });
 
+  test('야간 상황실은 전화가 닿지 않은 담당자를 연락 불가로 표시하고, 상세에서 해제한다', async ({
+    page,
+  }) => {
+    await loginAs(page, '이수진 (결제원 · 전산(상황실))로 로그인');
+    await page.goto('/cms/contacts');
+    const table = page.getByTestId('contact-table');
+    // 시드: 지난밤 KB국민은행 국해솔 주담당이 연락 불가로 표시돼 있다.
+    await expect(table.getByRole('button', { name: 'KB국민은행 국해솔' })).toContainText('연락 불가');
+    await expect(page.getByTestId('contact-unreachable')).toContainText('연락 불가 1명');
+
+    // 행 끝 버튼으로 신한은행 이준호를 연락 불가로 표시한다.
+    await table.getByRole('button', { name: '이준호 연락 불가 표시' }).click();
+    const dialog = page.getByRole('dialog', { name: '연락 불가 표시' });
+    await dialog.getByLabel('메모').fill('03:20 대외계 장애 문의, 내선·휴대폰 모두 받지 않음');
+    await dialog.getByLabel(/신한은행 CMS 담당자에게도 메일로 알리기/).check();
+    await shot(page, 'contact-unreachable-modal');
+    await dialog.getByRole('button', { name: '연락 불가로 표시' }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(table.getByRole('button', { name: '신한은행 이준호' })).toContainText('연락 불가');
+    await expect(page.getByTestId('contact-unreachable')).toContainText('연락 불가 2명');
+    await shot(page, 'contact-unreachable-list');
+
+    // 상세 패널 맨 위에 언제·누가·메모가 빨갛게 보이고, 연락이 닿으면 해제한다.
+    await table.getByRole('button', { name: '신한은행 이준호' }).click();
+    const alert = page.getByTestId('contact-unreachable-alert');
+    await expect(alert).toContainText('결제원(이수진 주임)');
+    await expect(alert).toContainText('03:20 대외계 장애 문의');
+    await shot(page, 'contact-unreachable-detail');
+    await alert.getByRole('button', { name: '연락됨 · 해제' }).click();
+    await expect(alert).toHaveCount(0);
+    await expect(page.getByTestId('contact-unreachable')).toContainText('연락 불가 1명');
+  });
+
   test('결제원 담당자는 정기 변경 주간의 진행률과 미확인 기관을 보고 주간을 등록·삭제한다', async ({
     page,
   }) => {
