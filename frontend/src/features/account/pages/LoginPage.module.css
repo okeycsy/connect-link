@@ -72,29 +72,14 @@
   opacity: 0.75;
 }
 
-/* 흰 반짝임 */
-.sparkleA,
-.sparkleB,
+/* 흰 반짝임(로그인 카드 왼쪽 아래 하나) */
 .sparkleC {
   position: absolute;
-  color: #fff;
-  pointer-events: none;
-}
-
-.sparkleA {
-  left: 10px;
-  top: 40%;
-}
-
-.sparkleB {
-  left: 26px;
-  top: calc(40% + 66px);
-}
-
-.sparkleC {
   left: 2%;
   top: 62%;
   z-index: 1;
+  color: #fff;
+  pointer-events: none;
 }
 
 /* 카드 뒤 고리: 2px clay-5 선, 지름 600. 작은 점은 clay-3 채움 + clay-5 선 */
@@ -165,11 +150,11 @@
 }
 
 .headlineLogo {
-  height: 150px;
+  height: 210px;
   margin-top: 8px;
 
   @media (max-width: $mantine-breakpoint-md) {
-    height: 104px;
+    height: 140px;
   }
 }
 

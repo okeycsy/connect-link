@@ -13,7 +13,7 @@ export function EntryLayout({ children }: { children: ReactNode }) {
   return (
     <Box className={classes.page}>
       <Group component="header" className={classes.top} justify="space-between" wrap="nowrap">
-        <Anchor component={Link} to="/login" c="inherit" underline="never" aria-label="연결고리">
+        <Anchor component={Link} to="/login" c="inherit" underline="never" aria-label="연결이">
           <BrandMark />
         </Anchor>
         <Text size="sm" c="dimmed">

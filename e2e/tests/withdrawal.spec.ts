@@ -51,7 +51,7 @@ test.describe('탈퇴', () => {
     // 비밀번호가 틀리면 칸 아래에 서버 메시지가 보이고 탈퇴하지 않는다.
     await open.click();
     const dialog = page.getByRole('dialog', { name: '탈퇴' });
-    await expect(dialog).toContainText('KB국민은행 이탈퇴 님의 연결고리 계정을 탈퇴합니다.');
+    await expect(dialog).toContainText('KB국민은행 이탈퇴 님의 연결이 계정을 탈퇴합니다.');
     await dialog.getByLabel(/비밀번호/).fill('Wrong123!');
     await dialog.getByRole('button', { name: '탈퇴하기' }).click();
     await expect(dialog.getByText('비밀번호가 맞지 않습니다.')).toBeVisible();
@@ -70,8 +70,8 @@ test.describe('탈퇴', () => {
 
     // 탈퇴 확인 메일이 가고, 다른 브라우저의 세션도 끝났다.
     const mail = (await mailbox(request, email))[0];
-    expect(mail.subject).toBe('[연결고리] 탈퇴가 완료되었습니다');
-    expect(mail.body).toContain('KB국민은행 이탈퇴 님의 연결고리 탈퇴가 완료되었습니다.');
+    expect(mail.subject).toBe('[연결이] 탈퇴가 완료되었습니다');
+    expect(mail.body).toContain('KB국민은행 이탈퇴 님의 연결이 탈퇴가 완료되었습니다.');
     expect((await elsewhere.request.get('/api/v1/me')).status()).toBe(401);
     await elsewhere.close();
 
@@ -169,7 +169,7 @@ test.describe('탈퇴', () => {
 
     // 탈퇴 처리된 사람에게 사유를 담은 메일이 가고, 그 사람의 세션은 끝났다.
     const mail = (await mailbox(request, email))[0];
-    expect(mail.subject).toBe('[연결고리] 계정이 탈퇴 처리되었습니다');
+    expect(mail.subject).toBe('[연결이] 계정이 탈퇴 처리되었습니다');
     expect(mail.body).toContain('결제원 담당자 홍성민 님이 탈퇴 처리했습니다');
     expect(mail.body).toContain(`사유: ${reason}`);
     expect((await target.request.get('/api/v1/me')).status()).toBe(401);

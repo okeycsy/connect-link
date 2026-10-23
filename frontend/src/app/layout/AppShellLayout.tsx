@@ -127,7 +127,7 @@ export function AppShellLayout() {
             component={Link}
             to={`${base}/home`}
             className={classes.brand}
-            aria-label="연결고리 홈"
+            aria-label="연결이 홈"
           >
             <BrandMark className={classes.logo} />
           </Box>

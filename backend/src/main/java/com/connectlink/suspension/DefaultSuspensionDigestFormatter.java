@@ -19,7 +19,7 @@ class DefaultSuspensionDigestFormatter implements SuspensionDigestFormatter {
 
   @Override
   public String subject(LocalDate fromDate, LocalDate toDate, int count) {
-    return "[연결고리] 일시중단 확정 " + count + "건 (" + range(fromDate, toDate) + ")";
+    return "[연결이] 일시중단 확정 " + count + "건 (" + range(fromDate, toDate) + ")";
   }
 
   @Override
@@ -50,7 +50,7 @@ class DefaultSuspensionDigestFormatter implements SuspensionDigestFormatter {
     }
     int rest = suspensions.size() - written;
     if (rest > 0) {
-      body.append("\n\n외 ").append(rest).append("건은 연결고리에서 확인해 주세요.");
+      body.append("\n\n외 ").append(rest).append("건은 연결이에서 확인해 주세요.");
     }
     return body.toString();
   }

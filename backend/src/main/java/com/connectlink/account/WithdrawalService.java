@@ -97,11 +97,11 @@ public class WithdrawalService {
     complete(
         account,
         null,
-        "[연결고리] 탈퇴가 완료되었습니다",
+        "[연결이] 탈퇴가 완료되었습니다",
         organizationName
             + " "
             + name
-            + " 님의 연결고리 탈퇴가 완료되었습니다.\n\n이름, 부서, 연락처, 담당 업무 같은 계정 정보는 지웠고 이 계정으로는 더 로그인할 수"
+            + " 님의 연결이 탈퇴가 완료되었습니다.\n\n이름, 부서, 연락처, 담당 업무 같은 계정 정보는 지웠고 이 계정으로는 더 로그인할 수"
             + " 없습니다. 같은 회사 이메일로 다시 가입 신청할 수 있습니다.\n\n직접 탈퇴하지 않으셨다면 결제원 담당자에게 바로 알려 주세요.",
         null);
   }
@@ -117,11 +117,11 @@ public class WithdrawalService {
     complete(
         account,
         actor,
-        "[연결고리] 계정이 탈퇴 처리되었습니다",
+        "[연결이] 계정이 탈퇴 처리되었습니다",
         account.getOrganization().getName()
             + " "
             + account.getName()
-            + " 님의 연결고리 계정을 결제원 담당자 "
+            + " 님의 연결이 계정을 결제원 담당자 "
             + actor.name()
             + " 님이 탈퇴 처리했습니다.\n\n사유: "
             + trimmed

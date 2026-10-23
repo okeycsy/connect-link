@@ -40,7 +40,7 @@ export function WithdrawModal({ me, opened, onClose }: Props) {
       >
         <Stack gap="md">
           <Text size="md">
-            {me.organizationName} {me.name} 님의 연결고리 계정을 탈퇴합니다.
+            {me.organizationName} {me.name} 님의 연결이 계정을 탈퇴합니다.
           </Text>
           <List size="sm" spacing={4} c="var(--cl-ink-soft)">
             <List.Item>이름, 부서, 연락처, 담당 업무 같은 계정 정보와 알림을 지웁니다.</List.Item>

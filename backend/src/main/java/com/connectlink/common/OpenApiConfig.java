@@ -20,7 +20,7 @@ public class OpenApiConfig {
   @Bean
   public OpenAPI connectLinkOpenApi() {
     return new OpenAPI()
-        .info(new Info().title("연결고리 API").version("v1").description("결제원·기관 담당자 업무 포털"));
+        .info(new Info().title("연결이 API").version("v1").description("결제원·기관 담당자 업무 포털"));
   }
 
   @Bean
