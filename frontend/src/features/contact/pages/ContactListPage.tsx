@@ -358,13 +358,13 @@ function ContactTable({
       <Table.Thead>
         <Table.Tr>
           <Table.Th w={150}>이름</Table.Th>
-          <Table.Th w={96}>직무</Table.Th>
+          <Table.Th>직무</Table.Th>
           <Table.Th>부서 · 팀</Table.Th>
           <Table.Th>세부업무</Table.Th>
           <Table.Th w={80}>내선</Table.Th>
           <Table.Th w={124}>휴대폰</Table.Th>
-          <Table.Th w={190}>최근 확인일</Table.Th>
-          {canMark && <Table.Th w={44} aria-label="연락 불가 표시" />}
+          <Table.Th>최근 확인일</Table.Th>
+          {canMark && <Table.Th w={1} px={0} aria-label="연락 불가 표시" />}
         </Table.Tr>
       </Table.Thead>
       <Table.Tbody>
@@ -429,15 +429,28 @@ function ContactTable({
                     )}
                   </Table.Td>
                   <Table.Td data-label="직무">
-                    <Text size="sm">{r.jobRoleLabel}</Text>
+                    <Text size="sm" className={classes.nowrap}>
+                      {r.jobRoleLabel}
+                    </Text>
                   </Table.Td>
                   <Table.Td data-label="부서 · 팀">
-                    <Text size="sm" lineClamp={2}>
+                    <Text
+                      size="sm"
+                      truncate="end"
+                      maw={200}
+                      title={[r.department, r.team].filter(Boolean).join(' · ')}
+                    >
                       {[r.department, r.team].filter(Boolean).join(' · ')}
                     </Text>
                   </Table.Td>
                   <Table.Td data-label="세부업무">
-                    <Text size="sm" lineClamp={2} c={r.subBusiness ? undefined : 'dimmed'}>
+                    <Text
+                      size="sm"
+                      truncate="end"
+                      maw={160}
+                      title={r.subBusiness ?? undefined}
+                      c={r.subBusiness ? undefined : 'dimmed'}
+                    >
                       {r.subBusiness || '-'}
                     </Text>
                   </Table.Td>
@@ -452,18 +465,24 @@ function ContactTable({
                     </Text>
                   </Table.Td>
                   <Table.Td data-label="최근 확인일">
-                    <Group gap={6} wrap="nowrap">
+                    <Group gap={6} wrap="nowrap" w="max-content">
                       <Text size="sm" className={classes.numeric}>
                         {formatDate(r.lastConfirmedAt)}
                       </Text>
                       {r.unreachable && (
-                        <ContactUnreachableBadge unreachable={r.unreachable} size="xs" />
+                        <ContactUnreachableBadge
+                          unreachable={r.unreachable}
+                          size="xs"
+                          style={{ flexShrink: 0 }}
+                        />
                       )}
-                      {r.needsConfirm && <ContactNeedsConfirmBadge size="xs" />}
+                      {r.needsConfirm && (
+                        <ContactNeedsConfirmBadge size="xs" style={{ flexShrink: 0 }} />
+                      )}
                     </Group>
                   </Table.Td>
                   {canMark && (
-                    <Table.Td data-label="연락 불가">
+                    <Table.Td data-label="연락 불가" px={0}>
                       {r.permissions.markUnreachable && (
                         <Tooltip label="전화가 닿지 않으면 연락 불가로 표시" color="dark" withArrow>
                           <ActionIcon

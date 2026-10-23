@@ -30,7 +30,7 @@ export function ContactNeedsConfirmBadge(props: BadgeProps) {
   );
 }
 
-/** 전화가 닿지 않아 결제원이 남긴 연락 불가 표시(긴급, red). 올리면 언제·누가·메모를 보인다. */
+/** 전화가 닿지 않아 결제원이 남긴 연락 불가 표시(긴급, 채움 red. 표 안에서 눈에 띄게 SHY 결정). 올리면 언제·누가·메모를 보인다. */
 export function ContactUnreachableBadge({
   unreachable,
   ...props
@@ -46,6 +46,7 @@ export function ContactUnreachableBadge({
     >
       <Badge
         color="red"
+        variant="filled"
         leftSection={<IconPhoneOff size={11} stroke={2} />}
         data-testid="contact-unreachable-badge"
         {...props}
