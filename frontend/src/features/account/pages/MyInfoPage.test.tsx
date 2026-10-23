@@ -204,7 +204,7 @@ describe('MyInfoPage', () => {
     await waitFor(() => expect(open).toBeEnabled());
     fireEvent.click(open);
     const dialog = await screen.findByRole('dialog', { name: '탈퇴' });
-    expect(dialog).toHaveTextContent('KB국민은행 김민준 님의 연결고리 계정을 탈퇴합니다.');
+    expect(dialog).toHaveTextContent('KB국민은행 김민준 님의 연결이 계정을 탈퇴합니다.');
 
     const password = within(dialog).getByLabelText(/비밀번호/);
     fireEvent.change(password, { target: { value: 'Wrong123!' } });

@@ -58,7 +58,7 @@ public class ChatRoom extends AuditedEntity {
 
   /** 업무 단체방. 이름은 "{업무} 단체방" 이다. */
   static ChatRoom businessRoom(Business business) {
-    return new ChatRoom(business, ChatRoomType.BUSINESS, business.getLabel() + " 단체방", "연결고리");
+    return new ChatRoom(business, ChatRoomType.BUSINESS, business.getLabel() + " 단체방", "연결이");
   }
 
   /** 초대한 사람을 더한다. 이미 있으면 그대로 둔다. */

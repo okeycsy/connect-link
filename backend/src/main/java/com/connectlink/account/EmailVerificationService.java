@@ -89,7 +89,7 @@ public class EmailVerificationService {
         new OutboundMessage(
             NotificationChannel.EMAIL,
             email,
-            "[연결고리] 회사 이메일 인증 코드",
+            "[연결이] 회사 이메일 인증 코드",
             mailBody(code, properties.getCodeTtl()),
             null));
     return new EmailVerificationResponse(
@@ -194,7 +194,7 @@ public class EmailVerificationService {
 
   private static String mailBody(String code, Duration ttl) {
     return """
-        연결고리 가입을 위한 회사 이메일 인증 코드입니다.
+        연결이 가입을 위한 회사 이메일 인증 코드입니다.
 
         인증 코드: %s
 

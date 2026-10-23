@@ -12,10 +12,10 @@ INSERT INTO chat_room (business, type, name, created_by_name, created_at, create
 SELECT r.business, r.type, r.name, r.created_by_name,
        CURRENT_TIMESTAMP - r.days_ago * INTERVAL '1' DAY, 'seed', CURRENT_TIMESTAMP - r.days_ago * INTERVAL '1' DAY, 'seed'
 FROM (VALUES
-  (1, 'ACCOUNT_INFO',  'BUSINESS', '계좌통합관리 단체방',         '연결고리', 30),
-  (2, 'AUTO_TRANSFER', 'BUSINESS', '자동이체통합관리 단체방',     '연결고리', 30),
-  (3, 'LOAN_TRANSFER', 'BUSINESS', '대출이동 단체방',             '연결고리', 30),
-  (4, 'CMS',           'BUSINESS', 'CMS 단체방',                  '연결고리', 30),
+  (1, 'ACCOUNT_INFO',  'BUSINESS', '계좌통합관리 단체방',         '연결이', 30),
+  (2, 'AUTO_TRANSFER', 'BUSINESS', '자동이체통합관리 단체방',     '연결이', 30),
+  (3, 'LOAN_TRANSFER', 'BUSINESS', '대출이동 단체방',             '연결이', 30),
+  (4, 'CMS',           'BUSINESS', 'CMS 단체방',                  '연결이', 30),
   (5, 'ACCOUNT_INFO',  'CUSTOM',   '오픈뱅킹 안심차단 전문 테스트', '홍성민',   5)
 ) AS r (seq, business, type, name, created_by_name, days_ago)
 ORDER BY r.seq;

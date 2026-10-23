@@ -459,7 +459,7 @@ public class ContactService {
                   + business.getLabel()
                   + " 담당자 정보 최근 확인일("
                   + contact.getLastConfirmedAt().toLocalDate()
-                  + ")에서 6개월이 지났습니다. 연결고리에서 고치거나 \"변동 없음\" 으로 확인해 주세요.",
+                  + ")에서 6개월이 지났습니다. 연결이에서 고치거나 \"변동 없음\" 으로 확인해 주세요.",
               "/" + business.getSlug() + "/contacts?id=" + contact.getId(),
               Set.of(NotificationChannel.EMAIL)));
       contact.markReconfirmNotified(now);

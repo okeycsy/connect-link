@@ -259,7 +259,7 @@ class SignUpReviewControllerTest {
 
     login(email).andExpect(status().isOk()).andExpect(jsonPath("$.name").value("승인대상"));
     JsonNode mail = mailbox(email).get(0);
-    assertThat(mail.get("subject").asText()).isEqualTo("연결고리 가입이 승인되었습니다");
+    assertThat(mail.get("subject").asText()).isEqualTo("연결이 가입이 승인되었습니다");
     assertThat(mail.get("body").asText()).contains("담당 업무: 자동이체통합관리");
     assertThat(notificationRepository.findByRecipientEmailAndReadAtIsNull(email))
         .singleElement()
@@ -316,7 +316,7 @@ class SignUpReviewControllerTest {
         .andExpect(jsonPath("$.rejectionReason").value("소속 기관을 다시 골라 주세요."));
 
     JsonNode mail = mailbox(email).get(0);
-    assertThat(mail.get("subject").asText()).isEqualTo("[연결고리] 가입 신청이 반려되었습니다");
+    assertThat(mail.get("subject").asText()).isEqualTo("[연결이] 가입 신청이 반려되었습니다");
     assertThat(mail.get("body").asText())
         .contains("반려 사유: 소속 기관을 다시 골라 주세요.")
         .contains("결제원 담당자 홍성민 님");
