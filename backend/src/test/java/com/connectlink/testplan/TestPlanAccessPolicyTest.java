@@ -145,4 +145,22 @@ class TestPlanAccessPolicyTest {
     assertThatThrownBy(() -> policy.ensureCanFeedback(TestUsers.GANA_MEMBER, plan))
         .isInstanceOf(AccessDeniedException.class);
   }
+
+  @Test
+  void 결제원_담당자와_그_기관_담당자는_답글을_단다() {
+    TestPlan plan = plan();
+    assertThat(policy.canComment(TestUsers.KFTC_ACCOUNT_INFO, target(plan, "004"))).isTrue();
+    assertThat(policy.canComment(TestUsers.ADMIN, target(plan, "240"))).isTrue();
+    assertThat(policy.canComment(TestUsers.GANA_MEMBER, target(plan, "004"))).isTrue();
+  }
+
+  @Test
+  void 다른_기관과_다른_업무_결제원과_이용기관은_답글을_달지_못한다() {
+    TestPlan plan = plan();
+    assertThat(policy.canComment(TestUsers.GANA_MEMBER, target(plan, "240"))).isFalse();
+    assertThat(policy.canComment(TestUsers.KFTC_CMS, target(plan, "004"))).isFalse();
+    assertThat(policy.canComment(HAHA_MEMBER, target(plan, "004"))).isFalse();
+    assertThatThrownBy(() -> policy.ensureCanComment(CHAKA_MEMBER, target(plan, "004")))
+        .isInstanceOf(AccessDeniedException.class);
+  }
 }

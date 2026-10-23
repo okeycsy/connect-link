@@ -32,6 +32,7 @@ import {
   useTestTargetResults,
 } from '../hooks';
 import { RESULT_OPTIONS } from '../results';
+import { TestItemComments } from './TestItemComments';
 import { TestResultBadge } from './TestPlanBadges';
 import classes from './TestPlanTable.module.css';
 
@@ -53,6 +54,7 @@ const changed = (row: TestItemResultRow, draft: Draft | undefined) =>
 /**
  * 대상 기관 한 곳의 요구사항별 결과. 기관 담당자는 결과(정상·오류·수행중·미수행)와 특이사항을 고르고 한 번에 저장한다. 결제원 담당자는 기관 결과를
  * 보고 요구사항마다 의견(미니 수행률 0~100·특이사항)을 남긴다. 기관 정상 + 결제원 100% 면 그 요구사항은 수행 완료다.
+ * 결제원 의견 아래에는 결제원 담당자와 그 기관 담당자가 답글을 이어 단다.
  * 쓴 사람은 "결제원(김민찬 과장)", "KB국민은행(김민준 대리)"처럼 소속과 그때의 이름·직급으로 보인다.
  */
 export function TargetResultsCard({
@@ -85,6 +87,10 @@ export function TargetResultsCard({
 
   if (isError) return <ErrorState error={error} />;
   if (!data) return <Skeleton h={240} />;
+  // 답글 입력창에 보이는 글쓴이(지금 로그인한 사람).
+  const myLabel = data.canFeedback
+    ? myKftcLabel
+    : formatAuthor(data.summary.organizationName, me?.name, me?.jobTitle);
 
   const dirty = data.rows.filter((r) => changed(r, drafts[r.itemId]));
   const submit = () => {
@@ -132,6 +138,8 @@ export function TargetResultsCard({
               draft={drafts[row.itemId] ?? draftOf(row)}
               editable={data.canReport}
               feedback={data.canFeedback}
+              comment={data.canComment}
+              myLabel={myLabel}
               organizationName={data.summary.organizationName}
               myKftcLabel={myKftcLabel}
               error={rowErrors[row.itemId]}
@@ -209,6 +217,8 @@ function ResultRow({
   draft,
   editable,
   feedback,
+  comment,
+  myLabel,
   organizationName,
   myKftcLabel,
   error,
@@ -221,6 +231,8 @@ function ResultRow({
   draft: Draft;
   editable: boolean;
   feedback: boolean;
+  comment: boolean;
+  myLabel: string;
   organizationName: string;
   myKftcLabel: string;
   error: string | undefined;
@@ -231,6 +243,7 @@ function ResultRow({
 }) {
   const quick = useSaveTestFeedback(planId, organizationId);
   const hasFeedback = row.feedbackRate != null || row.feedbackNote != null;
+  const hasComments = row.comments.length > 0;
   const reporter = formatAuthor(organizationName, row.reportedByName, row.reportedByJobTitle);
   // 남긴 의견은 쓴 사람, 아직 없으면 지금 쓸 사람(결제원 담당자)이다.
   const feedbackAuthor = hasFeedback
@@ -315,7 +328,7 @@ function ResultRow({
           </Text>
         )}
 
-        {(hasFeedback || (feedback && row.result)) && (
+        {(hasFeedback || hasComments || (feedback && row.result)) && (
           <Paper p="sm" radius="lg" bg="var(--cl-card)" data-testid="item-feedback">
             <Group justify="space-between" align="flex-start" gap="sm" wrap="nowrap">
               <div>
@@ -384,6 +397,14 @@ function ResultRow({
                 {quick.error.message}
               </Text>
             )}
+            <TestItemComments
+              row={row}
+              organizationName={organizationName}
+              canReply={comment && row.result != null && (hasFeedback || hasComments)}
+              writer={myLabel}
+              planId={planId}
+              organizationId={organizationId}
+            />
           </Paper>
         )}
       </Stack>
