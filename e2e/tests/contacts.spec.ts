@@ -228,7 +228,8 @@ test.describe('가. 담당자 연락처', () => {
     await page.getByRole('button', { name: '미확인 기관 리마인드' }).click();
     await expect(dialog).toContainText('현행화 완료를 누르지 않은');
     await dialog.getByRole('button', { name: '보내기' }).click();
-    await expect(page.getByText(/리마인드 메일을 보냈습니다/)).toBeVisible();
+    // 앞의 신협 리마인드 알림이 아직 떠 있을 수 있어 마지막 알림을 본다.
+    await expect(page.getByText(/리마인드 메일을 보냈습니다/).last()).toBeVisible();
     await shot(page, 'update-campaign-reminder');
   });
 });

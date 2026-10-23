@@ -53,7 +53,8 @@ test.describe('알림 센터와 발송함', () => {
     await expect(page).toHaveURL(/\/account-info\/demo\/outbox$/);
     await expect(page.getByRole('heading', { name: '발송함' })).toBeVisible();
     const table = page.getByTestId('outbox-table');
-    await expect(table.getByText('@admin')).toBeVisible();
+    // 첫 쪽은 최근 20건이라 다른 시나리오가 동시에 쌓은 발송에 따라 바뀐다. 특정 행 대신 받는 사람(메일 주소, 매터모스트 @)이 보이는지만 본다.
+    await expect(table.getByText(/@/).first()).toBeVisible();
     await expect(table.getByText('발송 대기').first()).toBeVisible();
     await page.screenshot({
       path: 'screenshots/notification-outbox.png',
