@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+import javax.persistence.criteria.Subquery;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -26,7 +28,13 @@ final class SuspensionSpecifications {
       LocalDateTime now) {
     return (root, query, cb) -> {
       List<Predicate> predicates = new ArrayList<>();
-      predicates.add(cb.equal(root.get("business"), business));
+      // 여러 업무를 멈추는 건은 그 업무 중 하나가 이 업무면 든다.
+      Subquery<Long> affected = query.subquery(Long.class);
+      Root<SuspensionBusiness> sb = affected.from(SuspensionBusiness.class);
+      affected
+          .select(sb.get("id"))
+          .where(cb.equal(sb.get("suspension"), root), cb.equal(sb.get("business"), business));
+      predicates.add(cb.exists(affected));
       if (organizationCode != null) {
         predicates.add(cb.equal(root.get("organization").get("code"), organizationCode));
       }

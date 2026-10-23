@@ -16,6 +16,8 @@ import com.connectlink.organization.Organization;
 import com.connectlink.organization.OrganizationService;
 import com.connectlink.organization.OrganizationType;
 import com.connectlink.organization.dto.OrganizationResponse;
+import com.connectlink.suspension.dto.SuspensionBusinessResponse;
+import com.connectlink.suspension.dto.SuspensionContactResponse;
 import com.connectlink.suspension.dto.SuspensionCountsResponse;
 import com.connectlink.suspension.dto.SuspensionDetailResponse;
 import com.connectlink.suspension.dto.SuspensionOrganizationResponse;
@@ -29,8 +31,9 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -168,12 +171,13 @@ public class SuspensionService {
   public SuspensionDetailResponse create(CurrentUser user, SuspensionSaveRequest body) {
     accessPolicy.ensureCanRegister(user);
     boolean kftc = accessPolicy.registersAsKftc(user);
+    Set<Business> businesses = businessesOf(body);
     Organization organization =
         kftc
-            ? loadOrganization(body.organizationId(), body.business())
-            : ownOrganization(user, body.business());
-    accessPolicy.ensureCanRegister(user, organization, body.business());
-    Suspension.Content content = contentOf(body);
+            ? loadOrganization(body.organizationId(), businesses)
+            : ownOrganization(user, businesses);
+    accessPolicy.ensureCanRegister(user, organization, businesses);
+    Suspension.Content content = contentOf(body, businesses);
     Suspension suspension =
         repository.saveAndFlush(
             Suspension.register(
@@ -183,10 +187,10 @@ public class SuspensionService {
         ChangeHistoryCommand.created(
             HistoryTargetType.SUSPENSION,
             suspension.getId(),
-            suspension.getBusiness(),
+            suspension.getPrimaryBusiness(),
             organization.getName() + " 일시중단 등록",
             Snapshot.of(suspension).diff(Snapshot.EMPTY, true)));
-    notifier.registered(suspension, kftcRecipients(suspension.getBusiness(), user));
+    notifier.registered(suspension, kftcRecipients(suspension.getBusinesses(), user));
     return toDetail(user, suspension);
   }
 
@@ -198,14 +202,17 @@ public class SuspensionService {
     Suspension suspension = load(id);
     ensureNotCompleted(suspension);
     accessPolicy.ensureCanEdit(user, suspension);
-    if (body.business() != suspension.getBusiness()) {
-      // 업무를 옮기면 기관이 그 업무에 참여해야 하고 그 업무로도 올릴 수 있어야 한다.
-      ensureParticipates(suspension.getOrganization(), body.business());
-      accessPolicy.ensureCanRegister(user, suspension.getOrganization(), body.business());
+    Set<Business> businesses = businessesOf(body);
+    Set<Business> businessesBefore = suspension.getBusinesses();
+    Set<Business> added = EnumSet.copyOf(businesses);
+    added.removeAll(businessesBefore);
+    if (!added.isEmpty()) {
+      // 업무를 더하면 기관이 그 업무에 참여해야 하고 그 업무로도 올릴 수 있어야 한다.
+      ensureParticipates(suspension.getOrganization(), added);
+      accessPolicy.ensureCanRegister(user, suspension.getOrganization(), added);
     }
     Snapshot before = Snapshot.of(suspension);
-    Business businessBefore = suspension.getBusiness();
-    suspension.change(contentOf(body));
+    suspension.change(contentOf(body, businesses));
     Snapshot after = Snapshot.of(suspension);
     var changes = after.diff(before, false);
     if (changes.isEmpty()) {
@@ -224,12 +231,14 @@ public class SuspensionService {
         ChangeHistoryCommand.updated(
             HistoryTargetType.SUSPENSION,
             suspension.getId(),
-            suspension.getBusiness(),
+            suspension.getPrimaryBusiness(),
             suspension.getOrganization().getName() + " 일시중단 수정",
             changes));
     String what = before.changedSummary(after);
-    Set<String> recipients = new LinkedHashSet<>(kftcRecipients(businessBefore, user));
-    recipients.addAll(kftcRecipients(suspension.getBusiness(), user));
+    // 업무를 뺐으면 빠진 업무 담당자에게도 알린다.
+    Set<Business> notified = EnumSet.copyOf(businessesBefore);
+    notified.addAll(suspension.getBusinesses());
+    Map<String, Business> recipients = kftcRecipients(notified, user);
     notifier.changed(suspension, recipients, user.name(), what, reopened);
     if (!suspension.getRegistrantEmail().equals(user.email())) {
       notifier.changedForRegistrant(suspension, user.name(), what);
@@ -248,7 +257,7 @@ public class SuspensionService {
         ChangeHistoryCommand.deleted(
             HistoryTargetType.SUSPENSION,
             suspension.getId(),
-            suspension.getBusiness(),
+            suspension.getPrimaryBusiness(),
             suspension.getOrganization().getName() + " 일시중단 삭제",
             FieldChanges.compare()
                 .value(
@@ -258,7 +267,7 @@ public class SuspensionService {
                     null)
                 .value("reason", "중단 이유", suspension.getReason(), null)
                 .toList()));
-    notifier.deleted(suspension, kftcRecipients(suspension.getBusiness(), user), user.name());
+    notifier.deleted(suspension, kftcRecipients(suspension.getBusinesses(), user), user.name());
     repository.delete(suspension);
   }
 
@@ -319,8 +328,7 @@ public class SuspensionService {
     SuspensionPeriod period = s.periodAt(now);
     return new SuspensionSummaryResponse(
         s.getId(),
-        s.getBusiness(),
-        s.getBusiness().getLabel(),
+        businessesOf(s),
         s.getOrganization().getId(),
         s.getOrganization().getName(),
         s.getStartAt(),
@@ -344,9 +352,7 @@ public class SuspensionService {
             || s.getStatus() == SuspensionStatus.IN_REVIEW;
     return new SuspensionDetailResponse(
         s.getId(),
-        s.getBusiness(),
-        s.getBusiness().getSlug(),
-        s.getBusiness().getLabel(),
+        businessesOf(s),
         s.getOrganization().getId(),
         s.getOrganization().getName(),
         s.getStartAt(),
@@ -357,9 +363,9 @@ public class SuspensionService {
         s.getStatus().getLabel(),
         s.getReason(),
         s.getKftcAction(),
-        s.getContactName(),
-        s.getContactPhone(),
-        s.getContactEmail(),
+        s.getContacts().stream()
+            .map(c -> new SuspensionContactResponse(c.getName(), c.getPhone(), c.getEmail()))
+            .toList(),
         s.getExtraNote(),
         s.getRegistrantName(),
         s.getRegistrantJobTitle(),
@@ -377,11 +383,15 @@ public class SuspensionService {
         s.getCreatedAt(),
         s.getUpdatedAt(),
         new SuspensionPermissions(
-            accessPolicy.canManage(user, s.getBusiness()),
+            accessPolicy.canManage(user, s),
             accessPolicy.canEdit(user, s),
             accessPolicy.canDelete(user, s),
             review && reviewOpen && !s.isReviewer(user.email()),
             review));
+  }
+
+  private static List<SuspensionBusinessResponse> businessesOf(Suspension s) {
+    return s.getBusinesses().stream().map(SuspensionBusinessResponse::of).toList();
   }
 
   // ---- 공통 ----
@@ -408,8 +418,8 @@ public class SuspensionService {
     throw new AccessDeniedException(SuspensionAccessPolicy.VIEW_DENIED);
   }
 
-  /** 결제원 담당자가 고른 기관. 그 업무에 참여하는 사용 중 참가기관이어야 한다. */
-  private Organization loadOrganization(Long organizationId, Business business) {
+  /** 결제원 담당자가 고른 기관. 고른 업무에 모두 참여하는 사용 중 참가기관이어야 한다. */
+  private Organization loadOrganization(Long organizationId, Set<Business> businesses) {
     if (organizationId == null) {
       throw BusinessException.onField(
           HttpStatus.BAD_REQUEST,
@@ -421,38 +431,54 @@ public class SuspensionService {
     try {
       organization = organizationService.getActive(organizationId);
     } catch (BusinessException e) {
-      throw invalidOrganization(business);
+      throw invalidOrganization();
     }
     if (organization.getType() != OrganizationType.FINANCE_ORGANIZATION) {
-      throw invalidOrganization(business);
+      throw invalidOrganization();
     }
-    ensureParticipates(organization, business);
+    ensureParticipates(organization, businesses);
     return organization;
   }
 
-  /** 기관 담당자의 자기 기관. 그 업무에 참여해야 한다. */
-  private Organization ownOrganization(CurrentUser user, Business business) {
+  /** 기관 담당자의 자기 기관. 고른 업무에 모두 참여해야 한다. */
+  private Organization ownOrganization(CurrentUser user, Set<Business> businesses) {
     Organization organization = organizationService.getByCode(user.organizationCode());
-    ensureParticipates(organization, business);
+    ensureParticipates(organization, businesses);
     return organization;
   }
 
-  private static void ensureParticipates(Organization organization, Business business) {
-    if (!organization.participatesIn(business)) {
-      throw invalidOrganization(business);
+  /** 고른 업무 중 기관이 참여하지 않는 업무가 있으면 대상 업무 칸에 알린다. */
+  private static void ensureParticipates(Organization organization, Set<Business> businesses) {
+    List<String> missing =
+        businesses.stream()
+            .filter(b -> !organization.participatesIn(b))
+            .map(Business::getLabel)
+            .toList();
+    if (!missing.isEmpty()) {
+      throw BusinessException.onField(
+          HttpStatus.BAD_REQUEST,
+          "SUSPENSION_ORGANIZATION_INVALID",
+          "businesses",
+          organization.getName() + " 은(는) " + String.join(", ", missing) + " 에 참여하지 않습니다.");
     }
   }
 
-  private static BusinessException invalidOrganization(Business business) {
+  private static BusinessException invalidOrganization() {
     return BusinessException.onField(
         HttpStatus.BAD_REQUEST,
         "SUSPENSION_ORGANIZATION_INVALID",
         "organizationId",
-        "기관은 " + business.getLabel() + " 에 참여하는 사용 중 참가기관이어야 합니다.");
+        "기관은 사용 중인 참가기관이어야 합니다.");
+  }
+
+  /** 고른 업무. 겹치면 하나로 치고 업무 순서로 둔다. */
+  private static Set<Business> businessesOf(SuspensionSaveRequest body) {
+    return EnumSet.copyOf(body.businesses());
   }
 
   /** 양식 값을 저장할 모양으로. 글은 앞뒤 공백을 떼고 빈 글은 null 로 둔다. 종료는 시작보다 뒤여야 한다. */
-  private static Suspension.Content contentOf(SuspensionSaveRequest body) {
+  private static Suspension.Content contentOf(
+      SuspensionSaveRequest body, Set<Business> businesses) {
     LocalDateTime start = body.startAt().truncatedTo(ChronoUnit.MINUTES);
     LocalDateTime end = body.endAt().truncatedTo(ChronoUnit.MINUTES);
     if (!end.isAfter(start)) {
@@ -460,14 +486,17 @@ public class SuspensionService {
           HttpStatus.BAD_REQUEST, "SUSPENSION_PERIOD_INVALID", "endAt", "종료 일시는 시작 일시보다 뒤여야 합니다.");
     }
     return new Suspension.Content(
-        body.business(),
+        businesses,
         start,
         end,
         body.reason().trim(),
         blankToNull(body.kftcAction()),
-        body.contactName().trim(),
-        body.contactPhone().trim(),
-        blankToNull(body.contactEmail()),
+        body.contacts().stream()
+            .map(
+                c ->
+                    new Suspension.ContactInfo(
+                        c.name().trim(), c.phone().trim(), blankToNull(c.email())))
+            .toList(),
         blankToNull(body.extraNote()));
   }
 
@@ -475,18 +504,25 @@ public class SuspensionService {
     return value == null || value.isBlank() ? null : value.trim();
   }
 
-  /** 그 업무를 맡은 사용 중 결제원 담당자(업무·개발·운영·상황실)의 이메일. 알림을 일으킨 본인은 뺀다. */
-  private Set<String> kftcRecipients(Business business, CurrentUser actor) {
+  /**
+   * 그 업무들을 맡은 사용 중 결제원 담당자(업무·개발·운영·상황실)의 이메일과, 그 사람이 맡은 업무 중 업무 순서로 첫째(알림을 보일 업무 영역). 알림을 일으킨 본인은
+   * 뺀다.
+   */
+  private Map<String, Business> kftcRecipients(Set<Business> businesses, CurrentUser actor) {
     Set<String> kftcCodes =
         organizationService.listActive().stream()
             .filter(o -> o.type() == OrganizationType.KFTC)
             .map(OrganizationResponse::code)
             .collect(Collectors.toSet());
-    return accountService.listActiveMembers(business).stream()
-        .filter(m -> kftcCodes.contains(m.organizationCode()))
-        .map(BusinessMember::email)
-        .filter(email -> !email.equals(actor.email()))
-        .collect(Collectors.toCollection(LinkedHashSet::new));
+    Map<String, Business> recipients = new LinkedHashMap<>();
+    for (Business business : EnumSet.copyOf(businesses)) {
+      accountService.listActiveMembers(business).stream()
+          .filter(m -> kftcCodes.contains(m.organizationCode()))
+          .map(BusinessMember::email)
+          .filter(email -> !email.equals(actor.email()))
+          .forEach(email -> recipients.putIfAbsent(email, business));
+    }
+    return recipients;
   }
 
   private static String roleLabelOf(CurrentUser user) {
@@ -509,7 +545,7 @@ public class SuspensionService {
         ChangeHistoryCommand.updated(
             HistoryTargetType.SUSPENSION,
             suspension.getId(),
-            suspension.getBusiness(),
+            suspension.getPrimaryBusiness(),
             suspension.getOrganization().getName() + " 일시중단 " + what,
             changes.toList()));
   }
@@ -538,12 +574,16 @@ public class SuspensionService {
 
     static Snapshot of(Suspension s) {
       String contact =
-          s.getContactName()
-              + " "
-              + s.getContactPhone()
-              + (s.getContactEmail() == null ? "" : " " + s.getContactEmail());
+          s.getContacts().stream()
+              .map(
+                  c ->
+                      c.getName()
+                          + " "
+                          + c.getPhone()
+                          + (c.getEmail() == null ? "" : " " + c.getEmail()))
+              .collect(Collectors.joining(" / "));
       return new Snapshot(
-          s.getBusiness().getLabel(),
+          s.getBusinesses().stream().map(Business::getLabel).collect(Collectors.joining(", ")),
           SuspensionNotifier.periodText(s.getStartAt(), s.getEndAt()),
           s.getReason(),
           s.getKftcAction(),

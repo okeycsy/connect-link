@@ -4,6 +4,7 @@ import com.connectlink.auth.CurrentUser;
 import com.connectlink.organization.Business;
 import com.connectlink.organization.Organization;
 import com.connectlink.organization.OrganizationType;
+import java.util.Set;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
 
@@ -12,8 +13,9 @@ import org.springframework.stereotype.Component;
  *
  * <ul>
  *   <li>결제원 담당자(그 업무를 맡은 결제원 계정과 관리자): 그 업무의 모든 기관 일시중단을 보고 등록하고, 기관이 올린 것도 고친다. 확인을 시작하고 조치·인수인계
- *       사항을 써서 확정한다.
- *   <li>기관 담당자(그 업무를 맡은 참가기관 계정): 자기 기관의 그 업무 일시중단을 본다. 본인이 올린 것만 고치고 지운다.
+ *       사항을 써서 확정한다. 한 건이 여러 업무를 멈추면 그 업무 중 하나라도 맡은 결제원 담당자가 다룬다.
+ *   <li>기관 담당자(그 업무를 맡은 참가기관 계정): 자기 기관의 그 업무 일시중단을 본다(여러 업무를 멈추는 건은 그중 하나라도 맡으면). 본인이 올린 것만 고치고
+ *       지운다.
  *   <li>등록은 사람이 아니라 기관 기준이다. 참가기관 계정은 자기 기관이 참여하는 업무 어디에나, 결제원 계정은 고른 기관이 참여하는 업무 어디에나 올린다(대외계·네트워크
  *       작업은 한 업무에 국한되지 않는다). 등록한 사람은 맡지 않은 업무의 건이라도 자기가 올린 건을 보고 고친다.
  *   <li>지우기는 등록한 본인만 한다(결제원 담당자도 자기가 올린 것만). 완료한 건은 아무도 고치거나 지우지 않는다.
@@ -37,6 +39,11 @@ public class SuspensionAccessPolicy {
             && user.businesses().contains(business));
   }
 
+  /** 이 일시중단이 멈추는 업무 중 하나라도 결제원 담당자로서 다루는지. */
+  public boolean canManage(CurrentUser user, Suspension suspension) {
+    return suspension.getBusinesses().stream().anyMatch(b -> canManage(user, b));
+  }
+
   /** 이 업무에서 기관 담당자로서 자기 기관 일시중단을 다루는지. 참가기관의 그 업무 담당자다. */
   public boolean isOrganizationMember(CurrentUser user, Business business) {
     return !user.admin()
@@ -55,9 +62,10 @@ public class SuspensionAccessPolicy {
         || user.organizationType() == OrganizationType.FINANCE_ORGANIZATION;
   }
 
-  /** 이 기관의 이 업무로 올릴 수 있는지. 기관이 그 업무에 참여해야 하고, 참가기관 계정은 자기 기관만이다. */
-  public boolean canRegister(CurrentUser user, Organization organization, Business business) {
-    if (!organization.participatesIn(business)) {
+  /** 이 기관의 이 업무들로 올릴 수 있는지. 기관이 그 업무에 모두 참여해야 하고, 참가기관 계정은 자기 기관만이다. */
+  public boolean canRegister(
+      CurrentUser user, Organization organization, Set<Business> businesses) {
+    if (businesses.isEmpty() || !businesses.stream().allMatch(organization::participatesIn)) {
       return false;
     }
     return registersAsKftc(user)
@@ -66,7 +74,7 @@ public class SuspensionAccessPolicy {
   }
 
   public boolean canView(CurrentUser user, Suspension suspension) {
-    return canManage(user, suspension.getBusiness())
+    return canManage(user, suspension)
         || isOwnOrganization(user, suspension)
         || isActiveRegistrant(user, suspension);
   }
@@ -76,7 +84,7 @@ public class SuspensionAccessPolicy {
     if (suspension.getStatus() == SuspensionStatus.COMPLETED) {
       return false;
     }
-    return canManage(user, suspension.getBusiness()) || isActiveRegistrant(user, suspension);
+    return canManage(user, suspension) || isActiveRegistrant(user, suspension);
   }
 
   /** 지울 수 있는지. 등록한 본인이 아직 같은 쪽(결제원, 그 기관)에 있을 때만. */
@@ -88,8 +96,7 @@ public class SuspensionAccessPolicy {
 
   /** 확인을 시작하거나 조치·인수인계 사항을 써서 확정할 수 있는지. */
   public boolean canReview(CurrentUser user, Suspension suspension) {
-    return suspension.getStatus() != SuspensionStatus.COMPLETED
-        && canManage(user, suspension.getBusiness());
+    return suspension.getStatus() != SuspensionStatus.COMPLETED && canManage(user, suspension);
   }
 
   /** 전 영업일 취합을 수동으로 보낼 수 있는지. 취합은 전 업무를 묶으므로 결제원 담당자 누구나와 관리자다. */
@@ -98,7 +105,7 @@ public class SuspensionAccessPolicy {
   }
 
   private boolean isOwnOrganization(CurrentUser user, Suspension suspension) {
-    return isOrganizationMember(user, suspension.getBusiness())
+    return suspension.getBusinesses().stream().anyMatch(b -> isOrganizationMember(user, b))
         && suspension.getOrganization().getCode().equals(user.organizationCode());
   }
 
@@ -124,8 +131,9 @@ public class SuspensionAccessPolicy {
     }
   }
 
-  public void ensureCanRegister(CurrentUser user, Organization organization, Business business) {
-    if (!canRegister(user, organization, business)) {
+  public void ensureCanRegister(
+      CurrentUser user, Organization organization, Set<Business> businesses) {
+    if (!canRegister(user, organization, businesses)) {
       throw new AccessDeniedException(REGISTER_DENIED);
     }
   }

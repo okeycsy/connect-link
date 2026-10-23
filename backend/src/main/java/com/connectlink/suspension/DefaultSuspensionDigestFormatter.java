@@ -3,9 +3,11 @@ package com.connectlink.suspension;
 import com.connectlink.organization.Business;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.stereotype.Component;
 
 /**
@@ -28,11 +30,14 @@ class DefaultSuspensionDigestFormatter implements SuspensionDigestFormatter {
     if (suspensions.isEmpty()) {
       return head;
     }
-    Map<Business, List<Suspension>> byBusiness = new LinkedHashMap<>();
+    // 여러 업무를 멈추는 건은 그 업무마다 적는다. 건수는 한 번씩 센다.
+    Map<Business, List<Suspension>> byBusiness = new EnumMap<>(Business.class);
     suspensions.forEach(
-        s -> byBusiness.computeIfAbsent(s.getBusiness(), k -> new ArrayList<>()).add(s));
+        s ->
+            s.getBusinesses()
+                .forEach(b -> byBusiness.computeIfAbsent(b, k -> new ArrayList<>()).add(s)));
     StringBuilder body = new StringBuilder(head);
-    int written = 0;
+    Set<Long> written = new HashSet<>();
     for (Map.Entry<Business, List<Suspension>> entry : byBusiness.entrySet()) {
       String section = "\n\n#### " + entry.getKey().getLabel();
       if (body.length() + section.length() > MAX_LENGTH - 40) {
@@ -45,10 +50,10 @@ class DefaultSuspensionDigestFormatter implements SuspensionDigestFormatter {
           break;
         }
         body.append(line);
-        written++;
+        written.add(s.getId());
       }
     }
-    int rest = suspensions.size() - written;
+    int rest = suspensions.size() - written.size();
     if (rest > 0) {
       body.append("\n\n외 ").append(rest).append("건은 연결고리에서 확인해 주세요.");
     }

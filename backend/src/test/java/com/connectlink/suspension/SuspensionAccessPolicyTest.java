@@ -10,6 +10,7 @@ import com.connectlink.organization.JobRole;
 import com.connectlink.organization.Organization;
 import com.connectlink.organization.OrganizationType;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
@@ -46,18 +47,21 @@ class SuspensionAccessPolicyTest {
 
   /** 김민준이 올린 KB국민은행 계좌통합관리 일시중단. */
   private static Suspension ganaSuspension() {
+    return ganaSuspension(Set.of(Business.ACCOUNT_INFO));
+  }
+
+  /** 김민준이 올린 KB국민은행 일시중단. 멈추는 업무를 고른다. */
+  private static Suspension ganaSuspension(Set<Business> businesses) {
     LocalDateTime start = LocalDateTime.now().plusDays(1);
     return Suspension.register(
         new Organization("004", "KB국민은행", OrganizationType.FINANCE_ORGANIZATION, null),
         new Suspension.Content(
-            Business.ACCOUNT_INFO,
+            businesses,
             start,
             start.plusHours(2),
             "점검",
             null,
-            "김민준",
-            "010-0000-2101",
-            null,
+            List.of(new Suspension.ContactInfo("김민준", "010-0000-2101", null)),
             null),
         "kim.minjun@kb.example.com",
         "김민준",
@@ -89,23 +93,27 @@ class SuspensionAccessPolicyTest {
   void 참가기관_담당자는_자기_기관이_참여하는_업무면_맡지_않아도_등록한다() {
     Organization kb = participating("004", "KB국민은행");
     assertThat(policy.canRegister(TestUsers.GANA_MEMBER)).isTrue();
-    assertThat(policy.canRegister(TestUsers.GANA_MEMBER, kb, Business.ACCOUNT_INFO)).isTrue();
-    assertThat(policy.canRegister(TestUsers.GANA_MEMBER, kb, Business.CMS)).isTrue();
+    assertThat(policy.canRegister(TestUsers.GANA_MEMBER, kb, Set.of(Business.ACCOUNT_INFO)))
+        .isTrue();
+    assertThat(policy.canRegister(TestUsers.GANA_MEMBER, kb, Set.of(Business.CMS))).isTrue();
   }
 
   @Test
   void 기관이_참여하지_않는_업무나_다른_기관으로는_등록하지_못한다() {
     Organization kb = participating("004", "KB국민은행");
-    assertThat(policy.canRegister(TestUsers.GANA_MEMBER, kb, Business.LOAN_TRANSFER)).isFalse();
+    assertThat(policy.canRegister(TestUsers.GANA_MEMBER, kb, Set.of(Business.LOAN_TRANSFER)))
+        .isFalse();
     Organization shinhan = participating("088", "신한은행");
-    assertThat(policy.canRegister(TestUsers.GANA_MEMBER, shinhan, Business.ACCOUNT_INFO)).isFalse();
+    assertThat(policy.canRegister(TestUsers.GANA_MEMBER, shinhan, Set.of(Business.ACCOUNT_INFO)))
+        .isFalse();
   }
 
   @Test
   void 결제원은_맡지_않은_업무라도_기관이_참여하면_등록한다() {
     Organization kb = participating("004", "KB국민은행");
-    assertThat(policy.canRegister(TestUsers.KFTC_CMS, kb, Business.ACCOUNT_INFO)).isTrue();
-    assertThat(policy.canRegister(TestUsers.KFTC_CMS, kb, Business.LOAN_TRANSFER)).isFalse();
+    assertThat(policy.canRegister(TestUsers.KFTC_CMS, kb, Set.of(Business.ACCOUNT_INFO))).isTrue();
+    assertThat(policy.canRegister(TestUsers.KFTC_CMS, kb, Set.of(Business.LOAN_TRANSFER)))
+        .isFalse();
   }
 
   @Test
@@ -243,5 +251,35 @@ class SuspensionAccessPolicyTest {
     assertThat(policy.canSendDigest(TestUsers.GANA_MEMBER)).isFalse();
     assertThatThrownBy(() -> policy.ensureCanSendDigest(TestUsers.GANA_MEMBER))
         .isInstanceOf(AccessDeniedException.class);
+  }
+
+  @Test
+  void 여러_업무를_멈추는_건은_그중_한_업무의_결제원_담당자가_다룬다() {
+    Suspension s = ganaSuspension(Set.of(Business.ACCOUNT_INFO, Business.CMS));
+    assertThat(policy.canView(TestUsers.KFTC_CMS, s)).isTrue();
+    assertThat(policy.canEdit(TestUsers.KFTC_CMS, s)).isTrue();
+    assertThat(policy.canReview(TestUsers.KFTC_CMS, s)).isTrue();
+  }
+
+  @Test
+  void 여러_업무를_멈추는_건이라도_어느_업무도_맡지_않은_결제원_계정은_다루지_못한다() {
+    Suspension s = ganaSuspension(Set.of(Business.ACCOUNT_INFO, Business.AUTO_TRANSFER));
+    assertThat(policy.canView(TestUsers.KFTC_CMS, s)).isFalse();
+    assertThat(policy.canReview(TestUsers.KFTC_CMS, s)).isFalse();
+  }
+
+  @Test
+  void 고른_업무_중_하나라도_기관이_참여하지_않으면_올리지_못한다() {
+    Organization kb =
+        new Organization("004", "KB국민은행", OrganizationType.FINANCE_ORGANIZATION, null);
+    kb.replaceBusinesses(Set.of(Business.ACCOUNT_INFO, Business.CMS));
+    assertThat(
+            policy.canRegister(
+                TestUsers.GANA_MEMBER, kb, Set.of(Business.ACCOUNT_INFO, Business.CMS)))
+        .isTrue();
+    assertThat(
+            policy.canRegister(
+                TestUsers.GANA_MEMBER, kb, Set.of(Business.ACCOUNT_INFO, Business.LOAN_TRANSFER)))
+        .isFalse();
   }
 }

@@ -106,15 +106,21 @@ class SuspensionControllerTest {
   private Map<String, Object> form(String reason) {
     LocalDateTime start = LocalDate.now().plusDays(2).atTime(2, 0);
     Map<String, Object> body = new HashMap<>();
-    body.put("business", "ACCOUNT_INFO");
+    body.put("businesses", List.of("ACCOUNT_INFO"));
     body.put("startAt", start.toString());
     body.put("endAt", start.plusHours(2).toString());
     body.put("reason", reason);
     body.put("kftcAction", "조회 차단");
-    body.put("contactName", "김민준");
-    body.put("contactPhone", "010-0000-2101");
-    body.put("contactEmail", "kim.minjun@kb.example.com");
+    body.put("contacts", List.of(contact("김민준", "010-0000-2101", "kim.minjun@kb.example.com")));
     return body;
+  }
+
+  private static Map<String, Object> contact(String name, String phone, String email) {
+    Map<String, Object> contact = new HashMap<>();
+    contact.put("name", name);
+    contact.put("phone", phone);
+    contact.put("email", email);
+    return contact;
   }
 
   private Long createAsKim(String reason) throws Exception {
@@ -197,11 +203,11 @@ class SuspensionControllerTest {
   @Test
   void 기관_담당자는_자기_기관이_참여하는_업무면_맡지_않아도_등록하고_본인_건을_본다() throws Exception {
     Map<String, Object> body = form("기관 기준 CMS 등록");
-    body.put("business", "CMS"); // 김민준은 계좌통합관리 담당이지만 KB국민은행은 CMS 에도 참여한다.
+    body.put("businesses", List.of("CMS")); // 김민준은 계좌통합관리 담당이지만 KB국민은행은 CMS 에도 참여한다.
     Long id =
         json(send(post(BASE), body, kim())
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.business").value("CMS"))
+                .andExpect(jsonPath("$.businesses[0].code").value("CMS"))
                 .andExpect(jsonPath("$.organizationName").value("KB국민은행")))
             .get("id")
             .asLong();
@@ -216,10 +222,74 @@ class SuspensionControllerTest {
   @Test
   void 기관이_참여하지_않는_업무로는_등록하지_못한다() throws Exception {
     Map<String, Object> body = form("참여 안 하는 업무");
-    body.put("business", "LOAN_TRANSFER"); // 삼성증권은 대출이동에 참여하지 않는다.
+    body.put("businesses", List.of("ACCOUNT_INFO", "LOAN_TRANSFER")); // 삼성증권은 대출이동에 참여하지 않는다.
     send(post(BASE), body, choi())
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.code").value("SUSPENSION_ORGANIZATION_INVALID"));
+        .andExpect(jsonPath("$.code").value("SUSPENSION_ORGANIZATION_INVALID"))
+        .andExpect(jsonPath("$.fieldErrors[0].field").value("businesses"));
+  }
+
+  @Test
+  void 여러_업무를_멈추는_건은_한_건으로_등록되고_그_업무들의_결제원_담당자가_모두_다룬다() throws Exception {
+    Map<String, Object> body = form("여러 업무 한 건 등록");
+    body.put("businesses", List.of("CMS", "ACCOUNT_INFO", "CMS"));
+    body.put(
+        "contacts",
+        List.of(
+            contact("김민준", "010-0000-2101", "kim.minjun@kb.example.com"),
+            contact("한예린", "010-0000-2102", null)));
+    Long id =
+        json(send(post(BASE), body, kim())
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.businesses.length()").value(2))
+                .andExpect(jsonPath("$.businesses[0].code").value("ACCOUNT_INFO"))
+                .andExpect(jsonPath("$.businesses[1].code").value("CMS"))
+                .andExpect(jsonPath("$.contacts.length()").value(2))
+                .andExpect(jsonPath("$.contacts[1].name").value("한예린")))
+            .get("id")
+            .asLong();
+    assertThat(notified("여러 업무 한 건 등록"))
+        .contains("hong.sungmin@kftc.example.com", "park.cms@kftc.example.com");
+    send(get(BASE + "/" + id), null, park())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.permissions.confirm").value(true));
+    send(get(BASE + "/" + id), null, hong())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.permissions.confirm").value(true));
+    JsonNode cms = json(send(get(BASE).param("business", "cms"), null, park()));
+    assertThat(cms.findValuesAsText("reason")).contains("여러 업무 한 건 등록");
+    JsonNode accountInfo = json(send(get(BASE).param("business", "account-info"), null, hong()));
+    assertThat(accountInfo.findValuesAsText("reason")).contains("여러 업무 한 건 등록");
+  }
+
+  @Test
+  void 고치면서_업무를_빼고_담당자를_줄이면_그대로_남는다() throws Exception {
+    Map<String, Object> body = form("업무 빼기");
+    body.put("businesses", List.of("ACCOUNT_INFO", "CMS"));
+    body.put(
+        "contacts",
+        List.of(contact("김민준", "010-0000-2101", null), contact("한예린", "010-0000-2102", null)));
+    Long id = json(send(post(BASE), body, kim())).get("id").asLong();
+    body.put("businesses", List.of("ACCOUNT_INFO"));
+    body.put("contacts", List.of(contact("한예린", "010-0000-2102", null)));
+    send(put(BASE + "/" + id), body, kim())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.businesses.length()").value(1))
+        .andExpect(jsonPath("$.contacts.length()").value(1))
+        .andExpect(jsonPath("$.contacts[0].name").value("한예린"));
+    // 빠진 업무(CMS)의 결제원 담당자는 그 뒤로 그 건을 보지 못한다.
+    send(get(BASE + "/" + id), null, park()).andExpect(status().isForbidden());
+  }
+
+  @Test
+  void 대상_업무와_담당자가_비면_필드_메시지가_온다() throws Exception {
+    Map<String, Object> body = form("빈 업무");
+    body.put("businesses", List.of());
+    body.put("contacts", List.of());
+    send(post(BASE), body, kim())
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.fieldErrors[*].field").value(hasItem("businesses")))
+        .andExpect(jsonPath("$.fieldErrors[*].field").value(hasItem("contacts")));
   }
 
   @Test
@@ -263,11 +333,12 @@ class SuspensionControllerTest {
   @Test
   void 양식_검증_메시지는_필드별로_온다() throws Exception {
     Map<String, Object> body = form("");
-    body.put("contactPhone", "전화");
+    body.put(
+        "contacts", List.of(contact("김민준", "010-0000-2101", null), contact("한예린", "전화", null)));
     send(post(BASE), body, kim())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.fieldErrors[*].field").value(hasItem("reason")))
-        .andExpect(jsonPath("$.fieldErrors[*].field").value(hasItem("contactPhone")));
+        .andExpect(jsonPath("$.fieldErrors[*].field").value(hasItem("contacts[1].phone")));
   }
 
   // ---- 조회 ----

@@ -97,7 +97,7 @@ public class SuspensionHomeCard implements HomeCardContributor {
               s.getReason() + " · " + s.getStatus().getLabel(),
               date,
               isToday ? Urgency.SOON : Urgency.NONE,
-              SuspensionNotifier.linkOf(s)));
+              SuspensionNotifier.linkOf(s, business)));
     }
     String summary;
     if (week.isEmpty()) {

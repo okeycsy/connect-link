@@ -60,7 +60,7 @@ public class SuspensionSearchProvider implements SearchProvider {
                         + s.getStatus().getLabel()
                         + " · "
                         + SuspensionNotifier.periodText(s.getStartAt(), s.getEndAt()),
-                    SuspensionNotifier.linkOf(s)))
+                    SuspensionNotifier.linkOf(s, business)))
         .toList();
   }
 }
