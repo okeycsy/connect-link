@@ -169,11 +169,13 @@ function TestPlanTable({
       <Table.Thead>
         <Table.Tr>
           <Table.Th>개발 건</Table.Th>
-          <Table.Th w={190}>수행 기간</Table.Th>
-          <Table.Th w={150}>{manager ? '전체 수행률' : '우리 기관 수행률'}</Table.Th>
-          <Table.Th w={manager ? 100 : 140}>{manager ? '완료 기관' : '완료 요구사항'}</Table.Th>
-          <Table.Th w={150}>상태</Table.Th>
-          <Table.Th w={80}>담당</Table.Th>
+          <Table.Th w="17%">수행 기간</Table.Th>
+          <Table.Th w="15%">{manager ? '전체 수행률' : '우리 기관 수행률'}</Table.Th>
+          <Table.Th w={manager ? '10%' : '16%'}>{manager ? '완료 기관' : '완료 요구사항'}</Table.Th>
+          <Table.Th w="12%" miw={120}>
+            상태
+          </Table.Th>
+          <Table.Th w="8%">담당</Table.Th>
         </Table.Tr>
       </Table.Thead>
       <Table.Tbody>
@@ -212,7 +214,7 @@ function TestPlanTable({
                   size="sm"
                   radius="xl"
                   color="clay"
-                  w={70}
+                  w={80}
                   aria-label="수행률"
                 />
                 <Text size="sm" fw={600} className={classes.numeric} data-testid="progress-rate">
