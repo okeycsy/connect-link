@@ -14,6 +14,7 @@ public enum NotificationType {
   TEST_PLAN_OPENED("기관 테스트 등록"),
   TEST_RESULT_REPORTED("기관 테스트 결과 등록"),
   TEST_RESULT_FEEDBACK("기관 테스트 결제원 의견"),
+  TEST_RESULT_COMMENT("기관 테스트 의견 답글"),
   TEST_DATA_REQUESTED("기관 테스트데이터 요청"),
   TEST_DATA_REPORTED("기관 테스트데이터 등록"),
   SUSPENSION_CHANGED("일시중단 변경"),

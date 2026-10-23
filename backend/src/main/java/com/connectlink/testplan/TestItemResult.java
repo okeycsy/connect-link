@@ -2,7 +2,11 @@ package com.connectlink.testplan;
 
 import com.connectlink.common.AuditedEntity;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -13,10 +17,15 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.OrderBy;
 import javax.persistence.Table;
+import org.hibernate.annotations.BatchSize;
 
 /**
  * 대상 기관 하나가 요구사항 하나에 등록한 결과와, 그 결과에 대한 결제원 의견(미니 수행률·특이사항). 결제원 의견은 기관 결과를 덮어쓰지 않고 옆에 둔다.
+ *
+ * <p>결제원 의견 아래에는 결제원 담당자와 그 기관 담당자가 답글({@link TestItemComment})을 시간순으로 이어서 단다.
  *
  * <p>결제원 의견을 남긴 뒤 기관이 결과를 다시 등록하면 그 의견은 지난 의견이 되어(다시 확인 필요) 수행률·완료 계산에 쓰지 않는다.
  */
@@ -81,6 +90,12 @@ public class TestItemResult extends AuditedEntity {
   @Column(name = "feedback_at")
   private LocalDateTime feedbackAt;
 
+  /** 결제원 의견에 이어 단 답글. 쓴 순서다. */
+  @OneToMany(mappedBy = "result", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OrderBy("writtenAt ASC, id ASC")
+  @BatchSize(size = 50)
+  private List<TestItemComment> comments = new ArrayList<>();
+
   protected TestItemResult() {}
 
   TestItemResult(
@@ -144,6 +159,19 @@ public class TestItemResult extends AuditedEntity {
     this.feedbackByName = name;
     this.feedbackByJobTitle = jobTitle;
     this.feedbackAt = now;
+  }
+
+  TestItemComment addComment(TestItemComment comment) {
+    comments.add(comment);
+    return comment;
+  }
+
+  Optional<TestItemComment> findComment(Long commentId) {
+    return comments.stream().filter(c -> c.getId().equals(commentId)).findFirst();
+  }
+
+  void removeComment(TestItemComment comment) {
+    comments.remove(comment);
   }
 
   /** 결제원 의견이 있고 그 뒤에 기관이 결과를 다시 등록하지 않았는지. */
@@ -230,5 +258,9 @@ public class TestItemResult extends AuditedEntity {
 
   public LocalDateTime getFeedbackAt() {
     return feedbackAt;
+  }
+
+  public List<TestItemComment> getComments() {
+    return List.copyOf(comments);
   }
 }
