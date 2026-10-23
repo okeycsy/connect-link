@@ -61,7 +61,7 @@ public class ContactConfirmHomeCard implements HomeCardContributor {
     }
     LocalDateTime threshold = LocalDateTime.now(clock).minus(ContactService.RECONFIRM_AFTER);
     Specification<Contact> overdueSpec =
-        scope.and(ContactSpecifications.filter(null, null, null, threshold));
+        scope.and(ContactSpecifications.filter(null, null, null, threshold, false));
     long total = repository.count(scope);
     long overdue = repository.count(overdueSpec);
     String link = "/" + business.getSlug() + "/" + key().getFeature();

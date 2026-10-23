@@ -209,7 +209,8 @@ class ContactControllerTest {
     mockMvc
         .perform(get(BASE + "/counts").param("business", "account-info").with(hong()))
         .andExpect(jsonPath("$.total").value(11))
-        .andExpect(jsonPath("$.needsConfirm").value(3));
+        .andExpect(jsonPath("$.needsConfirm").value(3))
+        .andExpect(jsonPath("$.unreachable").value(0));
   }
 
   @Test
@@ -401,6 +402,107 @@ class ContactControllerTest {
     mockMvc
         .perform(post("/api/v1/demo/contact-reconfirm-runs").with(csrf()).with(TestUsers.admin()))
         .andExpect(jsonPath("$.notified").value(0));
+  }
+
+  // 연락 불가
+
+  @Test
+  void 상황실이_연락_불가로_표시하면_결제원_담당자에게_알리고_목록에_빨간_비고가_보인다() throws Exception {
+    Long id = contactId("namgung.min@kb.example.com", Business.ACCOUNT_INFO);
+    mockMvc
+        .perform(
+            json(
+                    put(BASE + "/" + id + "/unreachable"),
+                    Map.of("note", "02:10 내선·휴대폰 모두 받지 않음", "notifyOrganization", false))
+                .with(TestUsers.as(CONTROL_ROOM)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.unreachable.note").value("02:10 내선·휴대폰 모두 받지 않음"))
+        .andExpect(jsonPath("$.unreachable.markedByName").value("이관제"))
+        .andExpect(jsonPath("$.permissions.clearUnreachable").value(true));
+    assertThat(
+            notificationRepository.findByRecipientEmailAndReadAtIsNull(
+                "hong.sungmin@kftc.example.com"))
+        .anyMatch(n -> n.getType() == NotificationType.CONTACT_UNREACHABLE);
+    assertThat(
+            notificationRepository.findByRecipientEmailAndReadAtIsNull("kim.minjun@kb.example.com"))
+        .noneMatch(n -> n.getType() == NotificationType.CONTACT_UNREACHABLE);
+    mockMvc
+        .perform(
+            get(BASE).param("business", "account-info").param("unreachable", "true").with(hong()))
+        .andExpect(jsonPath("$.totalElements").value(1))
+        .andExpect(jsonPath("$.content[0].name").value("남궁민"));
+    mockMvc
+        .perform(get(BASE + "/counts").param("business", "account-info").with(hong()))
+        .andExpect(jsonPath("$.unreachable").value(1));
+    mockMvc
+        .perform(
+            get("/api/v1/change-histories")
+                .param("targetType", "CONTACT")
+                .param("targetId", String.valueOf(id))
+                .with(hong()))
+        .andExpect(jsonPath("$.content[0].changes[0].field").value("unreachable"));
+  }
+
+  @Test
+  void 기관에도_알리기를_고르면_그_기관_같은_업무_담당자에게_메일이_간다() throws Exception {
+    Long id = contactId("namgung.min@kb.example.com", Business.ACCOUNT_INFO);
+    mockMvc
+        .perform(
+            json(put(BASE + "/" + id + "/unreachable"), Map.of("notifyOrganization", true))
+                .with(hong()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.unreachable.note").doesNotExist());
+    assertThat(
+            notificationRepository.findByRecipientEmailAndReadAtIsNull("kim.minjun@kb.example.com"))
+        .anyMatch(n -> n.getType() == NotificationType.CONTACT_UNREACHABLE);
+  }
+
+  @Test
+  void 기관_담당자는_연락_불가로_표시하지_못하고_결제원도_인터넷망에서는_못한다() throws Exception {
+    Long id = contactId("namgung.min@kb.example.com", Business.ACCOUNT_INFO);
+    mockMvc
+        .perform(json(put(BASE + "/" + id + "/unreachable"), Map.of()).with(gana()))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
+    mockMvc
+        .perform(external(json(put(BASE + "/" + id + "/unreachable"), Map.of()).with(hong())))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("INTERNAL_ONLY"));
+    mockMvc
+        .perform(external(get(BASE + "/" + id).with(hong())))
+        .andExpect(jsonPath("$.permissions.markUnreachable").value(false));
+  }
+
+  @Test
+  void 기관_담당자가_정보를_고치면_연락_불가_표시가_지워진다() throws Exception {
+    Long id = contactId("namgung.min@kb.example.com", Business.ACCOUNT_INFO);
+    mockMvc
+        .perform(json(put(BASE + "/" + id + "/unreachable"), Map.of()).with(hong()))
+        .andExpect(status().isOk());
+    mockMvc
+        .perform(
+            external(
+                json(put(BASE + "/" + id), namgungForm(Map.of("mobilePhone", "010-0000-2299")))
+                    .with(gana())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.unreachable").doesNotExist());
+    assertThat(contactRepository.findById(id).orElseThrow().isUnreachable()).isFalse();
+  }
+
+  @Test
+  void 연락_불가_해제는_고칠_수_있는_기관_담당자가_하고_다른_기관은_못한다() throws Exception {
+    Long id = contactId("namgung.min@kb.example.com", Business.ACCOUNT_INFO);
+    mockMvc
+        .perform(json(put(BASE + "/" + id + "/unreachable"), Map.of()).with(hong()))
+        .andExpect(status().isOk());
+    mockMvc
+        .perform(delete(BASE + "/" + id + "/unreachable").with(csrf()).with(saa()))
+        .andExpect(status().isForbidden());
+    mockMvc
+        .perform(external(delete(BASE + "/" + id + "/unreachable").with(csrf()).with(gana())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.unreachable").doesNotExist())
+        .andExpect(jsonPath("$.permissions.clearUnreachable").value(false));
   }
 
   // 등록

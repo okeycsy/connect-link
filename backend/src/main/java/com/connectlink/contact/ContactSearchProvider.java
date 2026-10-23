@@ -53,7 +53,7 @@ public class ContactSearchProvider implements SearchProvider {
     return repository
         .findAll(
             ContactSpecifications.scope(business, ownOrganizationCode)
-                .and(ContactSpecifications.filter(query, null, null, null)),
+                .and(ContactSpecifications.filter(query, null, null, null, false)),
             PageRequest.of(0, limit, ContactSpecifications.DEFAULT_SORT))
         .stream()
         .map(

@@ -27,7 +27,8 @@ import org.hibernate.annotations.BatchSize;
 
 /**
  * 담당자 연락처. 기관 하나의 업무 하나를 맡은 사람 한 명이다. 계정이 없는 담당자(후임자 등)도 있으므로 계정을 참조하지 않고, 본인 여부는 회사 이메일로 맞춘다. 고치거나
- * "변동 없음" 으로 확인하면 최근 확인일({@code lastConfirmedAt})이 갱신된다.
+ * "변동 없음" 으로 확인하면 최근 확인일({@code lastConfirmedAt})이 갱신된다. 전화가 닿지 않으면 결제원 담당자가 연락 불가로 표시하고({@link
+ * #markUnreachable}), 고치면 지워진다.
  */
 @Entity
 @Table(name = "contact")
@@ -89,6 +90,23 @@ public class Contact extends AuditedEntity {
   /** 6개월 미확인 알림을 보낸 때. 확인일보다 뒤면 이번 미확인 기간에는 이미 보냈다. */
   @Column(name = "reconfirm_notified_at")
   private LocalDateTime reconfirmNotifiedAt;
+
+  /** 연락 불가로 표시한 때. 표시가 없으면 null 이고, 아래 unreachable* 칸도 함께 비어 있다. */
+  @Column(name = "unreachable_at")
+  private LocalDateTime unreachableAt;
+
+  @Column(name = "unreachable_note", length = 500)
+  private String unreachableNote;
+
+  @Column(name = "unreachable_by_email", length = 200)
+  private String unreachableByEmail;
+
+  @Column(name = "unreachable_by_name", length = 50)
+  private String unreachableByName;
+
+  /** 표시한 그때의 직급. "결제원(이수진 주임)" 표시에 쓴다. */
+  @Column(name = "unreachable_by_job_title", length = 50)
+  private String unreachableByJobTitle;
 
   @OneToMany(mappedBy = "contact", cascade = CascadeType.ALL, orphanRemoval = true)
   @BatchSize(size = 50)
@@ -153,6 +171,29 @@ public class Contact extends AuditedEntity {
   /** 이번 미확인 기간에 아직 알림을 보내지 않았는지. 확인한 뒤에 보낸 알림이 있으면 보냈다. */
   public boolean isReconfirmNotificationPending() {
     return reconfirmNotifiedAt == null || reconfirmNotifiedAt.isBefore(lastConfirmedAt);
+  }
+
+  /** 연락 불가로 표시한다. 이미 표시돼 있으면 새 메모·표시한 사람·때로 바꾼다. */
+  public void markUnreachable(
+      String note, String byEmail, String byName, String byJobTitle, LocalDateTime now) {
+    this.unreachableAt = now;
+    this.unreachableNote = note;
+    this.unreachableByEmail = byEmail;
+    this.unreachableByName = byName;
+    this.unreachableByJobTitle = byJobTitle;
+  }
+
+  /** 연락 불가 표시를 지운다. 정보를 고쳤거나 연락이 닿았을 때다. */
+  public void clearUnreachable() {
+    this.unreachableAt = null;
+    this.unreachableNote = null;
+    this.unreachableByEmail = null;
+    this.unreachableByName = null;
+    this.unreachableByJobTitle = null;
+  }
+
+  public boolean isUnreachable() {
+    return unreachableAt != null;
   }
 
   private void replaceItRoles(Set<ItRole> requested) {
@@ -227,6 +268,26 @@ public class Contact extends AuditedEntity {
 
   public LocalDateTime getReconfirmNotifiedAt() {
     return reconfirmNotifiedAt;
+  }
+
+  public LocalDateTime getUnreachableAt() {
+    return unreachableAt;
+  }
+
+  public String getUnreachableNote() {
+    return unreachableNote;
+  }
+
+  public String getUnreachableByEmail() {
+    return unreachableByEmail;
+  }
+
+  public String getUnreachableByName() {
+    return unreachableByName;
+  }
+
+  public String getUnreachableByJobTitle() {
+    return unreachableByJobTitle;
   }
 
   /** 전산 세부 직무. 선언 순서다. */

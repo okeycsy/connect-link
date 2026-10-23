@@ -19,6 +19,8 @@ import org.springframework.stereotype.Component;
  *   <li>결제원 운영·상황실·대외계: 맡은 업무와 상관없이 전 업무·전 기관 담당자를 본다.
  *   <li>기관 담당자(그 업무를 맡은 참가기관 계정): 그 업무의 결제원 담당자와 자기 기관 담당자만 본다. 본인과 자기 기관의 같은 업무 담당자를 고치고 확인하며,
  *       후임자를 등록한다. 지우지는 않는다.
+ *   <li>연락 불가 표시: 이 업무 담당자를 다 보는 결제원 쪽(그 업무 결제원 담당자, 운영·상황실·대외계, 관리자)이 내부망에서 남긴다. 해제는 남길 수 있는 사람과 그
+ *       담당자를 고칠 수 있는 사람(기관 담당자는 자기 기관)이 한다.
  *   <li>이용기관 담당자는 쓰지 않는다(명세가 정하기 전까지, CLAUDE.md 용어집).
  * </ul>
  */
@@ -29,6 +31,8 @@ public class ContactAccessPolicy {
   static final String EDIT_DENIED = "본인과 소속 기관의 같은 업무 담당자, 또는 그 업무의 결제원 담당자만 고칩니다.";
   static final String CREATE_DENIED = "그 업무의 결제원 담당자나 그 기관의 같은 업무 담당자만 담당자를 등록합니다.";
   static final String DELETE_DENIED = "그 업무의 결제원 담당자만 담당자를 지웁니다.";
+  static final String UNREACHABLE_DENIED = "이 업무 담당자를 보는 결제원 담당자만 연락 불가로 표시합니다.";
+  static final String UNREACHABLE_CLEAR_DENIED = "연락 불가 표시는 결제원 담당자나 이 담당자를 고칠 수 있는 사람이 해제합니다.";
   static final String CAMPAIGN_DENIED = "그 업무의 결제원 담당자만 정기 변경 주간을 등록하고 진행률을 봅니다.";
 
   /** 맡은 업무와 상관없이 전 업무·전 기관 담당자를 조회하는 결제원 전산 세부 직무(명세). */
@@ -88,6 +92,16 @@ public class ContactAccessPolicy {
         || (isOrganizationMember(user, business) && isOwnOrganization(user, organization));
   }
 
+  /** 연락 불가로 표시할 수 있는지. 전화를 거는 결제원 쪽(이 업무 전 기관을 보는 결제원 계정과 관리자)이다. */
+  public boolean canMarkUnreachable(CurrentUser user, Contact contact) {
+    return isKftcSide(user) && canViewAll(user, contact.getBusiness());
+  }
+
+  /** 연락 불가 표시를 해제할 수 있는지. 표시할 수 있는 사람과, 고칠 수 있는 사람(정보를 바로잡는 기관 담당자)이다. */
+  public boolean canClearUnreachable(CurrentUser user, Contact contact) {
+    return canMarkUnreachable(user, contact) || canEdit(user, contact);
+  }
+
   /** 결제원 쪽 변경인지. 결제원 담당자의 수정·삭제는 내부망에서만 한다(명세). 기관 담당자는 인터넷망에서도 고친다. */
   public boolean isKftcSide(CurrentUser user) {
     return user.admin() || user.organizationType() == OrganizationType.KFTC;
@@ -124,6 +138,18 @@ public class ContactAccessPolicy {
   public void ensureCanCreate(CurrentUser user, Business business, Organization organization) {
     if (!canCreate(user, business, organization)) {
       throw new AccessDeniedException(CREATE_DENIED);
+    }
+  }
+
+  public void ensureCanMarkUnreachable(CurrentUser user, Contact contact) {
+    if (!canMarkUnreachable(user, contact)) {
+      throw new AccessDeniedException(UNREACHABLE_DENIED);
+    }
+  }
+
+  public void ensureCanClearUnreachable(CurrentUser user, Contact contact) {
+    if (!canClearUnreachable(user, contact)) {
+      throw new AccessDeniedException(UNREACHABLE_CLEAR_DENIED);
     }
   }
 

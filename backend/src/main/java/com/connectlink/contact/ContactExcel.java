@@ -31,7 +31,7 @@ public record ContactExcel(String fileName, byte[] content) {
 
   private static final String[] HEADERS = {
     "기관", "기관 코드", "이름", "주/부담당", "직무", "세부업무", "부서", "팀", "직급", "내선번호", "휴대폰번호", "회사 이메일",
-    "최근 확인일", "확인 필요"
+    "최근 확인일", "확인 필요", "연락 불가"
   };
 
   static ContactExcel of(
@@ -69,7 +69,8 @@ public record ContactExcel(String fileName, byte[] content) {
           orEmpty(c.getMobilePhone()),
           c.getEmail(),
           c.getLastConfirmedAt().format(DATE),
-          c.getLastConfirmedAt().isBefore(threshold) ? "6개월 경과" : ""
+          c.getLastConfirmedAt().isBefore(threshold) ? "6개월 경과" : "",
+          unreachableOf(c)
         };
         for (int i = 0; i < values.length; i++) {
           row.createCell(i).setCellValue(values[i]);
@@ -87,6 +88,15 @@ public record ContactExcel(String fileName, byte[] content) {
     } catch (IOException e) {
       throw new UncheckedIOException("엑셀 파일을 만들지 못했습니다.", e);
     }
+  }
+
+  /** 연락 불가 표시. "2026-10-24 메모" 처럼 표시한 날과 메모, 없으면 빈 칸. */
+  private static String unreachableOf(Contact c) {
+    if (!c.isUnreachable()) {
+      return "";
+    }
+    String date = c.getUnreachableAt().format(DATE);
+    return c.getUnreachableNote() == null ? date : date + " " + c.getUnreachableNote();
   }
 
   private static String orEmpty(String value) {
