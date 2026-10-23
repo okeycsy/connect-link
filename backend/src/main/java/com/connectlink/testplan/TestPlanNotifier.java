@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 /**
  * 기관 테스트 모듈의 알림. 모두 {@link NotificationService} 를 거쳐 알림 센터에 남는다. 테스트가 열리면 대상 기관 담당자에게 메일, 기관이 결과를
  * 등록하거나 테스트데이터를 생성 완료로 바꾸면 그 테스트의 알림 대상 결제원 담당자에게 매터모스트(명세), 결제원이 의견을 남기면 결과를 등록한 기관 담당자에게 알림 센터로만
- * 알린다.
+ * 알린다. 의견에 이어 단 답글도 상대 쪽에 알림 센터로만 알린다.
  */
 @Component
 class TestPlanNotifier {
@@ -136,6 +136,33 @@ class TestPlanNotifier {
             + " ("
             + actorName
             + ")",
+        Set.of());
+  }
+
+  /**
+   * 결제원 의견에 답글이 달렸다. 상대 쪽 담당자에게 알림 센터로만.
+   *
+   * @param author 글쓴이 표시(예: "KB국민은행(김민준 대리)")
+   */
+  void commented(
+      TestPlan plan,
+      TestPlanTarget target,
+      TestItemResult result,
+      Collection<String> recipientEmails,
+      String author,
+      String body) {
+    publish(
+        recipientEmails,
+        plan,
+        NotificationType.TEST_RESULT_COMMENT,
+        target.getOrganization().getName() + " " + headline(plan) + " 의견에 답글이 있습니다",
+        result.getItem().getNumber()
+            + " "
+            + result.getItem().getTitle()
+            + " · "
+            + author
+            + ": "
+            + body,
         Set.of());
   }
 

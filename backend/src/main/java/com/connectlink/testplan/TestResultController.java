@@ -2,22 +2,27 @@ package com.connectlink.testplan;
 
 import com.connectlink.auth.CurrentUserProvider;
 import com.connectlink.testplan.dto.TestFeedbackRequest;
+import com.connectlink.testplan.dto.TestItemCommentRequest;
 import com.connectlink.testplan.dto.TestResultSaveRequest;
 import com.connectlink.testplan.dto.TestTargetResultsResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 기관 테스트 결과: 대상 기관별 요구사항 결과 조회와 등록, 결제원 의견(미니 수행률·특이사항). */
+/** 기관 테스트 결과: 대상 기관별 요구사항 결과 조회와 등록, 결제원 의견(미니 수행률·특이사항)과 그 의견에 이어 다는 답글. */
 @RestController
 @RequestMapping("/api/v1/test-plans/{id}/targets/{organizationId}")
-@Tag(name = "기관 테스트 결과", description = "대상 기관의 요구사항별 결과와 결제원 의견")
+@Tag(name = "기관 테스트 결과", description = "대상 기관의 요구사항별 결과와 결제원 의견, 답글")
 public class TestResultController {
 
   private final TestResultService testResultService;
@@ -61,5 +66,31 @@ public class TestResultController {
       @Valid @RequestBody TestFeedbackRequest request) {
     return testResultService.feedback(
         currentUserProvider.require(), id, organizationId, itemId, request);
+  }
+
+  @PostMapping("/items/{itemId}/comments")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+      summary = "결제원 의견에 답글 달기",
+      description =
+          "그 업무 결제원 담당자와 그 기관 담당자가 기관 결과 하나의 결제원 의견 아래에 시간순으로 이어서 답글을 단다. 상대 쪽 담당자에게 알림 센터로 알린다. 결과가 없는 요구사항이면 409 TEST_RESULT_NOT_REPORTED.")
+  public TestTargetResultsResponse comment(
+      @PathVariable Long id,
+      @PathVariable Long organizationId,
+      @PathVariable Long itemId,
+      @Valid @RequestBody TestItemCommentRequest request) {
+    return testResultService.comment(
+        currentUserProvider.require(), id, organizationId, itemId, request);
+  }
+
+  @DeleteMapping("/items/{itemId}/comments/{commentId}")
+  @Operation(summary = "답글 지우기", description = "자기가 쓴 답글을 지운다. 다른 사람 답글이면 403.")
+  public TestTargetResultsResponse deleteComment(
+      @PathVariable Long id,
+      @PathVariable Long organizationId,
+      @PathVariable Long itemId,
+      @PathVariable Long commentId) {
+    return testResultService.deleteComment(
+        currentUserProvider.require(), id, organizationId, itemId, commentId);
   }
 }

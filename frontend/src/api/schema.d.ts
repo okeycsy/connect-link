@@ -409,6 +409,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/test-plans/{id}/targets/{organizationId}/items/{itemId}/comments': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 결제원 의견에 답글 달기
+     * @description 그 업무 결제원 담당자와 그 기관 담당자가 기관 결과 하나의 결제원 의견 아래에 시간순으로 이어서 답글을 단다. 상대 쪽 담당자에게 알림 센터로 알린다. 결과가 없는 요구사항이면 409 TEST_RESULT_NOT_REPORTED.
+     */
+    post: operations['comment'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/suspensions': {
     parameters: {
       query?: never;
@@ -1886,6 +1906,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/test-plans/{id}/targets/{organizationId}/items/{itemId}/comments/{commentId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * 답글 지우기
+     * @description 자기가 쓴 답글을 지운다. 다른 사람 답글이면 403.
+     */
+    delete: operations['deleteComment'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/chat-rooms/{id}/members/me': {
     parameters: {
       query?: never;
@@ -2114,6 +2154,17 @@ export interface components {
     TestResultSaveRequest: {
       results: components['schemas']['Entry'][];
     };
+    TestItemCommentResponse: {
+      /** Format: int64 */
+      id: number;
+      body: string;
+      authorKftc: boolean;
+      authorName: string;
+      authorJobTitle?: string | null;
+      /** Format: date-time */
+      writtenAt: string;
+      deletable: boolean;
+    };
     TestItemResultResponse: {
       /** Format: int64 */
       itemId: number;
@@ -2139,6 +2190,7 @@ export interface components {
       /** Format: int32 */
       effectiveRate: number;
       completed: boolean;
+      comments: components['schemas']['TestItemCommentResponse'][];
     };
     TestTargetResultsResponse: {
       /** Format: int64 */
@@ -2147,6 +2199,7 @@ export interface components {
       rows: components['schemas']['TestItemResultResponse'][];
       canReport: boolean;
       canFeedback: boolean;
+      canComment: boolean;
     };
     TestFeedbackRequest: {
       /** Format: int32 */
@@ -2583,6 +2636,9 @@ export interface components {
       /** Format: date-time */
       requestedAt: string;
     };
+    TestItemCommentRequest: {
+      body: string;
+    };
     SuspensionHandoverRequest: {
       handover: string;
     };
@@ -2739,6 +2795,7 @@ export interface components {
         | 'TEST_PLAN_OPENED'
         | 'TEST_RESULT_REPORTED'
         | 'TEST_RESULT_FEEDBACK'
+        | 'TEST_RESULT_COMMENT'
         | 'TEST_DATA_REQUESTED'
         | 'TEST_DATA_REPORTED'
         | 'SUSPENSION_CHANGED'
@@ -4312,6 +4369,34 @@ export interface operations {
         };
         content: {
           '*/*': components['schemas']['TestDataRequestSentResponse'];
+        };
+      };
+    };
+  };
+  comment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+        organizationId: number;
+        itemId: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TestItemCommentRequest'];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['TestTargetResultsResponse'];
         };
       };
     };
@@ -6290,6 +6375,31 @@ export interface operations {
         };
         content: {
           'application/octet-stream': string;
+        };
+      };
+    };
+  };
+  deleteComment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+        organizationId: number;
+        itemId: number;
+        commentId: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['TestTargetResultsResponse'];
         };
       };
     };
