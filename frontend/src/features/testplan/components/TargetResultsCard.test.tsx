@@ -41,6 +41,38 @@ const reported = {
   feedbackOutdated: false,
   effectiveRate: 100,
   completed: false,
+  comments: [] as unknown[],
+};
+
+// 결제원 의견(80%)에 기관과 결제원이 답글을 하나씩 이어 단 요구사항.
+const discussed = {
+  ...reported,
+  feedbackRate: 80,
+  feedbackNote: '003 전문에 대해 예외사항 발생',
+  feedbackByName: '홍성민',
+  feedbackByJobTitle: '과장',
+  feedbackAt: '2026-10-18T11:00:00',
+  effectiveRate: 80,
+  comments: [
+    {
+      id: 1,
+      body: '사유코드 09 는 다음 주에 반영합니다.',
+      authorKftc: false,
+      authorName: '김민준',
+      authorJobTitle: '대리',
+      writtenAt: '2026-10-18T12:00:00',
+      deletable: true,
+    },
+    {
+      id: 2,
+      body: '반영되면 다시 등록해 주세요.',
+      authorKftc: true,
+      authorName: '홍성민',
+      authorJobTitle: '과장',
+      writtenAt: '2026-10-18T13:00:00',
+      deletable: false,
+    },
+  ],
 };
 
 const unreported = {
@@ -60,6 +92,7 @@ const unreported = {
   feedbackOutdated: false,
   effectiveRate: 0,
   completed: false,
+  comments: [],
 };
 
 type Entry = { itemId: number; result: string; note: string | null };
@@ -67,6 +100,7 @@ type Entry = { itemId: number; result: string; note: string | null };
 // vi.mock 은 파일 맨 위로 끌어올려지므로 mock 안에서 쓰는 값은 vi.hoisted 로 만든다.
 const state = vi.hoisted(() => ({
   canReport: true,
+  discussed: false,
   writes: [] as { path: string; body: unknown }[],
 }));
 
@@ -78,15 +112,21 @@ vi.mock('../../../api/client', async (importOriginal) => {
     rows,
     canReport: state.canReport,
     canFeedback: !state.canReport,
+    canComment: true,
   });
+  const rows = () => [state.discussed ? discussed : reported, unreported];
   return {
     ...original,
     api: {
       GET: vi.fn(async (path: string) => {
         if (path === '/api/v1/test-plans/{id}/targets/{organizationId}') {
-          return { data: response([reported, unreported]), response: new Response() };
+          return { data: response(rows()), response: new Response() };
         }
         throw new Error(`unexpected GET ${path}`);
+      }),
+      POST: vi.fn(async (path: string, options: { body: unknown }) => {
+        state.writes.push({ path, body: options.body });
+        return { data: response(rows()), response: new Response(null, { status: 201 }) };
       }),
       PUT: vi.fn(async (path: string, options: { body: { results?: Entry[] } }) => {
         state.writes.push({ path, body: options.body });
@@ -109,7 +149,7 @@ vi.mock('../../../api/client', async (importOriginal) => {
             response: new Response(null, { status: 400 }),
           };
         }
-        return { data: response([reported, unreported]), response: new Response() };
+        return { data: response(rows()), response: new Response() };
       }),
     },
   };
@@ -117,6 +157,7 @@ vi.mock('../../../api/client', async (importOriginal) => {
 
 beforeEach(() => {
   state.writes.length = 0;
+  state.discussed = false;
 });
 
 function renderCard() {
@@ -169,5 +210,38 @@ describe('TargetResultsCard', () => {
       path: '/api/v1/test-plans/{id}/targets/{organizationId}/items/{itemId}/feedback',
       body: { rate: 100, note: null },
     });
+  });
+
+  it('결제원 의견 아래 답글이 쓴 사람 소속과 함께 이어지고, 기관 담당자가 답글을 단다', async () => {
+    state.canReport = true;
+    state.discussed = true;
+    renderCard();
+
+    const row = await screen.findByTestId('item-001');
+    const comments = within(row).getAllByTestId('item-comment');
+    expect(comments).toHaveLength(2);
+    expect(comments[0]).toHaveTextContent('KB국민은행(김민준 대리)');
+    expect(comments[1]).toHaveTextContent('결제원(홍성민 과장)');
+    // 자기가 쓴 답글만 지우기가 보인다.
+    expect(within(comments[0]).getByRole('button', { name: '지우기' })).toBeInTheDocument();
+    expect(within(comments[1]).queryByRole('button', { name: '지우기' })).not.toBeInTheDocument();
+
+    fireEvent.click(within(row).getByRole('button', { name: '001 답글' }));
+    const input = within(row).getByRole('textbox', { name: '001 답글 입력' });
+    expect(within(row).getByRole('button', { name: '답글 달기' })).toBeDisabled();
+    fireEvent.change(input, { target: { value: ' 네, 반영 후 다시 등록하겠습니다. ' } });
+    fireEvent.click(within(row).getByRole('button', { name: '답글 달기' }));
+    await waitFor(() => expect(state.writes).toHaveLength(1));
+    expect(state.writes[0]).toMatchObject({
+      path: '/api/v1/test-plans/{id}/targets/{organizationId}/items/{itemId}/comments',
+      body: { body: '네, 반영 후 다시 등록하겠습니다.' },
+    });
+  });
+
+  it('의견도 답글도 없는 요구사항에는 답글 버튼이 없다', async () => {
+    state.canReport = true;
+    renderCard();
+    const row = await screen.findByTestId('item-001');
+    expect(within(row).queryByRole('button', { name: '001 답글' })).not.toBeInTheDocument();
   });
 });

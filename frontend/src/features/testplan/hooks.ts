@@ -22,6 +22,7 @@ export type TestTargetResults = components['schemas']['TestTargetResultsResponse
 export type TestItemResultRow = components['schemas']['TestItemResultResponse'];
 export type TestResultSaveRequest = components['schemas']['TestResultSaveRequest'];
 export type TestFeedbackRequest = components['schemas']['TestFeedbackRequest'];
+export type TestItemComment = components['schemas']['TestItemCommentResponse'];
 export type TestData = components['schemas']['TestDataResponse'];
 export type TestDataSaveRequest = components['schemas']['TestDataSaveRequest'];
 export type TestDataStatus = TestDataSaveRequest['status'];
@@ -199,6 +200,40 @@ export function useSaveTestFeedback(id: number, organizationId: number) {
     onSuccess: (results) => {
       queryClient.setQueryData(testPlanKeys.target(id, organizationId), results);
       invalidate(queryClient);
+    },
+  });
+}
+
+/** 결제원 의견에 이어 답글을 단다. 결제원 담당자와 그 기관 담당자가 쓴다. */
+export function useAddTestComment(id: number, organizationId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ itemId, body }: { itemId: number; body: string }) =>
+      unwrap(
+        await api.POST('/api/v1/test-plans/{id}/targets/{organizationId}/items/{itemId}/comments', {
+          params: { path: { id, organizationId, itemId } },
+          body: { body },
+        }),
+      ),
+    onSuccess: (results) => {
+      queryClient.setQueryData(testPlanKeys.target(id, organizationId), results);
+    },
+  });
+}
+
+/** 자기가 쓴 답글을 지운다. */
+export function useDeleteTestComment(id: number, organizationId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ itemId, commentId }: { itemId: number; commentId: number }) =>
+      unwrap(
+        await api.DELETE(
+          '/api/v1/test-plans/{id}/targets/{organizationId}/items/{itemId}/comments/{commentId}',
+          { params: { path: { id, organizationId, itemId, commentId } } },
+        ),
+      ),
+    onSuccess: (results) => {
+      queryClient.setQueryData(testPlanKeys.target(id, organizationId), results);
     },
   });
 }
