@@ -80,8 +80,6 @@ export function LoginPage() {
       <Box className={classes.blobTopRight} aria-hidden />
       <Box className={classes.blobLeft} aria-hidden />
       <Box className={classes.blobBottomRight} aria-hidden />
-      <Sparkle className={classes.sparkleA} size={34} />
-      <Sparkle className={classes.sparkleB} size={24} />
 
       <Box className={classes.panel}>
         <Stack gap="xl" justify="space-between" h="100%">
