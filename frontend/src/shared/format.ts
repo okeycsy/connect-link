@@ -6,6 +6,12 @@ export function formatDate(value: string | Date | null | undefined): string {
   return dayjs(value).format('YYYY-MM-DD');
 }
 
+/** 짧은 날짜 표기 'YY.MM.DD. 목록의 좁은 칸에 기간을 한 줄로 넣을 때만 쓴다. */
+export function formatShortDate(value: string | Date | null | undefined): string {
+  if (!value) return '';
+  return dayjs(value).format("'YY.MM.DD");
+}
+
 /** 일시 표기 YYYY-MM-DD HH:mm. */
 export function formatDateTime(value: string | Date | null | undefined): string {
   if (!value) return '';

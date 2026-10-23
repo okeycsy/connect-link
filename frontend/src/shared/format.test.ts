@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   formatBytes,
   formatDate,
+  formatShortDate,
   formatDateTime,
   formatAuthor,
   formatDateTimeRange,
@@ -14,6 +15,8 @@ describe('format', () => {
     expect(formatDate('2026-10-15T10:05:00+09:00')).toBe('2026-10-15');
     expect(formatDateTime(new Date(2026, 9, 15, 9, 5))).toBe('2026-10-15 09:05');
     expect(formatDate(null)).toBe('');
+    expect(formatShortDate('2026-10-04')).toBe("'26.10.04");
+    expect(formatShortDate(null)).toBe('');
   });
 
   it('일시 구간은 같은 날이면 끝에 시각만 붙인다', () => {
