@@ -3,7 +3,6 @@ import {
   Alert,
   Button,
   Card,
-  Checkbox,
   Group,
   Select,
   SimpleGrid,
@@ -31,6 +30,7 @@ import { AttachmentPanel } from '../../attachment/components/AttachmentPanel';
 import { PendingAttachments } from '../../attachment/components/PendingAttachments';
 import { attachmentKeys, uploadAttachmentFile } from '../../attachment/hooks';
 import { type BusinessCode, useBusinesses, useCurrentBusiness } from '../../organization/hooks';
+import { SuspensionBusinessPicker } from '../components/SuspensionBusinessPicker';
 import {
   type SuspensionDetail,
   canRegisterSuspensions,
@@ -328,23 +328,20 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
                   readOnly
                 />
               )}
-              <Checkbox.Group
-                label="대상 업무"
-                description={
-                  selectedOrganization
-                    ? '이 기관이 참여하는 업무입니다. 함께 멈추는 업무를 모두 고르세요.'
-                    : '기관을 먼저 고르세요.'
-                }
-                required
-                data-testid="suspension-businesses"
-                {...form.getInputProps('businesses')}
-              >
-                <Group gap="md" mt={6}>
-                  {businessOptions.map((b) => (
-                    <Checkbox key={b.value} value={b.value} label={b.label} />
-                  ))}
-                </Group>
-              </Checkbox.Group>
+            </SimpleGrid>
+            <SuspensionBusinessPicker
+              options={businessOptions}
+              value={form.values.businesses}
+              onChange={(v) => form.setFieldValue('businesses', v)}
+              disabled={!selectedOrganization}
+              error={form.errors.businesses}
+              description={
+                selectedOrganization
+                  ? '이 기관이 참여하는 업무입니다. 함께 멈추는 업무를 모두 고르세요.'
+                  : '기관을 먼저 고르세요.'
+              }
+            />
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
               <DateTimePicker
                 label="중단 시작"
                 required
