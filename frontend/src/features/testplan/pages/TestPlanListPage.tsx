@@ -13,7 +13,7 @@ import { IconPlus } from '@tabler/icons-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
-import { formatDate, formatDateTime } from '../../../shared/format';
+import { formatDateTime, formatShortDate } from '../../../shared/format';
 import { ChipFilter } from '../../../shared/list/ChipFilter';
 import tableClasses from '../../../shared/list/ResponsiveTable.module.css';
 import { TableEmpty } from '../../../shared/list/TableEmpty';
@@ -169,7 +169,7 @@ function TestPlanTable({
       <Table.Thead>
         <Table.Tr>
           <Table.Th>개발 건</Table.Th>
-          <Table.Th w="17%">수행 기간</Table.Th>
+          <Table.Th w="15%">수행 기간</Table.Th>
           <Table.Th w="15%">{manager ? '전체 수행률' : '우리 기관 수행률'}</Table.Th>
           <Table.Th w={manager ? '10%' : '16%'}>{manager ? '완료 기관' : '완료 요구사항'}</Table.Th>
           <Table.Th w="12%" miw={120}>
@@ -204,7 +204,7 @@ function TestPlanTable({
             </Table.Td>
             <Table.Td data-label="수행 기간">
               <Text size="sm" className={classes.numeric}>
-                {formatDate(r.startDate)} ~ {formatDate(r.endDate)}
+                {formatShortDate(r.startDate)} ~ {formatShortDate(r.endDate)}
               </Text>
             </Table.Td>
             <Table.Td data-label="수행률">
