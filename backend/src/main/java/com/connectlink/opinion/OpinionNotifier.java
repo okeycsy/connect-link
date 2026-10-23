@@ -38,7 +38,7 @@ class OpinionNotifier {
             + request.getBusiness().getLabel()
             + " 의견을 요청했습니다. 회신 기한은 "
             + request.getDueDate()
-            + " 입니다. 연결고리에서 요청 내용을 보고 질문에 답해 회신해 주세요.";
+            + " 입니다. 연결이에서 요청 내용을 보고 질문에 답해 회신해 주세요.";
     publish(
         recipientEmails,
         NotificationType.OPINION_REQUEST_OPENED,
@@ -81,7 +81,7 @@ class OpinionNotifier {
         NotificationType.OPINION_REPLY_DUE,
         request,
         "회신을 기다립니다: " + request.getTitle(),
-        due + "(기한 " + request.getDueDate() + "). 아직 회신이 제출되지 않았습니다. 연결고리에서 회신해 주세요.",
+        due + "(기한 " + request.getDueDate() + "). 아직 회신이 제출되지 않았습니다. 연결이에서 회신해 주세요.",
         Set.of(NotificationChannel.EMAIL));
   }
 

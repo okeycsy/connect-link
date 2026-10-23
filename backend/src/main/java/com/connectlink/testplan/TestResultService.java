@@ -7,6 +7,8 @@ import com.connectlink.history.ChangeHistoryService;
 import com.connectlink.history.FieldChanges;
 import com.connectlink.history.HistoryTargetType;
 import com.connectlink.testplan.dto.TestFeedbackRequest;
+import com.connectlink.testplan.dto.TestItemCommentRequest;
+import com.connectlink.testplan.dto.TestItemCommentResponse;
 import com.connectlink.testplan.dto.TestItemResultResponse;
 import com.connectlink.testplan.dto.TestResultSaveRequest;
 import com.connectlink.testplan.dto.TestTargetResultsResponse;
@@ -24,8 +26,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 기관 테스트 결과. 대상 기관 담당자의 요구사항별 결과 등록과 결제원 담당자의 의견(미니 수행률·특이사항)을 맡는다. 결과나 의견이 바뀌면 수행률과 수행 완료를 다시
- * 계산하고, 기관별 변경 이력(TEST_PLAN_TARGET)을 남긴다.
+ * 기관 테스트 결과. 대상 기관 담당자의 요구사항별 결과 등록과 결제원 담당자의 의견(미니 수행률·특이사항), 그 의견에 양쪽이 이어 다는 답글을 맡는다. 결과나 의견이 바뀌면
+ * 수행률과 수행 완료를 다시 계산하고, 기관별 변경 이력(TEST_PLAN_TARGET)을 남긴다. 답글은 대화라 이력을 남기지 않는다.
  */
 @Service
 @Transactional
@@ -157,13 +159,7 @@ public class TestResultService {
         plan.findItem(itemId)
             .orElseThrow(
                 () -> BusinessException.notFound("TEST_ITEM_NOT_FOUND", "요구사항을 찾을 수 없습니다."));
-    TestItemResult result =
-        target
-            .findResult(itemId)
-            .orElseThrow(
-                () ->
-                    BusinessException.conflict(
-                        "TEST_RESULT_NOT_REPORTED", "기관이 아직 결과를 등록하지 않은 요구사항입니다."));
+    TestItemResult result = loadResult(target, itemId);
     String note = blankToNull(body.note());
     String before = feedbackText(result.getFeedbackRate(), result.getFeedbackNote());
     String after = feedbackText(body.rate(), note);
@@ -195,6 +191,66 @@ public class TestResultService {
     return toResponse(user, target);
   }
 
+  /**
+   * 결제원 의견에 이어 답글을 단다. 그 업무 결제원 담당자와 그 기관 담당자가 쓰고, 기관이 결과를 등록한 요구사항에만 단다. 상대 쪽에 알림 센터로 알린다: 결제원이 쓰면
+   * 결과를 등록한 기관 담당자와 이 칸에 답글을 단 기관 담당자, 기관이 쓰면 의견을 남긴 결제원 담당자와 이 칸에 답글을 단 결제원 담당자(아무도 없으면 테스트의 알림
+   * 대상)다.
+   */
+  public TestTargetResultsResponse comment(
+      CurrentUser user,
+      Long planId,
+      Long organizationId,
+      Long itemId,
+      TestItemCommentRequest body) {
+    TestPlanTarget target = loadTarget(user, planId, organizationId);
+    accessPolicy.ensureCanComment(user, target);
+    TestPlan plan = target.getPlan();
+    TestItemResult result = loadResult(target, itemId);
+    boolean kftc = accessPolicy.canFeedback(user, plan);
+    String text = body.body().trim();
+    result.addComment(
+        new TestItemComment(result, text, kftc, user.email(), user.name(), user.jobTitle(), now()));
+    repository.flush();
+    Set<String> recipients = new LinkedHashSet<>();
+    if (kftc) {
+      recipients.add(result.getReportedByEmail());
+    } else if (result.getFeedbackByEmail() != null) {
+      recipients.add(result.getFeedbackByEmail());
+    }
+    result.getComments().stream()
+        .filter(c -> c.isAuthorKftc() != kftc)
+        .forEach(c -> recipients.add(c.getAuthorEmail()));
+    if (recipients.isEmpty()) {
+      plan.getRecipients().forEach(r -> recipients.add(r.getEmail()));
+    }
+    recipients.remove(user.email());
+    notifier.commented(plan, target, result, recipients, authorLabel(kftc, target, user), text);
+    return toResponse(user, target);
+  }
+
+  /** 자기가 쓴 답글을 지운다. */
+  public TestTargetResultsResponse deleteComment(
+      CurrentUser user, Long planId, Long organizationId, Long itemId, Long commentId) {
+    TestPlanTarget target = loadTarget(user, planId, organizationId);
+    accessPolicy.ensureCanComment(user, target);
+    TestItemResult result = loadResult(target, itemId);
+    TestItemComment comment =
+        result
+            .findComment(commentId)
+            .orElseThrow(
+                () -> BusinessException.notFound("TEST_COMMENT_NOT_FOUND", "답글을 찾을 수 없습니다."));
+    accessPolicy.ensureCanDeleteComment(user, comment);
+    result.removeComment(comment);
+    repository.flush();
+    return toResponse(user, target);
+  }
+
+  /** 알림 문구의 글쓴이: "결제원(김민찬 과장)", "KB국민은행(김민준 대리)". */
+  private static String authorLabel(boolean kftc, TestPlanTarget target, CurrentUser user) {
+    String who = user.jobTitle() == null ? user.name() : user.name() + " " + user.jobTitle();
+    return (kftc ? "결제원" : target.getOrganization().getName()) + "(" + who + ")";
+  }
+
   // ---- 응답 ----
 
   private TestTargetResultsResponse toResponse(CurrentUser user, TestPlanTarget target) {
@@ -223,7 +279,8 @@ public class TestResultService {
                   null,
                   false,
                   0,
-                  false)
+                  false,
+                  List.of())
               : new TestItemResultResponse(
                   item.getId(),
                   item.getNumber(),
@@ -242,14 +299,27 @@ public class TestResultService {
                   r.getFeedbackAt(),
                   r.isFeedbackOutdated(),
                   r.effectiveRate(),
-                  r.isCompleted()));
+                  r.isCompleted(),
+                  r.getComments().stream()
+                      .map(
+                          c ->
+                              new TestItemCommentResponse(
+                                  c.getId(),
+                                  c.getBody(),
+                                  c.isAuthorKftc(),
+                                  c.getAuthorName(),
+                                  c.getAuthorJobTitle(),
+                                  c.getWrittenAt(),
+                                  accessPolicy.canDeleteComment(user, c)))
+                      .toList()));
     }
     return new TestTargetResultsResponse(
         plan.getId(),
         TestPlanService.toTargetSummary(target, items),
         rows,
         accessPolicy.canReport(user, target),
-        accessPolicy.canFeedback(user, plan));
+        accessPolicy.canFeedback(user, plan),
+        accessPolicy.canComment(user, target));
   }
 
   // ---- 공통 ----
@@ -261,6 +331,19 @@ public class TestResultService {
     return plan.findTarget(organizationId)
         .orElseThrow(
             () -> BusinessException.notFound("TEST_TARGET_NOT_FOUND", "이 테스트의 대상 기관이 아닙니다."));
+  }
+
+  /** 기관이 결과를 등록한 요구사항 한 칸. 결과가 없으면 의견도 답글도 달지 않는다. */
+  private static TestItemResult loadResult(TestPlanTarget target, Long itemId) {
+    if (target.getPlan().findItem(itemId).isEmpty()) {
+      throw BusinessException.notFound("TEST_ITEM_NOT_FOUND", "요구사항을 찾을 수 없습니다.");
+    }
+    return target
+        .findResult(itemId)
+        .orElseThrow(
+            () ->
+                BusinessException.conflict(
+                    "TEST_RESULT_NOT_REPORTED", "기관이 아직 결과를 등록하지 않은 요구사항입니다."));
   }
 
   /** 이력 값: "정상", "오류 · 오류내용". */

@@ -2,6 +2,7 @@
 -- 기관(R__1)·계정(R__2) 시드 뒤에 돈다. 날짜는 오늘 기준 상대값이라 시연 때 늘 진행 중·기간 지남·수행 완료가 함께 보인다.
 -- progress_rate·completed_count·completed_at 은 서버 계산(TestProgress)과 같은 값을 손으로 넣었다: 요구사항 수행률은 유효한 결제원 미니 수행률, 없으면 정상 100 그 밖 0,
 -- 기관·테스트 수행률은 그 평균(반올림), 완료는 정상 + 미니 수행률 100(결과 등록 뒤에 남긴 의견)이다. 결과를 바꾸면 이 숫자도 함께 고친다.
+DELETE FROM test_item_comment;
 DELETE FROM test_item_result;
 DELETE FROM test_plan_recipient;
 DELETE FROM test_plan_target;
@@ -223,3 +224,22 @@ SET reported_by_job_title = (SELECT a.job_title FROM user_account a WHERE a.emai
 UPDATE test_plan_target
 SET test_data_reported_by_job_title = (SELECT a.job_title FROM user_account a WHERE a.email = test_plan_target.test_data_reported_by_email)
 WHERE test_data_reported_by_email IS NOT NULL;
+
+-- 결제원 의견에 이어 단 답글(V25). 시각은 오늘 0시 기준 시간이다. KB국민은행 003 의 결제원 의견(80%) 아래에서 양쪽이 이어서 주고받는다.
+INSERT INTO test_item_comment (test_item_result_id, body, author_kftc, author_email, author_name, author_job_title, written_at,
+                               created_at, created_by, updated_at, updated_by)
+SELECT r.id, c.body, c.author_kftc, a.email, a.name, a.job_title,
+       CAST(CURRENT_DATE AS TIMESTAMP) + c.written_hour * INTERVAL '1' HOUR,
+       CAST(CURRENT_DATE AS TIMESTAMP) + c.written_hour * INTERVAL '1' HOUR, a.email,
+       CAST(CURRENT_DATE AS TIMESTAMP) + c.written_hour * INTERVAL '1' HOUR, a.email
+FROM (VALUES
+  ('계좌정보 통합조회 전문 개선 2차', '004', 2, '사유코드 09 는 당행 코드표에 없어 추가 개발이 필요합니다. 다음 주 화요일 테스트 서버에 반영할 예정입니다.', FALSE, 'kim.minjun@kb.example.com', -26),
+  ('계좌정보 통합조회 전문 개선 2차', '004', 2, '반영되면 09 건으로 다시 테스트하고 결과를 다시 등록해 주세요. 확인 후 미니 수행률을 올리겠습니다.', TRUE, 'hong.sungmin@kftc.example.com', -24),
+  ('계좌정보 통합조회 전문 개선 2차', '004', 2, '네, 반영 후 다시 등록하겠습니다.', FALSE, 'kim.minjun@kb.example.com', -22)
+) AS c (plan_title, org_code, sort_order, body, author_kftc, author_email, written_hour)
+JOIN test_plan p ON p.title = c.plan_title
+JOIN test_item i ON i.test_plan_id = p.id AND i.sort_order = c.sort_order
+JOIN organization o ON o.code = c.org_code
+JOIN test_plan_target t ON t.test_plan_id = p.id AND t.organization_id = o.id
+JOIN test_item_result r ON r.test_item_id = i.id AND r.test_plan_target_id = t.id
+JOIN user_account a ON a.email = c.author_email;

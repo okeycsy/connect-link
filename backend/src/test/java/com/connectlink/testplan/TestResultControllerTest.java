@@ -3,6 +3,7 @@ package com.connectlink.testplan;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -339,6 +340,100 @@ class TestResultControllerTest {
     feedback(plan, "004", 0, 101, null)
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.fieldErrors[0].field").value("rate"));
+  }
+
+  // ---- 답글 ----
+
+  private ResultActions comment(
+      Plan plan, String orgCode, int index, String body, RequestPostProcessor user)
+      throws Exception {
+    return send(
+        post(target(plan, orgCode) + "/items/" + plan.item(index) + "/comments"),
+        Map.of("body", body),
+        user);
+  }
+
+  @Test
+  void 결제원과_기관_담당자가_의견에_이어서_답글을_달고_상대에게_알린다() throws Exception {
+    Plan plan = create("답글 흐름", "해지 요청 확인");
+    comment(plan, "004", 0, "먼저 묻습니다.", hong())
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("TEST_RESULT_NOT_REPORTED"));
+    report(plan, "004", kim(), entry(plan.item(0), "PASSED", null));
+    feedback(plan, "004", 0, 80, "003 전문에 대해 예외사항 발생");
+
+    clock.advance(Duration.ofMinutes(1));
+    comment(plan, "004", 0, " 사유코드 09 는 다음 주에 반영합니다. ", kim())
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.canComment").value(true))
+        .andExpect(jsonPath("$.rows[0].comments[0].body").value("사유코드 09 는 다음 주에 반영합니다."))
+        .andExpect(jsonPath("$.rows[0].comments[0].authorKftc").value(false))
+        .andExpect(jsonPath("$.rows[0].comments[0].authorName").value("김민준"))
+        .andExpect(jsonPath("$.rows[0].comments[0].authorJobTitle").value("대리"))
+        .andExpect(jsonPath("$.rows[0].comments[0].deletable").value(true));
+    clock.advance(Duration.ofMinutes(1));
+    comment(plan, "004", 0, "반영되면 다시 등록해 주세요.", hong())
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.rows[0].comments.length()").value(2))
+        .andExpect(jsonPath("$.rows[0].comments[1].authorKftc").value(true))
+        .andExpect(jsonPath("$.rows[0].comments[1].authorJobTitle").value("과장"))
+        .andExpect(jsonPath("$.rows[0].comments[0].deletable").value(false));
+
+    // 기관이 쓰면 의견을 남긴 결제원 담당자에게, 결제원이 쓰면 결과를 등록한 기관 담당자에게 알림 센터로만 간다.
+    assertThat(
+            notificationRepository.findAll().stream()
+                .filter(n -> n.getType() == NotificationType.TEST_RESULT_COMMENT)
+                .filter(n -> n.getTitle().contains("답글 흐름"))
+                .map(n -> n.getRecipientEmail()))
+        .containsExactlyInAnyOrder("hong.sungmin@kftc.example.com", "kim.minjun@kb.example.com");
+    assertThat(
+            notificationRepository.findAll().stream()
+                .filter(n -> n.getType() == NotificationType.TEST_RESULT_COMMENT)
+                .filter(n -> n.getRecipientEmail().equals("hong.sungmin@kftc.example.com"))
+                .filter(n -> n.getTitle().contains("답글 흐름"))
+                .map(n -> n.getBody()))
+        .containsExactly("001 해지 요청 확인 · KB국민은행(김민준 대리): 사유코드 09 는 다음 주에 반영합니다.");
+    assertThat(outboxRepository.findAll())
+        .filteredOn(o -> o.getSubject() != null && o.getSubject().contains("답글 흐름"))
+        .filteredOn(o -> o.getSubject().contains("의견에 답글이 있습니다"))
+        .isEmpty();
+
+    // 답글은 결과를 다시 등록해도 남고, 결제원 의견을 지워도 남는다.
+    feedback(plan, "004", 0, null, null)
+        .andExpect(jsonPath("$.rows[0].comments.length()").value(2));
+  }
+
+  @Test
+  void 다른_기관은_답글을_보거나_달지_못하고_빈_답글은_거부한다() throws Exception {
+    Plan plan = create("답글 거부", "잔액 조회 확인");
+    report(plan, "004", kim(), entry(plan.item(0), "PASSED", null));
+    comment(plan, "004", 0, "삼성증권이 끼어듭니다.", choi()).andExpect(status().isForbidden());
+    comment(plan, "004", 0, "CMS 담당자입니다.", TestUsers.as(TestUsers.KFTC_CMS))
+        .andExpect(status().isForbidden());
+    comment(plan, "004", 0, "  ", kim())
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.fieldErrors[0].field").value("body"));
+    send(post(target(plan, "004") + "/items/999999/comments"), Map.of("body", "없는 요구사항"), kim())
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("TEST_ITEM_NOT_FOUND"));
+    send(get(target(plan, "004")), null, choi()).andExpect(status().isForbidden());
+  }
+
+  @Test
+  void 답글은_쓴_사람만_지운다() throws Exception {
+    Plan plan = create("답글 지우기", "잔액 조회 확인");
+    report(plan, "004", kim(), entry(plan.item(0), "PASSED", null));
+    JsonNode body = json(comment(plan, "004", 0, "잘못 쓴 답글", kim()));
+    long commentId = body.at("/rows/0/comments/0/id").asLong();
+    String path = target(plan, "004") + "/items/" + plan.item(0) + "/comments/" + commentId;
+
+    send(delete(path), null, hong()).andExpect(status().isForbidden());
+    send(delete(path), null, kim())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.rows[0].comments.length()").value(0));
+    send(delete(path), null, kim())
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("TEST_COMMENT_NOT_FOUND"));
   }
 
   // ---- 이력 ----

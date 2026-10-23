@@ -25,3 +25,9 @@
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* 결제원 의견 아래 답글 줄기: 왼쪽 선으로 의견에 이어진 대화임을 보인다. */
+.thread {
+  border-left: 2px solid var(--mantine-color-gray-3);
+  padding-left: var(--mantine-spacing-sm);
+}

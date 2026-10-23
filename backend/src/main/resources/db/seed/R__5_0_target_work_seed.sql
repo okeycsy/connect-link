@@ -1,5 +1,5 @@
 -- 일시중단 대상 업무 기준정보 샘플. 금융결제원의 공개 업무명을 분류별로 넣었고 관련 레일 업무는 시연용 가정이다. 실제 목록은 관리 화면에서 관리자가 정한다.
--- 이미 있는 이름(V25 의 네 업무 포함)은 건드리지 않고 없는 것만 더한다(관리 화면에서 고친 값을 덮지 않는다). 관련 레일 업무도 없는 것만 더한다.
+-- 이미 있는 이름(V26 의 네 업무 포함)은 건드리지 않고 없는 것만 더한다(관리 화면에서 고친 값을 덮지 않는다). 관련 레일 업무도 없는 것만 더한다.
 -- 일시중단 샘플(R__5_suspension_seed)보다 먼저 돈다.
 INSERT INTO target_work (name, category, sort_order, active, created_at, created_by, updated_at, updated_by)
 SELECT t.name, t.category, t.sort_order, TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'

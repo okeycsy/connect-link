@@ -80,8 +80,6 @@ export function LoginPage() {
       <Box className={classes.blobTopRight} aria-hidden />
       <Box className={classes.blobLeft} aria-hidden />
       <Box className={classes.blobBottomRight} aria-hidden />
-      <Sparkle className={classes.sparkleA} size={34} />
-      <Sparkle className={classes.sparkleB} size={24} />
 
       <Box className={classes.panel}>
         <Stack gap="xl" justify="space-between" h="100%">
@@ -89,7 +87,7 @@ export function LoginPage() {
           <Stack gap="lg" align="flex-start">
             <Box className={classes.tag}>참가기관 · 금융결제원 협업 포털</Box>
             <Title order={1} className={classes.headline}>
-              <BrandMark className={classes.headlineLogo} />
+              <BrandMark mascot className={classes.headlineLogo} />
             </Title>
             <Text size="xl" c="var(--cl-ink-soft)" maw={460} lh={1.75}>
               담당자 연락처, 의견 요청, 기관 테스트, 일시중단을 한곳에서 관리합니다.

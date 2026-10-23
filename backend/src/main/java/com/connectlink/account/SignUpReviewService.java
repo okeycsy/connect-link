@@ -126,11 +126,11 @@ public class SignUpReviewService {
             account.getEmail(),
             NotificationType.SIGNUP_APPROVED,
             home,
-            "연결고리 가입이 승인되었습니다",
+            "연결이 가입이 승인되었습니다",
             account.getOrganization().getName()
                 + " "
                 + account.getName()
-                + " 님, 연결고리 가입이 승인되었습니다. 회사 이메일과 가입 때 정한 비밀번호로 로그인할 수 있습니다. 담당 업무: "
+                + " 님, 연결이 가입이 승인되었습니다. 회사 이메일과 가입 때 정한 비밀번호로 로그인할 수 있습니다. 담당 업무: "
                 + labelsOf(account.getBusinesses())
                 + ".",
             "/" + home.getSlug() + "/home",
@@ -147,11 +147,11 @@ public class SignUpReviewService {
         new OutboundMessage(
             NotificationChannel.EMAIL,
             account.getEmail(),
-            "[연결고리] 가입 신청이 반려되었습니다",
+            "[연결이] 가입 신청이 반려되었습니다",
             account.getOrganization().getName()
                 + " "
                 + account.getName()
-                + " 님의 연결고리 가입 신청이 반려되었습니다.\n\n반려 사유: "
+                + " 님의 연결이 가입 신청이 반려되었습니다.\n\n반려 사유: "
                 + trimmed
                 + "\n\n신청 내용을 고쳐 같은 회사 이메일로 다시 가입 신청할 수 있습니다. 궁금한 점은 결제원 담당자 "
                 + user.name()

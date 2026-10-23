@@ -309,4 +309,72 @@ test.describe('다. 기관 테스트', () => {
     await expect(card.getByRole('button', { name: '테스트데이터 저장' })).toHaveCount(0);
     await shot(page, 'test-data-kftc');
   });
+
+  test('결제원 의견 아래에서 결제원과 기관 담당자가 답글을 이어 달고 상대에게 알림이 간다', async ({
+    page,
+    request,
+  }) => {
+    const title = `E2E 의견 답글 ${Date.now()}`;
+    const id = await createAsHong(request, title);
+
+    await loginAs(page, '김민준 (참가기관 · 현업)로 로그인');
+    await page.goto(`/account-info/tests/${id}`);
+    const first = page.getByTestId('item-001');
+    await first.getByText('정상', { exact: true }).click();
+    await page.getByRole('button', { name: '결과 저장 (1)' }).click();
+    await expect(page.getByTestId('target-progress')).toHaveText('50%');
+    // 결제원 의견이 없으면 답글을 달 곳이 없다.
+    await expect(first.getByRole('button', { name: '001 답글' })).toHaveCount(0);
+
+    // 결제원 담당자가 의견을 남기고 이어서 답글로 묻는다.
+    await loginAs(page, '홍성민 (결제원 · 현업)로 로그인');
+    await page.goto(`/account-info/tests/${id}`);
+    await first.getByRole('button', { name: '001 의견' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('textbox', { name: '미니 수행률' }).fill('20');
+    await dialog
+      .getByRole('textbox', { name: '특이사항' })
+      .fill('007 전문의 응답이 간헐적으로 오지 않고 있습니다. 확인 부탁드립니다.');
+    await dialog.getByRole('button', { name: '저장' }).click();
+    await expect(dialog).toBeHidden();
+
+    // 기관 담당자가 의견 아래에 답글을 단다. 입력창에는 지금 쓸 사람이 보인다.
+    await loginAs(page, '김민준 (참가기관 · 현업)로 로그인');
+    await page.goto(`/account-info/tests/${id}`);
+    await first.getByRole('button', { name: '001 답글' }).click();
+    await expect(first.getByTestId('item-comments')).toContainText('KB국민은행(김민준 대리)');
+    await first
+      .getByRole('textbox', { name: '001 답글 입력' })
+      .fill('타임아웃 설정을 30초로 늘렸습니다. 다시 확인 부탁드립니다.');
+    await first.getByRole('button', { name: '답글 달기' }).click();
+    await expect(first.getByTestId('item-comment')).toHaveCount(1);
+
+    // 결제원 담당자는 알림을 받고, 답글에 다시 답글을 이어 단다.
+    await loginAs(page, '홍성민 (결제원 · 현업)로 로그인');
+    const notifications = (await (await page.request.get('/api/v1/notifications')).json()) as {
+      content: { title: string; body: string }[];
+    };
+    expect(
+      notifications.content.some(
+        (n) =>
+          n.title.includes(`${title} 의견에 답글이 있습니다`) &&
+          n.body.includes('KB국민은행(김민준 대리)'),
+      ),
+    ).toBeTruthy();
+    await page.goto(`/account-info/tests/${id}`);
+    await first.getByRole('button', { name: '001 답글' }).click();
+    await first
+      .getByRole('textbox', { name: '001 답글 입력' })
+      .fill('확인했습니다. 응답이 모두 들어옵니다. 완료 확인하겠습니다.');
+    await first.getByRole('button', { name: '답글 달기' }).click();
+    const comments = first.getByTestId('item-comment');
+    await expect(comments).toHaveCount(2);
+    await expect(comments.nth(0)).toContainText('KB국민은행(김민준 대리)');
+    await expect(comments.nth(1)).toContainText('결제원(홍성민 과장)');
+    await first.getByRole('button', { name: '001 답글' }).click();
+    await first.getByRole('textbox', { name: '001 답글 입력' }).fill('추가로 확인할 내용이 있으면');
+    await first.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(300);
+    await first.screenshot({ path: 'screenshots/test-plan-comments.png' });
+  });
 });

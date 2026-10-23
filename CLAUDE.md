@@ -87,6 +87,7 @@
 | 테스트 요구사항 | `TestItem` | 번호(001, 002 …)는 순서로 붙는다 |
 | 대상 기관(테스트) | `TestPlanTarget` | 테스트의 대상 참가기관 하나. 기관 수행률·완료 요구사항 수를 둔다. API `/api/v1/test-plans/{id}/targets/{organizationId}` |
 | 기관 테스트 결과 | `TestItemResult` | 대상 기관 × 요구사항 한 칸. 기관 결과·특이사항과 결제원 의견(미니 수행률 0~100 `feedbackRate`, 특이사항 `feedbackNote`). 기관 정상 + 미니 수행률 100 이면 테스트 수행 완료, 의견 뒤에 기관이 바꾸면 "다시 확인"(`feedbackOutdated`) |
+| 결제원 의견 답글 | `TestItemComment` | 기관 테스트 결과 한 칸(`TestItemResult`)의 결제원 의견 아래에 결제원 담당자와 그 기관 담당자가 시간순으로 이어 다는 답글 하나(중첩 없음). 쓴 사람의 그때 이름·직급과 결제원 쪽인지(`authorKftc`)를 남긴다. 상대 쪽에 알림 센터(`TEST_RESULT_COMMENT`), 쓴 사람만 지운다. API `/api/v1/test-plans/{id}/targets/{organizationId}/items/{itemId}/comments` |
 | 테스트데이터 준비 | `TestDataStatus`, `TestDataService`, `TestDataRequestForm` | 수행 기간 전 단계. 결제원 담당자가 테스트마다 선택으로 사전 요청한다(`test_plan.test_data_*`: 회신 기한(수행 시작일 이전), 요청 사항, 회신 양식 첨부 `TEST_DATA_FORM`). 요청하면 대상 기관에 메일(`TEST_DATA_REQUESTED`, 만들 때는 열림 메일에 함께), 미생성 기관에 다시 보내기 `POST /api/v1/test-plans/{id}/test-data-requests`. 기관 담당자는 생성 여부 `TestDataStatus` = `NOT_CREATED`(미생성), `CREATED`(생성 완료)와 메모를 저장하고 파일을 첨부 `TEST_DATA` 로 올린다(`/api/v1/test-plans/{id}/targets/{organizationId}/test-data`). 생성 완료가 되면 알림 대상에게 매터모스트(`TEST_DATA_REPORTED`) |
 | 테스트 결과 | `TestResult` | `PASSED`(정상), `FAILED`(오류), `IN_PROGRESS`(수행중), `NOT_STARTED`(미수행) |
 | 수행률 | `TestProgress` | 요구사항 수행률(결제원 의견, 없으면 정상 100 그 밖 0)의 기관별·전체 평균과 수행 완료 계산. 결과가 바뀔 때마다 `progress_rate` 에 다시 계산해 둔다 |
@@ -96,7 +97,7 @@
 | 일시중단 시기 | `SuspensionPeriod` | 지금 기준 `CURRENT`(진행 중), `UPCOMING`(예정), `PAST`(지난). 저장하지 않고 일시로 계산한다 |
 | 일시중단 확인자 | `SuspensionReviewer` | 확인을 시작한 결제원 담당자 한 명(이름·이메일·직무 표시·시작 일시). 조치 및 인수인계 사항(`handover`)을 쓰면 확정이다 |
 | 전 영업일 취합 | `SuspensionDigest`, `SuspensionDigestService`, `SuspensionDigestFormatter` | 작업일 전 영업일에 확정 일시중단을 모아 운영·관제 매터모스트 채널로 보낸 한 번. 설정 `app.suspension.digest.*`, 영업일 `BusinessDayCalendar`. 전달 양식은 미결이라 `SuspensionDigestFormatter` 빈을 바꿔 끼운다 |
-| 알림 | `Notification` | 알림 센터 항목. 종류 `NotificationType` (`SIGNUP_REQUESTED`, `SIGNUP_APPROVED`, `CONTACT_CHANGE_REQUESTED`, `CONTACT_CHANGE_REMINDER`, `CONTACT_RECONFIRM_DUE`, `OPINION_REQUEST_OPENED`, `OPINION_REQUEST_CHANGED`, `OPINION_REPLY_DUE`, `OPINION_REPLY_REVISION`, `TEST_PLAN_OPENED`, `TEST_RESULT_REPORTED`, `TEST_RESULT_FEEDBACK`, `TEST_DATA_REQUESTED`, `TEST_DATA_REPORTED`, `SUSPENSION_CHANGED`, `SYSTEM`) |
+| 알림 | `Notification` | 알림 센터 항목. 종류 `NotificationType` (`SIGNUP_REQUESTED`, `SIGNUP_APPROVED`, `CONTACT_CHANGE_REQUESTED`, `CONTACT_CHANGE_REMINDER`, `CONTACT_RECONFIRM_DUE`, `OPINION_REQUEST_OPENED`, `OPINION_REQUEST_CHANGED`, `OPINION_REPLY_DUE`, `OPINION_REPLY_REVISION`, `TEST_PLAN_OPENED`, `TEST_RESULT_REPORTED`, `TEST_RESULT_FEEDBACK`, `TEST_RESULT_COMMENT`, `TEST_DATA_REQUESTED`, `TEST_DATA_REPORTED`, `SUSPENSION_CHANGED`, `SYSTEM`) |
 | 알림 채널 | `NotificationChannel` | `EMAIL`, `MATTERMOST` |
 | 발송함 | `NotificationOutbox` | 프로토타입에서 실제 발송 대신 기록. 상태 `OutboxStatus` = `PENDING`(발송 대기), `SENT`, `FAILED` |
 | 로그인 사용자 | `CurrentUser` | Service 권한 판단에 넘기는 값. 로그인할 때 계정에서 만들어 세션에 둔다. 업무 영역(레일) 조회 범위는 `BusinessAccessPolicy`(관리자는 전 업무, 그 밖에는 담당 업무). 테스트는 `TestUsers` |
@@ -194,7 +195,7 @@ connect-link/
 - UI는 Mantine 컴포넌트와 Mantine 테마(`app/theme.ts`)만 쓴다. 인라인 스타일과 별도 CSS 파일은 Mantine으로 안 될 때만 최소로 쓴다.
 - 글꼴은 Pretendard Variable 을 npm 패키지(`pretendard`)로 번들해서 쓴다. 외부에서 웹폰트를 불러오지 않는다. 글꼴은 `frontend/src/app/fonts.css` 의 `--cl-font-sans` 한 곳에서만 정하고, 바꾸는 방법은 `frontend/CLAUDE.md` 3절에 있다. 숫자 서체(Geist) 도입은 확인 대기.
 - 화면 구성: Mantine `AppShell`, 왼쪽 레일(업무 영역: 계좌통합관리 / 자동이체통합관리 / 대출이동 / CMS) + 사이드바(기능: 홈 / 연락처 / 의견 요청 / 기관 테스트 / 일시중단 / 소통 채널 / 관리, 바로가기에 알림 센터), 상단 바에 전역 검색·알림·사용자 정보. 주소는 `/{업무 slug}/{기능}`. 디자인 토큰과 셸 치수는 `frontend/CLAUDE.md`, 화면 범위와 구조 결정은 `docs/design/common-screens.md`, 분류는 `docs/service-taxonomy.md`를 따른다. `demo` 프로필이면 상단에 데모 도구(계정 전환, 망 전환, 발송함)를 보인다.
-- 날짜 표기 `YYYY-MM-DD`, 일시 `YYYY-MM-DD HH:mm`. 전화번호 표기와 마스킹 형식은 `shared/format.ts` 한 곳에서만 처리한다(마스킹 판단 자체는 서버가 한다).
+- 날짜 표기 `YYYY-MM-DD`, 일시 `YYYY-MM-DD HH:mm`. 예외로 목록의 좁은 칸에 넣는 기간은 짧은 날짜 `'YY.MM.DD`(`formatShortDate`)를 쓴다(지금은 기관 테스트 목록의 수행 기간). 전화번호 표기와 마스킹 형식은 `shared/format.ts` 한 곳에서만 처리한다(마스킹 판단 자체는 서버가 한다).
 - 데스크톱 우선(1280px 기준), 태블릿 폭에서 깨지지 않게 한다. 휴대폰 폭(sm, 768px 미만)에서도 쓸 수 있게 한다(모바일 웹, `frontend/CLAUDE.md` 5.1절).
 - 화면 문구는 한국어로 컴포넌트에 직접 쓴다. 다국어 처리는 하지 않는다.
 - 폼은 `@mantine/form`, 검증 메시지는 서버 오류의 필드 메시지를 그대로 보여준다.
