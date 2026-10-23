@@ -169,13 +169,13 @@ function TestPlanTable({
       <Table.Thead>
         <Table.Tr>
           <Table.Th>개발 건</Table.Th>
-          <Table.Th w="15%">수행 기간</Table.Th>
-          <Table.Th w="15%">{manager ? '전체 수행률' : '우리 기관 수행률'}</Table.Th>
-          <Table.Th w={manager ? '10%' : '16%'}>{manager ? '완료 기관' : '완료 요구사항'}</Table.Th>
-          <Table.Th w="12%" miw={120}>
+          <Table.Th w="16%">수행 기간</Table.Th>
+          <Table.Th w="17%">{manager ? '전체 수행률' : '우리 기관 수행률'}</Table.Th>
+          <Table.Th w={manager ? '12%' : '16%'}>{manager ? '완료 기관' : '완료 요구사항'}</Table.Th>
+          <Table.Th w="14%" miw={120}>
             상태
           </Table.Th>
-          <Table.Th w="8%">담당</Table.Th>
+          <Table.Th w="10%">담당</Table.Th>
         </Table.Tr>
       </Table.Thead>
       <Table.Tbody>
