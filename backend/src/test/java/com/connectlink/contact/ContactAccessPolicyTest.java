@@ -208,4 +208,33 @@ class ContactAccessPolicyTest {
     assertThat(policy.isKftcSide(TestUsers.KFTC_CMS)).isTrue();
     assertThat(policy.isKftcSide(TestUsers.GANA_MEMBER)).isFalse();
   }
+
+  @Test
+  void 연락_불가는_전_기관을_보는_결제원_쪽이_표시한다() {
+    assertThat(policy.canMarkUnreachable(CONTROL_ROOM, KB_ACCOUNT_INFO)).isTrue();
+    assertThat(policy.canMarkUnreachable(TestUsers.KFTC_ACCOUNT_INFO, SHINHAN_ACCOUNT_INFO))
+        .isTrue();
+    assertThat(policy.canMarkUnreachable(TestUsers.ADMIN, KB_CMS)).isTrue();
+  }
+
+  @Test
+  void 기관_담당자와_맡지_않은_결제원_개발은_연락_불가로_표시하지_못한다() {
+    assertThat(policy.canMarkUnreachable(TestUsers.GANA_MEMBER, KB_COLLEAGUE)).isFalse();
+    assertThat(policy.canMarkUnreachable(KFTC_DEV, KB_ACCOUNT_INFO)).isFalse();
+    assertThatThrownBy(() -> policy.ensureCanMarkUnreachable(TestUsers.GANA_MEMBER, KB_COLLEAGUE))
+        .isInstanceOf(AccessDeniedException.class);
+  }
+
+  @Test
+  void 연락_불가_해제는_표시할_수_있는_사람과_고칠_수_있는_기관_담당자가_한다() {
+    assertThat(policy.canClearUnreachable(CONTROL_ROOM, KB_ACCOUNT_INFO)).isTrue();
+    assertThat(policy.canClearUnreachable(TestUsers.GANA_MEMBER, KB_COLLEAGUE)).isTrue();
+  }
+
+  @Test
+  void 다른_기관_담당자는_연락_불가를_해제하지_못한다() {
+    assertThat(policy.canClearUnreachable(TestUsers.SAA_MEMBER, KB_COLLEAGUE)).isFalse();
+    assertThatThrownBy(() -> policy.ensureCanClearUnreachable(TestUsers.SAA_MEMBER, KB_COLLEAGUE))
+        .isInstanceOf(AccessDeniedException.class);
+  }
 }

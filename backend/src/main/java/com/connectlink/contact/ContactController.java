@@ -9,6 +9,7 @@ import com.connectlink.contact.dto.ContactOrganizationConfirmResponse;
 import com.connectlink.contact.dto.ContactOrganizationResponse;
 import com.connectlink.contact.dto.ContactResponse;
 import com.connectlink.contact.dto.ContactSaveRequest;
+import com.connectlink.contact.dto.ContactUnreachableRequest;
 import com.connectlink.organization.Business;
 import com.connectlink.organization.JobRole;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,7 +35,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 가. 담당자 연락처: 목록·상세, 등록·수정·삭제, "변동 없음" 확인, 기관 현행화 완료, 내 연락처, 로그인 확인 알림, 엑셀. */
+/** 가. 담당자 연락처: 목록·상세, 등록·수정·삭제, "변동 없음" 확인, 연락 불가 표시, 기관 현행화 완료, 내 연락처, 로그인 확인 알림, 엑셀. */
 @RestController
 @RequestMapping("/api/v1/contacts")
 @Tag(name = "담당자 연락처", description = "참가기관·결제원 담당자 연락처 조회·수정과 최근 확인일")
@@ -61,17 +62,21 @@ public class ContactController {
       @Parameter(description = "이 직무만(내부망)") @RequestParam(required = false) JobRole jobRole,
       @Parameter(description = "최근 확인일 6개월 경과만(내부망)") @RequestParam(defaultValue = "false")
           boolean needsConfirm,
+      @Parameter(description = "연락 불가 표시만(내부망)") @RequestParam(defaultValue = "false")
+          boolean unreachable,
       @Parameter(description = "0부터 시작") @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "50") int size) {
     return contactService.list(
         currentUserProvider.require(),
         resolveBusiness(business),
-        new ContactService.Filter(q, organizationId, jobRole, needsConfirm),
+        new ContactService.Filter(q, organizationId, jobRole, needsConfirm, unreachable),
         PageRequest.of(page, Math.min(size, 200)));
   }
 
   @GetMapping("/counts")
-  @Operation(summary = "담당자 건수 조회", description = "볼 수 있는 범위의 전체 담당자 수와 최근 확인일 6개월 경과 수.")
+  @Operation(
+      summary = "담당자 건수 조회",
+      description = "볼 수 있는 범위의 전체 담당자 수, 최근 확인일 6개월 경과 수, 연락 불가 표시 수.")
   public ContactCountsResponse counts(
       @Parameter(description = "업무 영역 slug (예: account-info)") @RequestParam String business) {
     return contactService.counts(currentUserProvider.require(), resolveBusiness(business));
@@ -110,12 +115,13 @@ public class ContactController {
       @RequestParam(required = false) String q,
       @RequestParam(required = false) Long organizationId,
       @RequestParam(required = false) JobRole jobRole,
-      @RequestParam(defaultValue = "false") boolean needsConfirm) {
+      @RequestParam(defaultValue = "false") boolean needsConfirm,
+      @RequestParam(defaultValue = "false") boolean unreachable) {
     ContactExcel excel =
         contactService.excel(
             currentUserProvider.require(),
             resolveBusiness(business),
-            new ContactService.Filter(q, organizationId, jobRole, needsConfirm));
+            new ContactService.Filter(q, organizationId, jobRole, needsConfirm, unreachable));
     ContentDisposition disposition =
         ContentDisposition.attachment().filename(excel.fileName(), StandardCharsets.UTF_8).build();
     return ResponseEntity.ok()
@@ -163,6 +169,24 @@ public class ContactController {
   @Operation(summary = "변동 없음 확인", description = "내용은 그대로 두고 최근 확인일만 오늘로 한다. 고칠 수 있는 사람이 한다.")
   public ContactResponse confirm(@PathVariable Long id) {
     return contactService.confirm(currentUserProvider.require(), id);
+  }
+
+  @PutMapping("/{id}/unreachable")
+  @Operation(
+      summary = "연락 불가 표시",
+      description =
+          "전화가 닿지 않은 담당자에게 연락 불가 표시를 남긴다. 이 업무 담당자를 보는 결제원 쪽(그 업무 결제원 담당자, 운영·상황실·대외계)이 내부망에서 한다. 이미 있으면 새 메모로 바꾼다. 그 업무 결제원 담당자에게 매터모스트로, notifyOrganization 이면 그 기관 같은 업무 담당자에게 메일로 알린다. 담당자를 고치면 지워진다.")
+  public ContactResponse markUnreachable(
+      @PathVariable Long id, @Valid @RequestBody ContactUnreachableRequest request) {
+    return contactService.markUnreachable(currentUserProvider.require(), id, request);
+  }
+
+  @DeleteMapping("/{id}/unreachable")
+  @Operation(
+      summary = "연락 불가 해제",
+      description = "연락이 닿았거나 정보가 맞을 때 표시를 지운다. 표시할 수 있는 사람과 이 담당자를 고칠 수 있는 사람이 한다.")
+  public ContactResponse clearUnreachable(@PathVariable Long id) {
+    return contactService.clearUnreachable(currentUserProvider.require(), id);
   }
 
   @PostMapping("/organization-confirmations")

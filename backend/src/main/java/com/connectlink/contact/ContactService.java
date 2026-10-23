@@ -13,6 +13,8 @@ import com.connectlink.contact.dto.ContactOrganizationResponse;
 import com.connectlink.contact.dto.ContactPermissions;
 import com.connectlink.contact.dto.ContactResponse;
 import com.connectlink.contact.dto.ContactSaveRequest;
+import com.connectlink.contact.dto.ContactUnreachableRequest;
+import com.connectlink.contact.dto.ContactUnreachableResponse;
 import com.connectlink.history.ChangeHistoryCommand;
 import com.connectlink.history.ChangeHistoryService;
 import com.connectlink.history.FieldChanges;
@@ -28,6 +30,7 @@ import com.connectlink.organization.JobRole;
 import com.connectlink.organization.Organization;
 import com.connectlink.organization.OrganizationService;
 import com.connectlink.organization.OrganizationType;
+import com.connectlink.organization.dto.OrganizationResponse;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.Period;
@@ -36,10 +39,12 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -49,10 +54,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 담당자 연락처. 목록·상세 조회, 등록·수정·삭제, "변동 없음" 확인(최근 확인일 갱신), 기관 단위 현행화 완료, 6개월 미확인 담당자와 알림을 맡는다. 누가 무엇을
- * 하는지는 {@link ContactAccessPolicy}, 정기 변경 주간은 {@link UpdateCampaignService} 가 맡는다.
+ * 담당자 연락처. 목록·상세 조회, 등록·수정·삭제, "변동 없음" 확인(최근 확인일 갱신), 연락 불가 표시, 기관 단위 현행화 완료, 6개월 미확인 담당자와 알림을 맡는다.
+ * 누가 무엇을 하는지는 {@link ContactAccessPolicy}, 정기 변경 주간은 {@link UpdateCampaignService} 가 맡는다.
  *
- * <p>내부망 전용(명세): 결제원 담당자의 등록·수정·삭제·확인, 검색·필터, 엑셀 다운로드. 기관 담당자의 수정·확인은 인터넷망에서도 된다.
+ * <p>내부망 전용(명세): 결제원 담당자의 등록·수정·삭제·확인·연락 불가 표시, 검색·필터, 엑셀 다운로드. 기관 담당자의 수정·확인은 인터넷망에서도 된다.
  */
 @Service
 @Transactional
@@ -96,15 +101,21 @@ public class ContactService {
   }
 
   /** 목록의 검색·필터 조건. 하나라도 있으면 내부망 전용이다. */
-  public record Filter(String keyword, Long organizationId, JobRole jobRole, boolean needsConfirm) {
+  public record Filter(
+      String keyword,
+      Long organizationId,
+      JobRole jobRole,
+      boolean needsConfirm,
+      boolean unreachable) {
 
-    public static final Filter NONE = new Filter(null, null, null, false);
+    public static final Filter NONE = new Filter(null, null, null, false, false);
 
     boolean isEmpty() {
       return (keyword == null || keyword.isBlank())
           && organizationId == null
           && jobRole == null
-          && !needsConfirm;
+          && !needsConfirm
+          && !unreachable;
     }
   }
 
@@ -134,7 +145,8 @@ public class ContactService {
     return new ContactCountsResponse(
         repository.count(scope),
         repository.count(
-            scope.and(ContactSpecifications.filter(null, null, null, reconfirmThreshold()))));
+            scope.and(ContactSpecifications.filter(null, null, null, reconfirmThreshold(), false))),
+        repository.count(scope.and(ContactSpecifications.filter(null, null, null, null, true))));
   }
 
   @Transactional(readOnly = true)
@@ -246,7 +258,7 @@ public class ContactService {
 
   /**
    * 담당자 정보를 고친다. 저장하면 바뀐 것이 없어도 최근 확인일이 갱신된다(확인한 것으로 본다). 바뀐 항목은 변경 전·후 이력으로 남고, 정기 변경 주간이면 그 기관을
-   * "정보 변경" 으로 남긴다. 기관과 업무는 바뀌지 않는다.
+   * "정보 변경" 으로 남긴다. 연락 불가 표시가 있으면 정보를 바로잡은 것으로 보고 지운다. 기관과 업무는 바뀌지 않는다.
    */
   public ContactResponse update(CurrentUser user, Long id, ContactSaveRequest body) {
     Contact contact = load(id);
@@ -258,6 +270,7 @@ public class ContactService {
     Snapshot before = Snapshot.of(contact);
     contact.change(content);
     contact.confirm(user.name(), now());
+    contact.clearUnreachable();
     List<FieldChange> changes = Snapshot.of(contact).diff(before, false);
     repository.flush();
     if (!changes.isEmpty()) {
@@ -282,6 +295,147 @@ public class ContactService {
     contact.confirm(user.name(), now());
     repository.flush();
     return toResponse(user, contact);
+  }
+
+  /**
+   * 연락 불가로 표시한다. 야간 관제 등 결제원 담당자가 전화했는데 닿지 않을 때 남긴다(내부망). 이미 표시돼 있으면 새 메모로 바꾼다. 그 업무 결제원 담당자에게
+   * 매터모스트로 알리고, 고르면 그 기관의 같은 업무 담당자에게도 메일로 알린다. 표시·해제는 변경 이력에 남고 최근 확인일은 그대로다.
+   */
+  public ContactResponse markUnreachable(
+      CurrentUser user, Long id, ContactUnreachableRequest body) {
+    Contact contact = load(id);
+    accessPolicy.ensureCanMarkUnreachable(user, contact);
+    networkZoneResolver.ensureInternal("연락 불가 표시");
+    Snapshot before = Snapshot.of(contact);
+    String note = blankToNull(body.note());
+    contact.markUnreachable(note, user.email(), user.name(), user.jobTitle(), now());
+    repository.flush();
+    recordUnreachableChange(user, contact, before, "연락 불가 표시");
+    notifyUnreachable(user, contact, body.notifyOrganization());
+    return toResponse(user, contact);
+  }
+
+  /** 연락 불가 표시를 해제한다. 연락이 닿았거나 정보가 맞다고 확인됐을 때다. 표시가 없으면 그대로 돌려준다. */
+  public ContactResponse clearUnreachable(CurrentUser user, Long id) {
+    Contact contact = load(id);
+    accessPolicy.ensureCanClearUnreachable(user, contact);
+    ensureInternalIfKftc(user, "연락 불가 해제");
+    if (contact.isUnreachable()) {
+      Snapshot before = Snapshot.of(contact);
+      contact.clearUnreachable();
+      repository.flush();
+      recordUnreachableChange(user, contact, before, "연락 불가 해제");
+    }
+    return toResponse(user, contact);
+  }
+
+  private void recordUnreachableChange(
+      CurrentUser user, Contact contact, Snapshot before, String what) {
+    List<FieldChange> changes = Snapshot.of(contact).diff(before, false);
+    if (changes.isEmpty()) {
+      return;
+    }
+    changeHistoryService.record(
+        user,
+        ChangeHistoryCommand.updated(
+            HistoryTargetType.CONTACT,
+            contact.getId(),
+            contact.getBusiness(),
+            summaryOf(contact, what),
+            changes));
+  }
+
+  /**
+   * 연락 불가 알림. 그 업무를 맡은 사용 중 결제원 담당자(표시한 본인 빼고)에게 매터모스트로, 고르면 그 기관의 같은 업무 담당자(사용 중 계정과 연락처 이메일, 연락이
+   * 안 된 본인 포함)에게 메일로 보낸다.
+   */
+  private void notifyUnreachable(CurrentUser user, Contact contact, boolean notifyOrganization) {
+    Business business = contact.getBusiness();
+    Organization organization = contact.getOrganization();
+    String title =
+        "["
+            + business.getLabel()
+            + "] "
+            + organization.getName()
+            + " "
+            + contact.getName()
+            + " 담당자 연락 불가";
+    String link = "/" + business.getSlug() + "/contacts?id=" + contact.getId();
+    String note =
+        contact.getUnreachableNote() == null ? "" : " 메모: " + contact.getUnreachableNote();
+    String author = "결제원(" + personOf(user) + ")";
+    String kftcBody =
+        organization.getName()
+            + " "
+            + contact.getName()
+            + " 담당자에게 연락이 닿지 않아 연락 불가로 표시했습니다."
+            + note
+            + " 담당자 정보를 확인해 주세요. 표시: "
+            + author;
+    for (String email : kftcRecipients(business, user)) {
+      notificationService.publish(
+          new NotificationCommand(
+              email,
+              NotificationType.CONTACT_UNREACHABLE,
+              business,
+              title,
+              kftcBody,
+              link,
+              Set.of(NotificationChannel.MATTERMOST)));
+    }
+    if (!notifyOrganization || organization.getType() != OrganizationType.FINANCE_ORGANIZATION) {
+      return;
+    }
+    String organizationBody =
+        "우리 기관 "
+            + business.getLabel()
+            + " 담당자 "
+            + contact.getName()
+            + " 님에게 결제원이 연락했지만 닿지 않았습니다."
+            + note
+            + " 연결고리 연락처 화면에서 담당자 정보를 바로잡아 주세요. 고치면 연락 불가 표시가 지워집니다. 표시: "
+            + author;
+    for (String email : organizationRecipients(business, organization)) {
+      notificationService.publish(
+          new NotificationCommand(
+              email,
+              NotificationType.CONTACT_UNREACHABLE,
+              business,
+              title,
+              organizationBody,
+              link,
+              Set.of(NotificationChannel.EMAIL)));
+    }
+  }
+
+  /** 그 업무를 맡은 사용 중 결제원 계정의 이메일. 알림을 일으킨 본인은 뺀다. */
+  private Set<String> kftcRecipients(Business business, CurrentUser actor) {
+    Set<String> kftcCodes =
+        organizationService.listActive().stream()
+            .filter(o -> o.type() == OrganizationType.KFTC)
+            .map(OrganizationResponse::code)
+            .collect(Collectors.toSet());
+    return accountService.listActiveMembers(business).stream()
+        .filter(m -> kftcCodes.contains(m.organizationCode()))
+        .map(m -> normalizeEmail(m.email()))
+        .filter(email -> !email.equals(actor.email()))
+        .collect(Collectors.toCollection(LinkedHashSet::new));
+  }
+
+  /** 그 기관의 그 업무를 맡은 사용 중 계정과 담당자 연락처 이메일. */
+  private Set<String> organizationRecipients(Business business, Organization organization) {
+    Set<String> emails = new LinkedHashSet<>();
+    accountService.listActiveMembers(business).stream()
+        .filter(m -> organization.getCode().equals(m.organizationCode()))
+        .forEach(m -> emails.add(normalizeEmail(m.email())));
+    repository
+        .findByBusinessAndOrganizationIdOrderByRankAscNameAsc(business, organization.getId())
+        .forEach(c -> emails.add(normalizeEmail(c.getEmail())));
+    return emails;
+  }
+
+  private static String personOf(CurrentUser user) {
+    return user.jobTitle() == null ? user.name() : user.name() + " " + user.jobTitle();
   }
 
   /**
@@ -502,10 +656,21 @@ public class ContactService {
         c.getLastConfirmedAt(),
         c.getLastConfirmedByName(),
         c.getLastConfirmedAt().isBefore(now.minus(RECONFIRM_AFTER)),
+        c.isUnreachable()
+            ? new ContactUnreachableResponse(
+                c.getUnreachableAt(),
+                c.getUnreachableNote(),
+                c.getUnreachableByName(),
+                c.getUnreachableByJobTitle())
+            : null,
         c.getEmail().equals(user.email()),
         new ContactPermissions(
             accessPolicy.canEdit(user, c) && (!kftcSide || internal),
-            accessPolicy.canDelete(user, c) && internal));
+            accessPolicy.canDelete(user, c) && internal,
+            accessPolicy.canMarkUnreachable(user, c) && internal,
+            c.isUnreachable()
+                && accessPolicy.canClearUnreachable(user, c)
+                && (!kftcSide || internal)));
   }
 
   // ---- 공통 ----
@@ -530,14 +695,15 @@ public class ContactService {
   /** 검색·필터 조건. 조건이 있으면 내부망 전용이다(명세). */
   private Specification<Contact> filterOf(Filter filter) {
     if (filter == null || filter.isEmpty()) {
-      return ContactSpecifications.filter(null, null, null, null);
+      return ContactSpecifications.filter(null, null, null, null, false);
     }
     networkZoneResolver.ensureInternal("담당자 검색·필터");
     return ContactSpecifications.filter(
         filter.keyword(),
         filter.organizationId(),
         filter.jobRole(),
-        filter.needsConfirm() ? reconfirmThreshold() : null);
+        filter.needsConfirm() ? reconfirmThreshold() : null,
+        filter.unreachable());
   }
 
   /** 등록·현행화 완료의 기관. 결제원 담당자는 고른 기관(결제원이거나 그 업무에 참여하는 사용 중 참가기관), 기관 담당자는 자기 기관이다(고른 값을 무시한다). */
@@ -672,10 +838,11 @@ public class ContactService {
       String rank,
       String extensionPhone,
       String mobilePhone,
-      String email) {
+      String email,
+      String unreachable) {
 
     static final Snapshot EMPTY =
-        new Snapshot(null, null, null, null, null, null, null, null, null, null);
+        new Snapshot(null, null, null, null, null, null, null, null, null, null, null);
 
     static Snapshot of(Contact c) {
       return new Snapshot(
@@ -688,7 +855,16 @@ public class ContactService {
           c.getRank().getLabel(),
           c.getExtensionPhone(),
           c.getMobilePhone(),
-          c.getEmail());
+          c.getEmail(),
+          unreachableOf(c));
+    }
+
+    /** 연락 불가 표시를 이력 글자로. 메모가 있으면 함께 보인다. 표시가 없으면 null. */
+    private static String unreachableOf(Contact c) {
+      if (!c.isUnreachable()) {
+        return null;
+      }
+      return c.getUnreachableNote() == null ? "연락 불가" : "연락 불가: " + c.getUnreachableNote();
     }
 
     /** {@code before} 에서 이것으로 바뀐 항목. {@code all} 이면 값이 있는 항목을 모두 남긴다(등록 이력). */
@@ -704,6 +880,7 @@ public class ContactService {
       fields.add(new Object[] {"extensionPhone", "내선번호", before.extensionPhone, extensionPhone});
       fields.add(new Object[] {"mobilePhone", "휴대폰번호", before.mobilePhone, mobilePhone});
       fields.add(new Object[] {"email", "회사 이메일", before.email, email});
+      fields.add(new Object[] {"unreachable", "연락 불가", before.unreachable, unreachable});
       FieldChanges changes = FieldChanges.compare();
       for (Object[] f : fields) {
         if (all) {

@@ -1,4 +1,5 @@
 import {
+  ActionIcon,
   Badge,
   Button,
   Card,
@@ -11,10 +12,17 @@ import {
   Table,
   Text,
   TextInput,
+  Tooltip,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { IconCalendarEvent, IconDownload, IconPlus, IconSearch } from '@tabler/icons-react';
+import {
+  IconCalendarEvent,
+  IconDownload,
+  IconPhoneOff,
+  IconPlus,
+  IconSearch,
+} from '@tabler/icons-react';
 import { Fragment, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 
@@ -28,10 +36,15 @@ import { ErrorState } from '../../../shared/state/StateView';
 import { useMe } from '../../account/hooks';
 import { useCurrentBusiness } from '../../organization/hooks';
 import { CampaignBanner } from '../components/CampaignBanner';
-import { ContactNeedsConfirmBadge, ContactRankBadge } from '../components/ContactBadges';
+import {
+  ContactNeedsConfirmBadge,
+  ContactRankBadge,
+  ContactUnreachableBadge,
+} from '../components/ContactBadges';
 import { ContactDrawer } from '../components/ContactDrawer';
 import { ContactFormModal } from '../components/ContactFormModal';
 import classes from '../components/ContactTable.module.css';
+import { ContactUnreachableModal } from '../components/ContactUnreachableModal';
 import {
   type Contact,
   type ContactListParams,
@@ -49,7 +62,8 @@ type JobRoleFilter = 'ALL' | JobRole;
 
 /**
  * 담당자 연락처. 결제원 담당자와 결제원 운영·상황실·대외계는 이 업무의 전 기관을, 기관 담당자는 결제원과 자기 기관 담당자를 본다.
- * 기관별로 묶어 보이고, 행을 누르면 오른쪽 상세 패널(?id=)이 열린다. 검색·필터·엑셀은 내부망에서만 보인다.
+ * 기관별로 묶어 보이고, 행을 누르면 오른쪽 상세 패널(?id=)이 열린다. 검색·필터·엑셀은 내부망에서만 보인다. 전화가 닿지 않은
+ * 담당자는 결제원 쪽이 행 끝 버튼으로 "연락 불가" 를 남기고, 빨간 배지로 보인다.
  */
 export function ContactListPage() {
   const { business: slug = '' } = useParams<{ business: string }>();
@@ -66,9 +80,11 @@ export function ContactListPage() {
   const [organizationId, setOrganizationId] = useState<number | undefined>();
   const [jobRole, setJobRole] = useState<JobRoleFilter>('ALL');
   const [needsConfirm, setNeedsConfirm] = useState(false);
+  const [unreachable, setUnreachable] = useState(false);
   const [page, setPage] = useState(0);
   const [editing, setEditing] = useState<Contact | null>(null);
   const [creating, setCreating] = useState(false);
+  const [marking, setMarking] = useState<Contact | null>(null);
 
   // 인터넷망에서는 거르기 조건을 보내지 않는다(서버가 403 INTERNAL_ONLY 로 막는다).
   const params: ContactListParams = internal
@@ -78,6 +94,7 @@ export function ContactListPage() {
         organizationId,
         jobRole: jobRole === 'ALL' ? undefined : jobRole,
         needsConfirm: needsConfirm || undefined,
+        unreachable: unreachable || undefined,
         page,
         size: PAGE_SIZE,
       }
@@ -208,6 +225,17 @@ export function ContactListPage() {
               >
                 확인 필요만{counts ? ` ${counts.needsConfirm}` : ''}
               </Chip>
+              <Chip
+                size="xs"
+                color="red"
+                checked={unreachable}
+                onChange={(v) => {
+                  setUnreachable(v);
+                  resetPage();
+                }}
+              >
+                연락 불가만{counts ? ` ${counts.unreachable}` : ''}
+              </Chip>
             </Group>
           ) : (
             <Text size="sm" c="dimmed" data-testid="contact-filter-internal-only">
@@ -215,6 +243,11 @@ export function ContactListPage() {
             </Text>
           )}
           <Group gap="sm">
+            {counts && counts.unreachable > 0 && (
+              <Text size="sm" c="red.6" fw={600} data-testid="contact-unreachable">
+                연락 불가 {counts.unreachable}명
+              </Text>
+            )}
             {counts && counts.needsConfirm > 0 && (
               <Text size="sm" c="amber.7" fw={600} data-testid="contact-needs-confirm">
                 확인 필요 {counts.needsConfirm}명
@@ -236,6 +269,7 @@ export function ContactListPage() {
               loading={isPending}
               selectedId={selectedId}
               onSelect={(c) => select(c.id)}
+              onMarkUnreachable={setMarking}
             />
           </div>
         )}
@@ -255,8 +289,10 @@ export function ContactListPage() {
         contactId={selectedId}
         onClose={() => select(null)}
         onEdit={setEditing}
+        onMarkUnreachable={setMarking}
         kftcExternal={manager && !internal}
       />
+      <ContactUnreachableModal contact={marking} onClose={() => setMarking(null)} />
       {current && (
         <>
           <ContactFormModal
@@ -283,11 +319,13 @@ function ContactTable({
   loading,
   selectedId,
   onSelect,
+  onMarkUnreachable,
 }: {
   rows: Contact[] | undefined;
   loading: boolean;
   selectedId: number | null;
   onSelect: (row: Contact) => void;
+  onMarkUnreachable: (row: Contact) => void;
 }) {
   if (loading && !rows) {
     return (
@@ -306,6 +344,10 @@ function ContactTable({
     else groups.push({ organizationId: row.organizationId, rows: [row] });
   }
 
+  // 연락 불가를 남길 수 있는 사람(결제원 쪽, 내부망)에게만 행 끝 버튼 칸을 둔다.
+  const canMark = (rows ?? []).some((r) => r.permissions.markUnreachable);
+  const columns = canMark ? 8 : 7;
+
   return (
     <Table
       verticalSpacing="sm"
@@ -316,12 +358,13 @@ function ContactTable({
       <Table.Thead>
         <Table.Tr>
           <Table.Th w={150}>이름</Table.Th>
-          <Table.Th w={96}>직무</Table.Th>
+          <Table.Th>직무</Table.Th>
           <Table.Th>부서 · 팀</Table.Th>
           <Table.Th>세부업무</Table.Th>
           <Table.Th w={80}>내선</Table.Th>
           <Table.Th w={124}>휴대폰</Table.Th>
-          <Table.Th w={168}>최근 확인일</Table.Th>
+          <Table.Th>최근 확인일</Table.Th>
+          {canMark && <Table.Th w={1} px={0} aria-label="연락 불가 표시" />}
         </Table.Tr>
       </Table.Thead>
       <Table.Tbody>
@@ -330,7 +373,7 @@ function ContactTable({
           return (
             <Fragment key={group.organizationId}>
               <Table.Tr className={classes.group} data-group data-testid="contact-group">
-                <Table.Td colSpan={7}>
+                <Table.Td colSpan={columns}>
                   <Group gap="xs">
                     <OrgMonogram
                       name={first.organizationName}
@@ -355,6 +398,7 @@ function ContactTable({
                 <Table.Tr
                   key={r.id}
                   className={`${classes.row} ${selectedId === r.id ? classes.selected : ''}`}
+                  data-unreachable={r.unreachable ? true : undefined}
                   onClick={() => onSelect(r)}
                   tabIndex={0}
                   role="button"
@@ -385,15 +429,28 @@ function ContactTable({
                     )}
                   </Table.Td>
                   <Table.Td data-label="직무">
-                    <Text size="sm">{r.jobRoleLabel}</Text>
+                    <Text size="sm" className={classes.nowrap}>
+                      {r.jobRoleLabel}
+                    </Text>
                   </Table.Td>
                   <Table.Td data-label="부서 · 팀">
-                    <Text size="sm" lineClamp={2}>
+                    <Text
+                      size="sm"
+                      truncate="end"
+                      maw={200}
+                      title={[r.department, r.team].filter(Boolean).join(' · ')}
+                    >
                       {[r.department, r.team].filter(Boolean).join(' · ')}
                     </Text>
                   </Table.Td>
                   <Table.Td data-label="세부업무">
-                    <Text size="sm" lineClamp={2} c={r.subBusiness ? undefined : 'dimmed'}>
+                    <Text
+                      size="sm"
+                      truncate="end"
+                      maw={160}
+                      title={r.subBusiness ?? undefined}
+                      c={r.subBusiness ? undefined : 'dimmed'}
+                    >
                       {r.subBusiness || '-'}
                     </Text>
                   </Table.Td>
@@ -408,20 +465,49 @@ function ContactTable({
                     </Text>
                   </Table.Td>
                   <Table.Td data-label="최근 확인일">
-                    <Group gap={6} wrap="nowrap">
+                    <Group gap={6} wrap="nowrap" w="max-content">
                       <Text size="sm" className={classes.numeric}>
                         {formatDate(r.lastConfirmedAt)}
                       </Text>
-                      {r.needsConfirm && <ContactNeedsConfirmBadge size="xs" />}
+                      {r.unreachable && (
+                        <ContactUnreachableBadge
+                          unreachable={r.unreachable}
+                          size="xs"
+                          style={{ flexShrink: 0 }}
+                        />
+                      )}
+                      {r.needsConfirm && (
+                        <ContactNeedsConfirmBadge size="xs" style={{ flexShrink: 0 }} />
+                      )}
                     </Group>
                   </Table.Td>
+                  {canMark && (
+                    <Table.Td data-label="연락 불가" px={0}>
+                      {r.permissions.markUnreachable && (
+                        <Tooltip label="전화가 닿지 않으면 연락 불가로 표시" color="dark" withArrow>
+                          <ActionIcon
+                            variant="subtle"
+                            color="gray"
+                            aria-label={`${r.name} 연락 불가 표시`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onMarkUnreachable(r);
+                            }}
+                            onKeyDown={(e) => e.stopPropagation()}
+                          >
+                            <IconPhoneOff size={18} stroke={1.8} />
+                          </ActionIcon>
+                        </Tooltip>
+                      )}
+                    </Table.Td>
+                  )}
                 </Table.Tr>
               ))}
             </Fragment>
           );
         })}
         {rows && rows.length === 0 && (
-          <TableEmpty colSpan={7} message="조건에 맞는 담당자가 없습니다." />
+          <TableEmpty colSpan={columns} message="조건에 맞는 담당자가 없습니다." />
         )}
       </Table.Tbody>
     </Table>

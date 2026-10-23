@@ -52,9 +52,14 @@ final class ContactSpecifications {
    *
    * @param keyword 이름, 기관 이름, 부서, 세부업무, 이메일에 든 글자
    * @param confirmBefore 최근 확인일이 이 시각 전인 담당자만(6개월 경과)
+   * @param unreachableOnly 연락 불가로 표시된 담당자만
    */
   static Specification<Contact> filter(
-      String keyword, Long organizationId, JobRole jobRole, LocalDateTime confirmBefore) {
+      String keyword,
+      Long organizationId,
+      JobRole jobRole,
+      LocalDateTime confirmBefore,
+      boolean unreachableOnly) {
     return (root, query, cb) -> {
       List<Predicate> predicates = new ArrayList<>();
       if (keyword != null && !keyword.isBlank()) {
@@ -75,6 +80,9 @@ final class ContactSpecifications {
       }
       if (confirmBefore != null) {
         predicates.add(cb.lessThan(root.get("lastConfirmedAt"), confirmBefore));
+      }
+      if (unreachableOnly) {
+        predicates.add(cb.isNotNull(root.get("unreachableAt")));
       }
       return cb.and(predicates.toArray(Predicate[]::new));
     };

@@ -7,6 +7,11 @@
   }
 }
 
+/* 연락 불가로 표시된 담당자. 첫 칸 왼쪽에 빨간 줄을 긋는다. */
+.row[data-unreachable] td:first-child {
+  box-shadow: inset 3px 0 0 var(--mantine-color-red-6);
+}
+
 .selected {
   background: var(--mantine-color-clay-1);
 }
@@ -15,6 +20,10 @@
   background: var(--cl-sunken);
   padding-top: 8px;
   padding-bottom: 8px;
+}
+
+.nowrap {
+  white-space: nowrap;
 }
 
 .numeric {

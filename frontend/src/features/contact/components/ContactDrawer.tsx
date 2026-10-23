@@ -1,6 +1,6 @@
 import { Alert, Badge, Button, Divider, Group, Skeleton, Stack, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconTrash, IconUserCheck } from '@tabler/icons-react';
+import { IconPhoneOff, IconTrash, IconUserCheck } from '@tabler/icons-react';
 import { useState } from 'react';
 
 import { ConfirmModal } from '../../../shared/ConfirmModal';
@@ -10,7 +10,14 @@ import { OrgMonogram } from '../../../shared/OrgMonogram';
 import { ErrorState } from '../../../shared/state/StateView';
 import { ChangeHistoryList } from '../../history/components/ChangeHistoryList';
 import { useJobRoles } from '../../organization/hooks';
-import { type Contact, useConfirmContact, useContact, useDeleteContact } from '../hooks';
+import {
+  type Contact,
+  useClearContactUnreachable,
+  useConfirmContact,
+  useContact,
+  useDeleteContact,
+} from '../hooks';
+import { unreachableSummary } from '../unreachable';
 import { ContactNeedsConfirmBadge, ContactRankBadge } from './ContactBadges';
 import classes from './ContactTable.module.css';
 
@@ -18,17 +25,27 @@ interface Props {
   contactId: number | null;
   onClose: () => void;
   onEdit: (contact: Contact) => void;
+  /** 연락 불가 표시 창을 연다. */
+  onMarkUnreachable: (contact: Contact) => void;
   /** 결제원 담당자가 인터넷망에서 볼 때. 고치기·지우기가 막힌 까닭을 알린다. */
   kftcExternal: boolean;
 }
 
 /**
  * 담당자 상세 패널. 연락처, 최근 확인일, 이전 담당자 한 명까지의 변경 이력(휴대폰은 가려서)을 보이고, 권한에 따라 수정·"변동 없음"
- * 확인·삭제를 한다. 버튼 표시는 서버가 내려 준 권한(permissions)을 따른다.
+ * 확인·삭제를 한다. 연락 불가 표시가 있으면 맨 위에 빨갛게 보이고, 결제원 쪽은 "연락 불가" 로 남기며 고칠 수 있는 사람은 해제한다. 버튼
+ * 표시는 서버가 내려 준 권한(permissions)을 따른다.
  */
-export function ContactDrawer({ contactId, onClose, onEdit, kftcExternal }: Props) {
+export function ContactDrawer({
+  contactId,
+  onClose,
+  onEdit,
+  onMarkUnreachable,
+  kftcExternal,
+}: Props) {
   const { data: contact, isPending, isError, error } = useContact(contactId);
   const confirm = useConfirmContact();
+  const clearUnreachable = useClearContactUnreachable();
   const remove = useDeleteContact();
   const [deleting, setDeleting] = useState(false);
   const { data: jobRoles } = useJobRoles();
@@ -50,6 +67,17 @@ export function ContactDrawer({ contactId, onClose, onEdit, kftcExternal }: Prop
           mr="auto"
         >
           삭제
+        </Button>
+      )}
+      {contact.permissions.markUnreachable && (
+        <Button
+          color="red"
+          variant="light"
+          leftSection={<IconPhoneOff size={16} stroke={1.8} />}
+          onClick={() => onMarkUnreachable(contact)}
+          mr={contact.permissions.delete ? undefined : 'auto'}
+        >
+          연락 불가
         </Button>
       )}
       {contact.permissions.edit && (
@@ -93,6 +121,43 @@ export function ContactDrawer({ contactId, onClose, onEdit, kftcExternal }: Prop
       )}
       {contact && (
         <Stack gap="lg" data-testid="contact-detail">
+          {contact.unreachable && (
+            <Alert
+              variant="light"
+              color="red"
+              icon={<IconPhoneOff size={18} stroke={1.8} />}
+              title="연락 불가"
+              data-testid="contact-unreachable-alert"
+            >
+              <Stack gap={8}>
+                <Text size="sm">{unreachableSummary(contact.unreachable)}</Text>
+                <Text size="xs" c="dimmed">
+                  담당자 정보를 고치면 표시가 지워집니다.
+                </Text>
+                {contact.permissions.clearUnreachable && (
+                  <Group>
+                    <Button
+                      size="xs"
+                      variant="default"
+                      loading={clearUnreachable.isPending}
+                      onClick={() =>
+                        clearUnreachable.mutate(contact.id, {
+                          onSuccess: () =>
+                            notifications.show({
+                              message: '연락 불가 표시를 해제했습니다.',
+                              color: 'clay',
+                            }),
+                          onError: (e) => notifications.show({ message: e.message, color: 'red' }),
+                        })
+                      }
+                    >
+                      연락됨 · 해제
+                    </Button>
+                  </Group>
+                )}
+              </Stack>
+            </Alert>
+          )}
           <Group gap="sm" wrap="nowrap">
             <OrgMonogram
               name={contact.organizationName}

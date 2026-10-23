@@ -273,6 +273,30 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/contacts/{id}/unreachable': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * 연락 불가 표시
+     * @description 전화가 닿지 않은 담당자에게 연락 불가 표시를 남긴다. 이 업무 담당자를 보는 결제원 쪽(그 업무 결제원 담당자, 운영·상황실·대외계)이 내부망에서 한다. 이미 있으면 새 메모로 바꾼다. 그 업무 결제원 담당자에게 매터모스트로, notifyOrganization 이면 그 기관 같은 업무 담당자에게 메일로 알린다. 담당자를 고치면 지워진다.
+     */
+    put: operations['markUnreachable'];
+    post?: never;
+    /**
+     * 연락 불가 해제
+     * @description 연락이 닿았거나 정보가 맞을 때 표시를 지운다. 표시할 수 있는 사람과 이 담당자를 고칠 수 있는 사람이 한다.
+     */
+    delete: operations['clearUnreachable'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/chat-messages/{id}/ack': {
     parameters: {
       query?: never;
@@ -1777,7 +1801,7 @@ export interface paths {
     };
     /**
      * 담당자 건수 조회
-     * @description 볼 수 있는 범위의 전체 담당자 수와 최근 확인일 6개월 경과 수.
+     * @description 볼 수 있는 범위의 전체 담당자 수, 최근 확인일 6개월 경과 수, 연락 불가 표시 수.
      */
     get: operations['counts_4'];
     put?: never;
@@ -2491,6 +2515,8 @@ export interface components {
     ContactPermissions: {
       edit: boolean;
       delete: boolean;
+      markUnreachable: boolean;
+      clearUnreachable: boolean;
     };
     ContactResponse: {
       /** Format: int64 */
@@ -2523,8 +2549,20 @@ export interface components {
       lastConfirmedAt: string;
       lastConfirmedByName: string;
       needsConfirm: boolean;
+      unreachable: components['schemas']['ContactUnreachableResponse'];
       self: boolean;
       permissions: components['schemas']['ContactPermissions'];
+    };
+    ContactUnreachableResponse: {
+      /** Format: date-time */
+      markedAt: string;
+      note?: string | null;
+      markedByName: string;
+      markedByJobTitle?: string | null;
+    } | null;
+    ContactUnreachableRequest: {
+      note?: string | null;
+      notifyOrganization: boolean;
     };
     AttachmentResponse: {
       /** Format: int64 */
@@ -2749,6 +2787,7 @@ export interface components {
         | 'CONTACT_CHANGE_REQUESTED'
         | 'CONTACT_CHANGE_REMINDER'
         | 'CONTACT_RECONFIRM_DUE'
+        | 'CONTACT_UNREACHABLE'
         | 'OPINION_REQUEST_OPENED'
         | 'OPINION_REQUEST_CHANGED'
         | 'OPINION_REPLY_DUE'
@@ -3429,6 +3468,8 @@ export interface components {
       total: number;
       /** Format: int64 */
       needsConfirm: number;
+      /** Format: int64 */
+      unreachable: number;
     };
     ChatRoomSummaryResponse: {
       /** Format: int64 */
@@ -4090,6 +4131,54 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+    };
+  };
+  markUnreachable: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ContactUnreachableRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['ContactResponse'];
+        };
+      };
+    };
+  };
+  clearUnreachable: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['ContactResponse'];
+        };
       };
     };
   };
@@ -5047,6 +5136,8 @@ export interface operations {
         jobRole?: 'BUSINESS' | 'IT';
         /** @description 최근 확인일 6개월 경과만(내부망) */
         needsConfirm?: boolean;
+        /** @description 연락 불가 표시만(내부망) */
+        unreachable?: boolean;
         /** @description 0부터 시작 */
         page?: number;
         size?: number;
@@ -6128,6 +6219,7 @@ export interface operations {
         organizationId?: number;
         jobRole?: 'BUSINESS' | 'IT';
         needsConfirm?: boolean;
+        unreachable?: boolean;
       };
       header?: never;
       path?: never;

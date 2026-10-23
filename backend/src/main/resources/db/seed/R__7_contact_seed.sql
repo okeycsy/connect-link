@@ -56,6 +56,15 @@ FROM (VALUES
         extension_phone, mobile_phone, email, days_ago, confirmed_by)
 JOIN organization o ON o.code = c.org_code;
 
+-- 연락 불가 표시. 결제원 상황실 이수진 주임이 지난밤 KB국민은행 CMS 주담당에게 전화했지만 닿지 않았다(연락처 목록에 빨간 "연락 불가" 가 보인다).
+UPDATE contact
+SET unreachable_at = CURRENT_TIMESTAMP - INTERVAL '9' HOUR,
+    unreachable_note = '야간 출금이체 지연 확인 전화, 내선·휴대폰 모두 받지 않음',
+    unreachable_by_email = 'lee.control@kftc.example.com',
+    unreachable_by_name = '이수진',
+    unreachable_by_job_title = '주임'
+WHERE email = 'kook.haesol@kb.example.com' AND business = 'CMS';
+
 -- 전산 세부 직무.
 INSERT INTO contact_it_role (contact_id, it_role, created_at, created_by, updated_at, updated_by)
 SELECT c.id, r.it_role, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'

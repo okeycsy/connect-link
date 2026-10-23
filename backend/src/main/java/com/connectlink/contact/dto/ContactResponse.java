@@ -14,6 +14,7 @@ import java.util.List;
  *
  * @param lastConfirmedAt 최근 확인일. 고치거나 "변동 없음" 으로 확인한 때다
  * @param needsConfirm 최근 확인일에서 6개월이 지났는지
+ * @param unreachable 연락 불가 표시. 없으면 null
  * @param self 로그인한 사람 본인인지(회사 이메일이 같다)
  */
 public record ContactResponse(
@@ -40,5 +41,6 @@ public record ContactResponse(
     LocalDateTime lastConfirmedAt,
     String lastConfirmedByName,
     boolean needsConfirm,
+    @Schema(nullable = true) ContactUnreachableResponse unreachable,
     boolean self,
     ContactPermissions permissions) {}
