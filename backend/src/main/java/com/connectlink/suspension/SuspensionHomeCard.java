@@ -66,7 +66,13 @@ public class SuspensionHomeCard implements HomeCardContributor {
     LocalDate today = LocalDate.now(clock);
     LocalDate monday = today.with(DayOfWeek.MONDAY);
     Specification<Suspension> spec =
-        SuspensionSpecifications.of(business, organizationCode, null, null, null)
+        SuspensionSpecifications.of(
+                business,
+                organizationCode,
+                null,
+                null,
+                null,
+                !manager || accessPolicy.handlesUnlinked(user))
             .and(
                 SuspensionSpecifications.startingBetween(
                     monday.atStartOfDay(), monday.plusDays(5).atStartOfDay()));

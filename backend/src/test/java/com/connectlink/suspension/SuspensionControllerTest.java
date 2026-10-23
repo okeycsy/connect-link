@@ -14,13 +14,18 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.connectlink.auth.CurrentUser;
 import com.connectlink.auth.TestUsers;
 import com.connectlink.notification.NotificationChannel;
 import com.connectlink.notification.NotificationOutbox;
 import com.connectlink.notification.NotificationOutboxRepository;
 import com.connectlink.notification.NotificationRepository;
 import com.connectlink.notification.NotificationType;
+import com.connectlink.organization.Business;
+import com.connectlink.organization.ItRole;
+import com.connectlink.organization.JobRole;
 import com.connectlink.organization.OrganizationService;
+import com.connectlink.organization.OrganizationType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
@@ -29,6 +34,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -60,6 +66,32 @@ class SuspensionControllerTest {
   @Autowired private NotificationRepository notificationRepository;
   @Autowired private NotificationOutboxRepository outboxRepository;
   @Autowired private SuspensionService suspensionService;
+  @Autowired private TargetWorkRepository targetWorkRepository;
+
+  /** 결제원 운영(계좌통합관리). 레일과 무관한 일시중단을 맡는다. */
+  private static RequestPostProcessor ops() {
+    return TestUsers.as(
+        new CurrentUser(
+            "kim.ops@kftc.example.com",
+            "김태호",
+            "KFTC",
+            "금융결제원",
+            OrganizationType.KFTC,
+            false,
+            Set.of(Business.ACCOUNT_INFO),
+            JobRole.IT,
+            Set.of(ItRole.OPS),
+            "차장"));
+  }
+
+  /** 시드 대상 업무의 ID. */
+  private Long work(String name) {
+    return targetWorkRepository.findAll().stream()
+        .filter(w -> w.getName().equals(name))
+        .findFirst()
+        .orElseThrow()
+        .getId();
+  }
 
   /** 결제원 계좌통합관리 현업. */
   private static RequestPostProcessor hong() {
@@ -106,7 +138,7 @@ class SuspensionControllerTest {
   private Map<String, Object> form(String reason) {
     LocalDateTime start = LocalDate.now().plusDays(2).atTime(2, 0);
     Map<String, Object> body = new HashMap<>();
-    body.put("businesses", List.of("ACCOUNT_INFO"));
+    body.put("targetWorkIds", List.of(work("계좌통합관리")));
     body.put("startAt", start.toString());
     body.put("endAt", start.plusHours(2).toString());
     body.put("reason", reason);
@@ -192,9 +224,9 @@ class SuspensionControllerTest {
   }
 
   @Test
-  void 업무에_참여하지_않는_기관은_고를_수_없다() throws Exception {
-    Map<String, Object> body = form("참여 안 하는 기관");
-    body.put("organizationId", orgId("071")); // 우체국은 계좌통합관리에 참여하지 않는다.
+  void 참가기관이_아닌_기관은_고를_수_없다() throws Exception {
+    Map<String, Object> body = form("참가기관 아님");
+    body.put("organizationId", orgId("KFTC"));
     send(post(BASE), body, hong())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("SUSPENSION_ORGANIZATION_INVALID"));
@@ -203,7 +235,7 @@ class SuspensionControllerTest {
   @Test
   void 기관_담당자는_자기_기관이_참여하는_업무면_맡지_않아도_등록하고_본인_건을_본다() throws Exception {
     Map<String, Object> body = form("기관 기준 CMS 등록");
-    body.put("businesses", List.of("CMS")); // 김민준은 계좌통합관리 담당이지만 KB국민은행은 CMS 에도 참여한다.
+    body.put("targetWorkIds", List.of(work("CMS"))); // 김민준은 계좌통합관리 담당이지만 KB국민은행은 CMS 에도 참여한다.
     Long id =
         json(send(post(BASE), body, kim())
                 .andExpect(status().isCreated())
@@ -220,19 +252,117 @@ class SuspensionControllerTest {
   }
 
   @Test
-  void 기관이_참여하지_않는_업무로는_등록하지_못한다() throws Exception {
+  void 대상_업무는_기관_참여나_맡은_업무와_상관없이_고른다() throws Exception {
     Map<String, Object> body = form("참여 안 하는 업무");
-    body.put("businesses", List.of("ACCOUNT_INFO", "LOAN_TRANSFER")); // 삼성증권은 대출이동에 참여하지 않는다.
+    // 삼성증권은 대출이동에 참여하지 않고 최유진도 맡지 않지만 고를 수 있다.
+    body.put("targetWorkIds", List.of(work("계좌통합관리"), work("대출이동")));
     send(post(BASE), body, choi())
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.businesses.length()").value(2));
+  }
+
+  @Test
+  void 레일과_무관한_대상_업무만_고르면_운영_상황실_대외계가_알림을_받고_확정한다() throws Exception {
+    Map<String, Object> body = form("레일 무관 회선 작업");
+    body.put("targetWorkIds", List.of(work("타행환공동망"), work("대외계 회선")));
+    Long id =
+        json(send(post(BASE), body, kim())
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.businesses.length()").value(0))
+                .andExpect(jsonPath("$.targetWorks[0].name").value("타행환공동망")))
+            .get("id")
+            .asLong();
+    assertThat(notified("레일 무관 회선 작업"))
+        .contains("kim.ops@kftc.example.com", "lee.control@kftc.example.com")
+        .doesNotContain("hong.sungmin@kftc.example.com", "park.cms@kftc.example.com");
+    send(get(BASE + "/" + id), null, hong()).andExpect(status().isForbidden());
+    send(get(BASE + "/" + id), null, kim()).andExpect(status().isOk());
+    // 운영 담당자의 계좌통합관리 목록에 나온다.
+    JsonNode list = json(send(get(BASE).param("business", "account-info"), null, ops()));
+    assertThat(list.findValuesAsText("reason")).contains("레일 무관 회선 작업");
+    JsonNode hongList = json(send(get(BASE).param("business", "account-info"), null, hong()));
+    assertThat(hongList.findValuesAsText("reason")).doesNotContain("레일 무관 회선 작업");
+    Map<String, Object> handover = new HashMap<>();
+    handover.put("handover", "운영팀이 우회 경로를 열었습니다.");
+    send(post(BASE + "/" + id + "/confirmation"), handover, ops())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("CONFIRMED"));
+  }
+
+  @Test
+  void 사용_안_함_대상_업무는_새로_고르지_못한다() throws Exception {
+    Map<String, Object> create = new HashMap<>();
+    create.put("name", "테스트용 사용 안 함 업무");
+    create.put("category", "기타");
+    create.put("sortOrder", 999);
+    create.put("active", false);
+    create.put("businesses", List.of());
+    Long inactive =
+        json(send(post("/api/v1/target-works"), create, TestUsers.admin())
+                .andExpect(status().isCreated()))
+            .get("id")
+            .asLong();
+    Map<String, Object> body = form("사용 안 함 업무 고르기");
+    body.put("targetWorkIds", List.of(inactive));
+    send(post(BASE), body, kim())
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.code").value("SUSPENSION_ORGANIZATION_INVALID"))
-        .andExpect(jsonPath("$.fieldErrors[0].field").value("businesses"));
+        .andExpect(jsonPath("$.code").value("SUSPENSION_TARGET_WORK_INVALID"));
+    JsonNode active = json(send(get("/api/v1/target-works"), null, kim()));
+    assertThat(active.findValuesAsText("name")).doesNotContain("테스트용 사용 안 함 업무");
+  }
+
+  // ---- 대상 업무 기준정보 ----
+
+  @Test
+  void 대상_업무_목록은_로그인한_누구나_사용_중인_것을_순서대로_본다() throws Exception {
+    JsonNode works =
+        json(send(get("/api/v1/target-works"), null, kim()).andExpect(status().isOk()));
+    assertThat(works.size()).isGreaterThanOrEqualTo(40);
+    assertThat(works.get(0).get("name").asText()).isEqualTo("계좌통합관리");
+    send(get("/api/v1/target-works").param("includeInactive", "true"), null, kim())
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void 관리자는_대상_업무를_더하고_고친다() throws Exception {
+    Map<String, Object> body = new HashMap<>();
+    body.put("name", "테스트용 새 업무");
+    body.put("category", "기타");
+    body.put("sortOrder", 900);
+    body.put("active", true);
+    body.put("businesses", List.of("CMS"));
+    Long id =
+        json(send(post("/api/v1/target-works"), body, TestUsers.admin())
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.businesses[0].code").value("CMS")))
+            .get("id")
+            .asLong();
+    body.put("name", "테스트용 고친 업무");
+    body.put("businesses", List.of());
+    send(put("/api/v1/target-works/" + id), body, TestUsers.admin())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.name").value("테스트용 고친 업무"))
+        .andExpect(jsonPath("$.businesses.length()").value(0));
+    body.put("name", "타행환공동망");
+    send(put("/api/v1/target-works/" + id), body, TestUsers.admin())
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("TARGET_WORK_NAME_DUPLICATE"));
+  }
+
+  @Test
+  void 관리자가_아니면_대상_업무를_더하지_못한다() throws Exception {
+    Map<String, Object> body = new HashMap<>();
+    body.put("name", "권한 없는 업무");
+    body.put("sortOrder", 1);
+    body.put("active", true);
+    body.put("businesses", List.of());
+    send(post("/api/v1/target-works"), body, hong()).andExpect(status().isForbidden());
   }
 
   @Test
   void 여러_업무를_멈추는_건은_한_건으로_등록되고_그_업무들의_결제원_담당자가_모두_다룬다() throws Exception {
     Map<String, Object> body = form("여러 업무 한 건 등록");
-    body.put("businesses", List.of("CMS", "ACCOUNT_INFO", "CMS"));
+    body.put("targetWorkIds", List.of(work("CMS"), work("계좌통합관리"), work("CMS")));
     body.put(
         "contacts",
         List.of(
@@ -241,6 +371,8 @@ class SuspensionControllerTest {
     Long id =
         json(send(post(BASE), body, kim())
                 .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.targetWorks.length()").value(2))
+                .andExpect(jsonPath("$.targetWorks[0].name").value("계좌통합관리"))
                 .andExpect(jsonPath("$.businesses.length()").value(2))
                 .andExpect(jsonPath("$.businesses[0].code").value("ACCOUNT_INFO"))
                 .andExpect(jsonPath("$.businesses[1].code").value("CMS"))
@@ -265,12 +397,12 @@ class SuspensionControllerTest {
   @Test
   void 고치면서_업무를_빼고_담당자를_줄이면_그대로_남는다() throws Exception {
     Map<String, Object> body = form("업무 빼기");
-    body.put("businesses", List.of("ACCOUNT_INFO", "CMS"));
+    body.put("targetWorkIds", List.of(work("계좌통합관리"), work("CMS")));
     body.put(
         "contacts",
         List.of(contact("김민준", "010-0000-2101", null), contact("한예린", "010-0000-2102", null)));
     Long id = json(send(post(BASE), body, kim())).get("id").asLong();
-    body.put("businesses", List.of("ACCOUNT_INFO"));
+    body.put("targetWorkIds", List.of(work("계좌통합관리")));
     body.put("contacts", List.of(contact("한예린", "010-0000-2102", null)));
     send(put(BASE + "/" + id), body, kim())
         .andExpect(status().isOk())
@@ -284,11 +416,11 @@ class SuspensionControllerTest {
   @Test
   void 대상_업무와_담당자가_비면_필드_메시지가_온다() throws Exception {
     Map<String, Object> body = form("빈 업무");
-    body.put("businesses", List.of());
+    body.put("targetWorkIds", List.of());
     body.put("contacts", List.of());
     send(post(BASE), body, kim())
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.fieldErrors[*].field").value(hasItem("businesses")))
+        .andExpect(jsonPath("$.fieldErrors[*].field").value(hasItem("targetWorkIds")))
         .andExpect(jsonPath("$.fieldErrors[*].field").value(hasItem("contacts")));
   }
 

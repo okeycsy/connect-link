@@ -11,7 +11,6 @@ import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 /**
@@ -47,11 +46,7 @@ class SuspensionNotifier {
   }
 
   private static String headline(Suspension suspension) {
-    return suspension.getOrganization().getName()
-        + " "
-        + suspension.getBusinesses().stream()
-            .map(Business::getLabel)
-            .collect(Collectors.joining("·"));
+    return suspension.getOrganization().getName() + " " + suspension.targetWorkNames();
   }
 
   /** 새로 등록했다. 그 업무 결제원 담당자에게 알림, 메일, 매터모스트. */
@@ -108,9 +103,9 @@ class SuspensionNotifier {
   }
 
   /** 등록한 사람에게: 결제원이 확정했다. 알림 센터에만. */
-  void confirmed(Suspension suspension) {
+  void confirmed(Suspension suspension, Map<String, Business> registrant) {
     publish(
-        toRegistrant(suspension),
+        registrant,
         suspension,
         headline(suspension) + " 일시중단이 확정되었습니다",
         periodText(suspension.getStartAt(), suspension.getEndAt())
@@ -122,19 +117,15 @@ class SuspensionNotifier {
   }
 
   /** 등록한 사람에게: 다른 사람(결제원 담당자)이 내용을 고쳤다. 알림 센터에만. */
-  void changedForRegistrant(Suspension suspension, String actorName, String what) {
+  void changedForRegistrant(
+      Suspension suspension, Map<String, Business> registrant, String actorName, String what) {
     publish(
-        toRegistrant(suspension),
+        registrant,
         suspension,
         headline(suspension) + " 일시중단을 결제원이 고쳤습니다",
         actorName + " 님이 " + what + "을(를) 고쳤습니다.",
         b -> linkOf(suspension, b),
         Set.of());
-  }
-
-  /** 등록한 사람. 알림은 대표 업무 영역에 보인다. */
-  private static Map<String, Business> toRegistrant(Suspension suspension) {
-    return Map.of(suspension.getRegistrantEmail(), suspension.getPrimaryBusiness());
   }
 
   /**

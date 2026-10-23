@@ -1,6 +1,5 @@
 package com.connectlink.suspension.dto;
 
-import com.connectlink.organization.Business;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,11 +14,12 @@ import javax.validation.constraints.Size;
  * 기관은 바뀌지 않는다.
  *
  * @param kftcAction 결제원 조치사항(중단 동안 결제원이 할 일)
- * @param businesses 멈추는 업무. 하나 이상이고 기관이 모두 참여해야 한다
+ * @param targetWorkIds 고른 대상 업무(기준정보 ID). 하나 이상이다. 등록하는 사람의 업무와 상관없이 고른다
  * @param contacts 기관 작업 담당자 연락처. 한 명 이상, 적은 순서대로 보인다
  */
 public record SuspensionSaveRequest(
-    @NotEmpty(message = "대상 업무를 하나 이상 골라 주세요.") List<@NotNull Business> businesses,
+    @NotEmpty(message = "대상 업무를 하나 이상 골라 주세요.") @Size(max = 100, message = "대상 업무는 100개까지 고릅니다.")
+        List<@NotNull Long> targetWorkIds,
     @Schema(nullable = true) Long organizationId,
     @NotNull(message = "중단 시작 일시를 골라 주세요.") LocalDateTime startAt,
     @NotNull(message = "중단 종료 일시를 골라 주세요.") LocalDateTime endAt,

@@ -9,6 +9,7 @@ import java.util.List;
 /** 일시중단 목록 한 줄. 등록한 사람은 그때의 이름·직급으로 "결제원(김민찬 과장)"처럼 보인다. */
 public record SuspensionSummaryResponse(
     Long id,
+    List<SuspensionTargetWorkResponse> targetWorks,
     List<SuspensionBusinessResponse> businesses,
     Long organizationId,
     String organizationName,
