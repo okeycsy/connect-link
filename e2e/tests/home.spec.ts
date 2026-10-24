@@ -22,6 +22,8 @@ test.describe('홈 대시보드', () => {
     const upcoming = cards.getByTestId('suspension-upcoming');
     await expect(upcoming).toBeVisible();
     await expect(upcoming.getByText(/^오늘 · /)).toBeVisible();
+    // 기관명 옆에 원형 로고(파일이 있는 기관만)를 붙인다.
+    await expect(upcoming.locator('img').first()).toBeVisible();
     await expect(cards.getByText('최근 소식')).toHaveCount(0);
     const suspensionBox = (await cards.getByTestId('home-card-SUSPENSIONS').boundingBox())!;
     const signUpBox = (await cards.getByTestId('home-card-SIGNUP_APPROVAL').boundingBox())!;

@@ -185,6 +185,7 @@ class SuspensionControllerTest {
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.status").value("PENDING_REVIEW"))
         .andExpect(jsonPath("$.organizationName").value("KB국민은행"))
+        .andExpect(jsonPath("$.organizationCode").value("004"))
         .andExpect(jsonPath("$.registrantKftc").value(false))
         .andExpect(jsonPath("$.registrantJobTitle").value("대리"))
         .andExpect(jsonPath("$.permissions.edit").value(true))

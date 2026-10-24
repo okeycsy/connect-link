@@ -12,6 +12,7 @@ public record SuspensionSummaryResponse(
     List<SuspensionTargetWorkResponse> targetWorks,
     List<SuspensionBusinessResponse> businesses,
     Long organizationId,
+    String organizationCode,
     String organizationName,
     LocalDateTime startAt,
     LocalDateTime endAt,

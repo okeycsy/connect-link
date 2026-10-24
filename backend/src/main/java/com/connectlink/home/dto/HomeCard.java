@@ -29,5 +29,13 @@ public record HomeCard(
       @Schema(nullable = true) String subtitle,
       @Schema(nullable = true) LocalDate dueAt,
       Urgency urgency,
-      @Schema(nullable = true) String link) {}
+      @Schema(nullable = true) String link,
+      @Schema(nullable = true, description = "줄이 기관 하나를 가리킬 때 그 기관 코드. 화면이 기관 로고를 붙인다")
+          String organizationCode) {
+
+    public HomeCardItem(
+        String title, String subtitle, LocalDate dueAt, Urgency urgency, String link) {
+      this(title, subtitle, dueAt, urgency, link, null);
+    }
+  }
 }

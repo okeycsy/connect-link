@@ -2294,6 +2294,7 @@ export interface components {
       businesses: components['schemas']['SuspensionBusinessResponse'][];
       /** Format: int64 */
       organizationId: number;
+      organizationCode: string;
       organizationName: string;
       /** Format: date-time */
       startAt: string;
@@ -3086,6 +3087,7 @@ export interface components {
       businesses: components['schemas']['SuspensionBusinessResponse'][];
       /** Format: int64 */
       organizationId: number;
+      organizationCode: string;
       organizationName: string;
       /** Format: date-time */
       startAt: string;
@@ -3423,6 +3425,8 @@ export interface components {
       /** @enum {string} */
       urgency: 'NONE' | 'SOON' | 'OVERDUE';
       link?: string | null;
+      /** @description 줄이 기관 하나를 가리킬 때 그 기관 코드. 화면이 기관 로고를 붙인다 */
+      organizationCode?: string | null;
     };
     HomeResponse: {
       /** @enum {string} */

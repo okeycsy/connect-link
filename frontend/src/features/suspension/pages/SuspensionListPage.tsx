@@ -20,6 +20,7 @@ import { ChipFilter } from '../../../shared/list/ChipFilter';
 import tableClasses from '../../../shared/list/ResponsiveTable.module.css';
 import { TableEmpty } from '../../../shared/list/TableEmpty';
 import { PageHeader } from '../../../shared/PageHeader';
+import { OrgLogo } from '../../../shared/OrgLogo';
 import { ErrorState } from '../../../shared/state/StateView';
 import { useMe } from '../../account/hooks';
 import { useCurrentBusiness } from '../../organization/hooks';
@@ -288,9 +289,12 @@ function SuspensionTable({
             }}
           >
             <Table.Td>
-              <Text size="md" fw={600}>
-                {r.organizationName}
-              </Text>
+              <Group gap={8} wrap="nowrap">
+                <OrgLogo code={r.organizationCode} />
+                <Text size="md" fw={600}>
+                  {r.organizationName}
+                </Text>
+              </Group>
               <Text size="xs" c="dimmed" lineClamp={1}>
                 {r.targetWorks.map((w) => w.name).join(', ')}
               </Text>

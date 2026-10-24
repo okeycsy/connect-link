@@ -2,6 +2,7 @@ import { Badge, Box, Group, Stack, Text, UnstyledButton } from '@mantine/core';
 import dayjs from 'dayjs';
 import { Link } from 'react-router-dom';
 
+import { OrgLogo } from '../../../shared/OrgLogo';
 import type { HomeItem } from '../hooks';
 import classes from './SuspensionUpcoming.module.css';
 
@@ -84,9 +85,12 @@ export function SuspensionUpcoming({ items, today = seoulToday(), fill = false }
                 className={classes.row}
                 data-soon={it.urgency !== 'NONE' || undefined}
               >
-                <Text size="sm" fw={600} truncate>
-                  {it.title}
-                </Text>
+                <Group gap={6} wrap="nowrap">
+                  <OrgLogo code={it.organizationCode} size={18} />
+                  <Text size="sm" fw={600} truncate>
+                    {it.title}
+                  </Text>
+                </Group>
                 {it.subtitle && (
                   <Text size="xs" c="dimmed" truncate>
                     {it.subtitle}
