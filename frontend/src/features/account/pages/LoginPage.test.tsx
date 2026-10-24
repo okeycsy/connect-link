@@ -52,6 +52,8 @@ beforeEach(() => {
         return ok([]);
       case '/api/v1/demo/accounts':
         return ok(demoAccounts);
+      case '/api/v1/support-info':
+        return ok({ inquiryEmail: 'help@connect-link.example.com' });
       default:
         throw new Error(`예상하지 못한 GET ${path}`);
     }
@@ -59,6 +61,31 @@ beforeEach(() => {
 });
 
 describe('LoginPage', () => {
+  it('이용 가이드와 서버가 알려 준 문의 메일 주소를 보인다', async () => {
+    renderWithProviders(<LoginPage />, { route: '/login', path: '/login' });
+
+    expect(screen.getByRole('region', { name: '연결이 주요 기능' })).toHaveTextContent(
+      '담당자 연락처',
+    );
+    expect(screen.getByRole('link', { name: '가이드 보기' })).toHaveAttribute('href', '/guide');
+    expect(await screen.findByRole('link', { name: '문의 메일 보내기' })).toHaveAttribute(
+      'href',
+      'mailto:help@connect-link.example.com',
+    );
+  });
+
+  it('문의 메일 주소가 없으면 문의하기 칸을 뺀다', async () => {
+    const base = GET.getMockImplementation()!;
+    GET.mockImplementation(async (path: string) =>
+      path === '/api/v1/support-info' ? ok({}) : base(path),
+    );
+    renderWithProviders(<LoginPage />, { route: '/login', path: '/login' });
+
+    await waitFor(() => expect(GET).toHaveBeenCalledWith('/api/v1/support-info'));
+    expect(screen.getByRole('link', { name: '가이드 보기' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '문의 메일 보내기' })).not.toBeInTheDocument();
+  });
+
   it('틀린 비밀번호면 서버 메시지를 그대로 보여 준다', async () => {
     POST.mockResolvedValue(
       fail(401, { code: 'INVALID_CREDENTIALS', detail: '이메일 또는 비밀번호가 맞지 않습니다.' }),

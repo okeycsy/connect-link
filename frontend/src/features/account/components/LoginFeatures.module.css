@@ -1,0 +1,136 @@
+/*
+ * 로그인 기능 소개. 넓은 화면(lg 이상)에서는 높이 600 안에 다섯 줄을 120 간격으로 두고, 아이콘 원의 가운데가
+ * 반지름 600 호(왼쪽 40px 에서 시작하는 svg) 위에 오도록 줄마다 왼쪽 여백(30/68/80/68/30)을 준다.
+ * 좁은 화면에서는 호를 숨기고 여백 없이 목록으로 쌓는다.
+ */
+.root {
+  position: relative;
+  width: 100%;
+}
+
+.arc {
+  position: absolute;
+  left: 40px;
+  top: 0;
+  width: 120px;
+  height: 600px;
+  overflow: visible;
+  pointer-events: none;
+
+  & path {
+    fill: none;
+    stroke: var(--mantine-color-clay-3);
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+  }
+
+  @media (max-width: $mantine-breakpoint-lg) {
+    display: none;
+  }
+}
+
+.list {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  @media (min-width: $mantine-breakpoint-lg) {
+    height: 600px;
+  }
+
+  @media (max-width: $mantine-breakpoint-lg) {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px 20px;
+  }
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+
+  @media (min-width: $mantine-breakpoint-lg) {
+    height: 120px;
+
+    &[data-index='0'],
+    &[data-index='4'] {
+      margin-left: 30px;
+    }
+
+    &[data-index='1'],
+    &[data-index='3'] {
+      margin-left: 68px;
+    }
+
+    &[data-index='2'] {
+      margin-left: 80px;
+    }
+  }
+}
+
+/* 아이콘: 흰 원(지름 80, 카드 그림자) 안에 파스텔 원(지름 60). 좁은 화면에서는 한 단계 작게 */
+.iconRing {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--cl-card);
+  box-shadow: var(--mantine-shadow-card);
+
+  @media (max-width: $mantine-breakpoint-lg) {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+
+  &[data-tone='clay'] {
+    background: var(--mantine-color-clay-1);
+    color: var(--mantine-color-clay-7);
+  }
+
+  &[data-tone='sky'] {
+    background: var(--mantine-color-sky-1);
+    color: var(--mantine-color-sky-7);
+  }
+
+  &[data-tone='amber'] {
+    background: var(--mantine-color-amber-1);
+    color: var(--mantine-color-amber-7);
+  }
+
+  @media (max-width: $mantine-breakpoint-lg) {
+    width: 46px;
+    height: 46px;
+  }
+}
+
+.number {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+
+  &[data-tone='clay'] {
+    color: var(--mantine-color-clay-6);
+  }
+
+  &[data-tone='sky'] {
+    color: var(--mantine-color-sky-7);
+  }
+
+  &[data-tone='amber'] {
+    color: var(--mantine-color-amber-7);
+  }
+}

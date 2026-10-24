@@ -13,6 +13,9 @@ logging:
     org.springframework.security: INFO
 
 app:
+  support:
+    # 샘플 문의 주소(가상).
+    inquiry-email: help@connect-link.example.com
   network:
     # 시연·개발·테스트는 내부망이 기본이고, 화면의 망 전환 토글(X-Network-Zone 헤더)을 믿는다.
     header-override: true

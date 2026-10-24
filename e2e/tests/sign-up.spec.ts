@@ -29,7 +29,7 @@ test.describe('회원가입', () => {
   }) => {
     const email = `e2e.${Date.now()}@kb.example.com`;
     await page.goto('/login');
-    await page.getByRole('link', { name: '회원가입' }).click();
+    await page.getByRole('link', { name: '회원가입', exact: true }).click();
     await expect(page).toHaveURL(/\/sign-up$/);
     await expect(page.getByRole('heading', { name: '회원가입' })).toBeVisible();
 

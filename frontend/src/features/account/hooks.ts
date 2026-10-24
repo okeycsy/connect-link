@@ -40,6 +40,7 @@ export interface SignUpApplicationParams {
 export const accountKeys = {
   me: ['me'] as const,
   demoAccounts: ['demo-accounts'] as const,
+  supportInfo: ['support-info'] as const,
   withdrawalCheck: ['withdrawal-check'] as const,
 };
 
@@ -179,6 +180,15 @@ export function useDemoAccounts() {
     queryFn: async () => unwrap(await api.GET('/api/v1/demo/accounts')),
     enabled: isDemoProfile(serverInfo?.profile),
     staleTime: 5 * 60_000,
+  });
+}
+
+/** 로그인 화면의 문의 안내(문의 메일 주소). 설정하지 않은 서버는 inquiryEmail 이 비어 문의하기 칸을 뺀다. */
+export function useSupportInfo() {
+  return useQuery({
+    queryKey: accountKeys.supportInfo,
+    queryFn: async () => unwrap(await api.GET('/api/v1/support-info')),
+    staleTime: 30 * 60_000,
   });
 }
 

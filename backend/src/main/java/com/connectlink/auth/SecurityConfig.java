@@ -71,6 +71,7 @@ public class SecurityConfig {
                     .permitAll()
                     .antMatchers(
                         "/api/v1/health",
+                        "/api/v1/support-info",
                         "/v3/api-docs/**",
                         "/swagger-ui/**",
                         "/swagger-ui.html",

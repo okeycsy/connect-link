@@ -1384,6 +1384,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/support-info': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 문의 안내 조회
+     * @description 문의 메일 주소. 설정하지 않았으면 inquiryEmail 이 null 이다.
+     */
+    get: operations['supportInfo'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/sign-ups/{id}': {
     parameters: {
       query?: never;
@@ -3129,6 +3149,9 @@ export interface components {
       past: number;
       /** Format: int64 */
       pendingReview: number;
+    };
+    SupportInfoResponse: {
+      inquiryEmail?: string | null;
     };
     PageResponseSignUpApplicationResponse: {
       content: components['schemas']['SignUpApplicationResponse'][];
@@ -5778,6 +5801,26 @@ export interface operations {
         };
         content: {
           '*/*': components['schemas']['SuspensionCountsResponse'];
+        };
+      };
+    };
+  };
+  supportInfo: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['SupportInfoResponse'];
         };
       };
     };
