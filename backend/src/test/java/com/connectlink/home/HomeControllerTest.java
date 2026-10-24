@@ -2,6 +2,7 @@ package com.connectlink.home;
 
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -54,6 +55,38 @@ class HomeControllerTest {
         .perform(get("/api/v1/home").param("business", "account-info").with(TestUsers.ganaMember()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.cards[*].key").value(not(hasItem("CONTACT_CONFIRM"))));
+  }
+
+  @Test
+  void 기관_담당자_홈은_요청받은_일과_우리_기관을_부른_대화를_보이고_일시중단은_없다() throws Exception {
+    // SHY 요청(2026-10-24): 기관 홈은 요청받은 일 위주이고 줄마다 할 일 단계를 보인다.
+    mockMvc
+        .perform(get("/api/v1/home").param("business", "account-info").with(TestUsers.ganaMember()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.cards[*].key").value(not(hasItem("SUSPENSIONS"))))
+        .andExpect(
+            jsonPath("$.cards[?(@.key == 'UPDATE_CAMPAIGN')].title").value(hasItem("연락처 변경·확인 요청")))
+        .andExpect(
+            jsonPath("$.cards[?(@.key == 'OPINION_REPLIES')].items[0].subtitle")
+                .value(hasItem(startsWith("미작성"))))
+        .andExpect(
+            jsonPath("$.cards[?(@.key == 'TEST_PROGRESS')].title").value(hasItem("요청받은 기관 테스트")))
+        // 시드: 홍성민이 김민준이 마지막으로 읽은 뒤에 KB국민은행을 멘션했다.
+        .andExpect(
+            jsonPath("$.cards[?(@.key == 'CHAT_MENTIONS')].items[0].link")
+                .value(hasItem(startsWith("/account-info/chat/"))));
+  }
+
+  @Test
+  void 결제원_담당자_홈에는_우리_기관을_부른_대화_카드가_없다() throws Exception {
+    mockMvc
+        .perform(
+            get("/api/v1/home")
+                .param("business", "account-info")
+                .with(TestUsers.as(TestUsers.KFTC_ACCOUNT_INFO)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.cards[*].key").value(not(hasItem("CHAT_MENTIONS"))))
+        .andExpect(jsonPath("$.cards[*].key").value(hasItem("SUSPENSIONS")));
   }
 
   @Test

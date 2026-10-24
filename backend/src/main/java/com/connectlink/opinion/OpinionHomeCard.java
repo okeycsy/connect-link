@@ -13,6 +13,7 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -117,7 +118,11 @@ public class OpinionHomeCard implements HomeCardContributor {
             .findTargeted(
                 business, OpinionRequestStatus.OPEN, user.organizationCode(), OPEN_REQUESTS)
             .getContent();
-    List<OpinionRequest> waiting = targeted.stream().filter(r -> !submittedBy(user, r)).toList();
+    // 아직 제출하지 않은 요청과, 결제원이 수정을 허락해 다시 제출해야 하는 요청(수정 중)이 기관이 할 일이다.
+    Map<Long, Optional<OpinionReply>> own = new HashMap<>();
+    targeted.forEach(r -> own.put(r.getId(), ownReply(user, r)));
+    List<OpinionRequest> waiting =
+        targeted.stream().filter(r -> stageOf(own.get(r.getId())) != null).toList();
     List<HomeCardItem> items =
         waiting.stream()
             .limit(ITEM_COUNT)
@@ -125,7 +130,7 @@ public class OpinionHomeCard implements HomeCardContributor {
                 r ->
                     new HomeCardItem(
                         r.getTitle(),
-                        r.getOwnerName() + " · 기한 " + r.getDueDate(),
+                        stageOf(own.get(r.getId())) + " · " + r.getOwnerName() + " 요청",
                         r.getDueDate(),
                         urgencyOf(r, today),
                         OpinionNotifier.linkOf(r)))
@@ -142,12 +147,26 @@ public class OpinionHomeCard implements HomeCardContributor {
             "/" + business.getSlug() + "/" + key().getFeature()));
   }
 
-  private boolean submittedBy(CurrentUser user, OpinionRequest request) {
+  private Optional<OpinionReply> ownReply(CurrentUser user, OpinionRequest request) {
     Map<Long, OpinionReply> replies =
         replyRepository.findByTarget_Request_Id(request.getId()).stream()
             .collect(Collectors.toMap(r -> r.getTarget().getId(), Function.identity()));
-    Optional<OpinionTarget> target = OpinionRequestService.ownTarget(user, request);
-    return target.map(t -> replies.get(t.getId())).map(OpinionReply::isReplied).orElse(false);
+    return OpinionRequestService.ownTarget(user, request).map(t -> replies.get(t.getId()));
+  }
+
+  /** 기관이 할 일의 단계. 할 일이 없으면(제출했고 수정 중이 아님) null. */
+  private static String stageOf(Optional<OpinionReply> reply) {
+    if (reply.isEmpty()) {
+      return "미작성";
+    }
+    OpinionReply r = reply.get();
+    if (r.getStatus() == OpinionReplyStatus.REVISING) {
+      return "수정 중 · 다시 제출";
+    }
+    if (r.isReplied()) {
+      return null;
+    }
+    return r.getStatus() == OpinionReplyStatus.DRAFT ? "임시저장" : "미작성";
   }
 
   private static Urgency urgencyOf(OpinionRequest request, LocalDate today) {

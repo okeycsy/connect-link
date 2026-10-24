@@ -37,16 +37,6 @@ export function HomeCardView({ card, stacked = false, tall = false }: Props) {
           </Badge>
         </Tooltip>
       )}
-      {card.urgency === 'OVERDUE' && (
-        <Badge size="sm" color="red" variant="filled" style={{ flexShrink: 0 }}>
-          초과
-        </Badge>
-      )}
-      {card.urgency === 'SOON' && (
-        <Badge size="sm" color="amber" style={{ flexShrink: 0 }}>
-          임박
-        </Badge>
-      )}
     </Group>
   );
 

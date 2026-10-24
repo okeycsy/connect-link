@@ -11,6 +11,7 @@ import com.connectlink.home.dto.HomeCard.HomeCardItem;
 import com.connectlink.organization.Business;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +31,8 @@ public class TestPlanHomeCard implements HomeCardContributor {
 
   /** 이 날수 안에 끝나는 테스트는 임박이다. */
   private static final int SOON_DAYS = 3;
+
+  private static final DateTimeFormatter DATE = DateTimeFormatter.ISO_LOCAL_DATE;
 
   private final TestPlanRepository repository;
   private final TestPlanAccessPolicy accessPolicy;
@@ -85,10 +88,10 @@ public class TestPlanHomeCard implements HomeCardContributor {
                 + plan.getTargets().size();
       } else {
         Optional<TestPlanTarget> own = plan.findTargetByCode(organizationCode);
-        int rate = own.map(TestPlanTarget::getProgressRate).orElse(0);
         var summary = own.map(t -> TestPlanService.toTargetSummary(t, plan.getItems()));
-        unreported += summary.map(s -> s.unreported()).orElse(itemCount);
-        subtitle = plan.getSubBusiness() + " · 우리 기관 수행률 " + rate + "%";
+        int ownUnreported = summary.map(s -> s.unreported()).orElse(itemCount);
+        unreported += ownUnreported;
+        subtitle = memberSubtitle(plan, own, summary.map(s -> s.failed()).orElse(0), ownUnreported);
       }
       if (items.size() < MAX_ITEMS) {
         items.add(
@@ -120,12 +123,34 @@ public class TestPlanHomeCard implements HomeCardContributor {
     return HomeContribution.of(
         new HomeCard(
             key(),
-            key().getTitle(),
+            manager ? key().getTitle() : "요청받은 기관 테스트",
             HomeCardSource.REAL,
             urgency,
             summary,
             items,
             "/" + business.getSlug() + "/" + key().getFeature()));
+  }
+
+  /** 기관 담당자가 이 테스트에서 할 일. 테스트데이터 회신, 미등록 요구사항, 오류 순이고 할 일이 없으면 수행률이다. */
+  private static String memberSubtitle(
+      TestPlan plan, Optional<TestPlanTarget> own, int failed, int unreported) {
+    List<String> parts = new ArrayList<>();
+    boolean testDataDue =
+        plan.isTestDataRequested()
+            && own.map(t -> t.getTestDataStatus() == TestDataStatus.NOT_CREATED).orElse(false);
+    if (testDataDue) {
+      parts.add("테스트데이터 회신 " + DATE.format(plan.getTestDataDueDate()) + "까지");
+    }
+    if (unreported > 0) {
+      parts.add("결과 미등록 " + unreported + "건");
+    }
+    if (failed > 0) {
+      parts.add("오류 " + failed + "건");
+    }
+    if (parts.isEmpty()) {
+      parts.add("우리 기관 수행률 " + own.map(TestPlanTarget::getProgressRate).orElse(0) + "%");
+    }
+    return String.join(" · ", parts);
   }
 
   private static Urgency urgencyOf(TestPlan plan, LocalDate today) {

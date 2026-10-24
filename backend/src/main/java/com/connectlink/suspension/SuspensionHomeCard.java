@@ -23,8 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 홈 "다가오는 일시중단" 카드. 지금 진행 중인 건과 오늘부터 {@link #DAYS_AHEAD}일 안에 시작하는 건을 시작 순으로 보인다. 지난 날은 보이지 않고,
- * 일시중단이 몰리는 주말도 평일과 같이 넣는다(SHY 요청, 2026-10-24). 결제원 담당자는 그 업무 전 기관을, 기관 담당자는 자기 기관 것만 본다. 진행 중이거나
- * 오늘 시작하는 건은 임박이다. 결제원 담당자에게는 아직 확정되지 않은 건 수를 함께 보인다. 그 밖의 사용자에게는 카드가 없다.
+ * 일시중단이 몰리는 주말도 평일과 같이 넣는다(SHY 요청, 2026-10-24). 확인·확정하는 결제원 담당자에게만 그 업무 전 기관 것을 보이고, 기관 담당자 홈에는 두지
+ * 않는다(SHY 요청, 2026-10-24). 진행 중이거나 오늘 시작하는 건은 임박이다.
  */
 @Component
 @Transactional(readOnly = true)
@@ -57,25 +57,15 @@ public class SuspensionHomeCard implements HomeCardContributor {
 
   @Override
   public HomeContribution contribute(CurrentUser user, Business business) {
-    boolean manager = accessPolicy.canManage(user, business);
-    String organizationCode;
-    if (manager) {
-      organizationCode = null;
-    } else if (accessPolicy.isOrganizationMember(user, business)) {
-      organizationCode = user.organizationCode();
-    } else {
+    // 기관 담당자 홈에는 두지 않는다(자기 기관 일시중단은 일시중단 메뉴에서 본다). SHY 요청(2026-10-24).
+    if (!accessPolicy.canManage(user, business)) {
       return null;
     }
     LocalDateTime now = LocalDateTime.now(clock);
     LocalDate today = now.toLocalDate();
     Specification<Suspension> spec =
         SuspensionSpecifications.of(
-                business,
-                organizationCode,
-                null,
-                null,
-                null,
-                !manager || accessPolicy.handlesUnlinked(user))
+                business, null, null, null, null, accessPolicy.handlesUnlinked(user))
             .and(
                 SuspensionSpecifications.activeOrStartingBefore(
                     now, today.plusDays(DAYS_AHEAD + 1L).atStartOfDay()));
@@ -109,14 +99,14 @@ public class SuspensionHomeCard implements HomeCardContributor {
               SuspensionNotifier.linkOf(s, business)));
     }
     String summary;
-    if (manager && unconfirmed > 0) {
+    if (unconfirmed > 0) {
       summary = "확정 전 " + unconfirmed + "건";
     } else if (ongoing > 0) {
       summary = "진행 중 " + ongoing + "건";
     } else {
       summary = "앞으로 " + DAYS_AHEAD + "일";
     }
-    boolean urgent = ongoing > 0 || (manager && unconfirmed > 0);
+    boolean urgent = ongoing > 0 || unconfirmed > 0;
     return HomeContribution.of(
         new HomeCard(
             key(),

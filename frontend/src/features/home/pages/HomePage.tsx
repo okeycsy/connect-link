@@ -6,15 +6,16 @@ import { StateView } from '../../../shared/state/StateView';
 import { useHome, type HomeCard } from '../hooks';
 import classes from './HomePage.module.css';
 
-/** 왼쪽 큰 칸에 두는 자리. 일시중단을 먼저 읽히게 한다. SHY 요청(2026-10-21). */
+/** 윗줄 오른쪽 큰 칸에 두는 자리. SHY 요청(2026-10-24). */
 const MAIN_KEY: HomeCard['key'] = 'SUSPENSIONS';
-/** 오른쪽 열에 두는 자리. 나머지는 아래 줄에 서버 순서대로 놓는다. */
-const SIDE_KEYS: HomeCard['key'][] = ['OPINION_REPLIES'];
+/** 윗줄 왼쪽 칸 후보. 이 사람에게 있는 첫 카드 하나를 둔다. SHY 요청(2026-10-24). */
+const SIDE_CANDIDATES: HomeCard['key'][] = ['SIGNUP_APPROVAL', 'OPINION_REPLIES'];
 
 /**
  * 홈: "지금 할 일". 파스텔 번짐 위에 날짜 태그와 인사말만 두고(설명 문구 없음, SHY 요청 2026-10-24), 그 아래 카드.
  * 건수 요약(KPI 타일)은 두지 않고, 서버가 이 사람에게 할 일이 있는 카드만 준다. SHY 요청(2026-10-24).
- * 왼쪽 큰 칸은 다가오는 일시중단, 오른쪽은 회신 대기 의견 요청이다. 둘 중 하나만 있으면 한 줄을 다 쓴다.
+ * 결제원 담당자: 윗줄 왼쪽은 가입 승인 대기(없으면 회신 대기 의견 요청), 오른쪽 큰 칸은 다가오는 일시중단이다.
+ * 기관 담당자: 요청받은 일(연락처 변경·확인, 의견 회신, 기관 테스트, 우리 기관을 부른 대화) 카드를 한 줄에 두 장씩 놓는다. 임박·초과 글자 배지는 두지 않는다.
  * 아래 줄은 나머지 카드이고, 장 수만큼 열을 나눠 한 줄을 채운다(최대 3열). 6개월 지난 담당자 확인은 홈 카드 대신
  * 로그인 뒤 확인 창이 맡는다. SHY 요청(2026-10-24).
  * 최근 알림은 홈에 두지 않고 상단 바의 알림 벨에서 본다. SHY 요청(2026-10-21).
@@ -26,10 +27,13 @@ export function HomePage() {
 
   const cards = data?.cards ?? [];
   const main = cards.find((c) => c.key === MAIN_KEY);
-  const side = SIDE_KEYS.map((k) => cards.find((c) => c.key === k)).filter(
-    (c): c is HomeCard => c !== undefined,
-  );
-  const bottom = cards.filter((c) => c.key !== MAIN_KEY && !SIDE_KEYS.includes(c.key));
+  // 윗줄은 일시중단 카드가 있을 때(결제원 담당자)만 둔다. 기관 담당자 홈은 요청받은 일 카드만 한 줄에 놓는다.
+  const side = main
+    ? SIDE_CANDIDATES.map((k) => cards.find((c) => c.key === k)).find(
+        (c): c is HomeCard => c !== undefined,
+      )
+    : undefined;
+  const bottom = cards.filter((c) => c !== main && c !== side);
 
   return (
     <Stack gap="lg" className={classes.home}>
@@ -66,35 +70,30 @@ export function HomePage() {
         </Box>
       ) : (
         <Stack gap="md" data-testid="home-cards">
-          {(main || side.length > 0) && (
+          {main && (
             <Grid gutter="md">
-              {main && (
-                <Grid.Col span={{ base: 12, md: side.length > 0 ? 7 : 12 }}>
-                  <HomeCardView card={main} tall />
+              {/* 윗줄 두 칸은 높이를 맞춘다(tall). SHY 요청(2026-10-24). */}
+              {side && (
+                <Grid.Col span={{ base: 12, md: 5 }}>
+                  <HomeCardView card={side} tall />
                 </Grid.Col>
               )}
-              {side.length > 0 && (
-                <Grid.Col span={{ base: 12, md: main ? 5 : 12 }}>
-                  <Stack gap="md" h="100%">
-                    {/* 오른쪽 카드가 하나면 왼쪽 큰 칸과 높이를 맞춘다. SHY 요청(2026-10-24). */}
-                    {side.map((c) =>
-                      main && side.length === 1 ? (
-                        <HomeCardView key={c.key} card={c} tall />
-                      ) : (
-                        <HomeCardView key={c.key} card={c} stacked />
-                      ),
-                    )}
-                  </Stack>
-                </Grid.Col>
-              )}
+              <Grid.Col span={{ base: 12, md: side ? 7 : 12 }}>
+                <HomeCardView card={main} tall />
+              </Grid.Col>
             </Grid>
           )}
           <SimpleGrid
-            cols={{ base: 1, sm: Math.min(bottom.length, 2), md: Math.min(bottom.length, 3) }}
+            // 기관 담당자 홈(윗줄 없음)은 한 줄에 두 장씩 놓고 같은 줄 카드 높이를 맞춘다. SHY 요청(2026-10-24).
+            cols={
+              main
+                ? { base: 1, sm: Math.min(bottom.length, 2), md: Math.min(bottom.length, 3) }
+                : { base: 1, sm: 2 }
+            }
             spacing="md"
           >
             {bottom.map((c) => (
-              <HomeCardView key={c.key} card={c} />
+              <HomeCardView key={c.key} card={c} tall={!main} />
             ))}
           </SimpleGrid>
         </Stack>

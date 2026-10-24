@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import { skipContactReconfirm } from './support/account';
+
 test.describe('홈 대시보드', () => {
   test('건수 요약 없이 할 일이 있는 카드만 보이고, 일시중단은 오늘부터 다가오는 목록이다', async ({
     page,
@@ -8,25 +10,27 @@ test.describe('홈 대시보드', () => {
     await expect(page.getByRole('heading', { name: '안녕하세요, 데모 관리자 님' })).toBeVisible();
 
     const cards = page.getByTestId('home-cards');
-    for (const key of ['OPINION_REPLIES', 'TEST_PROGRESS', 'SUSPENSIONS']) {
+    for (const key of ['SIGNUP_APPROVAL', 'OPINION_REPLIES', 'TEST_PROGRESS', 'SUSPENSIONS']) {
       await expect(cards.getByTestId(`home-card-${key}`)).toBeVisible();
     }
     // 확인이 필요한 담당자는 홈에 두지 않는다(로그인 뒤 확인 창이 맡는다).
     await expect(cards.getByTestId('home-card-CONTACT_CONFIRM')).toHaveCount(0);
     // 건수 요약 타일은 없다.
     await expect(page.getByText('진행 중 기관 테스트', { exact: true })).toHaveCount(1);
-    // 왼쪽 큰 칸은 다가오는 일시중단(요일 칸 없음, 날짜별 묶음), 오른쪽은 회신 대기 의견 요청이다.
+    // 윗줄 왼쪽은 가입 승인 대기, 오른쪽 큰 칸은 다가오는 일시중단(요일 칸 없음, 날짜별 묶음)이다. SHY 요청(2026-10-24).
     // 최근 알림은 홈에 두지 않고 상단 바의 알림 벨에서 본다.
     const upcoming = cards.getByTestId('suspension-upcoming');
     await expect(upcoming).toBeVisible();
     await expect(upcoming.getByText(/^오늘 · /)).toBeVisible();
     await expect(cards.getByText('최근 소식')).toHaveCount(0);
     const suspensionBox = (await cards.getByTestId('home-card-SUSPENSIONS').boundingBox())!;
-    const opinionBox = (await cards.getByTestId('home-card-OPINION_REPLIES').boundingBox())!;
-    expect(suspensionBox.x).toBeLessThan(opinionBox.x);
+    const signUpBox = (await cards.getByTestId('home-card-SIGNUP_APPROVAL').boundingBox())!;
+    expect(signUpBox.x).toBeLessThan(suspensionBox.x);
     expect(suspensionBox.height).toBeLessThan(640);
-    // 오른쪽 의견 요청 카드는 왼쪽 일시중단 카드와 높이를 맞춘다.
-    expect(Math.abs(suspensionBox.height - opinionBox.height)).toBeLessThan(2);
+    // 윗줄 두 카드는 높이를 맞춘다.
+    expect(Math.abs(suspensionBox.height - signUpBox.height)).toBeLessThan(2);
+    // 임박·초과 글자 배지는 없다.
+    await expect(cards.getByText(/^(임박|초과)$/)).toHaveCount(0);
     // 모든 카드가 실제 데이터다(샘플 카드 없음).
     await expect(cards.getByText('샘플')).toHaveCount(0);
     await page.screenshot({ path: 'screenshots/home.png', fullPage: true });
@@ -59,5 +63,51 @@ test.describe('홈 대시보드', () => {
     await expect(page.getByText(/^읽지 않은 알림/)).toBeVisible();
     await page.getByRole('link', { name: '알림 센터에서 모두 보기' }).click();
     await expect(page).toHaveURL(/\/account-info\/notifications$/);
+  });
+});
+
+test.describe('기관 담당자 홈', () => {
+  // 빈 브라우저로 시작해 기관 담당자(김민준)로 로그인한다.
+  test.use({
+    storageState: { cookies: [], origins: [] },
+    timezoneId: 'Asia/Seoul',
+  });
+  test.beforeEach(async ({ page }) => skipContactReconfirm(page));
+
+  test('요청받은 일 카드를 한 줄에 두 장씩 놓고 일시중단은 없다', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByRole('button', { name: '김민준 (참가기관 · 현업)로 로그인' }).click();
+    await expect(page).toHaveURL(/\/home$/);
+
+    // 연락처·대화 카드는 앞선 시나리오(현행화 완료, 대화 읽음)에 따라 없을 수 있어 의견·테스트 카드로 본다.
+    const cards = page.getByTestId('home-cards');
+    const opinion = cards.getByTestId('home-card-OPINION_REPLIES');
+    const testPlan = cards.getByTestId('home-card-TEST_PROGRESS');
+    await expect(opinion.getByText('회신할 의견 요청')).toBeVisible();
+    await expect(testPlan.getByText('요청받은 기관 테스트')).toBeVisible();
+    await expect(cards.getByTestId('home-card-SUSPENSIONS')).toHaveCount(0);
+    // 줄마다 기관이 할 일 단계를 보인다.
+    await expect(opinion.getByText(/^미작성 · /).first()).toBeVisible();
+    // 카드는 한 줄에 두 장씩(폭이 줄의 절반쯤)이고, 같은 줄 카드는 높이가 같다. SHY 요청(2026-10-24).
+    const row = (await cards.boundingBox())!;
+    const boxes = await Promise.all(
+      (await cards.locator('[data-testid^="home-card-"]').all()).map(
+        async (c) => (await c.boundingBox())!,
+      ),
+    );
+    for (const box of boxes) {
+      expect(box.width).toBeLessThan(row.width * 0.6);
+    }
+    for (const a of boxes) {
+      for (const b of boxes) {
+        if (Math.abs(a.y - b.y) < 2) {
+          expect(Math.abs(a.height - b.height)).toBeLessThan(2);
+        }
+      }
+    }
+    await page.screenshot({
+      path: 'screenshots/home-organization.png',
+      fullPage: true,
+    });
   });
 });
