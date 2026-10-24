@@ -105,7 +105,7 @@ export function LoginPage() {
             </Group>
           </Stack>
           <Text c="dimmed" size="sm">
-            샘플 데이터로 동작하는 프로토타입입니다. 모든 기관명과 담당자는 가상 데이터입니다.
+            샘플 데이터로 동작하는 프로토타입입니다.
           </Text>
         </Stack>
       </Box>
