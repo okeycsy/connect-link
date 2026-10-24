@@ -1,6 +1,7 @@
 package com.connectlink.common;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,5 +31,5 @@ public class SupportInfoController {
    *
    * @param inquiryEmail 문의 메일 주소. 없으면 null
    */
-  public record SupportInfoResponse(String inquiryEmail) {}
+  public record SupportInfoResponse(@Schema(nullable = true) String inquiryEmail) {}
 }
