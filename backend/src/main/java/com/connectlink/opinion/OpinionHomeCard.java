@@ -8,8 +8,6 @@ import com.connectlink.home.HomeContribution;
 import com.connectlink.home.Urgency;
 import com.connectlink.home.dto.HomeCard;
 import com.connectlink.home.dto.HomeCard.HomeCardItem;
-import com.connectlink.home.dto.HomeCard.HomeCardMetric;
-import com.connectlink.home.dto.HomeCard.HomeCardProgress;
 import com.connectlink.organization.Business;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -108,12 +106,7 @@ public class OpinionHomeCard implements HomeCardContributor {
             key().getTitle(),
             HomeCardSource.REAL,
             urgency,
-            open.isEmpty()
-                ? "회신중인 의견 요청이 없습니다."
-                : "회신중인 요청 " + open.size() + "건. 미회신 기관에 리마인드 메일을 보낼 수 있습니다.",
-            List.of(
-                new HomeCardMetric("회신중", open.size(), "건"), new HomeCardMetric("회신율", rate, "%")),
-            open.isEmpty() ? null : new HomeCardProgress(replied, targets, "기관 회신"),
+            open.isEmpty() ? "회신중인 요청 없음" : "회신중 " + open.size() + "건 · 회신율 " + rate + "%",
             items,
             "/" + business.getSlug() + "/" + key().getFeature()));
   }
@@ -144,13 +137,7 @@ public class OpinionHomeCard implements HomeCardContributor {
             "회신할 의견 요청",
             HomeCardSource.REAL,
             urgency,
-            waiting.isEmpty()
-                ? "회신할 의견 요청이 없습니다."
-                : "회신을 기다리는 요청 " + waiting.size() + "건. 기한 전에 제출해 주세요.",
-            List.of(
-                new HomeCardMetric("회신 필요", waiting.size(), "건"),
-                new HomeCardMetric("제출", targeted.size() - waiting.size(), "건")),
-            null,
+            waiting.isEmpty() ? "회신할 요청 없음" : "회신할 요청 " + waiting.size() + "건",
             items,
             "/" + business.getSlug() + "/" + key().getFeature()));
   }

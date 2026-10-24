@@ -20,16 +20,8 @@ public record HomeCard(
     HomeCardSource source,
     Urgency urgency,
     @Schema(nullable = true) String summary,
-    List<HomeCardMetric> metrics,
-    @Schema(nullable = true) HomeCardProgress progress,
     List<HomeCardItem> items,
     @Schema(nullable = true) String link) {
-
-  /** 카드 위쪽의 숫자(예: 미확인 7명). */
-  public record HomeCardMetric(String label, long value, String unit) {}
-
-  /** 진행률(예: 기관 12/18). */
-  public record HomeCardProgress(long done, long total, String label) {}
 
   /** 카드 안의 할 일 한 줄. */
   public record HomeCardItem(

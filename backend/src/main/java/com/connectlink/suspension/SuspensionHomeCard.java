@@ -8,7 +8,6 @@ import com.connectlink.home.HomeContribution;
 import com.connectlink.home.Urgency;
 import com.connectlink.home.dto.HomeCard;
 import com.connectlink.home.dto.HomeCard.HomeCardItem;
-import com.connectlink.home.dto.HomeCard.HomeCardMetric;
 import com.connectlink.organization.Business;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -104,24 +103,18 @@ public class SuspensionHomeCard implements HomeCardContributor {
       items.add(
           new HomeCardItem(
               s.getOrganization().getName(),
-              timeRange(s) + " · " + s.getReason() + " · " + s.getStatus().getLabel(),
+              timeRange(s) + " · " + s.getStatus().getLabel(),
               date,
               running || date.equals(today) ? Urgency.SOON : Urgency.NONE,
               SuspensionNotifier.linkOf(s, business)));
     }
     String summary;
     if (manager && unconfirmed > 0) {
-      summary = "확정되지 않은 일시중단이 " + unconfirmed + "건 있습니다. 확인하고 조치 사항을 써 주세요.";
+      summary = "확정 전 " + unconfirmed + "건";
     } else if (ongoing > 0) {
-      summary = "지금 진행 중인 일시중단이 " + ongoing + "건 있습니다.";
+      summary = "진행 중 " + ongoing + "건";
     } else {
-      summary = "앞으로 " + DAYS_AHEAD + "일 안의 일시중단입니다.";
-    }
-    List<HomeCardMetric> metrics = new ArrayList<>();
-    metrics.add(new HomeCardMetric("진행 중", ongoing, "건"));
-    metrics.add(new HomeCardMetric(DAYS_AHEAD + "일 안", upcoming.size(), "건"));
-    if (manager) {
-      metrics.add(new HomeCardMetric("확정 전", unconfirmed, "건"));
+      summary = "앞으로 " + DAYS_AHEAD + "일";
     }
     boolean urgent = ongoing > 0 || (manager && unconfirmed > 0);
     return HomeContribution.of(
@@ -131,8 +124,6 @@ public class SuspensionHomeCard implements HomeCardContributor {
             HomeCardSource.REAL,
             urgent ? Urgency.SOON : Urgency.NONE,
             summary,
-            metrics,
-            null,
             items,
             "/" + business.getSlug() + "/" + key().getFeature()));
   }

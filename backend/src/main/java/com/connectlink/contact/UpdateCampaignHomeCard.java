@@ -12,8 +12,6 @@ import com.connectlink.home.HomeContribution;
 import com.connectlink.home.Urgency;
 import com.connectlink.home.dto.HomeCard;
 import com.connectlink.home.dto.HomeCard.HomeCardItem;
-import com.connectlink.home.dto.HomeCard.HomeCardMetric;
-import com.connectlink.home.dto.HomeCard.HomeCardProgress;
 import com.connectlink.organization.Business;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -65,14 +63,7 @@ public class UpdateCampaignHomeCard implements HomeCardContributor {
     String adminLink = "/" + business.getSlug() + "/contacts/update-campaigns";
     Optional<UpdateCampaignProgressResponse> open = campaignService.openProgress(business);
     if (open.isEmpty()) {
-      return HomeContribution.of(
-          card(
-              Urgency.NONE,
-              "진행 중인 정기 변경 주간이 없습니다. 관리 > 정기 변경 주간에서 등록합니다.",
-              List.of(),
-              null,
-              List.of(),
-              adminLink));
+      return HomeContribution.of(card(Urgency.NONE, "진행 중인 정기 변경 주간 없음", List.of(), adminLink));
     }
     UpdateCampaignResponse campaign = open.get().campaign();
     LocalDate end = campaign.endDate();
@@ -99,12 +90,7 @@ public class UpdateCampaignHomeCard implements HomeCardContributor {
     return HomeContribution.of(
         card(
             urgency,
-            campaign.startDate() + " ~ " + end + " " + campaign.title() + ". " + remaining(end),
-            List.of(
-                new HomeCardMetric("완료 기관", campaign.completedCount(), "곳"),
-                new HomeCardMetric("미완료", campaign.targetCount() - campaign.completedCount(), "곳"),
-                new HomeCardMetric("정보 변경", campaign.changedCount(), "곳")),
-            new HomeCardProgress(campaign.completedCount(), campaign.targetCount(), "기관"),
+            "미완료 " + (campaign.targetCount() - campaign.completedCount()) + "곳 · " + remaining(end),
             items,
             campaignLink));
   }
@@ -118,22 +104,12 @@ public class UpdateCampaignHomeCard implements HomeCardContributor {
     UpdateCampaignOrganizationResponse own = current.ownOrganization();
     String link = "/" + business.getSlug() + "/contacts";
     String summary =
-        own.completed()
-            ? "우리 기관은 현행화를 완료했습니다("
-                + own.completedAt().toLocalDate()
-                + ", "
-                + own.completedByName()
-                + ")."
-            : campaign.title()
-                + " 기간입니다. 담당자 정보를 확인하고 \"현행화 완료\" 를 눌러 주세요. "
-                + remaining(campaign.endDate());
+        own.completed() ? "현행화 완료" : "담당자를 확인하고 현행화 완료를 눌러 주세요 · " + remaining(campaign.endDate());
     Urgency urgency = own.completed() ? Urgency.NONE : urgencyOf(campaign.endDate());
     return HomeContribution.of(
         card(
             urgency,
             summary,
-            List.of(new HomeCardMetric("우리 기관 담당자", own.contactCount(), "명")),
-            new HomeCardProgress(own.completed() ? 1 : 0, 1, "우리 기관"),
             own.completed()
                 ? List.of()
                 : List.of(
@@ -146,23 +122,9 @@ public class UpdateCampaignHomeCard implements HomeCardContributor {
             link));
   }
 
-  private HomeCard card(
-      Urgency urgency,
-      String summary,
-      List<HomeCardMetric> metrics,
-      HomeCardProgress progress,
-      List<HomeCardItem> items,
-      String link) {
+  private HomeCard card(Urgency urgency, String summary, List<HomeCardItem> items, String link) {
     return new HomeCard(
-        key(),
-        key().getTitle(),
-        HomeCardSource.REAL,
-        urgency,
-        summary,
-        metrics,
-        progress,
-        items,
-        link);
+        key(), key().getTitle(), HomeCardSource.REAL, urgency, summary, items, link);
   }
 
   private Urgency urgencyOf(LocalDate end) {
@@ -173,6 +135,6 @@ public class UpdateCampaignHomeCard implements HomeCardContributor {
 
   private String remaining(LocalDate end) {
     long days = ChronoUnit.DAYS.between(LocalDate.now(clock), end);
-    return days == 0 ? "오늘 마감." : "마감까지 " + days + "일.";
+    return days == 0 ? "오늘 마감" : "마감까지 " + days + "일";
   }
 }

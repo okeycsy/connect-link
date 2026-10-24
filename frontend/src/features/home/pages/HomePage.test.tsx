@@ -18,8 +18,6 @@ const home = {
       source: 'SAMPLE',
       urgency: 'SOON',
       summary: null,
-      metrics: [{ label: '회신중', value: 2, unit: '건' }],
-      progress: { done: 12, total: 18, label: '기관 회신' },
       items: [
         {
           title: '야간 배치 시간 조정',
@@ -37,8 +35,6 @@ const home = {
       source: 'REAL',
       urgency: 'SOON',
       summary: '지금 진행 중인 일시중단이 1건 있습니다.',
-      metrics: [{ label: '진행 중', value: 1, unit: '건' }],
-      progress: null,
       items: [
         {
           title: '우리은행',
@@ -102,7 +98,8 @@ describe('HomePage', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: '안녕하세요, 데모 관리자 님' }),
     ).toBeInTheDocument();
-    expect(screen.getByText('지금 할 일을 모았습니다.')).toBeInTheDocument();
+    // 인사말 아래 설명 문구는 두지 않는다.
+    expect(screen.queryByText('지금 할 일을 모았습니다.')).not.toBeInTheDocument();
     // 건수 요약(KPI 타일)은 없다.
     expect(screen.queryByText('확인 필요 담당자')).not.toBeInTheDocument();
 

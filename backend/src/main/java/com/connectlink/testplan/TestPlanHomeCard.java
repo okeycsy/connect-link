@@ -8,8 +8,6 @@ import com.connectlink.home.HomeContribution;
 import com.connectlink.home.Urgency;
 import com.connectlink.home.dto.HomeCard;
 import com.connectlink.home.dto.HomeCard.HomeCardItem;
-import com.connectlink.home.dto.HomeCard.HomeCardMetric;
-import com.connectlink.home.dto.HomeCard.HomeCardProgress;
 import com.connectlink.organization.Business;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -69,9 +67,6 @@ public class TestPlanHomeCard implements HomeCardContributor {
     long overdue = running.stream().filter(p -> p.isOverdue(today)).count();
     List<HomeCardItem> items = new ArrayList<>();
     long unreported = 0;
-    long failed = 0;
-    long doneTargets = 0;
-    long totalTargets = 0;
     for (TestPlan plan : running) {
       int itemCount = plan.getItems().size();
       String subtitle;
@@ -80,8 +75,6 @@ public class TestPlanHomeCard implements HomeCardContributor {
             plan.getTargets().stream()
                 .filter(t -> itemCount > 0 && t.getCompletedCount() == itemCount)
                 .count();
-        doneTargets += completed;
-        totalTargets += plan.getTargets().size();
         subtitle =
             plan.getSubBusiness()
                 + " · 수행률 "
@@ -95,7 +88,6 @@ public class TestPlanHomeCard implements HomeCardContributor {
         int rate = own.map(TestPlanTarget::getProgressRate).orElse(0);
         var summary = own.map(t -> TestPlanService.toTargetSummary(t, plan.getItems()));
         unreported += summary.map(s -> s.unreported()).orElse(itemCount);
-        failed += summary.map(s -> s.failed()).orElse(0);
         subtitle = plan.getSubBusiness() + " · 우리 기관 수행률 " + rate + "%";
       }
       if (items.size() < MAX_ITEMS) {
@@ -110,29 +102,18 @@ public class TestPlanHomeCard implements HomeCardContributor {
     }
 
     long awaiting = manager ? repository.countAwaitingReview(business) : 0;
-    List<HomeCardMetric> metrics = new ArrayList<>();
-    metrics.add(new HomeCardMetric("진행 중", running.size(), "건"));
-    if (manager) {
-      metrics.add(new HomeCardMetric("확인할 결과", awaiting, "건"));
-    } else {
-      metrics.add(new HomeCardMetric("미등록 요구사항", unreported, "건"));
-      metrics.add(new HomeCardMetric("오류", failed, "건"));
-    }
-    if (overdue > 0) {
-      metrics.add(new HomeCardMetric("기간 지남", overdue, "건"));
-    }
 
     String summary;
     if (running.isEmpty()) {
-      summary = "진행 중인 기관 테스트가 없습니다.";
+      summary = "진행 중 테스트 없음";
     } else if (manager && awaiting > 0) {
-      summary = "확인할 기관 결과가 " + awaiting + "건 있습니다. 미니 수행률과 의견을 남겨 주세요.";
+      summary = "확인할 결과 " + awaiting + "건";
     } else if (!manager && unreported > 0) {
-      summary = "아직 결과를 등록하지 않은 요구사항이 " + unreported + "건 있습니다.";
+      summary = "미등록 요구사항 " + unreported + "건";
     } else if (overdue > 0) {
-      summary = "수행 기간이 지난 테스트가 " + overdue + "건 있습니다.";
+      summary = "기간 지난 테스트 " + overdue + "건";
     } else {
-      summary = "진행 중인 기관 테스트 " + running.size() + "건입니다.";
+      summary = "진행 중 " + running.size() + "건";
     }
     boolean urgent = overdue > 0 || (manager ? awaiting > 0 : unreported > 0);
     Urgency urgency = overdue > 0 ? Urgency.OVERDUE : urgent ? Urgency.SOON : Urgency.NONE;
@@ -143,10 +124,6 @@ public class TestPlanHomeCard implements HomeCardContributor {
             HomeCardSource.REAL,
             urgency,
             summary,
-            metrics,
-            manager && totalTargets > 0
-                ? new HomeCardProgress(doneTargets, totalTargets, "완료 기관")
-                : null,
             items,
             "/" + business.getSlug() + "/" + key().getFeature()));
   }

@@ -32,15 +32,7 @@ class HomeServiceTest {
       public HomeContribution contribute(CurrentUser user, Business business) {
         return HomeContribution.of(
             new HomeCard(
-                key,
-                key.getTitle(),
-                HomeCardSource.REAL,
-                Urgency.NONE,
-                null,
-                List.of(),
-                null,
-                items,
-                null));
+                key, key.getTitle(), HomeCardSource.REAL, Urgency.NONE, null, items, null));
       }
     };
   }

@@ -12,7 +12,7 @@ const MAIN_KEY: HomeCard['key'] = 'SUSPENSIONS';
 const SIDE_KEYS: HomeCard['key'][] = ['OPINION_REPLIES'];
 
 /**
- * 홈: "지금 할 일". 파스텔 번짐 위에 인사말, 그 아래 카드.
+ * 홈: "지금 할 일". 파스텔 번짐 위에 날짜 태그와 인사말만 두고(설명 문구 없음, SHY 요청 2026-10-24), 그 아래 카드.
  * 건수 요약(KPI 타일)은 두지 않고, 서버가 이 사람에게 할 일이 있는 카드만 준다. SHY 요청(2026-10-24).
  * 왼쪽 큰 칸은 다가오는 일시중단, 오른쪽은 회신 대기 의견 요청이다. 둘 중 하나만 있으면 한 줄을 다 쓴다.
  * 아래 줄은 나머지 카드이고, 장 수만큼 열을 나눠 한 줄을 채운다(최대 3열). 6개월 지난 담당자 확인은 홈 카드 대신
@@ -39,13 +39,8 @@ export function HomePage() {
             {formatToday()} · {data?.businessLabel ?? '업무 영역'}
           </Box>
           <Title order={1} className={classes.greeting}>
-            {data ? `안녕하세요, ${data.userName} 님` : '지금 할 일을 모으는 중입니다.'}
+            {data ? `안녕하세요, ${data.userName} 님` : '안녕하세요'}
           </Title>
-          {data && (
-            <Text size="lg" c="var(--cl-ink-soft)">
-              지금 할 일을 모았습니다.
-            </Text>
-          )}
         </Stack>
       </Group>
 

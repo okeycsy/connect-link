@@ -1,21 +1,13 @@
-import {
-  Anchor,
-  Badge,
-  Box,
-  Card,
-  Group,
-  Progress,
-  RingProgress,
-  Stack,
-  Text,
-  Tooltip,
-} from '@mantine/core';
+import { Anchor, Badge, Box, Card, Group, Stack, Text, Tooltip } from '@mantine/core';
 import { Link } from 'react-router-dom';
 
 import { formatDate } from '../../../shared/format';
 import type { HomeCard, HomeItem } from '../hooks';
 import classes from './HomeCardView.module.css';
 import { SuspensionUpcoming } from './SuspensionUpcoming';
+
+/** 일시중단 밖 카드에 보이는 할 일 줄 수. 나머지는 "모두 보기" 에서 본다. SHY 요청(2026-10-24). */
+const MAX_ROWS = 3;
 
 /** 기한 배지 색: 초과 빨강 채움, 임박 앰버, 여유 스카이. frontend/CLAUDE.md "상태 색". */
 const URGENCY_COLOR = { OVERDUE: 'red', SOON: 'amber', NONE: 'sky' } as const;
@@ -28,7 +20,10 @@ interface Props {
   tall?: boolean;
 }
 
-/** 홈 "지금 할 일" 카드. 서버가 준 모양(요약, 숫자, 진행률, 항목)만 그리고 무엇을 채울지는 기능 모듈이 정한다. */
+/**
+ * 홈 "지금 할 일" 카드. 제목, 짧은 요약 한 줄, 할 일 줄만 그린다. 숫자 줄과 진행 막대는 홈에 두지 않고 "모두 보기" 화면에서 본다
+ * (SHY 요청, 2026-10-24). 무엇을 채울지는 기능 모듈이 정한다.
+ */
 export function HomeCardView({ card, stacked = false, tall = false }: Props) {
   const header = (
     <Group gap="xs" wrap="wrap" style={{ flexShrink: 0 }}>
@@ -61,9 +56,7 @@ export function HomeCardView({ card, stacked = false, tall = false }: Props) {
     </Anchor>
   );
 
-  const ring = card.key === 'UPDATE_CAMPAIGN' && card.progress;
   const suspensions = card.key === 'SUSPENSIONS';
-  const percent = card.progress ? (card.progress.done / Math.max(card.progress.total, 1)) * 100 : 0;
 
   return (
     <Card
@@ -85,61 +78,12 @@ export function HomeCardView({ card, stacked = false, tall = false }: Props) {
           </Text>
         )}
 
-        {!suspensions && (
-          <Group gap="lg" align="center" wrap="nowrap">
-            {ring && (
-              <RingProgress
-                size={76}
-                thickness={8}
-                roundCaps
-                sections={[{ value: percent, color: 'clay' }]}
-                label={
-                  <Text ta="center" fw={700} size="md" className={classes.number}>
-                    {Math.round(percent)}%
-                  </Text>
-                }
-              />
-            )}
-            <Group gap="xl">
-              {card.metrics.map((m) => (
-                <div key={m.label}>
-                  <Text size="xs" c="dimmed">
-                    {m.label}
-                  </Text>
-                  <Group gap={2} align="baseline">
-                    <Text className={classes.number} fw={700} size="xl">
-                      {m.value}
-                    </Text>
-                    <Text size="xs" c="dimmed">
-                      {m.unit}
-                    </Text>
-                  </Group>
-                </div>
-              ))}
-            </Group>
-          </Group>
-        )}
-
-        {card.progress && !ring && (
-          <div>
-            <Group justify="space-between" mb={4}>
-              <Text size="xs" c="dimmed">
-                {card.progress.label}
-              </Text>
-              <Text size="xs" c="dimmed" className={classes.number}>
-                {card.progress.done}/{card.progress.total}
-              </Text>
-            </Group>
-            <Progress value={percent} size="sm" radius="xl" color="clay" />
-          </div>
-        )}
-
         {suspensions ? (
           <SuspensionUpcoming items={card.items} fill={tall} />
         ) : (
           card.items.length > 0 && (
             <Stack gap={8} className={classes.items}>
-              {card.items.map((item, i) => (
+              {card.items.slice(0, MAX_ROWS).map((item, i) => (
                 <ItemRow key={i} item={item} />
               ))}
             </Stack>

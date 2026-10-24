@@ -357,7 +357,7 @@ class SignUpReviewControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.cards[-1].key").value("SIGNUP_APPROVAL"))
         .andExpect(jsonPath("$.cards[-1].source").value("REAL"))
-        .andExpect(jsonPath("$.cards[-1].metrics[0].value").value(2))
+        .andExpect(jsonPath("$.cards[-1].summary").value("승인 대기 2건"))
         .andExpect(jsonPath("$.cards[-1].items[0].title").value("신한은행 · 오승현"))
         .andExpect(jsonPath("$.cards[-1].items[0].subtitle").value("전산(개발) · 도메인 다름"))
         .andExpect(
