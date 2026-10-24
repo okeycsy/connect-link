@@ -10,7 +10,6 @@ import com.connectlink.home.HomeContribution;
 import com.connectlink.home.Urgency;
 import com.connectlink.home.dto.HomeCard;
 import com.connectlink.home.dto.HomeCard.HomeCardItem;
-import com.connectlink.home.dto.HomeCard.HomeCardMetric;
 import com.connectlink.organization.Business;
 import java.util.List;
 import org.springframework.data.domain.PageRequest;
@@ -54,7 +53,8 @@ public class SignUpApprovalHomeCard implements HomeCardContributor {
                         a.jobRoleLabel() + " · " + (a.emailDomainMatches() ? "도메인 일치" : "도메인 다름"),
                         a.appliedAt().toLocalDate(),
                         Urgency.NONE,
-                        SignUpReviewService.linkOf(business, a.id())))
+                        SignUpReviewService.linkOf(business, a.id()),
+                        a.organizationCode()))
             .toList();
     return HomeContribution.of(
         new HomeCard(
@@ -63,10 +63,8 @@ public class SignUpApprovalHomeCard implements HomeCardContributor {
             HomeCardSource.REAL,
             Urgency.NONE,
             pending.totalElements() > 0
-                ? "이메일 인증을 마친 신청입니다. 도메인과 기관이 맞는지 보고 승인합니다."
-                : "기다리는 가입 신청이 없습니다.",
-            List.of(new HomeCardMetric("대기", pending.totalElements(), "건")),
-            null,
+                ? "승인 대기 " + pending.totalElements() + "건"
+                : "기다리는 가입 신청 없음",
             items,
             link));
   }

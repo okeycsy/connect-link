@@ -14,7 +14,14 @@ import org.junit.jupiter.api.Test;
 
 class HomeServiceTest {
 
+  private static final HomeCard.HomeCardItem TODO =
+      new HomeCard.HomeCardItem("할 일", null, null, Urgency.NONE, null);
+
   private static HomeCardContributor stub(HomeCardKey key) {
+    return stub(key, List.of(TODO));
+  }
+
+  private static HomeCardContributor stub(HomeCardKey key, List<HomeCard.HomeCardItem> items) {
     return new HomeCardContributor() {
       @Override
       public HomeCardKey key() {
@@ -23,34 +30,38 @@ class HomeServiceTest {
 
       @Override
       public HomeContribution contribute(CurrentUser user, Business business) {
-        return new HomeContribution(
+        return HomeContribution.of(
             new HomeCard(
-                key,
-                key.getTitle(),
-                HomeCardSource.REAL,
-                Urgency.NONE,
-                null,
-                List.of(),
-                null,
-                List.of(),
-                null),
-            new HomeCard.HomeCardKpi(key.getTitle(), 1, "건", false));
+                key, key.getTitle(), HomeCardSource.REAL, Urgency.NONE, null, items, null));
       }
     };
   }
 
   @Test
-  void 기여자가_없는_자리는_연결_예정_카드로_채운다() {
+  void 기여자가_없는_자리는_홈에_없다() {
     HomeService service =
         new HomeService(List.of(stub(HomeCardKey.OPINION_REPLIES)), new BusinessAccessPolicy());
 
     HomeResponse home = service.summary(TestUsers.ADMIN, Business.LOAN_TRANSFER);
 
-    assertThat(home.cards()).hasSize(HomeCardKey.values().length);
-    assertThat(home.cards().get(0).source()).isEqualTo(HomeCardSource.UNAVAILABLE);
-    assertThat(home.cards().get(0).link()).isEqualTo("/loan-transfer/contacts");
-    assertThat(home.cards().get(2).source()).isEqualTo(HomeCardSource.REAL);
-    assertThat(home.kpis()).hasSize(1);
+    assertThat(home.cards()).extracting(HomeCard::key).containsExactly(HomeCardKey.OPINION_REPLIES);
+  }
+
+  @Test
+  void 할_일_줄이_빈_카드는_홈에_없다() {
+    HomeService service =
+        new HomeService(
+            List.of(
+                stub(HomeCardKey.UPDATE_CAMPAIGN, List.of()),
+                stub(HomeCardKey.OPINION_REPLIES),
+                stub(HomeCardKey.SUSPENSIONS)),
+            new BusinessAccessPolicy());
+
+    HomeResponse home = service.summary(TestUsers.ADMIN, Business.ACCOUNT_INFO);
+
+    assertThat(home.cards())
+        .extracting(HomeCard::key)
+        .containsExactly(HomeCardKey.OPINION_REPLIES, HomeCardKey.SUSPENSIONS);
   }
 
   @Test
@@ -73,8 +84,7 @@ class HomeServiceTest {
 
     HomeResponse home = service.summary(TestUsers.GANA_MEMBER, Business.ACCOUNT_INFO);
 
-    assertThat(home.cards()).hasSize(HomeCardKey.values().length - 1);
-    assertThat(home.cards()).noneMatch(c -> c.key() == HomeCardKey.SIGNUP_APPROVAL);
+    assertThat(home.cards()).extracting(HomeCard::key).containsExactly(HomeCardKey.OPINION_REPLIES);
   }
 
   @Test

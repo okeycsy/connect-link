@@ -12,8 +12,8 @@ public interface HomeCardContributor {
   HomeCardKey key();
 
   /**
-   * 현재 사용자와 레일의 업무 영역에 맞는 카드(와 KPI). 권한 밖 데이터는 여기서부터 내려보내지 않는다. 이 사용자가 쓰지 않는 자리면(예: 참가기관 담당자의 가입
-   * 승인) null 을 돌려주고, 그러면 홈에 그 카드가 없다.
+   * 현재 사용자와 레일의 업무 영역에 맞는 카드. 권한 밖 데이터는 여기서부터 내려보내지 않는다. 이 사용자가 쓰지 않는 자리면(예: 참가기관 담당자의 가입 승인) null
+   * 을 돌려주고, 그러면 홈에 그 카드가 없다. 쓰는 자리라도 할 일 줄({@code items})이 비면 홈이 그 카드를 뺀다.
    */
   HomeContribution contribute(CurrentUser user, Business business);
 }

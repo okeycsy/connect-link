@@ -173,7 +173,11 @@ function TargetHeader({ summary: s, manager }: { summary: TestTargetSummary; man
   return (
     <Group justify="space-between" align="center" gap="md">
       <Group gap="sm" wrap="nowrap">
-        <OrgMonogram name={s.organizationName} type="FINANCE_ORGANIZATION" />
+        <OrgMonogram
+          name={s.organizationName}
+          type="FINANCE_ORGANIZATION"
+          code={s.organizationCode}
+        />
         <div style={{ minWidth: 0 }}>
           <Group gap="xs">
             <Text fw={700} size="xl">

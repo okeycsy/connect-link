@@ -51,7 +51,12 @@ export function MyInfoPage() {
             ) : (
               <Stack gap="sm">
                 <Group gap="sm" wrap="nowrap">
-                  <OrgMonogram name={me.organizationName} type={me.organizationType} size={44} />
+                  <OrgMonogram
+                    name={me.organizationName}
+                    type={me.organizationType}
+                    size={44}
+                    code={me.organizationCode}
+                  />
                   <div>
                     <Text fw={700} size="xl">
                       {me.name}

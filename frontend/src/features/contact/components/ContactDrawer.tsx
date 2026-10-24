@@ -98,6 +98,7 @@ export function ContactDrawer({ contactId, onClose, onEdit, kftcExternal }: Prop
               name={contact.organizationName}
               type={contact.organizationType}
               size={40}
+              code={contact.organizationCode}
             />
             <div>
               <Group gap={6}>

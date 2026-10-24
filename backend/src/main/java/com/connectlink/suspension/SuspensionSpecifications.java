@@ -64,12 +64,10 @@ final class SuspensionSpecifications {
     };
   }
 
-  /** 시작 시각이 이 구간 [from, to) 에 드는 건. 홈의 이번 주 칸이 쓴다. */
-  static Specification<Suspension> startingBetween(LocalDateTime from, LocalDateTime to) {
+  /** 지금(now) 진행 중이거나 until 전에 시작하는 건. 홈의 다가오는 일시중단이 쓴다. */
+  static Specification<Suspension> activeOrStartingBefore(LocalDateTime now, LocalDateTime until) {
     return (root, query, cb) ->
-        cb.and(
-            cb.greaterThanOrEqualTo(root.get("startAt"), from),
-            cb.lessThan(root.get("startAt"), to));
+        cb.and(cb.greaterThan(root.get("endAt"), now), cb.lessThan(root.get("startAt"), until));
   }
 
   /** 기관 이름, 중단 이유, 고른 대상 업무 이름에 검색어가 든 건. */

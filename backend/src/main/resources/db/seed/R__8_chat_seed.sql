@@ -48,6 +48,7 @@ FROM (VALUES
   (3, '계좌통합관리 단체방', 'hong.sungmin@kftc.example.com',  180,  '@KB국민은행 @삼성증권 내일 10시에 계좌정보 조회 전문 응답코드 변경을 반영합니다. 확인 부탁드립니다.'),
   (4, '계좌통합관리 단체방', 'kim.ops@kftc.example.com',       120,  '반영 시간 동안 운영팀이 상황을 함께 봅니다. 이상이 있으면 바로 알려 주세요.'),
   (5, '계좌통합관리 단체방', 'choi.yujin@samsung.example.com', 25,   '@결제원 삼성증권은 오늘 18시 이후에 변경 전문 테스트가 가능합니다.'),
+  (8, '계좌통합관리 단체방', 'hong.sungmin@kftc.example.com',  10,   '@KB국민은행 변경 전문 테스트도 오늘 18시 이후에 함께 가능하신지 알려 주세요.'),
   (6, '오픈뱅킹 안심차단 전문 테스트', 'hong.sungmin@kftc.example.com', 2880, '오픈뱅킹 안심차단 전문 테스트 케이스를 이 방에서 주고받겠습니다.'),
   (7, '오픈뱅킹 안심차단 전문 테스트', 'yoon.seoyeon@fsb.example.com',  2800, '테스트 케이스 받았습니다. 금요일까지 결과 올리겠습니다.')
 ) AS m (seq, room_name, email, minutes_ago, content)
@@ -61,7 +62,8 @@ SELECT msg.id, n.code, msg.created_at, msg.created_by, msg.created_at, msg.creat
 FROM (VALUES
   ('@KB국민은행 @삼성증권 내일 10시에%', '004'),
   ('@KB국민은행 @삼성증권 내일 10시에%', '240'),
-  ('@결제원 삼성증권은%',               'KFTC')
+  ('@결제원 삼성증권은%',               'KFTC'),
+  ('@KB국민은행 변경 전문 테스트도%',    '004')
 ) AS n (content_prefix, code)
 JOIN chat_message msg ON msg.content LIKE n.content_prefix;
 

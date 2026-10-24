@@ -12,8 +12,8 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 
 /**
- * 홈 화면 조립. 카드 자리({@link HomeCardKey}) 순서대로 기여자를 불러 모으고, 기여자가 없는 자리는 "연결 예정" 카드로 채운다. 기여자가 이 사용자에게는
- * 없는 자리라고 하면(null) 그 카드를 뺀다.
+ * 홈 화면 조립. 카드 자리({@link HomeCardKey}) 순서대로 기여자를 불러 모은다. 홈에는 이 사람에게 할 일이 있는 카드만 둔다: 기여자가 없는 자리, 기여자가
+ * 이 사용자에게는 없는 자리라고 한 카드(null), 할 일 줄이 빈 카드는 뺀다. SHY 요청(2026-10-24).
  */
 @Service
 public class HomeService {
@@ -44,23 +44,17 @@ public class HomeService {
   public HomeResponse summary(CurrentUser user, Business business) {
     businessAccessPolicy.ensureCanView(user, business);
     List<HomeCard> cards = new ArrayList<>();
-    List<HomeCard.HomeCardKpi> kpis = new ArrayList<>();
     for (HomeCardKey key : HomeCardKey.values()) {
-      String link = "/" + business.getSlug() + "/" + key.getFeature();
       HomeCardContributor contributor = contributors.get(key);
       if (contributor == null) {
-        cards.add(HomeCard.unavailable(key, link));
         continue;
       }
       HomeContribution contribution = contributor.contribute(user, business);
-      if (contribution == null) {
+      if (contribution == null || contribution.card().items().isEmpty()) {
         continue;
       }
       cards.add(contribution.card());
-      if (contribution.kpi() != null) {
-        kpis.add(contribution.kpi());
-      }
     }
-    return new HomeResponse(business, business.getLabel(), user.name(), kpis, cards);
+    return new HomeResponse(business, business.getLabel(), user.name(), cards);
   }
 }

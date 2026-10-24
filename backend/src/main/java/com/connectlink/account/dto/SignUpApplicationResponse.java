@@ -22,6 +22,7 @@ public record SignUpApplicationResponse(
     String email,
     String name,
     Long organizationId,
+    String organizationCode,
     String organizationName,
     OrganizationType organizationType,
     String organizationTypeLabel,

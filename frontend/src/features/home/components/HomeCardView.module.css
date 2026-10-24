@@ -20,11 +20,6 @@
   }
 }
 
-/* 작게 두는 카드: 한 줄 띠 */
-.card[data-compact] {
-  padding: 14px 24px;
-}
-
 .number {
   font-variant-numeric: tabular-nums;
 }

@@ -145,7 +145,12 @@ export function TargetOrgPicker({
                     aria-label={`${org.name} 대상`}
                     label={
                       <Group gap="xs" wrap="nowrap">
-                        <OrgMonogram name={org.name} type="FINANCE_ORGANIZATION" size={28} />
+                        <OrgMonogram
+                          name={org.name}
+                          type="FINANCE_ORGANIZATION"
+                          size={28}
+                          code={org.code}
+                        />
                         <Text fw={600}>{org.name}</Text>
                         {locked && (
                           <Badge size="xs" color="sky">

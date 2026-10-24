@@ -47,7 +47,7 @@ export function OrganizationDrawer({
       title={
         data ? (
           <Group gap="sm" wrap="nowrap">
-            <OrgMonogram name={data.name} type={data.type} size={36} />
+            <OrgMonogram name={data.name} type={data.type} size={36} code={data.code} />
             <span>{data.name}</span>
             {!data.active && (
               <Badge variant="outline" color="gray">

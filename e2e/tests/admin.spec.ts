@@ -35,9 +35,9 @@ test.describe('관리 > 기관·업무 기준정보', () => {
     await chip(page, '업무', '전체 업무').click();
     await expect(page.getByTestId('organization-count')).toHaveText('11곳');
 
+    // 샘플에는 사용 중지된 기관이 없어 상태 전체도 같은 수다.
     await chip(page, '상태', '전체').click();
-    await expect(page.getByTestId('organization-count')).toHaveText('12곳');
-    await expect(page.getByTestId('organization-table').getByText('외환은행')).toBeVisible();
+    await expect(page.getByTestId('organization-count')).toHaveText('11곳');
 
     await page.getByLabel('기관 검색').fill('저축');
     await expect(page.getByTestId('organization-count')).toHaveText('2곳');
