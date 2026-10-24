@@ -64,7 +64,7 @@ export function OrganizationTable({ rows, loading, selectedId, currentBusiness, 
           >
             <Table.Td>
               <Group gap="sm" wrap="nowrap">
-                <OrgMonogram name={o.name} type={o.type} />
+                <OrgMonogram name={o.name} type={o.type} code={o.code} />
                 <div>
                   <Text size="md" fw={600}>
                     {o.name}

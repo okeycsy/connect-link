@@ -245,7 +245,11 @@ export function TargetPicker({
                         }
                         label={
                           <Group gap="xs" wrap="nowrap">
-                            <OrgMonogram name={org.organizationName} type="FINANCE_ORGANIZATION" />
+                            <OrgMonogram
+                              name={org.organizationName}
+                              type="FINANCE_ORGANIZATION"
+                              code={org.organizationCode}
+                            />
                             <Text fw={600}>{org.organizationName}</Text>
                             {locked && (
                               <Badge size="xs" color="sky">

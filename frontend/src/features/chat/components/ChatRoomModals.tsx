@@ -235,6 +235,7 @@ export function InviteChatMembersModal({
                       name={g.label}
                       type={g.kftc ? 'KFTC' : 'FINANCE_ORGANIZATION'}
                       size={24}
+                      code={g.organizationCode}
                     />
                     <SelectAllCheckbox
                       label={`${g.label} ${g.items.length}명`}
@@ -335,6 +336,7 @@ export function ChatMembersModal({
                 name={m.organizationName}
                 type={m.kftc ? 'KFTC' : 'FINANCE_ORGANIZATION'}
                 size={32}
+                code={m.organizationCode}
               />
               <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
                 <Text size="md" fw={600}>

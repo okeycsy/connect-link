@@ -2749,6 +2749,7 @@ export interface components {
       name: string;
       /** Format: int64 */
       organizationId: number;
+      organizationCode: string;
       organizationName: string;
       /** @enum {string} */
       organizationType: 'KFTC' | 'FINANCE_ORGANIZATION' | 'USE_ORGANIZATION';

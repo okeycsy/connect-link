@@ -21,15 +21,13 @@ INSERT INTO organization (code, name, type, email_domain, active, created_at, cr
   ('050',   '저축은행중앙회',   'FINANCE_ORGANIZATION', 'fsb.example.com',       TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
   ('090',   '카카오뱅크',     'FINANCE_ORGANIZATION', 'kakaobank.example.com', TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
   ('048',   '신협',        'FINANCE_ORGANIZATION', 'cu.example.com',        TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
-  ('HAHA',  '하하통신',      'USE_ORGANIZATION',     'haha.example.com',      TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
-  ('005',   '외환은행',      'FINANCE_ORGANIZATION', 'keb.example.com',       FALSE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed');
+  ('HAHA',  '하하통신',      'USE_ORGANIZATION',     'haha.example.com',      TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed');
 
 -- 업권. 의견 요청에서 대상 기관을 업권별로 고를 때 쓴다(참가기관만, 모든 참가기관에 정한다).
 -- 이름으로 나눈다: 은행 → 은행, 우체국·상호금융(신협 등)·저축은행 → 서민금융기관, 증권사 → 증권사, 보험사 → 보험사.
 UPDATE organization SET sector = CASE code
   WHEN '004'  THEN 'BANK'
   WHEN '088'  THEN 'BANK'
-  WHEN '005'  THEN 'BANK'
   WHEN '103'  THEN 'MICROFINANCE'
   WHEN '050'  THEN 'MICROFINANCE'
   WHEN '240'  THEN 'SECURITIES'
@@ -54,8 +52,7 @@ FROM (VALUES
   ('050',     'ACCOUNT_INFO'), ('050', 'AUTO_TRANSFER'),
   ('090',    'LOAN_TRANSFER'),
   ('048',     'ACCOUNT_INFO'), ('048',  'AUTO_TRANSFER'), ('048',  'CMS'),
-  ('HAHA',    'CMS'),
-  ('005',     'ACCOUNT_INFO')
+  ('HAHA',    'CMS')
 ) AS p (code, business)
 JOIN organization o ON o.code = p.code;
 
@@ -67,8 +64,6 @@ FROM (VALUES
    '[{"field":"code","label":"기관 코드","before":null,"after":"088"},{"field":"name","label":"기관명","before":null,"after":"신한은행"},{"field":"type","label":"기관 구분","before":null,"after":"참가기관"},{"field":"emailDomain","label":"이메일 도메인","before":null,"after":"shinhan.example.com"},{"field":"businesses","label":"참여 업무","before":null,"after":"계좌통합관리, 자동이체통합관리"}]'),
   ('088',     'UPDATED', '신한은행 수정', '데모 관리자', 'admin@kftc.example.com', TIMESTAMP '2026-07-14 14:05:00',
    '[{"field":"businesses","label":"참여 업무","before":"계좌통합관리, 자동이체통합관리","after":"계좌통합관리, 자동이체통합관리, CMS"}]'),
-  ('005',     'UPDATED', '외환은행 수정', '데모 관리자', 'admin@kftc.example.com', TIMESTAMP '2026-09-01 10:00:00',
-   '[{"field":"active","label":"사용 여부","before":"예","after":"아니요"}]'),
   ('048',     'UPDATED', '신협 수정', '데모 관리자', 'admin@kftc.example.com', TIMESTAMP '2026-10-02 16:40:00',
    '[{"field":"name","label":"기관명","before":"나다신용협동조합","after":"신협"},{"field":"emailDomain","label":"이메일 도메인","before":"nada-cu.example.com","after":"cu.example.com"}]')
 ) AS h (code, action, summary, actor_name, changed_by, changed_at, changes)

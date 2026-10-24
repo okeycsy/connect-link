@@ -12,7 +12,7 @@ describe('OrgLogo', () => {
   });
 
   it('로고 파일이 없는 기관은 아무것도 그리지 않는다', () => {
-    const { container } = render(<OrgLogo code="103" />);
+    const { container } = render(<OrgLogo code="HAHA" />);
     expect(container).toBeEmptyDOMElement();
   });
 });

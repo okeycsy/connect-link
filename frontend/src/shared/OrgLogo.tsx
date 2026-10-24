@@ -14,6 +14,10 @@ const LOGOS: Record<string, string> = Object.fromEntries(
 );
 
 /** 이 기관 코드의 로고 주소. 없으면 undefined. */
+export function hasOrgLogo(code: string | null | undefined): boolean {
+  return orgLogoUrl(code) !== undefined;
+}
+
 function orgLogoUrl(code: string | null | undefined): string | undefined {
   return code ? LOGOS[code] : undefined;
 }
