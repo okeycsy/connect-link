@@ -3400,12 +3400,7 @@ export interface components {
     HomeCard: {
       /** @enum {string} */
       key:
-        | 'CONTACT_CONFIRM'
-        | 'UPDATE_CAMPAIGN'
-        | 'OPINION_REPLIES'
-        | 'TEST_PROGRESS'
-        | 'SUSPENSIONS'
-        | 'SIGNUP_APPROVAL';
+        'UPDATE_CAMPAIGN' | 'OPINION_REPLIES' | 'TEST_PROGRESS' | 'SUSPENSIONS' | 'SIGNUP_APPROVAL';
       title: string;
       /** @enum {string} */
       source: 'REAL' | 'SAMPLE';

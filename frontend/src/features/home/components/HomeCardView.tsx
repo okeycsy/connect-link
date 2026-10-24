@@ -22,8 +22,6 @@ const URGENCY_COLOR = { OVERDUE: 'red', SOON: 'amber', NONE: 'sky' } as const;
 
 interface Props {
   card: HomeCard;
-  /** 중요도가 낮은 자리는 한 줄짜리 띠로 작게 보인다(제목, 요약, 숫자만). */
-  compact?: boolean;
   /** 세로로 쌓이는 자리(오른쪽 열). 높이를 채우지 않는다. */
   stacked?: boolean;
   /** 왼쪽 큰 칸. 남는 높이를 내용(다가오는 일시중단 목록)이 채운다. */
@@ -31,10 +29,10 @@ interface Props {
 }
 
 /** 홈 "지금 할 일" 카드. 서버가 준 모양(요약, 숫자, 진행률, 항목)만 그리고 무엇을 채울지는 기능 모듈이 정한다. */
-export function HomeCardView({ card, compact = false, stacked = false, tall = false }: Props) {
+export function HomeCardView({ card, stacked = false, tall = false }: Props) {
   const header = (
-    <Group gap="xs" wrap={compact ? 'nowrap' : 'wrap'} style={{ flexShrink: 0 }}>
-      <Text fw={700} size={compact ? 'lg' : 'xl'} style={{ whiteSpace: 'nowrap' }}>
+    <Group gap="xs" wrap="wrap" style={{ flexShrink: 0 }}>
+      <Text fw={700} size="xl" style={{ whiteSpace: 'nowrap' }}>
         {card.title}
       </Text>
       {card.source === 'SAMPLE' && (
@@ -62,38 +60,6 @@ export function HomeCardView({ card, compact = false, stacked = false, tall = fa
       모두 보기
     </Anchor>
   );
-
-  if (compact) {
-    return (
-      <Card
-        className={classes.card}
-        data-compact
-        data-urgency={card.urgency !== 'NONE' ? card.urgency : undefined}
-        data-testid={`home-card-${card.key}`}
-      >
-        <Group justify="space-between" gap="sm">
-          <Group gap="lg" wrap="nowrap" style={{ minWidth: 0 }}>
-            {header}
-            <Text size="sm" c="dimmed" truncate visibleFrom="md">
-              {card.summary}
-            </Text>
-          </Group>
-          <Group gap="lg" wrap="nowrap">
-            {card.metrics.map((m) => (
-              <Text key={m.label} size="sm" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
-                {m.label}{' '}
-                <Text span fw={700} size="md" c="var(--cl-ink)" className={classes.number}>
-                  {m.value}
-                </Text>
-                {m.unit}
-              </Text>
-            ))}
-            {more}
-          </Group>
-        </Group>
-      </Card>
-    );
-  }
 
   const ring = card.key === 'UPDATE_CAMPAIGN' && card.progress;
   const suspensions = card.key === 'SUSPENSIONS';

@@ -13,25 +13,6 @@ const home = {
   userName: '데모 관리자',
   cards: [
     {
-      key: 'CONTACT_CONFIRM',
-      title: '확인이 필요한 담당자',
-      source: 'SAMPLE',
-      urgency: 'OVERDUE',
-      summary: '6개월을 넘긴 담당자',
-      metrics: [{ label: '6개월 초과', value: 7, unit: '명' }],
-      progress: null,
-      items: [
-        {
-          title: 'KB국민은행 · 김민준 (현업)',
-          subtitle: '최근 확인 2026-02-02',
-          dueAt: null,
-          urgency: 'OVERDUE',
-          link: '/account-info/contacts',
-        },
-      ],
-      link: '/account-info/contacts',
-    },
-    {
       key: 'OPINION_REPLIES',
       title: '회신 대기 의견 요청',
       source: 'SAMPLE',
@@ -114,7 +95,7 @@ describe('HomePage', () => {
     vi.useRealTimers();
   });
 
-  it('건수 요약 없이 인사말과 카드를 보이고 확인 필요 담당자는 작게 둔다', async () => {
+  it('건수 요약 없이 인사말과 카드를 보인다', async () => {
     renderWithProviders(<HomePage />);
 
     expect(await screen.findByText(/· 계좌통합관리$/)).toBeInTheDocument();
@@ -125,10 +106,7 @@ describe('HomePage', () => {
     // 건수 요약(KPI 타일)은 없다.
     expect(screen.queryByText('확인 필요 담당자')).not.toBeInTheDocument();
 
-    // 확인이 필요한 담당자: 한 줄 띠로 작게, 항목 목록은 보이지 않는다.
-    expect(screen.getByTestId('home-card-CONTACT_CONFIRM')).toHaveAttribute('data-compact');
-    expect(screen.queryByText('KB국민은행 · 김민준 (현업)')).not.toBeInTheDocument();
-    expect(screen.getByText('초과')).toBeInTheDocument();
+    expect(screen.getByTestId('home-card-OPINION_REPLIES')).toBeInTheDocument();
 
     // 최근 알림은 홈에 두지 않는다(알림 벨에서 본다).
     expect(screen.queryByText('최근 소식')).not.toBeInTheDocument();

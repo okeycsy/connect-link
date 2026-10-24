@@ -8,13 +8,11 @@ test.describe('홈 대시보드', () => {
     await expect(page.getByRole('heading', { name: '안녕하세요, 데모 관리자 님' })).toBeVisible();
 
     const cards = page.getByTestId('home-cards');
-    for (const key of ['CONTACT_CONFIRM', 'OPINION_REPLIES', 'TEST_PROGRESS', 'SUSPENSIONS']) {
+    for (const key of ['OPINION_REPLIES', 'TEST_PROGRESS', 'SUSPENSIONS']) {
       await expect(cards.getByTestId(`home-card-${key}`)).toBeVisible();
     }
-    await expect(cards.getByTestId('home-card-CONTACT_CONFIRM')).toHaveAttribute(
-      'data-compact',
-      'true',
-    );
+    // 확인이 필요한 담당자는 홈에 두지 않는다(로그인 뒤 확인 창이 맡는다).
+    await expect(cards.getByTestId('home-card-CONTACT_CONFIRM')).toHaveCount(0);
     // 건수 요약 타일은 없다.
     await expect(page.getByText('진행 중 기관 테스트', { exact: true })).toHaveCount(1);
     // 왼쪽 큰 칸은 다가오는 일시중단(요일 칸 없음, 날짜별 묶음), 오른쪽은 회신 대기 의견 요청이다.
@@ -27,6 +25,8 @@ test.describe('홈 대시보드', () => {
     const opinionBox = (await cards.getByTestId('home-card-OPINION_REPLIES').boundingBox())!;
     expect(suspensionBox.x).toBeLessThan(opinionBox.x);
     expect(suspensionBox.height).toBeLessThan(640);
+    // 오른쪽 의견 요청 카드는 왼쪽 일시중단 카드와 높이를 맞춘다.
+    expect(Math.abs(suspensionBox.height - opinionBox.height)).toBeLessThan(2);
     // 모든 카드가 실제 데이터다(샘플 카드 없음).
     await expect(cards.getByText('샘플')).toHaveCount(0);
     await page.screenshot({ path: 'screenshots/home.png', fullPage: true });
@@ -40,7 +40,7 @@ test.describe('홈 대시보드', () => {
     }
     // CMS 에는 진행 중인 정기 변경 주간이 없다(연락처 시드).
     await page.goto('/cms/home');
-    await expect(page.getByTestId('home-card-CONTACT_CONFIRM')).toBeVisible();
+    await expect(page.getByTestId('home-card-SUSPENSIONS')).toBeVisible();
     await expect(page.getByTestId('home-card-UPDATE_CAMPAIGN')).toHaveCount(0);
   });
 

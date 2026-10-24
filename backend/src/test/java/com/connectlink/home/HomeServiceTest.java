@@ -60,7 +60,7 @@ class HomeServiceTest {
     HomeService service =
         new HomeService(
             List.of(
-                stub(HomeCardKey.CONTACT_CONFIRM, List.of()),
+                stub(HomeCardKey.UPDATE_CAMPAIGN, List.of()),
                 stub(HomeCardKey.OPINION_REPLIES),
                 stub(HomeCardKey.SUSPENSIONS)),
             new BusinessAccessPolicy());
