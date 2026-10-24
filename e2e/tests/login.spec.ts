@@ -138,7 +138,9 @@ test.describe('로그인 화면 안내', () => {
       'mailto:help@connect-link.example.com',
     );
 
-    await page.getByRole('link', { name: '의견 요청·회신 작성 가이드' }).click();
+    await page.getByRole('link', { name: '가이드 보기' }).click();
+    await expect(page).toHaveURL(/\/guide$/);
+    await page.getByRole('link', { name: /의견 요청·회신 작성 가이드/ }).click();
     await expect(page).toHaveURL(/\/guide\/opinions$/);
     await expect(page.getByRole('heading', { name: '이용 가이드' })).toBeVisible();
     const guide = page.getByTestId('user-guide');
@@ -156,7 +158,7 @@ test.describe('로그인 화면 안내', () => {
     await page.goto('/login');
     await expect(page.getByRole('heading', { name: '로그인' })).toBeVisible();
     await expect(page.getByRole('region', { name: '연결이 주요 기능' })).toBeHidden();
-    await expect(page.getByRole('link', { name: '이용 가이드' })).toBeVisible();
+    await expect(page.getByRole('link', { name: '가이드 보기' })).toBeVisible();
     await expect(page.getByRole('link', { name: '문의 메일 보내기' })).toBeVisible();
   });
 });
