@@ -59,6 +59,7 @@ export const router = createBrowserRouter([
   { path: '/sign-up', element: <SignUpPage /> },
   { path: '/sign-up/pending', element: <SignUpPendingPage /> },
   { path: '/guide', element: <UserGuidePage /> },
+  { path: '/guide/:topic', element: <UserGuidePage /> },
   {
     path: '/',
     element: <AppShellLayout />,

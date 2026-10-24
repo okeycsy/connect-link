@@ -67,7 +67,11 @@ describe('LoginPage', () => {
     expect(screen.getByRole('region', { name: '연결이 주요 기능' })).toHaveTextContent(
       '담당자 연락처',
     );
-    expect(screen.getByRole('link', { name: '가이드 보기' })).toHaveAttribute('href', '/guide');
+    expect(screen.getByRole('link', { name: '이용 가이드' })).toHaveAttribute('href', '/guide');
+    expect(screen.getByRole('link', { name: '기관 테스트 결과 등록 방법' })).toHaveAttribute(
+      'href',
+      '/guide/tests',
+    );
     expect(await screen.findByRole('link', { name: '문의 메일 보내기' })).toHaveAttribute(
       'href',
       'mailto:help@connect-link.example.com',
@@ -82,7 +86,7 @@ describe('LoginPage', () => {
     renderWithProviders(<LoginPage />, { route: '/login', path: '/login' });
 
     await waitFor(() => expect(GET).toHaveBeenCalledWith('/api/v1/support-info'));
-    expect(screen.getByRole('link', { name: '가이드 보기' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '이용 가이드' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: '문의 메일 보내기' })).not.toBeInTheDocument();
   });
 

@@ -22,7 +22,7 @@ import { BrandMark } from '../../../shared/BrandMark';
 import { useBusinesses } from '../../organization/hooks';
 import { DemoAccountList } from '../components/DemoAccountList';
 import { LoginFeatures } from '../components/LoginFeatures';
-import { LoginHelpCard } from '../components/LoginHelpCard';
+import { LoginHelpBar } from '../components/LoginHelpBar';
 import {
   type CurrentUserResponse,
   homeBusinessSlugOf,
@@ -182,8 +182,6 @@ export function LoginPage() {
             </form>
           </Paper>
 
-          <LoginHelpCard inquiryEmail={support?.inquiryEmail ?? undefined} />
-
           {demo && demo.accounts.length > 0 && (
             <Paper className={classes.demoCard} p="md">
               <Text fw={700}>데모 계정으로 들어가기</Text>
@@ -214,6 +212,10 @@ export function LoginPage() {
             </Paper>
           )}
         </Stack>
+      </Box>
+
+      <Box className={classes.help}>
+        <LoginHelpBar inquiryEmail={support?.inquiryEmail ?? undefined} />
       </Box>
     </Box>
   );

@@ -1,29 +1,57 @@
-/* 목차: 휴대폰 폭에서는 한 열, 넓으면 두 열 */
-.toc {
-  margin: 0;
-  padding-left: 20px;
-  columns: 2;
-  column-gap: 32px;
+/* 본문 가운데 열(가입 화면 760 보다 넓게, 왼쪽 목차 + 본문) */
+.body {
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding-bottom: 24px;
+}
 
-  & li {
-    padding: 2px 0;
-  }
+.layout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
 
   @media (max-width: $mantine-breakpoint-sm) {
-    columns: 1;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
-/* 목차 링크로 왔을 때 상단 바(56)에 가리지 않게 */
-.section {
-  scroll-margin-top: 72px;
+/* 왼쪽 목차: 스크롤해도 따라온다. 휴대폰 폭에서는 숨기고 아래 이전·다음으로 옮겨 다닌다. */
+.nav {
+  position: sticky;
+  top: 72px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    display: none;
+  }
+}
+
+/* 메뉴 한 줄 radius 8 */
+.navLink {
+  border-radius: 8px;
+}
+
+.content {
+  min-width: 0;
+}
+
+.indexCard {
+  transition: border-color 120ms var(--cl-ease, ease);
+
+  &:hover {
+    border-color: var(--mantine-color-clay-3);
+  }
 }
 
 .steps {
-  padding-left: 60px;
   color: var(--cl-ink-soft);
+  line-height: 1.7;
+}
 
-  @media (max-width: $mantine-breakpoint-sm) {
-    padding-left: 4px;
-  }
+.tips {
+  background: var(--mantine-color-sky-0);
 }
