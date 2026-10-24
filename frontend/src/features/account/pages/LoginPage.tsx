@@ -21,6 +21,8 @@ import { errorCodeOf, fieldErrorsOf } from '../../../api/client';
 import { BrandMark } from '../../../shared/BrandMark';
 import { useBusinesses } from '../../organization/hooks';
 import { DemoAccountList } from '../components/DemoAccountList';
+import { LoginFeatures } from '../components/LoginFeatures';
+import { LoginHelpCard } from '../components/LoginHelpCard';
 import {
   type CurrentUserResponse,
   homeBusinessSlugOf,
@@ -90,7 +92,7 @@ export function LoginPage() {
               <BrandMark mascot className={classes.headlineLogo} />
             </Title>
             <Text size="xl" c="var(--cl-ink-soft)" maw={460} lh={1.75}>
-              담당자 연락처, 의견 요청, 기관 테스트, 일시중단을 한곳에서 관리합니다.
+              결제원과 참가기관 담당자가 서로 찾고, 묻고, 함께 확인하는 업무 공간이에요.
             </Text>
             <Group gap="xs">
               {businesses?.map((b) => (
@@ -104,6 +106,10 @@ export function LoginPage() {
             샘플 데이터로 동작하는 프로토타입입니다. 모든 기관명과 담당자는 가상 데이터입니다.
           </Text>
         </Stack>
+      </Box>
+
+      <Box className={classes.features}>
+        <LoginFeatures />
       </Box>
 
       <Box className={classes.sheet}>
@@ -173,6 +179,8 @@ export function LoginPage() {
               </Stack>
             </form>
           </Paper>
+
+          <LoginHelpCard inquiryEmail="help@connect-link.example.com" />
 
           {demo && demo.accounts.length > 0 && (
             <Paper className={classes.demoCard} p="md">

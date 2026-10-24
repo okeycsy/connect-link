@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 
 import { LoginPage } from '../features/account/pages/LoginPage';
+import { UserGuidePage } from '../features/account/pages/UserGuidePage';
 import { MyInfoPage } from '../features/account/pages/MyInfoPage';
 import { SignUpApprovalPage } from '../features/account/pages/SignUpApprovalPage';
 import { SignUpPage } from '../features/account/pages/SignUpPage';
@@ -57,6 +58,7 @@ export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
   { path: '/sign-up', element: <SignUpPage /> },
   { path: '/sign-up/pending', element: <SignUpPendingPage /> },
+  { path: '/guide', element: <UserGuidePage /> },
   {
     path: '/',
     element: <AppShellLayout />,
