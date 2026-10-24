@@ -110,6 +110,7 @@
 | 기관 멘션 | `ChatMessageMention` | 메시지가 부른 기관 하나(`@KB국민은행`, `@결제원` 은 코드 `KFTC`). 부를 수 있는 기관은 그 방 구성원의 기관이다 |
 | 확인 공감 | `ChatMessageAck` | 메시지에 "확인" 을 누른 사람 한 명(기관 이름을 남겨 기관별로 묶어 보인다). 보낸 사람은 누르지 못한다 |
 | 읽음 표시 | `ChatReadMark` | 사람 × 방 하나의 마지막으로 읽은 메시지. 방의 읽지 않은 수, 메시지의 읽지 않은 사람 수, 읽지 않은 내 기관 멘션을 여기서 센다 |
+| 문의 안내·이용 가이드 | `SupportInfo`, `SupportProperties` | 로그인 화면 아래 카드. 문의 메일 주소는 설정 `app.support.inquiry-email`(공개 저장소라 실제 주소는 배포 설정에만, 비우면 문의하기 칸이 빠진다)이고 로그인 없이 API `/api/v1/support-info` 로 읽는다. 이용 가이드는 참가기관 담당자용 화면 `/guide`(로그인 없이) |
 | 전역 검색 묶음 | `SearchCategory` | `ORGANIZATION`, `CONTACT`, `OPINION_REQUEST`, `TEST_PLAN`, `SUSPENSION`. 기능 모듈은 `SearchProvider` 빈 하나로 자기 묶음을 채운다 |
 
 용어집에 없는 개념이 필요하면 이름을 정해 이 표에 추가하는 것까지 같은 작업에 포함한다.

@@ -31,6 +31,7 @@ import {
   useDemoAccounts,
   useLogin,
   useMe,
+  useSupportInfo,
 } from '../hooks';
 import classes from './LoginPage.module.css';
 
@@ -46,6 +47,7 @@ export function LoginPage() {
   const { data: businesses } = useBusinesses();
   const { data: me } = useMe();
   const { data: demo } = useDemoAccounts();
+  const { data: support } = useSupportInfo();
   const login = useLogin();
   const [pickedEmail, setPickedEmail] = useState<string>();
 
@@ -180,7 +182,7 @@ export function LoginPage() {
             </form>
           </Paper>
 
-          <LoginHelpCard inquiryEmail="help@connect-link.example.com" />
+          <LoginHelpCard inquiryEmail={support?.inquiryEmail ?? undefined} />
 
           {demo && demo.accounts.length > 0 && (
             <Paper className={classes.demoCard} p="md">

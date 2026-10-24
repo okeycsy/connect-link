@@ -116,3 +116,42 @@ test.describe('로그인', () => {
     );
   });
 });
+
+test.describe('로그인 화면 안내', () => {
+  test('기능 소개, 이용 가이드, 문의 메일을 보이고 가이드는 로그인 없이 열린다', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/login');
+    const features = page.getByRole('region', { name: '연결이 주요 기능' });
+    for (const title of [
+      '담당자 연락처',
+      '의견 요청과 회신',
+      '기관 테스트',
+      '일시중단 공유',
+      '소통 채널',
+    ]) {
+      await expect(features.getByText(title, { exact: true })).toBeVisible();
+    }
+    await expect(page.getByRole('link', { name: '문의 메일 보내기' })).toHaveAttribute(
+      'href',
+      'mailto:help@connect-link.example.com',
+    );
+
+    await page.getByRole('link', { name: '가이드 보기' }).click();
+    await expect(page).toHaveURL(/\/guide$/);
+    await expect(page.getByRole('heading', { name: '이용 가이드' })).toBeVisible();
+    await expect(
+      page.getByTestId('user-guide').getByText('의견 요청에 회신하기').first(),
+    ).toBeVisible();
+  });
+
+  test('휴대폰 폭에서는 기능 소개를 빼고 가이드·문의는 남긴다', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/login');
+    await expect(page.getByRole('heading', { name: '로그인' })).toBeVisible();
+    await expect(page.getByRole('region', { name: '연결이 주요 기능' })).toBeHidden();
+    await expect(page.getByRole('link', { name: '가이드 보기' })).toBeVisible();
+    await expect(page.getByRole('link', { name: '문의 메일 보내기' })).toBeVisible();
+  });
+});
