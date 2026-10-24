@@ -355,19 +355,18 @@ class SignUpReviewControllerTest {
     mockMvc
         .perform(get("/api/v1/home").param("business", "account-info").with(hong()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.cards[5].key").value("SIGNUP_APPROVAL"))
-        .andExpect(jsonPath("$.cards[5].source").value("REAL"))
-        .andExpect(jsonPath("$.cards[5].metrics[0].value").value(2))
-        .andExpect(jsonPath("$.cards[5].items[0].title").value("신한은행 · 오승현"))
-        .andExpect(jsonPath("$.cards[5].items[0].subtitle").value("전산(개발) · 도메인 다름"))
+        .andExpect(jsonPath("$.cards[-1].key").value("SIGNUP_APPROVAL"))
+        .andExpect(jsonPath("$.cards[-1].source").value("REAL"))
+        .andExpect(jsonPath("$.cards[-1].summary").value("승인 대기 2건"))
+        .andExpect(jsonPath("$.cards[-1].items[0].title").value("신한은행 · 오승현"))
+        .andExpect(jsonPath("$.cards[-1].items[0].subtitle").value("전산(개발) · 도메인 다름"))
         .andExpect(
-            jsonPath("$.cards[5].items[0].link")
+            jsonPath("$.cards[-1].items[0].link")
                 .value(startsWith("/account-info/admin/sign-ups?id=")))
-        .andExpect(jsonPath("$.cards[5].link").value("/account-info/admin/sign-ups"));
+        .andExpect(jsonPath("$.cards[-1].link").value("/account-info/admin/sign-ups"));
     mockMvc
         .perform(get("/api/v1/home").param("business", "account-info").with(TestUsers.ganaMember()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.cards.length()").value(5))
         .andExpect(jsonPath("$.cards[?(@.key == 'SIGNUP_APPROVAL')]").isEmpty());
   }
 }

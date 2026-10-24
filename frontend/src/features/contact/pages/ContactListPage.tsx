@@ -335,6 +335,7 @@ function ContactTable({
                     <OrgMonogram
                       name={first.organizationName}
                       type={first.organizationType}
+                      code={first.organizationCode}
                       size={24}
                     />
                     <Text size="sm" fw={700}>

@@ -39,7 +39,12 @@ export function SignUpApplicationDrawer({ applicationId, onClose }: Props) {
         title={
           data ? (
             <Group gap="sm" wrap="nowrap">
-              <OrgMonogram name={data.organizationName} type={data.organizationType} size={36} />
+              <OrgMonogram
+                name={data.organizationName}
+                type={data.organizationType}
+                size={36}
+                code={data.organizationCode}
+              />
               <span>{data.name}</span>
               <SignUpStatusBadge application={data} />
             </Group>

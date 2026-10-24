@@ -2294,6 +2294,7 @@ export interface components {
       businesses: components['schemas']['SuspensionBusinessResponse'][];
       /** Format: int64 */
       organizationId: number;
+      organizationCode: string;
       organizationName: string;
       /** Format: date-time */
       startAt: string;
@@ -2748,6 +2749,7 @@ export interface components {
       name: string;
       /** Format: int64 */
       organizationId: number;
+      organizationCode: string;
       organizationName: string;
       /** @enum {string} */
       organizationType: 'KFTC' | 'FINANCE_ORGANIZATION' | 'USE_ORGANIZATION';
@@ -3086,6 +3088,7 @@ export interface components {
       businesses: components['schemas']['SuspensionBusinessResponse'][];
       /** Format: int64 */
       organizationId: number;
+      organizationCode: string;
       organizationName: string;
       /** Format: date-time */
       startAt: string;
@@ -3400,20 +3403,18 @@ export interface components {
     HomeCard: {
       /** @enum {string} */
       key:
-        | 'CONTACT_CONFIRM'
         | 'UPDATE_CAMPAIGN'
         | 'OPINION_REPLIES'
         | 'TEST_PROGRESS'
+        | 'CHAT_MENTIONS'
         | 'SUSPENSIONS'
         | 'SIGNUP_APPROVAL';
       title: string;
       /** @enum {string} */
-      source: 'REAL' | 'SAMPLE' | 'UNAVAILABLE';
+      source: 'REAL' | 'SAMPLE';
       /** @enum {string} */
       urgency: 'NONE' | 'SOON' | 'OVERDUE';
       summary?: string | null;
-      metrics: components['schemas']['HomeCardMetric'][];
-      progress: components['schemas']['HomeCardProgress'];
       items: components['schemas']['HomeCardItem'][];
       link?: string | null;
     };
@@ -3425,33 +3426,14 @@ export interface components {
       /** @enum {string} */
       urgency: 'NONE' | 'SOON' | 'OVERDUE';
       link?: string | null;
+      /** @description 줄이 기관 하나를 가리킬 때 그 기관 코드. 화면이 기관 로고를 붙인다 */
+      organizationCode?: string | null;
     };
-    HomeCardKpi: {
-      label: string;
-      /** Format: int64 */
-      value: number;
-      unit: string;
-      urgent: boolean;
-    };
-    HomeCardMetric: {
-      label: string;
-      /** Format: int64 */
-      value: number;
-      unit: string;
-    };
-    HomeCardProgress: {
-      /** Format: int64 */
-      done: number;
-      /** Format: int64 */
-      total: number;
-      label: string;
-    } | null;
     HomeResponse: {
       /** @enum {string} */
       business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
       businessLabel: string;
       userName: string;
-      kpis: components['schemas']['HomeCardKpi'][];
       cards: components['schemas']['HomeCard'][];
     };
     HealthResponse: {

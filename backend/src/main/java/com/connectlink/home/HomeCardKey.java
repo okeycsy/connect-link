@@ -6,11 +6,11 @@ package com.connectlink.home;
  * <p>{@code feature} 는 카드의 "모두 보기" 가 여는 업무 영역 아래 경로다.
  */
 public enum HomeCardKey {
-  CONTACT_CONFIRM("확인이 필요한 담당자", "contacts"),
   UPDATE_CAMPAIGN("정기 변경 진행률", "contacts"),
   OPINION_REPLIES("회신 대기 의견 요청", "opinions"),
   TEST_PROGRESS("진행 중 기관 테스트", "tests"),
-  SUSPENSIONS("이번 주 일시중단", "suspensions"),
+  CHAT_MENTIONS("우리 기관을 부른 대화", "chat"),
+  SUSPENSIONS("다가오는 일시중단", "suspensions"),
   SIGNUP_APPROVAL("가입 승인 대기", "admin/sign-ups");
 
   private final String title;

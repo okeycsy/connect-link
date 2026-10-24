@@ -8,14 +8,12 @@ import com.connectlink.home.HomeContribution;
 import com.connectlink.home.Urgency;
 import com.connectlink.home.dto.HomeCard;
 import com.connectlink.home.dto.HomeCard.HomeCardItem;
-import com.connectlink.home.dto.HomeCard.HomeCardKpi;
-import com.connectlink.home.dto.HomeCard.HomeCardMetric;
-import com.connectlink.home.dto.HomeCard.HomeCardProgress;
 import com.connectlink.organization.Business;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -103,21 +101,15 @@ public class OpinionHomeCard implements HomeCardContributor {
     }
     Urgency urgency = worst(open, today);
     int rate = targets == 0 ? 0 : Math.round(replied * 100f / targets);
-    return new HomeContribution(
+    return HomeContribution.of(
         new HomeCard(
             key(),
             key().getTitle(),
             HomeCardSource.REAL,
             urgency,
-            open.isEmpty()
-                ? "회신중인 의견 요청이 없습니다."
-                : "회신중인 요청 " + open.size() + "건. 미회신 기관에 리마인드 메일을 보낼 수 있습니다.",
-            List.of(
-                new HomeCardMetric("회신중", open.size(), "건"), new HomeCardMetric("회신율", rate, "%")),
-            open.isEmpty() ? null : new HomeCardProgress(replied, targets, "기관 회신"),
+            open.isEmpty() ? "회신중인 요청 없음" : "회신중 " + open.size() + "건 · 회신율 " + rate + "%",
             items,
-            "/" + business.getSlug() + "/" + key().getFeature()),
-        new HomeCardKpi("회신 대기 의견 요청", open.size(), "건", urgency == Urgency.OVERDUE));
+            "/" + business.getSlug() + "/" + key().getFeature()));
   }
 
   private HomeContribution forReplier(CurrentUser user, Business business, LocalDate today) {
@@ -126,7 +118,11 @@ public class OpinionHomeCard implements HomeCardContributor {
             .findTargeted(
                 business, OpinionRequestStatus.OPEN, user.organizationCode(), OPEN_REQUESTS)
             .getContent();
-    List<OpinionRequest> waiting = targeted.stream().filter(r -> !submittedBy(user, r)).toList();
+    // 아직 제출하지 않은 요청과, 결제원이 수정을 허락해 다시 제출해야 하는 요청(수정 중)이 기관이 할 일이다.
+    Map<Long, Optional<OpinionReply>> own = new HashMap<>();
+    targeted.forEach(r -> own.put(r.getId(), ownReply(user, r)));
+    List<OpinionRequest> waiting =
+        targeted.stream().filter(r -> stageOf(own.get(r.getId())) != null).toList();
     List<HomeCardItem> items =
         waiting.stream()
             .limit(ITEM_COUNT)
@@ -134,36 +130,43 @@ public class OpinionHomeCard implements HomeCardContributor {
                 r ->
                     new HomeCardItem(
                         r.getTitle(),
-                        r.getOwnerName() + " · 기한 " + r.getDueDate(),
+                        stageOf(own.get(r.getId())) + " · " + r.getOwnerName() + " 요청",
                         r.getDueDate(),
                         urgencyOf(r, today),
                         OpinionNotifier.linkOf(r)))
             .toList();
     Urgency urgency = worst(waiting, today);
-    return new HomeContribution(
+    return HomeContribution.of(
         new HomeCard(
             key(),
             "회신할 의견 요청",
             HomeCardSource.REAL,
             urgency,
-            waiting.isEmpty()
-                ? "회신할 의견 요청이 없습니다."
-                : "회신을 기다리는 요청 " + waiting.size() + "건. 기한 전에 제출해 주세요.",
-            List.of(
-                new HomeCardMetric("회신 필요", waiting.size(), "건"),
-                new HomeCardMetric("제출", targeted.size() - waiting.size(), "건")),
-            null,
+            waiting.isEmpty() ? "회신할 요청 없음" : "회신할 요청 " + waiting.size() + "건",
             items,
-            "/" + business.getSlug() + "/" + key().getFeature()),
-        new HomeCardKpi("회신할 의견 요청", waiting.size(), "건", urgency != Urgency.NONE));
+            "/" + business.getSlug() + "/" + key().getFeature()));
   }
 
-  private boolean submittedBy(CurrentUser user, OpinionRequest request) {
+  private Optional<OpinionReply> ownReply(CurrentUser user, OpinionRequest request) {
     Map<Long, OpinionReply> replies =
         replyRepository.findByTarget_Request_Id(request.getId()).stream()
             .collect(Collectors.toMap(r -> r.getTarget().getId(), Function.identity()));
-    Optional<OpinionTarget> target = OpinionRequestService.ownTarget(user, request);
-    return target.map(t -> replies.get(t.getId())).map(OpinionReply::isReplied).orElse(false);
+    return OpinionRequestService.ownTarget(user, request).map(t -> replies.get(t.getId()));
+  }
+
+  /** 기관이 할 일의 단계. 할 일이 없으면(제출했고 수정 중이 아님) null. */
+  private static String stageOf(Optional<OpinionReply> reply) {
+    if (reply.isEmpty()) {
+      return "미작성";
+    }
+    OpinionReply r = reply.get();
+    if (r.getStatus() == OpinionReplyStatus.REVISING) {
+      return "수정 중 · 다시 제출";
+    }
+    if (r.isReplied()) {
+      return null;
+    }
+    return r.getStatus() == OpinionReplyStatus.DRAFT ? "임시저장" : "미작성";
   }
 
   private static Urgency urgencyOf(OpinionRequest request, LocalDate today) {

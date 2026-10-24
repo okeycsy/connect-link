@@ -249,6 +249,7 @@ public class SignUpReviewService {
         account.getEmail(),
         account.getName(),
         organization.getId(),
+        organization.getCode(),
         organization.getName(),
         organization.getType(),
         organization.getType().getLabel(),

@@ -6,9 +6,11 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.connectlink.auth.TestUsers;
 import com.connectlink.common.ClockConfig;
 import com.connectlink.common.MutableClock;
 import com.connectlink.organization.OrganizationService;
@@ -108,6 +110,37 @@ class SignUpControllerTest {
 
   private Long organizationId(String code) {
     return organizationService.getByCode(code).getId();
+  }
+
+  private Long inactiveOrganizationId() throws Exception {
+    String created =
+        mockMvc
+            .perform(
+                post("/api/v1/organizations")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"code":"OLDBANK","name":"옛은행","type":"FINANCE_ORGANIZATION","businesses":["ACCOUNT_INFO"],"sector":"BANK"}
+                        """)
+                    .with(TestUsers.admin())
+                    .with(csrf()))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    long id = objectMapper.readTree(created).get("id").asLong();
+    mockMvc
+        .perform(
+            put("/api/v1/organizations/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"name":"옛은행","active":false,"businesses":["ACCOUNT_INFO"],"sector":"BANK"}
+                    """)
+                .with(TestUsers.admin())
+                .with(csrf()))
+        .andExpect(status().isOk());
+    return id;
   }
 
   /** KB국민은행 현업 담당자의 가입 신청 본문. 테스트마다 필요한 칸만 바꾼다. */
@@ -364,7 +397,8 @@ class SignUpControllerTest {
         .andExpect(jsonPath("$.code").value("ORGANIZATION_NOT_ALLOWED"))
         .andExpect(jsonPath("$.fieldErrors[0].field").value("organizationId"));
 
-    body.put("organizationId", organizationId("005"));
+    // 사용 중지된 기관. 시드에는 없어 하나 만들어 끈다.
+    body.put("organizationId", inactiveOrganizationId());
     body.put("businesses", List.of(Map.of("business", "ACCOUNT_INFO")));
     postJson("/api/v1/sign-ups", body)
         .andExpect(status().isBadRequest())

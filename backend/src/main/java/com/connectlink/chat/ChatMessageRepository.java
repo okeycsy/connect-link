@@ -30,6 +30,18 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
       @Param("email") String email,
       @Param("code") String organizationCode);
 
+  /** 이 메시지 뒤에 다른 사람이 보낸, 이 기관을 멘션한 메시지. 최근 것부터. */
+  @Query(
+      "select m from ChatMessage m join m.mentions n where m.room.id = :roomId"
+          + " and m.id > :after and m.senderEmail <> :email and n.organizationCode = :code"
+          + " order by m.id desc")
+  List<ChatMessage> findUnreadMentions(
+      @Param("roomId") Long roomId,
+      @Param("after") Long afterMessageId,
+      @Param("email") String email,
+      @Param("code") String organizationCode,
+      Pageable pageable);
+
   /** 보관 기간이 지났고 아직 첨부를 지우지 않은 첨부 메시지. */
   List<ChatMessage> findByWithAttachmentsTrueAndAttachmentsExpiredFalseAndCreatedAtBefore(
       LocalDateTime cutoff);

@@ -8,12 +8,10 @@ import com.connectlink.home.HomeContribution;
 import com.connectlink.home.Urgency;
 import com.connectlink.home.dto.HomeCard;
 import com.connectlink.home.dto.HomeCard.HomeCardItem;
-import com.connectlink.home.dto.HomeCard.HomeCardKpi;
-import com.connectlink.home.dto.HomeCard.HomeCardMetric;
-import com.connectlink.home.dto.HomeCard.HomeCardProgress;
 import com.connectlink.organization.Business;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +31,8 @@ public class TestPlanHomeCard implements HomeCardContributor {
 
   /** 이 날수 안에 끝나는 테스트는 임박이다. */
   private static final int SOON_DAYS = 3;
+
+  private static final DateTimeFormatter DATE = DateTimeFormatter.ISO_LOCAL_DATE;
 
   private final TestPlanRepository repository;
   private final TestPlanAccessPolicy accessPolicy;
@@ -70,9 +70,6 @@ public class TestPlanHomeCard implements HomeCardContributor {
     long overdue = running.stream().filter(p -> p.isOverdue(today)).count();
     List<HomeCardItem> items = new ArrayList<>();
     long unreported = 0;
-    long failed = 0;
-    long doneTargets = 0;
-    long totalTargets = 0;
     for (TestPlan plan : running) {
       int itemCount = plan.getItems().size();
       String subtitle;
@@ -81,8 +78,6 @@ public class TestPlanHomeCard implements HomeCardContributor {
             plan.getTargets().stream()
                 .filter(t -> itemCount > 0 && t.getCompletedCount() == itemCount)
                 .count();
-        doneTargets += completed;
-        totalTargets += plan.getTargets().size();
         subtitle =
             plan.getSubBusiness()
                 + " · 수행률 "
@@ -93,11 +88,10 @@ public class TestPlanHomeCard implements HomeCardContributor {
                 + plan.getTargets().size();
       } else {
         Optional<TestPlanTarget> own = plan.findTargetByCode(organizationCode);
-        int rate = own.map(TestPlanTarget::getProgressRate).orElse(0);
         var summary = own.map(t -> TestPlanService.toTargetSummary(t, plan.getItems()));
-        unreported += summary.map(s -> s.unreported()).orElse(itemCount);
-        failed += summary.map(s -> s.failed()).orElse(0);
-        subtitle = plan.getSubBusiness() + " · 우리 기관 수행률 " + rate + "%";
+        int ownUnreported = summary.map(s -> s.unreported()).orElse(itemCount);
+        unreported += ownUnreported;
+        subtitle = memberSubtitle(plan, own, summary.map(s -> s.failed()).orElse(0), ownUnreported);
       }
       if (items.size() < MAX_ITEMS) {
         items.add(
@@ -111,46 +105,52 @@ public class TestPlanHomeCard implements HomeCardContributor {
     }
 
     long awaiting = manager ? repository.countAwaitingReview(business) : 0;
-    List<HomeCardMetric> metrics = new ArrayList<>();
-    metrics.add(new HomeCardMetric("진행 중", running.size(), "건"));
-    if (manager) {
-      metrics.add(new HomeCardMetric("확인할 결과", awaiting, "건"));
-    } else {
-      metrics.add(new HomeCardMetric("미등록 요구사항", unreported, "건"));
-      metrics.add(new HomeCardMetric("오류", failed, "건"));
-    }
-    if (overdue > 0) {
-      metrics.add(new HomeCardMetric("기간 지남", overdue, "건"));
-    }
 
     String summary;
     if (running.isEmpty()) {
-      summary = "진행 중인 기관 테스트가 없습니다.";
+      summary = "진행 중 테스트 없음";
     } else if (manager && awaiting > 0) {
-      summary = "확인할 기관 결과가 " + awaiting + "건 있습니다. 미니 수행률과 의견을 남겨 주세요.";
+      summary = "확인할 결과 " + awaiting + "건";
     } else if (!manager && unreported > 0) {
-      summary = "아직 결과를 등록하지 않은 요구사항이 " + unreported + "건 있습니다.";
+      summary = "미등록 요구사항 " + unreported + "건";
     } else if (overdue > 0) {
-      summary = "수행 기간이 지난 테스트가 " + overdue + "건 있습니다.";
+      summary = "기간 지난 테스트 " + overdue + "건";
     } else {
-      summary = "진행 중인 기관 테스트 " + running.size() + "건입니다.";
+      summary = "진행 중 " + running.size() + "건";
     }
     boolean urgent = overdue > 0 || (manager ? awaiting > 0 : unreported > 0);
     Urgency urgency = overdue > 0 ? Urgency.OVERDUE : urgent ? Urgency.SOON : Urgency.NONE;
-    return new HomeContribution(
+    return HomeContribution.of(
         new HomeCard(
             key(),
-            key().getTitle(),
+            manager ? key().getTitle() : "요청받은 기관 테스트",
             HomeCardSource.REAL,
             urgency,
             summary,
-            metrics,
-            manager && totalTargets > 0
-                ? new HomeCardProgress(doneTargets, totalTargets, "완료 기관")
-                : null,
             items,
-            "/" + business.getSlug() + "/" + key().getFeature()),
-        new HomeCardKpi("진행 중 기관 테스트", running.size(), "건", urgent));
+            "/" + business.getSlug() + "/" + key().getFeature()));
+  }
+
+  /** 기관 담당자가 이 테스트에서 할 일. 테스트데이터 회신, 미등록 요구사항, 오류 순이고 할 일이 없으면 수행률이다. */
+  private static String memberSubtitle(
+      TestPlan plan, Optional<TestPlanTarget> own, int failed, int unreported) {
+    List<String> parts = new ArrayList<>();
+    boolean testDataDue =
+        plan.isTestDataRequested()
+            && own.map(t -> t.getTestDataStatus() == TestDataStatus.NOT_CREATED).orElse(false);
+    if (testDataDue) {
+      parts.add("테스트데이터 회신 " + DATE.format(plan.getTestDataDueDate()) + "까지");
+    }
+    if (unreported > 0) {
+      parts.add("결과 미등록 " + unreported + "건");
+    }
+    if (failed > 0) {
+      parts.add("오류 " + failed + "건");
+    }
+    if (parts.isEmpty()) {
+      parts.add("우리 기관 수행률 " + own.map(TestPlanTarget::getProgressRate).orElse(0) + "%");
+    }
+    return String.join(" · ", parts);
   }
 
   private static Urgency urgencyOf(TestPlan plan, LocalDate today) {

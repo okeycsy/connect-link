@@ -1,7 +1,9 @@
 package com.connectlink.organization;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -40,8 +42,7 @@ class OrganizationControllerTest {
         .andExpect(jsonPath("$", hasSize(11)))
         .andExpect(jsonPath("$[0].code").value("KFTC"))
         .andExpect(jsonPath("$[0].typeLabel").value("결제원"))
-        .andExpect(jsonPath("$[0].businesses", hasSize(4)))
-        .andExpect(jsonPath("$[*].code", not(org.hamcrest.Matchers.hasItem("005"))));
+        .andExpect(jsonPath("$[0].businesses", hasSize(4)));
   }
 
   @Test
@@ -86,12 +87,12 @@ class OrganizationControllerTest {
     mockMvc
         .perform(get("/api/v1/organizations/search").with(TestUsers.admin()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.totalElements").value(12))
+        .andExpect(jsonPath("$.totalElements").value(11))
         .andExpect(jsonPath("$.content[0].code").value("KFTC"))
         .andExpect(jsonPath("$.content[0].businesses", hasSize(4)))
         .andExpect(jsonPath("$.content[0].businesses[0].slug").value("account-info"))
         .andExpect(jsonPath("$.content[1].name").value("KB국민은행"))
-        .andExpect(jsonPath("$.content[11].typeLabel").value("이용기관"));
+        .andExpect(jsonPath("$.content[10].typeLabel").value("이용기관"));
   }
 
   @Test
@@ -99,7 +100,7 @@ class OrganizationControllerTest {
     mockMvc
         .perform(get("/api/v1/organizations/search").param("keyword", "은행").with(TestUsers.admin()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.totalElements").value(6));
+        .andExpect(jsonPath("$.totalElements").value(5));
     mockMvc
         .perform(
             get("/api/v1/organizations/search").param("keyword", "004").with(TestUsers.admin()))
@@ -119,12 +120,14 @@ class OrganizationControllerTest {
                 .param("active", "true")
                 .with(TestUsers.admin()))
         .andExpect(jsonPath("$.totalElements").value(5))
-        .andExpect(jsonPath("$.content[*].code", not(org.hamcrest.Matchers.hasItem("005"))));
+        .andExpect(jsonPath("$.content[*].active", everyItem(is(true))));
+    // 시드에는 사용 중지된 기관이 없어 하나 만들어 끈다.
+    String inactive = createInactive("OLDBANK", "옛은행");
     mockMvc
         .perform(
             get("/api/v1/organizations/search").param("active", "false").with(TestUsers.admin()))
-        .andExpect(jsonPath("$.totalElements").value(1))
-        .andExpect(jsonPath("$.content[0].code").value("005"));
+        .andExpect(jsonPath("$.content[*].code", org.hamcrest.Matchers.hasItem(inactive)))
+        .andExpect(jsonPath("$.content[*].active", everyItem(is(false))));
     mockMvc
         .perform(
             get("/api/v1/organizations/search").param("business", "nope").with(TestUsers.admin()))
@@ -471,5 +474,39 @@ class OrganizationControllerTest {
                 .content("{}")
                 .with(csrf()))
         .andExpect(status().isUnauthorized());
+  }
+
+  /** 참가기관 하나를 만들고 사용 중지로 바꾼 뒤 그 코드를 돌려준다. */
+  private String createInactive(String code, String name) throws Exception {
+    String created =
+        mockMvc
+            .perform(
+                post("/api/v1/organizations")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"code":"%s","name":"%s","type":"FINANCE_ORGANIZATION","businesses":["CMS"],"sector":"BANK"}
+                        """
+                            .formatted(code, name))
+                    .with(TestUsers.admin())
+                    .with(csrf()))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    long id = com.jayway.jsonpath.JsonPath.parse(created).read("$.id", Long.class);
+    mockMvc
+        .perform(
+            put("/api/v1/organizations/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"name":"%s","active":false,"businesses":["CMS"],"sector":"BANK"}
+                    """
+                        .formatted(name))
+                .with(TestUsers.admin())
+                .with(csrf()))
+        .andExpect(status().isOk());
+    return code;
   }
 }

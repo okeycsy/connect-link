@@ -87,7 +87,11 @@ export function SignUpApplicationTable({
             </Table.Td>
             <Table.Td data-label="기관">
               <Group gap="sm" wrap="nowrap">
-                <OrgMonogram name={a.organizationName} type={a.organizationType} />
+                <OrgMonogram
+                  name={a.organizationName}
+                  type={a.organizationType}
+                  code={a.organizationCode}
+                />
                 <div>
                   <Text size="sm">{a.organizationName}</Text>
                   {!a.emailDomainMatches && (

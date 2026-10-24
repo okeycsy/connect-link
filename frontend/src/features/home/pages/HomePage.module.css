@@ -30,28 +30,8 @@
   font-weight: 500;
 }
 
-.kpi {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 20px 22px;
-  border-radius: 22px;
+/* 할 일이 없을 때: 흰 면 위에 빈 안내 */
+.empty {
+  border-radius: 24px;
   background: var(--cl-card);
-}
-
-.kpiValue {
-  font-size: 40px;
-  font-weight: 700;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-/* 급한 KPI 는 빨간 점 하나로만 표시한다. */
-.kpiDot {
-  flex: 0 0 auto;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--mantine-color-red-6);
-  box-shadow: 0 0 0 3px var(--mantine-color-red-1);
 }
