@@ -95,7 +95,8 @@ public class UpdateCampaignHomeCard implements HomeCardContributor {
                             : "담당자 " + o.contactCount() + "명",
                         end,
                         urgency,
-                        campaignLink))
+                        campaignLink,
+                        o.organizationCode()))
             .toList();
     return HomeContribution.of(
         card(

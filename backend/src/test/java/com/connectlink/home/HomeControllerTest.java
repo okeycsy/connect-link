@@ -86,7 +86,11 @@ class HomeControllerTest {
                 .with(TestUsers.as(TestUsers.KFTC_ACCOUNT_INFO)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.cards[*].key").value(not(hasItem("CHAT_MENTIONS"))))
-        .andExpect(jsonPath("$.cards[*].key").value(hasItem("SUSPENSIONS")));
+        .andExpect(jsonPath("$.cards[*].key").value(hasItem("SUSPENSIONS")))
+        // 기관 하나를 가리키는 줄은 기관 코드를 실어 화면이 로고를 붙인다.
+        .andExpect(
+            jsonPath("$.cards[?(@.key == 'SUSPENSIONS')].items[0].organizationCode")
+                .value(hasItem(org.hamcrest.Matchers.notNullValue())));
   }
 
   @Test

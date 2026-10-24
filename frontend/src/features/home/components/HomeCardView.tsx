@@ -2,6 +2,7 @@ import { Anchor, Badge, Box, Card, Group, Stack, Text, Tooltip } from '@mantine/
 import { Link } from 'react-router-dom';
 
 import { formatDate } from '../../../shared/format';
+import { OrgLogo, hasOrgLogo } from '../../../shared/OrgLogo';
 import type { HomeCard, HomeItem } from '../hooks';
 import classes from './HomeCardView.module.css';
 import { SuspensionUpcoming } from './SuspensionUpcoming';
@@ -88,10 +89,15 @@ function ItemRow({ item }: { item: HomeItem }) {
   const content = (
     <Group justify="space-between" wrap="nowrap" className={classes.item}>
       <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
-        <Box
-          className={classes.dot}
-          data-urgency={item.urgency !== 'NONE' ? item.urgency : undefined}
-        />
+        {/* 기관 하나를 가리키는 줄은 상태 점 대신 기관 로고(있을 때만)를 둔다. SHY 요청(2026-10-24). */}
+        {hasOrgLogo(item.organizationCode) ? (
+          <OrgLogo code={item.organizationCode} size={22} />
+        ) : (
+          <Box
+            className={classes.dot}
+            data-urgency={item.urgency !== 'NONE' ? item.urgency : undefined}
+          />
+        )}
         <div style={{ minWidth: 0 }}>
           <Text size="sm" fw={600} truncate>
             {item.title}

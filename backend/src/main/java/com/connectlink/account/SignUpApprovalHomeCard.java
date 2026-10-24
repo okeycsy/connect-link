@@ -53,7 +53,8 @@ public class SignUpApprovalHomeCard implements HomeCardContributor {
                         a.jobRoleLabel() + " · " + (a.emailDomainMatches() ? "도메인 일치" : "도메인 다름"),
                         a.appliedAt().toLocalDate(),
                         Urgency.NONE,
-                        SignUpReviewService.linkOf(business, a.id())))
+                        SignUpReviewService.linkOf(business, a.id()),
+                        a.organizationCode()))
             .toList();
     return HomeContribution.of(
         new HomeCard(
