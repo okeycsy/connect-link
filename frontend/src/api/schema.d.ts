@@ -3408,7 +3408,7 @@ export interface components {
         | 'SIGNUP_APPROVAL';
       title: string;
       /** @enum {string} */
-      source: 'REAL' | 'SAMPLE' | 'UNAVAILABLE';
+      source: 'REAL' | 'SAMPLE';
       /** @enum {string} */
       urgency: 'NONE' | 'SOON' | 'OVERDUE';
       summary?: string | null;
@@ -3425,13 +3425,6 @@ export interface components {
       /** @enum {string} */
       urgency: 'NONE' | 'SOON' | 'OVERDUE';
       link?: string | null;
-    };
-    HomeCardKpi: {
-      label: string;
-      /** Format: int64 */
-      value: number;
-      unit: string;
-      urgent: boolean;
     };
     HomeCardMetric: {
       label: string;
@@ -3451,7 +3444,6 @@ export interface components {
       business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
       businessLabel: string;
       userName: string;
-      kpis: components['schemas']['HomeCardKpi'][];
       cards: components['schemas']['HomeCard'][];
     };
     HealthResponse: {

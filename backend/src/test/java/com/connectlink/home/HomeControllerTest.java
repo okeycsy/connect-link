@@ -35,7 +35,8 @@ class HomeControllerTest {
         .andExpect(jsonPath("$.cards[0].urgency").value("OVERDUE"))
         .andExpect(jsonPath("$.cards[0].link").value("/account-info/contacts"))
         .andExpect(jsonPath("$.cards[?(@.items.length() == 0)]").isEmpty())
-        .andExpect(jsonPath("$.cards[?(@.key == 'SUSPENSIONS')].title").value(hasItem("다가오는 일시중단")));
+        .andExpect(
+            jsonPath("$.cards[?(@.key == 'SUSPENSIONS')].title").value(hasItem("다가오는 일시중단")));
   }
 
   @Test

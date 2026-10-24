@@ -65,8 +65,7 @@ final class SuspensionSpecifications {
   }
 
   /** 지금(now) 진행 중이거나 until 전에 시작하는 건. 홈의 다가오는 일시중단이 쓴다. */
-  static Specification<Suspension> activeOrStartingBefore(
-      LocalDateTime now, LocalDateTime until) {
+  static Specification<Suspension> activeOrStartingBefore(LocalDateTime now, LocalDateTime until) {
     return (root, query, cb) ->
         cb.and(cb.greaterThan(root.get("endAt"), now), cb.lessThan(root.get("startAt"), until));
   }

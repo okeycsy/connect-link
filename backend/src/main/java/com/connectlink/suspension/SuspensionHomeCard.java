@@ -23,9 +23,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 홈 "다가오는 일시중단" 카드. 지금 진행 중인 건과 오늘부터 {@link #DAYS_AHEAD}일 안에 시작하는 건을 시작 순으로 보인다. 지난 날은 보이지 않고, 일시중단이 몰리는
- * 주말도 평일과 같이 넣는다(SHY 요청, 2026-10-24). 결제원 담당자는 그 업무 전 기관을, 기관 담당자는 자기 기관 것만 본다. 진행 중이거나 오늘 시작하는 건은
- * 임박이다. 결제원 담당자에게는 아직 확정되지 않은 건 수를 함께 보인다. 그 밖의 사용자에게는 카드가 없다.
+ * 홈 "다가오는 일시중단" 카드. 지금 진행 중인 건과 오늘부터 {@link #DAYS_AHEAD}일 안에 시작하는 건을 시작 순으로 보인다. 지난 날은 보이지 않고,
+ * 일시중단이 몰리는 주말도 평일과 같이 넣는다(SHY 요청, 2026-10-24). 결제원 담당자는 그 업무 전 기관을, 기관 담당자는 자기 기관 것만 본다. 진행 중이거나
+ * 오늘 시작하는 건은 임박이다. 결제원 담당자에게는 아직 확정되지 않은 건 수를 함께 보인다. 그 밖의 사용자에게는 카드가 없다.
  */
 @Component
 @Transactional(readOnly = true)
@@ -141,7 +141,8 @@ public class SuspensionHomeCard implements HomeCardContributor {
   private static String timeRange(Suspension s) {
     LocalDateTime start = s.getStartAt();
     LocalDateTime end = s.getEndAt();
-    String endText = end.toLocalDate().equals(start.toLocalDate()) ? end.format(TIME) : end.format(DATE_TIME);
+    String endText =
+        end.toLocalDate().equals(start.toLocalDate()) ? end.format(TIME) : end.format(DATE_TIME);
     return start.format(TIME) + " ~ " + endText;
   }
 }

@@ -2,7 +2,8 @@ import { Box, Grid, Group, SimpleGrid, Skeleton, Stack, Text, Title } from '@man
 import { useParams } from 'react-router-dom';
 
 import { HomeCardView } from '../components/HomeCardView';
-import { useHome, type HomeCard, type HomeKpi } from '../hooks';
+import { StateView } from '../../../shared/state/StateView';
+import { useHome, type HomeCard } from '../hooks';
 import classes from './HomePage.module.css';
 
 /** 왼쪽 큰 칸에 두는 자리. 일시중단을 먼저 읽히게 한다. SHY 요청(2026-10-21). */
@@ -13,8 +14,9 @@ const SIDE_KEYS: HomeCard['key'][] = ['OPINION_REPLIES'];
 const COMPACT_KEYS: HomeCard['key'][] = ['CONTACT_CONFIRM'];
 
 /**
- * 홈: "지금 할 일". 파스텔 번짐 위에 인사말과 흰 KPI 타일 네 개.
- * 그 아래 왼쪽 큰 칸은 이번 주 일시중단, 오른쪽은 회신 대기 의견 요청이다. 두 칸은 높이를 맞춰 한 화면에 들어온다.
+ * 홈: "지금 할 일". 파스텔 번짐 위에 인사말, 그 아래 카드.
+ * 건수 요약(KPI 타일)은 두지 않고, 서버가 이 사람에게 할 일이 있는 카드만 준다. SHY 요청(2026-10-24).
+ * 왼쪽 큰 칸은 다가오는 일시중단, 오른쪽은 회신 대기 의견 요청이다. 둘 중 하나만 있으면 한 줄을 다 쓴다.
  * 아래 줄은 나머지 카드이고 확인이 필요한 담당자는 끝에 작게 둔다.
  * 최근 알림은 홈에 두지 않고 상단 바의 알림 벨에서 본다. SHY 요청(2026-10-21).
  * 카드 내용은 서버(/api/v1/home)가 자리별 기여자에게서 모아 준다. 업무 영역(레일)마다 다르다.
@@ -51,12 +53,6 @@ export function HomePage() {
         </Stack>
       </Group>
 
-      <SimpleGrid cols={{ base: 2, md: 4 }} spacing={14}>
-        {data
-          ? data.kpis.map((k) => <KpiTile key={k.label} kpi={k} />)
-          : [0, 1, 2, 3].map((i) => <Skeleton key={i} h={112} radius={22} />)}
-      </SimpleGrid>
-
       {isError && (
         <Text c="red" size="sm">
           홈 정보를 불러오지 못했습니다.
@@ -69,22 +65,34 @@ export function HomePage() {
             <Skeleton key={i} h={180} radius="md" />
           ))}
         </SimpleGrid>
+      ) : cards.length === 0 ? (
+        <Box className={classes.empty}>
+          <StateView
+            kind="empty"
+            title="지금 할 일이 없습니다"
+            description="담당하는 연락처, 의견 요청, 기관 테스트, 일시중단에 할 일이 생기면 여기에 모입니다."
+          />
+        </Box>
       ) : (
         <Stack gap="md" data-testid="home-cards">
-          <Grid gutter="md">
-            {main && (
-              <Grid.Col span={{ base: 12, md: 7 }}>
-                <HomeCardView card={main} tall />
-              </Grid.Col>
-            )}
-            <Grid.Col span={{ base: 12, md: 5 }}>
-              <Stack gap="md" h="100%">
-                {side.map((c) => (
-                  <HomeCardView key={c.key} card={c} stacked />
-                ))}
-              </Stack>
-            </Grid.Col>
-          </Grid>
+          {(main || side.length > 0) && (
+            <Grid gutter="md">
+              {main && (
+                <Grid.Col span={{ base: 12, md: side.length > 0 ? 7 : 12 }}>
+                  <HomeCardView card={main} tall />
+                </Grid.Col>
+              )}
+              {side.length > 0 && (
+                <Grid.Col span={{ base: 12, md: main ? 5 : 12 }}>
+                  <Stack gap="md" h="100%">
+                    {side.map((c) => (
+                      <HomeCardView key={c.key} card={c} stacked />
+                    ))}
+                  </Stack>
+                </Grid.Col>
+              )}
+            </Grid>
+          )}
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="md">
             {bottom.map((c) => (
               <HomeCardView key={c.key} card={c} />
@@ -107,24 +115,4 @@ function formatToday() {
     weekday: 'long',
     timeZone: 'Asia/Seoul',
   });
-}
-
-/** KPI 타일: 흰 면 radius 22, 이름(보조 글자) + 큰 숫자(40px) + 단위. 급하면 이름 앞에 빨간 점 하나. */
-function KpiTile({ kpi }: { kpi: HomeKpi }) {
-  return (
-    <Box className={classes.kpi} data-urgent={kpi.urgent || undefined}>
-      <Group gap={6} wrap="nowrap">
-        {kpi.urgent && <Box className={classes.kpiDot} aria-label="급함" />}
-        <Text size="md" c="dimmed" truncate>
-          {kpi.label}
-        </Text>
-      </Group>
-      <Group gap={4} align="baseline">
-        <Text className={classes.kpiValue}>{kpi.value}</Text>
-        <Text size="xl" fw={500}>
-          {kpi.unit}
-        </Text>
-      </Group>
-    </Box>
-  );
 }
