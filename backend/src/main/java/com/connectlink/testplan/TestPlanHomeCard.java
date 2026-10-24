@@ -8,7 +8,6 @@ import com.connectlink.home.HomeContribution;
 import com.connectlink.home.Urgency;
 import com.connectlink.home.dto.HomeCard;
 import com.connectlink.home.dto.HomeCard.HomeCardItem;
-import com.connectlink.home.dto.HomeCard.HomeCardKpi;
 import com.connectlink.home.dto.HomeCard.HomeCardMetric;
 import com.connectlink.home.dto.HomeCard.HomeCardProgress;
 import com.connectlink.organization.Business;
@@ -137,7 +136,7 @@ public class TestPlanHomeCard implements HomeCardContributor {
     }
     boolean urgent = overdue > 0 || (manager ? awaiting > 0 : unreported > 0);
     Urgency urgency = overdue > 0 ? Urgency.OVERDUE : urgent ? Urgency.SOON : Urgency.NONE;
-    return new HomeContribution(
+    return HomeContribution.of(
         new HomeCard(
             key(),
             key().getTitle(),
@@ -149,8 +148,7 @@ public class TestPlanHomeCard implements HomeCardContributor {
                 ? new HomeCardProgress(doneTargets, totalTargets, "완료 기관")
                 : null,
             items,
-            "/" + business.getSlug() + "/" + key().getFeature()),
-        new HomeCardKpi("진행 중 기관 테스트", running.size(), "건", urgent));
+            "/" + business.getSlug() + "/" + key().getFeature()));
   }
 
   private static Urgency urgencyOf(TestPlan plan, LocalDate today) {

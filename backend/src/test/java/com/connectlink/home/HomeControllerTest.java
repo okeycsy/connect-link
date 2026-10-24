@@ -1,5 +1,6 @@
 package com.connectlink.home;
 
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -21,35 +22,32 @@ class HomeControllerTest {
   @Autowired private MockMvc mockMvc;
 
   @Test
-  void 업무_영역의_카드_여섯_장과_KPI_네_개를_자리_순서대로_돌려준다() throws Exception {
+  void 할_일이_있는_카드만_자리_순서대로_돌려주고_건수_요약은_없다() throws Exception {
     mockMvc
         .perform(get("/api/v1/home").param("business", "account-info").with(TestUsers.admin()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.business").value("ACCOUNT_INFO"))
         .andExpect(jsonPath("$.businessLabel").value("계좌통합관리"))
         .andExpect(jsonPath("$.userName").value("데모 관리자"))
-        .andExpect(jsonPath("$.cards", hasSize(6)))
+        .andExpect(jsonPath("$.kpis").doesNotExist())
         .andExpect(jsonPath("$.cards[0].key").value("CONTACT_CONFIRM"))
         .andExpect(jsonPath("$.cards[0].source").value("REAL"))
         .andExpect(jsonPath("$.cards[0].urgency").value("OVERDUE"))
         .andExpect(jsonPath("$.cards[0].link").value("/account-info/contacts"))
-        .andExpect(jsonPath("$.cards[5].key").value("SIGNUP_APPROVAL"))
-        .andExpect(jsonPath("$.cards[5].source").value("REAL"))
-        .andExpect(jsonPath("$.cards[5].link").value("/account-info/admin/sign-ups"))
-        .andExpect(jsonPath("$.kpis", hasSize(4)))
-        .andExpect(jsonPath("$.kpis[0].label").value("확인 필요 담당자"))
-        .andExpect(jsonPath("$.kpis[0].urgent").value(true));
+        .andExpect(jsonPath("$.cards[?(@.items.length() == 0)]").isEmpty())
+        .andExpect(jsonPath("$.cards[?(@.key == 'SUSPENSIONS')].title").value(hasItem("다가오는 일시중단")));
   }
 
   @Test
-  void 업무_영역에_따라_숫자가_다르다() throws Exception {
+  void 할_일이_없는_카드는_뺀다() throws Exception {
     mockMvc
         .perform(get("/api/v1/home").param("business", "cms").with(TestUsers.admin()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.businessLabel").value("CMS"))
         // CMS 는 차민결(우리은행) 한 명이 6개월을 넘겼고, 진행 중인 정기 변경 주간이 없다(연락처 시드).
-        .andExpect(jsonPath("$.kpis[0].value").value(1))
-        .andExpect(jsonPath("$.cards[1].link").value("/cms/contacts/update-campaigns"));
+        .andExpect(jsonPath("$.cards[0].key").value("CONTACT_CONFIRM"))
+        .andExpect(jsonPath("$.cards[0].items", hasSize(1)))
+        .andExpect(jsonPath("$.cards[?(@.key == 'UPDATE_CAMPAIGN')]").isEmpty());
   }
 
   @Test

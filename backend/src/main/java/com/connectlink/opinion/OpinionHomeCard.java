@@ -8,7 +8,6 @@ import com.connectlink.home.HomeContribution;
 import com.connectlink.home.Urgency;
 import com.connectlink.home.dto.HomeCard;
 import com.connectlink.home.dto.HomeCard.HomeCardItem;
-import com.connectlink.home.dto.HomeCard.HomeCardKpi;
 import com.connectlink.home.dto.HomeCard.HomeCardMetric;
 import com.connectlink.home.dto.HomeCard.HomeCardProgress;
 import com.connectlink.organization.Business;
@@ -103,7 +102,7 @@ public class OpinionHomeCard implements HomeCardContributor {
     }
     Urgency urgency = worst(open, today);
     int rate = targets == 0 ? 0 : Math.round(replied * 100f / targets);
-    return new HomeContribution(
+    return HomeContribution.of(
         new HomeCard(
             key(),
             key().getTitle(),
@@ -116,8 +115,7 @@ public class OpinionHomeCard implements HomeCardContributor {
                 new HomeCardMetric("회신중", open.size(), "건"), new HomeCardMetric("회신율", rate, "%")),
             open.isEmpty() ? null : new HomeCardProgress(replied, targets, "기관 회신"),
             items,
-            "/" + business.getSlug() + "/" + key().getFeature()),
-        new HomeCardKpi("회신 대기 의견 요청", open.size(), "건", urgency == Urgency.OVERDUE));
+            "/" + business.getSlug() + "/" + key().getFeature()));
   }
 
   private HomeContribution forReplier(CurrentUser user, Business business, LocalDate today) {
@@ -140,7 +138,7 @@ public class OpinionHomeCard implements HomeCardContributor {
                         OpinionNotifier.linkOf(r)))
             .toList();
     Urgency urgency = worst(waiting, today);
-    return new HomeContribution(
+    return HomeContribution.of(
         new HomeCard(
             key(),
             "회신할 의견 요청",
@@ -154,8 +152,7 @@ public class OpinionHomeCard implements HomeCardContributor {
                 new HomeCardMetric("제출", targeted.size() - waiting.size(), "건")),
             null,
             items,
-            "/" + business.getSlug() + "/" + key().getFeature()),
-        new HomeCardKpi("회신할 의견 요청", waiting.size(), "건", urgency != Urgency.NONE));
+            "/" + business.getSlug() + "/" + key().getFeature()));
   }
 
   private boolean submittedBy(CurrentUser user, OpinionRequest request) {

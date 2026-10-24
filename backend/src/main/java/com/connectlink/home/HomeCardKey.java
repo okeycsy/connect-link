@@ -10,7 +10,7 @@ public enum HomeCardKey {
   UPDATE_CAMPAIGN("정기 변경 진행률", "contacts"),
   OPINION_REPLIES("회신 대기 의견 요청", "opinions"),
   TEST_PROGRESS("진행 중 기관 테스트", "tests"),
-  SUSPENSIONS("이번 주 일시중단", "suspensions"),
+  SUSPENSIONS("다가오는 일시중단", "suspensions"),
   SIGNUP_APPROVAL("가입 승인 대기", "admin/sign-ups");
 
   private final String title;

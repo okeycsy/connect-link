@@ -8,7 +8,6 @@ import com.connectlink.home.HomeContribution;
 import com.connectlink.home.Urgency;
 import com.connectlink.home.dto.HomeCard;
 import com.connectlink.home.dto.HomeCard.HomeCardItem;
-import com.connectlink.home.dto.HomeCard.HomeCardKpi;
 import com.connectlink.home.dto.HomeCard.HomeCardMetric;
 import com.connectlink.organization.Business;
 import java.time.Clock;
@@ -90,7 +89,7 @@ public class ContactConfirmHomeCard implements HomeCardContributor {
         overdue == 0
             ? "최근 확인일이 6개월을 넘긴 담당자가 없습니다."
             : "최근 확인일이 6개월을 넘긴 담당자가 " + overdue + "명 있습니다. 고치거나 \"변동 없음\" 으로 확인해 주세요.";
-    return new HomeContribution(
+    return HomeContribution.of(
         new HomeCard(
             key(),
             key().getTitle(),
@@ -102,7 +101,6 @@ public class ContactConfirmHomeCard implements HomeCardContributor {
                 new HomeCardMetric("전체 담당자", total, "명")),
             null,
             items,
-            link),
-        new HomeCardKpi("확인 필요 담당자", overdue, "명", overdue > 0));
+            link));
   }
 }

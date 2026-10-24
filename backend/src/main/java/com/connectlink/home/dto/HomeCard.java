@@ -10,7 +10,8 @@ import java.util.List;
 /**
  * 홈 카드 한 장. 기능 모듈이 무엇을 채우든 화면은 이 모양만 안다.
  *
- * @param urgency 카드 전체의 급한 정도. 가장 급한 카드가 홈에서 크게 보인다
+ * @param urgency 카드 전체의 급한 정도
+ * @param items 할 일 줄. 비어 있으면 이 사람에게 할 일이 없는 카드라 홈에 나가지 않는다
  * @param link "모두 보기" 가 여는 주소(예: /account-info/contacts)
  */
 public record HomeCard(
@@ -37,21 +38,4 @@ public record HomeCard(
       @Schema(nullable = true) LocalDate dueAt,
       Urgency urgency,
       @Schema(nullable = true) String link) {}
-
-  /** 홈 머리의 KPI 타일에 올리는 숫자. 카드와 함께 {@code HomeContribution} 으로 전달된다. */
-  public record HomeCardKpi(String label, long value, String unit, boolean urgent) {}
-
-  /** 기여자가 없는 자리. */
-  public static HomeCard unavailable(HomeCardKey key, String link) {
-    return new HomeCard(
-        key,
-        key.getTitle(),
-        HomeCardSource.UNAVAILABLE,
-        Urgency.NONE,
-        null,
-        List.of(),
-        null,
-        List.of(),
-        link);
-  }
 }

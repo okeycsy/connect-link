@@ -710,7 +710,9 @@ class SuspensionControllerTest {
   void 홈_일시중단_카드는_실제_데이터다() throws Exception {
     send(get("/api/v1/home").param("business", "account-info"), null, hong())
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.cards[?(@.key == 'SUSPENSIONS')].source").value(hasItem("REAL")));
+        .andExpect(jsonPath("$.cards[?(@.key == 'SUSPENSIONS')].source").value(hasItem("REAL")))
+        .andExpect(
+            jsonPath("$.cards[?(@.key == 'SUSPENSIONS')].title").value(hasItem("다가오는 일시중단")));
   }
 
   @Test
