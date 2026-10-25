@@ -559,6 +559,40 @@ class SuspensionControllerTest {
   }
 
   @Test
+  void 처음_확정하면_등록한_사람과_기관_담당자_연락처에_메일이_간다() throws Exception {
+    Map<String, Object> body = form("확정 메일 작업");
+    body.put(
+        "contacts",
+        List.of(
+            contact("김민준", "010-0000-2101", "kim.minjun@kb.example.com"),
+            contact("한예린", "010-0000-2102", "han.yerin@kb.example.com"),
+            contact("홍성민", "010-0000-0001", "hong.sungmin@kftc.example.com")));
+    Long id =
+        json(send(post(BASE), body, kim()).andExpect(status().isCreated())).get("id").asLong();
+    long before = outboxRepository.count();
+
+    send(post(BASE + "/" + id + "/confirmation"), Map.of("handover", "차단합니다."), hong())
+        .andExpect(status().isOk());
+
+    List<NotificationOutbox> mails =
+        outboxRepository.findAll().stream()
+            .skip(before)
+            .filter(o -> o.getChannel() == NotificationChannel.EMAIL)
+            .filter(o -> o.getSubject().contains("확정되었습니다"))
+            .toList();
+    // 등록한 김민준(알림 센터와 메일)과 연락처의 한예린에게 한 번씩. 확정한 홍성민은 연락처에 있어도 받지 않는다.
+    assertThat(mails)
+        .extracting(NotificationOutbox::getRecipient)
+        .containsExactlyInAnyOrder("kim.minjun@kb.example.com", "han.yerin@kb.example.com");
+
+    // 사항만 고치면 다시 보내지 않는다.
+    long afterFirst = outboxRepository.count();
+    send(post(BASE + "/" + id + "/confirmation"), Map.of("handover", "차단을 풉니다."), hong())
+        .andExpect(status().isOk());
+    assertThat(outboxRepository.count()).isEqualTo(afterFirst);
+  }
+
+  @Test
   void 기관_담당자는_확인하거나_확정하지_못한다() throws Exception {
     Long id = createAsKim("기관 확정 거부");
     send(post(BASE + "/" + id + "/review"), null, kim()).andExpect(status().isForbidden());

@@ -3,6 +3,7 @@ import {
   Checkbox,
   Group,
   Modal,
+  Radio,
   Select,
   Stack,
   Text,
@@ -13,9 +14,9 @@ import { DatePickerInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { fieldErrorsOf } from '../../../api/client';
-import { useOpinionRequests } from '../../opinion/hooks';
 import type { BusinessResponse } from '../../organization/hooks';
 import { NOTICE_CATEGORY_LABEL, type Notice, type NoticeCategory, useSaveNotice } from '../hooks';
 
@@ -36,7 +37,8 @@ interface Values {
   content: string;
   pinned: boolean;
   effectiveDate: string | null;
-  opinionRequestId: string | null;
+  /** 회신 받기(예/아니오). 예로 새로 정하면 저장한 뒤 의견 요청 작성 화면으로 간다. */
+  reply: 'YES' | 'NO';
 }
 
 /** 공지·자료실 글 쓰기·고치기. 범위(이 업무/전 업무 공통)는 새 글에서만 고른다. 첨부는 저장한 뒤 글 화면에서 올린다. */
@@ -50,20 +52,11 @@ export function NoticeFormModal({ opened, onClose, business, notice, canPostComm
       content: '',
       pinned: false,
       effectiveDate: null,
-      opinionRequestId: null,
+      reply: 'NO',
     },
   });
-  // 이어 둘 의견 요청 후보: 이 업무의 회신중·작성중 요청.
-  const openRequests = useOpinionRequests({
-    business: opened ? business.slug : '',
-    status: 'OPEN',
-    size: 50,
-  });
-  const draftRequests = useOpinionRequests({
-    business: opened ? business.slug : '',
-    status: 'DRAFT',
-    size: 50,
-  });
+  const navigate = useNavigate();
+  const linked = notice?.opinionRequest ?? null;
 
   useEffect(() => {
     if (!opened) return;
@@ -74,7 +67,7 @@ export function NoticeFormModal({ opened, onClose, business, notice, canPostComm
       content: notice?.content ?? '',
       pinned: notice?.pinned ?? false,
       effectiveDate: notice?.effectiveDate ?? null,
-      opinionRequestId: notice?.opinionRequest ? String(notice.opinionRequest.id) : null,
+      reply: notice?.opinionRequest ? 'YES' : 'NO',
     });
     form.resetDirty();
     save.reset();
@@ -85,15 +78,6 @@ export function NoticeFormModal({ opened, onClose, business, notice, canPostComm
   const fieldErrors = fieldErrorsOf(save.error);
   const common = form.values.scope === 'COMMON';
   const regulation = form.values.category !== 'NOTICE';
-  const opinionOptions = [
-    { group: '회신중', items: openRequests.data?.content ?? [] },
-    { group: '작성중', items: draftRequests.data?.content ?? [] },
-  ]
-    .filter((g) => g.items.length > 0)
-    .map((g) => ({
-      group: g.group,
-      items: g.items.map((r) => ({ value: String(r.id), label: r.title })),
-    }));
   const categoryOptions = (Object.keys(NOTICE_CATEGORY_LABEL) as NoticeCategory[])
     .filter((c) => !common || c === 'NOTICE')
     .map((c) => ({ value: c, label: NOTICE_CATEGORY_LABEL[c] }));
@@ -109,17 +93,23 @@ export function NoticeFormModal({ opened, onClose, business, notice, canPostComm
           content: v.content,
           pinned: v.pinned,
           effectiveDate: v.category === 'NOTICE' ? null : v.effectiveDate,
-          opinionRequestId:
-            v.scope === 'COMMON' || !v.opinionRequestId ? null : Number(v.opinionRequestId),
+          // 이미 이은 요청은 예면 그대로 두고 아니오면 끊는다. 새로 예를 고르면 요청을 만든 뒤 잇는다.
+          opinionRequestId: v.scope !== 'COMMON' && v.reply === 'YES' && linked ? linked.id : null,
         },
       },
       {
-        onSuccess: () => {
+        onSuccess: (saved) => {
+          const startRequest = v.scope !== 'COMMON' && v.reply === 'YES' && !linked;
           notifications.show({
-            message: notice ? '글을 고쳤습니다.' : '글을 올렸습니다.',
+            message: startRequest
+              ? '글을 올렸습니다. 회신 받을 의견 요청을 만들어 주세요.'
+              : notice
+                ? '글을 고쳤습니다.'
+                : '글을 올렸습니다.',
             color: 'clay',
           });
           onClose();
+          if (startRequest) navigate(`/${business.slug}/opinions/new?notice=${saved.id}`);
         },
       },
     ),
@@ -184,17 +174,20 @@ export function NoticeFormModal({ opened, onClose, business, notice, canPostComm
             />
           )}
           {!common && (
-            <Select
-              label="참석·의견 회신 받기"
-              description="회의 참석 여부처럼 기관 회신이 필요하면 의견 요청을 먼저 만들고 여기서 이어 주세요. 기관은 글에서 바로 회신합니다."
-              placeholder="잇지 않음"
-              clearable
-              searchable
-              data={opinionOptions}
-              nothingFoundMessage="이 업무의 회신중·작성중 의견 요청이 없습니다"
-              {...form.getInputProps('opinionRequestId')}
-              error={fieldErrors.opinionRequestId}
-            />
+            <Radio.Group
+              label="회신 받기"
+              description={
+                linked
+                  ? `"${linked.title}" 의견 요청으로 회신을 받고 있습니다. 아니오로 바꾸면 글에서 회신 칸이 빠집니다(의견 요청은 남습니다).`
+                  : '회의 참석 여부처럼 기관 회신이 필요하면 예를 고르세요. 올린 뒤 의견 요청 작성 화면으로 넘어갑니다.'
+              }
+              {...form.getInputProps('reply')}
+            >
+              <Group gap="lg" mt={6}>
+                <Radio value="YES" label="예" />
+                <Radio value="NO" label="아니오" />
+              </Group>
+            </Radio.Group>
           )}
           <Checkbox
             label="목록 맨 위에 고정"

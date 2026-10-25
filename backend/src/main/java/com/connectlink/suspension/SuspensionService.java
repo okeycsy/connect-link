@@ -328,7 +328,7 @@ public class SuspensionService {
     return toDetail(user, suspension);
   }
 
-  /** 결제원 담당자가 조치 및 인수인계 사항을 쓰고 확정한다. 확정한 건이면 사항만 고친다. 등록한 사람에게 알린다. */
+  /** 결제원 담당자가 조치 및 인수인계 사항을 쓰고 확정한다. 확정한 건이면 사항만 고친다. 처음 확정하면 등록한 사람과 기관 담당자 연락처에 알린다. */
   public SuspensionDetailResponse confirm(CurrentUser user, Long id, String handover) {
     Suspension suspension = load(id);
     ensureNotCompleted(suspension);
@@ -344,9 +344,13 @@ public class SuspensionService {
         before,
         before == SuspensionStatus.CONFIRMED ? "조치 사항 수정" : "확정",
         Objects.equals(handoverBefore, text) ? null : new String[] {handoverBefore, text});
-    if (before != SuspensionStatus.CONFIRMED
-        && !suspension.getRegistrantEmail().equals(user.email())) {
-      notifier.confirmed(suspension, toRegistrant(suspension));
+    if (before != SuspensionStatus.CONFIRMED) {
+      notifier.confirmed(
+          suspension,
+          suspension.getRegistrantEmail().equals(user.email())
+              ? Map.of()
+              : toRegistrant(suspension),
+          user.email());
     }
     return toDetail(user, suspension);
   }
