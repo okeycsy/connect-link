@@ -12,8 +12,6 @@ interface Props {
   items: HomeItem[];
   /** 기준일. 테스트에서만 넘긴다. */
   today?: dayjs.Dayjs;
-  /** 큰 칸에 놓여 남는 높이를 목록이 채운다. */
-  fill?: boolean;
 }
 
 interface DayGroup {
@@ -33,9 +31,9 @@ function seoulToday() {
 /**
  * 다가오는 일시중단: 서버가 준 건(진행 중 + 오늘부터 2주 안에 시작)을 날짜별로 묶어 위에서부터 놓는다.
  * 지난 날은 칸을 두지 않고, 이미 시작한 건은 맨 위 "진행 중" 묶음이다. 일시중단이 몰리는 토·일은 날짜 옆에 주말 배지를 단다.
- * 건이 없는 날은 그리지 않는다. 묶음은 카드 항목의 `dueAt`(시작일)으로만 정한다. SHY 요청(2026-10-24).
+ * 건이 없는 날은 그리지 않는다. 홈 카드는 앞의 3건만 넘긴다(SHY 요청, 2026-10-25). 묶음은 카드 항목의 `dueAt`(시작일)으로만 정한다. SHY 요청(2026-10-24).
  */
-export function SuspensionUpcoming({ items, today = seoulToday(), fill = false }: Props) {
+export function SuspensionUpcoming({ items, today = seoulToday() }: Props) {
   const todayKey = today.format('YYYY-MM-DD');
   const groups: DayGroup[] = [];
   for (const it of items) {
@@ -53,15 +51,10 @@ export function SuspensionUpcoming({ items, today = seoulToday(), fill = false }
   );
 
   return (
-    <Stack
-      gap="md"
-      className={classes.list}
-      data-fill={fill || undefined}
-      data-testid="suspension-upcoming"
-    >
+    <Stack gap="sm" data-testid="suspension-upcoming">
       {groups.map((g) => (
         <Box key={g.key} data-testid={`suspension-day-${g.key}`}>
-          <Group gap={8} mb={6}>
+          <Group gap={8} mb={4}>
             <Text size="sm" fw={700} c={g.today ? 'clay.7' : 'var(--cl-ink)'}>
               {g.label}
             </Text>

@@ -2,6 +2,7 @@ package com.connectlink.opinion;
 
 import com.connectlink.notification.NotificationChannel;
 import com.connectlink.notification.NotificationCommand;
+import com.connectlink.notification.NotificationProperties;
 import com.connectlink.notification.NotificationService;
 import com.connectlink.notification.NotificationType;
 import java.util.Collection;
@@ -20,9 +21,11 @@ class OpinionNotifier {
   private static final int BODY_MAX = 1000;
 
   private final NotificationService notificationService;
+  private final NotificationProperties properties;
 
-  OpinionNotifier(NotificationService notificationService) {
+  OpinionNotifier(NotificationService notificationService, NotificationProperties properties) {
     this.notificationService = notificationService;
+    this.properties = properties;
   }
 
   /** 의견 요청 화면 주소. */
@@ -84,18 +87,40 @@ class OpinionNotifier {
         Set.of(NotificationChannel.EMAIL));
   }
 
-  /** 미회신 기관에 보내는 리마인드. 알림과 메일. */
-  void remind(OpinionRequest request, Collection<String> recipientEmails, long daysLeft) {
+  /** 메일 제목과 본문 한 벌. */
+  record Message(String title, String body) {}
+
+  /**
+   * 미회신 기관에 보내는 리마인드의 기본 문구. 보내기 전 미리보기도 이 문구를 보여 준다. 제목은 "[금융결제원] 요청명 의견 요청 회신 리마인드 (~기한까지)"(요청명이
+   * "의견 요청" 으로 끝나면 겹쳐 쓰지 않는다)이고, 본문은 남은 날과 회신 화면 주소다.
+   */
+  Message reminderMessage(OpinionRequest request, long daysLeft) {
+    String name = request.getTitle().strip();
+    String subject =
+        "[금융결제원] "
+            + name
+            + (name.endsWith("의견 요청") ? "" : " 의견 요청")
+            + " 회신 리마인드 (~"
+            + request.getDueDate()
+            + "까지)";
     String due =
         daysLeft > 0
-            ? "회신 기한까지 " + daysLeft + "일 남았습니다"
-            : daysLeft == 0 ? "오늘이 회신 기한입니다" : "회신 기한이 " + (-daysLeft) + "일 지났습니다";
+            ? "회신 기한(" + request.getDueDate() + ")까지 " + daysLeft + "일 남았습니다."
+            : daysLeft == 0
+                ? "오늘이 회신 기한(" + request.getDueDate() + ")입니다."
+                : "회신 기한(" + request.getDueDate() + ")이 지났습니다.";
+    String body = due + " 연결이에서 회신해 주세요.\n" + properties.linkTo(linkOf(request));
+    return new Message(cut(subject, TITLE_MAX), cut(body, BODY_MAX));
+  }
+
+  /** 미회신 기관에 보내는 리마인드. 알림과 메일. 문구는 기본 문구이거나 보내는 사람이 고친 것이다. */
+  void remind(OpinionRequest request, Collection<String> recipientEmails, Message message) {
     publish(
         recipientEmails,
         NotificationType.OPINION_REPLY_DUE,
         request,
-        "회신을 기다립니다: " + request.getTitle(),
-        due + "(기한 " + request.getDueDate() + "). 아직 회신이 제출되지 않았습니다. 연결이에서 회신해 주세요.",
+        message.title(),
+        message.body(),
         Set.of(NotificationChannel.EMAIL));
   }
 

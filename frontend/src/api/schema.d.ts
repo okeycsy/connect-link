@@ -397,7 +397,7 @@ export interface paths {
     put?: never;
     /**
      * 미회신 기관에 리마인드 메일 보내기
-     * @description 진행 중 주간에서 아직 현행화 완료를 누르지 않은 기관에 지금 리마인드 메일을 보낸다. organizationIds 를 비우면 미완료 기관 전부. 받는 사람은 그 기관·업무의 사용 중 계정과 담당자 연락처 이메일. 진행 중이 아니면 409 UPDATE_CAMPAIGN_NOT_OPEN. 결제원 담당자만 보낸다.
+     * @description 진행 중 주간에서 아직 현행화 완료를 누르지 않은 기관에 지금 리마인드 메일을 보낸다. organizationIds 를 비우면 미완료 기관 전부. subject·body 를 넘기면 기본 문구 대신 그 문구로 보낸다. 받는 사람은 그 기관·업무의 사용 중 계정과 담당자 연락처 이메일. 진행 중이 아니면 409 UPDATE_CAMPAIGN_NOT_OPEN. 결제원 담당자만 보낸다.
      */
     post: operations['remind'];
     delete?: never;
@@ -785,7 +785,7 @@ export interface paths {
     put?: never;
     /**
      * 미회신 기관에 리마인드 메일 보내기
-     * @description 고른 미회신 기관(비우면 전부)의 회신 담당자에게 알림과 메일을 보내고 이력을 남긴다. 받을 사람이 없으면 400 OPINION_REMINDER_NO_RECIPIENT.
+     * @description 고른 미회신 기관(비우면 전부)의 회신 담당자에게 알림과 메일을 보내고 이력을 남긴다. subject·body 를 넘기면 기본 문구 대신 그 문구로 보낸다. 받을 사람이 없으면 400 OPINION_REMINDER_NO_RECIPIENT.
      */
     post: operations['remind_1'];
     delete?: never;
@@ -1373,6 +1373,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/update-campaigns/{id}/reminder-preview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 리마인드 메일 미리보기
+     * @description 보내기 전에 기본 제목·본문과 받을 기관(고른 미완료 기관, 비우면 전부)을 본다. 받을 사람이 없는 기관은 건너뛸 기관으로 따로 준다. 진행 중이 아니면 409 UPDATE_CAMPAIGN_NOT_OPEN. 결제원 담당자만 본다.
+     */
+    get: operations['reminderPreview'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/update-campaigns/{id}/progress': {
     parameters: {
       query?: never;
@@ -1645,6 +1665,26 @@ export interface paths {
      * @description 이름·코드 검색어, 구분, 참여 업무(slug), 사용 여부로 거른다. 구분 순(결제원 → 참가기관 → 이용기관) 뒤 이름순.
      */
     get: operations['search_1'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/opinion-requests/{requestId}/reminder-preview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 리마인드 메일 미리보기
+     * @description 보내기 전에 기본 제목·본문과 받을 기관(고른 미회신 기관, 비우면 전부)을 본다. 회신 담당자가 없는 기관은 건너뛸 기관으로 따로 준다. 회신중이 아니면 409 OPINION_REQUEST_STATUS.
+     */
+    get: operations['reminderPreview_1'];
     put?: never;
     post?: never;
     delete?: never;
@@ -2907,6 +2947,8 @@ export interface components {
     };
     UpdateCampaignReminderRequest: {
       organizationIds?: (number | null)[] | null;
+      subject?: string | null;
+      body?: string | null;
     };
     UpdateCampaignReminderResultResponse: {
       /** Format: int32 */
@@ -3064,6 +3106,8 @@ export interface components {
     };
     OpinionReminderSendRequest: {
       organizationIds?: (number | null)[] | null;
+      subject?: string | null;
+      body?: string | null;
     };
     OpinionReminderResponse: {
       /** Format: int64 */
@@ -3266,6 +3310,26 @@ export interface components {
     };
     AccountWithdrawalRequest: {
       reason: string;
+    };
+    MailPreviewResponse: {
+      subject: string;
+      body: string;
+      /** Format: int32 */
+      subjectMaxLength: number;
+      /** Format: int32 */
+      bodyMaxLength: number;
+      organizations: components['schemas']['Organization'][];
+      /** Format: int32 */
+      recipientCount: number;
+      skippedOrganizationNames: string[];
+    };
+    Organization: {
+      /** Format: int64 */
+      organizationId: number;
+      organizationName: string;
+      organizationCode: string;
+      /** Format: int32 */
+      recipientCount: number;
     };
     UpdateCampaignOrganizationResponse: {
       /** Format: int64 */
@@ -6151,6 +6215,31 @@ export interface operations {
       };
     };
   };
+  reminderPreview: {
+    parameters: {
+      query?: {
+        /** @description 고른 기관 ID. 비우면 미완료 기관 전부 */
+        organizationIds?: number[];
+      };
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['MailPreviewResponse'];
+        };
+      };
+    };
+  };
   progress: {
     parameters: {
       query?: {
@@ -6474,6 +6563,31 @@ export interface operations {
         };
         content: {
           '*/*': components['schemas']['PageResponseOrganizationDetailResponse'];
+        };
+      };
+    };
+  };
+  reminderPreview_1: {
+    parameters: {
+      query?: {
+        /** @description 고른 기관 ID. 비우면 미회신 기관 전부 */
+        organizationIds?: number[];
+      };
+      header?: never;
+      path: {
+        requestId: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['MailPreviewResponse'];
         };
       };
     };

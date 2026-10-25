@@ -321,15 +321,45 @@ export function useOpinionReminders(requestId: number | null, enabled = true) {
   });
 }
 
-/** 미회신 기관에 리마인드 메일. 기관을 고르지 않으면 미회신 기관 전체다. */
+/**
+ * 리마인드 메일 미리보기: 지금 보내면 나갈 기본 제목·본문과 받을 기관. 기관을 고르지 않으면 미회신 기관 전체다. 고치는 동안 문구가 바뀌지 않게
+ * 창으로 돌아와도 다시 불러오지 않는다.
+ */
+export function useOpinionReminderPreview(
+  requestId: number,
+  organizationIds: number[],
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: [...opinionKeys.reminders(requestId), 'preview', organizationIds] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET('/api/v1/opinion-requests/{requestId}/reminder-preview', {
+          params: { path: { requestId }, query: { organizationIds } },
+        }),
+      ),
+    enabled,
+    refetchOnWindowFocus: false,
+  });
+}
+
+/** 미회신 기관에 리마인드 메일. 기관을 고르지 않으면 미회신 기관 전체이고, 제목·본문은 미리보기에서 확인(고친) 문구다. */
 export function useSendOpinionReminder(requestId: number) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (organizationIds?: number[]) =>
+    mutationFn: async ({
+      organizationIds,
+      subject,
+      body,
+    }: {
+      organizationIds?: number[];
+      subject: string;
+      body: string;
+    }) =>
       unwrap(
         await api.POST('/api/v1/opinion-requests/{requestId}/reminders', {
           params: { path: { requestId } },
-          body: { organizationIds: organizationIds ?? null },
+          body: { organizationIds: organizationIds ?? null, subject, body },
         }),
       ),
     onSuccess: () => {

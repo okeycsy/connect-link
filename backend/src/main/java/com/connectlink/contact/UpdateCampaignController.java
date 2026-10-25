@@ -8,6 +8,7 @@ import com.connectlink.contact.dto.UpdateCampaignReminderResultResponse;
 import com.connectlink.contact.dto.UpdateCampaignResponse;
 import com.connectlink.contact.dto.UpdateCampaignSaveRequest;
 import com.connectlink.contact.dto.UpdateCampaignScheduleResponse;
+import com.connectlink.notification.dto.MailPreviewResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -115,9 +116,22 @@ public class UpdateCampaignController {
   @Operation(
       summary = "미회신 기관에 리마인드 메일 보내기",
       description =
-          "진행 중 주간에서 아직 현행화 완료를 누르지 않은 기관에 지금 리마인드 메일을 보낸다. organizationIds 를 비우면 미완료 기관 전부. 받는 사람은 그 기관·업무의 사용 중 계정과 담당자 연락처 이메일. 진행 중이 아니면 409 UPDATE_CAMPAIGN_NOT_OPEN. 결제원 담당자만 보낸다.")
+          "진행 중 주간에서 아직 현행화 완료를 누르지 않은 기관에 지금 리마인드 메일을 보낸다. organizationIds 를 비우면 미완료 기관 전부. subject·body 를 넘기면 기본 문구 대신 그 문구로 보낸다. 받는 사람은 그 기관·업무의 사용 중 계정과 담당자 연락처 이메일. 진행 중이 아니면 409 UPDATE_CAMPAIGN_NOT_OPEN. 결제원 담당자만 보낸다.")
   public UpdateCampaignReminderResultResponse remind(
-      @PathVariable Long id, @RequestBody(required = false) UpdateCampaignReminderRequest request) {
+      @PathVariable Long id,
+      @Valid @RequestBody(required = false) UpdateCampaignReminderRequest request) {
     return campaignService.sendReminders(currentUserProvider.require(), id, request);
+  }
+
+  @GetMapping("/{id}/reminder-preview")
+  @Operation(
+      summary = "리마인드 메일 미리보기",
+      description =
+          "보내기 전에 기본 제목·본문과 받을 기관(고른 미완료 기관, 비우면 전부)을 본다. 받을 사람이 없는 기관은 건너뛸 기관으로 따로 준다. 진행 중이 아니면 409 UPDATE_CAMPAIGN_NOT_OPEN. 결제원 담당자만 본다.")
+  public MailPreviewResponse reminderPreview(
+      @PathVariable Long id,
+      @Parameter(description = "고른 기관 ID. 비우면 미완료 기관 전부") @RequestParam(required = false)
+          List<Long> organizationIds) {
+    return campaignService.reminderPreview(currentUserProvider.require(), id, organizationIds);
   }
 }

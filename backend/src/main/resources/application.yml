@@ -65,6 +65,8 @@ app:
       resend-interval: 60s
       token-ttl: 30m
   notification:
+    # 메일 본문에 넣는 연결이 주소. 공개 저장소라 실제 주소는 배포 설정(환경 변수 APP_NOTIFICATION_SITE_URL)으로 넣는다.
+    site-url: http://localhost:8080
     delivery:
       # 발송함의 실제 발송(메일만). 꺼 두면(기본, demo) 발송함에 기록만 한다. 운영은 켜고 spring.mail.host 등 메일 서버 설정과
       # 아래 주소를 배포 설정(환경 변수)으로 넣는다. 공개 저장소라 실제 값은 여기에 적지 않는다.

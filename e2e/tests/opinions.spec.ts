@@ -134,10 +134,24 @@ test.describe('나. 의견 요청', () => {
     await expect(remind).toContainText('KB국민은행');
     await page.waitForTimeout(300);
     await shot(page, 'opinion-remind');
-    await remind.getByRole('button', { name: /곳에 보내기$/ }).click();
+    await remind.getByRole('button', { name: '다음: 메일 확인' }).click();
+    // 보내기 전에 실제로 나갈 제목·본문을 확인하고 고친다.
+    const check = page.getByRole('dialog', { name: '리마인드 메일 확인' });
+    const subject = check.getByRole('textbox', { name: '제목' });
+    await expect(subject).toHaveValue(
+      new RegExp(`^\\[금융결제원\\] ${SEEDED} 회신 리마인드 \\(~\\d{4}-\\d{2}-\\d{2}까지\\)$`),
+    );
+    await expect(check.getByRole('textbox', { name: '본문' })).toHaveValue(
+      /연결이에서 회신해 주세요\.\n.+\/account-info\/opinions\/\d+$/,
+    );
+    await expect(check.getByTestId('mail-preview')).toContainText('KB국민은행');
+    await page.waitForTimeout(300);
+    await shot(page, 'opinion-remind-preview');
+    await subject.fill(`[회신 요청] ${SEEDED}`);
+    await check.getByRole('button', { name: /곳에 보내기$/ }).click();
     await expect(page.getByTestId('remind-sent')).toContainText('리마인드 메일을 보냈습니다');
     const mails = await mailbox(request, 'kim.minjun@kb.example.com');
-    expect(mails.some((m) => m.subject.includes(`회신을 기다립니다: ${SEEDED}`))).toBeTruthy();
+    expect(mails.some((m) => m.subject === `[회신 요청] ${SEEDED}`)).toBeTruthy();
     await page.getByRole('tab', { name: '리마인드 이력' }).click();
     await expect(page.getByTestId('reminder-history')).toContainText('홍성민');
 

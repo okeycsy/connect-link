@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { IconCircleCheck, IconMailCheck } from '@tabler/icons-react';
 import { useState } from 'react';
 
-import { fieldErrorsOf } from '../../../../api/client';
+import { errorCodeOf, fieldErrorsOf } from '../../../../api/client';
 import { formatDateTime } from '../../../../shared/format';
 import {
   type EmailVerificationConfirmResponse,
@@ -88,7 +88,17 @@ export function EmailStep({ form, sent, verified, demo, onSent, onVerified, onRe
           setOtherError(undefined);
           onVerified(result);
         },
-        onError: showError,
+        onError: (error) => {
+          // 서버에 보낸 코드 기록이 없으면(데모 서버가 다시 시작돼 메모리 DB 가 비었을 때 등) 이 코드로는 끝낼 수 없다.
+          // 재발송 간격을 기다리지 않고 바로 다시 받게 처음 칸으로 되돌리고 서버 메시지는 이메일 칸에 보여 준다.
+          if (errorCodeOf(error) === 'VERIFICATION_NOT_REQUESTED') {
+            const message = fieldErrorsOf(error).code;
+            onReset();
+            form.setFieldError('email', message ?? '인증 코드를 다시 받아 주세요.');
+            return;
+          }
+          showError(error);
+        },
       },
     );
   };

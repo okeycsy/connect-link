@@ -53,6 +53,7 @@ import {
   useUpdateCampaignSchedule,
   useUpdateCampaigns,
 } from '../hooks';
+import { CampaignRemindModal } from '../components/CampaignRemindModal';
 
 /** 예전 주소(관리 메뉴 아래 `/{업무}/admin/update-campaigns`)를 연락처 메뉴 아래 새 주소로 보낸다. ?id= 는 그대로 넘긴다. */
 export function UpdateCampaignLegacyRedirect() {
@@ -425,41 +426,43 @@ function CampaignProgress({
         </Table>
       </div>
 
-      <ConfirmModal
-        opened={reminding != null}
-        onClose={() => setReminding(null)}
-        title="리마인드 메일 보내기"
-        message={
-          reminding === 'all'
-            ? `아직 현행화 완료를 누르지 않은 ${incomplete}개 기관의 담당자에게 리마인드 메일을 보냅니다.`
-            : `${reminding?.organizationName ?? ''} 담당자에게 리마인드 메일을 보냅니다.`
-        }
-        confirmLabel="보내기"
-        pending={remind.isPending}
-        error={remind.error}
-        onConfirm={() =>
-          remind.mutate(
-            {
-              id: campaign.id,
-              organizationIds:
-                reminding && reminding !== 'all' ? [reminding.organizationId] : undefined,
-            },
-            {
-              onSuccess: (result) => {
-                setReminding(null);
-                notifications.show({
-                  message:
-                    `${result.organizationCount}개 기관 ${result.recipientCount}명에게 리마인드 메일을 보냈습니다.` +
-                    (result.skippedOrganizationCount > 0
-                      ? ` 받을 사람이 없는 기관 ${result.skippedOrganizationCount}곳은 건너뛰었습니다.`
-                      : ''),
-                  color: 'clay',
-                });
+      {reminding != null && (
+        <CampaignRemindModal
+          opened
+          onClose={() => setReminding(null)}
+          campaignId={campaign.id}
+          organizationIds={reminding === 'all' ? [] : [reminding.organizationId]}
+          message={
+            reminding === 'all'
+              ? `아직 현행화 완료를 누르지 않은 ${incomplete}개 기관의 담당자에게 리마인드 메일을 보냅니다.`
+              : `${reminding.organizationName} 담당자에게 리마인드 메일을 보냅니다.`
+          }
+          pending={remind.isPending}
+          error={remind.error}
+          onSend={(draft) =>
+            remind.mutate(
+              {
+                id: campaign.id,
+                organizationIds: reminding === 'all' ? undefined : [reminding.organizationId],
+                ...draft,
               },
-            },
-          )
-        }
-      />
+              {
+                onSuccess: (result) => {
+                  setReminding(null);
+                  notifications.show({
+                    message:
+                      `${result.organizationCount}개 기관 ${result.recipientCount}명에게 리마인드 메일을 보냈습니다.` +
+                      (result.skippedOrganizationCount > 0
+                        ? ` 받을 사람이 없는 기관 ${result.skippedOrganizationCount}곳은 건너뛰었습니다.`
+                        : ''),
+                    color: 'clay',
+                  });
+                },
+              },
+            )
+          }
+        />
+      )}
 
       <ConfirmModal
         opened={deleting}

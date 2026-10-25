@@ -99,6 +99,7 @@
 | 일시중단 확인자 | `SuspensionReviewer` | 확인을 시작한 결제원 담당자 한 명(이름·이메일·직무 표시·시작 일시). 조치 및 인수인계 사항(`handover`)을 쓰면 확정이다 |
 | 전 영업일 취합 | `SuspensionDigest`, `SuspensionDigestService`, `SuspensionDigestFormatter` | 작업일 전 영업일에 확정 일시중단을 모아 운영·관제 매터모스트 채널로 보낸 한 번. 설정 `app.suspension.digest.*`, 영업일 `BusinessDayCalendar`. 전달 양식은 미결이라 `SuspensionDigestFormatter` 빈을 바꿔 끼운다 |
 | 알림 | `Notification` | 알림 센터 항목. 종류 `NotificationType` (`SIGNUP_REQUESTED`, `SIGNUP_APPROVED`, `CONTACT_CHANGE_REQUESTED`, `CONTACT_CHANGE_REMINDER`, `CONTACT_RECONFIRM_DUE`, `OPINION_REQUEST_OPENED`, `OPINION_REQUEST_CHANGED`, `OPINION_REPLY_DUE`, `OPINION_REPLY_REVISION`, `TEST_PLAN_OPENED`, `TEST_RESULT_REPORTED`, `TEST_RESULT_FEEDBACK`, `TEST_RESULT_COMMENT`, `TEST_DATA_REQUESTED`, `TEST_DATA_REPORTED`, `SUSPENSION_CHANGED`, `SYSTEM`) |
+| 메일 미리보기 | `MailPreviewResponse` | 사람이 직접 보내는 메일(지금은 의견 요청·정기 변경 리마인드)을 보내기 전에 보여 주는 기본 제목·본문과 받을 기관. 보내는 사람이 제목·본문을 고칠 수 있고 고친 문구가 받는 사람 모두에게 같게 간다(보내기 요청의 `subject`·`body`, 비우면 기본 문구). 예약 작업의 자동 리마인드는 기본 문구다. API `.../reminder-preview`, 화면 `shared/MailPreviewEditor` |
 | 알림 채널 | `NotificationChannel` | `EMAIL`, `MATTERMOST` |
 | 발송함 | `NotificationOutbox` | 프로토타입에서 실제 발송 대신 기록. 상태 `OutboxStatus` = `PENDING`(발송 대기), `SENT`, `FAILED` |
 | 로그인 사용자 | `CurrentUser` | Service 권한 판단에 넘기는 값. 로그인할 때 계정에서 만들어 세션에 둔다. 업무 영역(레일) 조회 범위는 `BusinessAccessPolicy`(관리자는 전 업무, 그 밖에는 담당 업무). 테스트는 `TestUsers` |

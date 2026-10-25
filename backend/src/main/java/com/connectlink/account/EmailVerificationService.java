@@ -104,7 +104,11 @@ public class EmailVerificationService {
     EmailVerification verification =
         repository
             .findFirstByEmailOrderByIdDesc(email)
-            .orElseThrow(() -> codeError("VERIFICATION_NOT_REQUESTED", "인증 코드를 먼저 받아 주세요."));
+            .orElseThrow(
+                () ->
+                    codeError(
+                        "VERIFICATION_NOT_REQUESTED",
+                        "이 이메일로 보낸 인증 코드 기록이 없습니다. 인증 코드를 다시 받아 주세요."));
     if (verification.isCodeExpired(now)) {
       throw codeError("VERIFICATION_EXPIRED", "인증 코드의 유효 시간이 지났습니다. 코드를 다시 받아 주세요.");
     }

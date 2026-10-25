@@ -834,6 +834,55 @@ class OpinionControllerTest {
   }
 
   @Test
+  void 리마인드_미리보기는_기본_문구와_받을_기관을_보여_주고_보내지_않는다() throws Exception {
+    Long id = createOpen("미리보기 확인");
+    send(post(BASE + "/" + id + "/my-reply/submission"), answer(id, "1월"), kim());
+    send(get(BASE + "/" + id + "/reminder-preview"), null, hong())
+        .andExpect(status().isOk())
+        .andExpect(
+            jsonPath("$.subject")
+                .value(
+                    org.hamcrest.Matchers.matchesPattern(
+                        "\\[금융결제원\\] 미리보기 확인 의견 요청 회신 리마인드 \\(~\\d{4}-\\d{2}-\\d{2}까지\\)")))
+        .andExpect(
+            jsonPath("$.body").value(org.hamcrest.Matchers.containsString("연결이에서 회신해 주세요.\n")))
+        .andExpect(
+            jsonPath("$.body")
+                .value(org.hamcrest.Matchers.containsString("/account-info/opinions/" + id)))
+        .andExpect(jsonPath("$.subjectMaxLength").value(200))
+        .andExpect(jsonPath("$.organizations.length()").value(1))
+        .andExpect(jsonPath("$.organizations[0].organizationName").value("삼성증권"))
+        .andExpect(jsonPath("$.organizations[0].recipientCount").value(1))
+        .andExpect(jsonPath("$.recipientCount").value(1));
+    assertThat(
+            notificationRepository.findAll().stream()
+                .filter(n -> n.getType() == NotificationType.OPINION_REPLY_DUE)
+                .filter(n -> n.getTitle().contains("미리보기 확인")))
+        .isEmpty();
+    send(get(BASE + "/" + id + "/reminder-preview"), null, kim()).andExpect(status().isForbidden());
+  }
+
+  @Test
+  void 리마인드는_고친_제목과_본문으로_보내고_빈_제목은_400이다() throws Exception {
+    Long id = createOpen("문구 고치기");
+    send(post(BASE + "/" + id + "/reminders"), Map.of("subject", "", "body", "고친 본문"), hong())
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.fieldErrors[0].field").value("subject"));
+    send(
+            post(BASE + "/" + id + "/reminders"),
+            Map.of("subject", "[문구 고치기] 회신 부탁드립니다", "body", "고친 본문\n두 번째 줄"),
+            hong())
+        .andExpect(status().isCreated());
+    assertThat(
+            notificationRepository.findAll().stream()
+                .filter(n -> n.getType() == NotificationType.OPINION_REPLY_DUE)
+                .filter(n -> n.getTitle().contains("문구 고치기"))
+                .map(n -> n.getBody()))
+        .isNotEmpty()
+        .allMatch(b -> b.equals("고친 본문\n두 번째 줄"));
+  }
+
+  @Test
   void 엑셀은_내부망에서_결과_요약과_취합표로_내려받는다() throws Exception {
     Long id = createOpen("엑셀 확인");
     send(post(BASE + "/" + id + "/my-reply/submission"), answer(id, "1월"), kim());
