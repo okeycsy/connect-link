@@ -63,7 +63,7 @@ class ContactImportControllerTest {
 
   private static String[] row(String code, String name, String email) {
     return new String[] {
-      code, name, "부담당", "전산", "개발, 운영", "내 계좌 한눈에", "디지털금융부", "", "대리", "1234", "", email
+      code, name, "부담당", "전산", "개발, 운영", "내 계좌 한눈에", "디지털금융부", "", "대리", "02-0000-1234", "", email
     };
   }
 

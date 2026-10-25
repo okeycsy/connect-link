@@ -53,7 +53,7 @@ export async function applyForGana(request: APIRequestContext, email: string, na
       department: '디지털금융부',
       team: '계좌서비스팀',
       jobTitle: '대리',
-      extensionPhone: '1234',
+      extensionPhone: '02-0000-1234',
       mobilePhone: null,
       password: NEW_ACCOUNT_PASSWORD,
     },

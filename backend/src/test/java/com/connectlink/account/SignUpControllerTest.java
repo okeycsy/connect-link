@@ -160,7 +160,7 @@ class SignUpControllerTest {
     body.put("department", "디지털금융부");
     body.put("team", "플랫폼팀");
     body.put("jobTitle", "대리");
-    body.put("extensionPhone", "1234");
+    body.put("extensionPhone", "02-0000-1234");
     body.put("mobilePhone", "010-0000-9999");
     body.put("password", "Welcome1!");
     return body;
@@ -325,6 +325,23 @@ class SignUpControllerTest {
 
     body.put("businesses", List.of(Map.of("business", "AUTO_TRANSFER")));
     postJson("/api/v1/sign-ups", body).andExpect(status().isCreated());
+  }
+
+  @Test
+  void 기관_담당자_내선번호는_전체_번호여야_하고_결제원은_4자리_내선이면_된다() throws Exception {
+    String email = "short-phone@kb.example.com";
+    Map<String, Object> body = signUpBody(verify(email), email);
+    body.put("extensionPhone", "1234");
+    postJson("/api/v1/sign-ups", body)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("OFFICE_PHONE_FULL_NUMBER_REQUIRED"))
+        .andExpect(jsonPath("$.fieldErrors[0].field").value("extensionPhone"));
+
+    String kftcEmail = "short-phone@kftc.example.com";
+    Map<String, Object> kftc = signUpBody(verify(kftcEmail), kftcEmail);
+    kftc.put("organizationId", organizationId("KFTC"));
+    kftc.put("extensionPhone", "1234");
+    postJson("/api/v1/sign-ups", kftc).andExpect(status().isCreated());
   }
 
   @Test

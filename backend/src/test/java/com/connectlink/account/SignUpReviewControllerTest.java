@@ -134,7 +134,7 @@ class SignUpReviewControllerTest {
     body.put("department", "디지털금융부");
     body.put("team", "플랫폼팀");
     body.put("jobTitle", "대리");
-    body.put("extensionPhone", "1234");
+    body.put("extensionPhone", "02-0000-1234");
     body.put("mobilePhone", null);
     body.put("password", "Welcome1!");
     postJson("/api/v1/sign-ups", body, null).andExpect(status().isCreated());
@@ -289,7 +289,7 @@ class SignUpReviewControllerTest {
         .perform(get("/api/v1/sign-ups/" + id).with(moon()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.department").value("디지털금융부"))
-        .andExpect(jsonPath("$.extensionPhone").value("1234"))
+        .andExpect(jsonPath("$.extensionPhone").value("02-0000-1234"))
         .andExpect(jsonPath("$.mobilePhone").doesNotExist());
     mockMvc.perform(get("/api/v1/sign-ups/" + id).with(park())).andExpect(status().isForbidden());
     postJson("/api/v1/sign-ups/" + id + "/approval", Map.of(), park())

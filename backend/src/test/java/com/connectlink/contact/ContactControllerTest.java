@@ -135,7 +135,7 @@ class ContactControllerTest {
     body.put("jobRole", "IT");
     body.put("itRoles", List.of("DEV"));
     body.put("rank", "PRIMARY");
-    body.put("extensionPhone", "2201");
+    body.put("extensionPhone", "02-0000-2201");
     body.put("mobilePhone", "010-0000-2201");
     body.put("email", "namgung.min@kb.example.com");
     body.putAll(overrides);
@@ -149,7 +149,7 @@ class ContactControllerTest {
     body.put("department", "디지털금융부");
     body.put("jobRole", "BUSINESS");
     body.put("rank", "SECONDARY");
-    body.put("extensionPhone", "2109");
+    body.put("extensionPhone", "02-0000-2109");
     body.put("mobilePhone", "010-0000-2109");
     body.put("email", email);
     return body;
@@ -244,10 +244,10 @@ class ContactControllerTest {
     mockMvc
         .perform(
             external(
-                json(put(BASE + "/" + id), namgungForm(Map.of("extensionPhone", "2202")))
+                json(put(BASE + "/" + id), namgungForm(Map.of("extensionPhone", "02-0000-2202")))
                     .with(gana())))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.extensionPhone").value("2202"))
+        .andExpect(jsonPath("$.extensionPhone").value("02-0000-2202"))
         .andExpect(jsonPath("$.lastConfirmedByName").value("김민준"))
         .andExpect(jsonPath("$.needsConfirm").value(false));
     mockMvc
@@ -259,7 +259,7 @@ class ContactControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content.length()").value(1))
         .andExpect(jsonPath("$.content[0].changes[0].field").value("extensionPhone"))
-        .andExpect(jsonPath("$.content[0].changes[0].before").value("2201"));
+        .andExpect(jsonPath("$.content[0].changes[0].before").value("02-0000-2201"));
   }
 
   @Test
@@ -341,7 +341,8 @@ class ContactControllerTest {
         .andExpect(jsonPath("$.content[?(@.action == 'CREATED')]").isEmpty())
         .andExpect(
             jsonPath(
-                "$.content[0].changes[?(@.field == 'extensionPhone')].before", hasItem("2299")))
+                "$.content[0].changes[?(@.field == 'extensionPhone')].before",
+                hasItem("02-0000-2299")))
         .andExpect(
             jsonPath(
                 "$.content[0].changes[?(@.field == 'mobilePhone')].before",
@@ -432,6 +433,31 @@ class ContactControllerTest {
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("CONTACT_DUPLICATE"))
         .andExpect(jsonPath("$.fieldErrors[0].field").value("email"));
+  }
+
+  @Test
+  void 기관_담당자_내선번호는_지역번호부터_전체_번호여야_하고_결제원은_4자리_내선이면_된다() throws Exception {
+    Map<String, Object> org = successorForm("short-phone@kb.example.com");
+    org.put("extensionPhone", "2109");
+    mockMvc
+        .perform(json(post(BASE), org).with(gana()))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("OFFICE_PHONE_FULL_NUMBER_REQUIRED"))
+        .andExpect(jsonPath("$.fieldErrors[0].field").value("extensionPhone"));
+
+    Map<String, Object> kftc = successorForm("short-phone@kftc.example.com");
+    kftc.put("extensionPhone", "1109");
+    kftc.put(
+        "organizationId",
+        contactRepository
+            .findById(contactId("hong.sungmin@kftc.example.com", Business.ACCOUNT_INFO))
+            .orElseThrow()
+            .getOrganization()
+            .getId());
+    mockMvc
+        .perform(json(post(BASE), kftc).with(hong()))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.extensionPhone").value("1109"));
   }
 
   @Test

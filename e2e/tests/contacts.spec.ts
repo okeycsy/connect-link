@@ -92,19 +92,19 @@ test.describe('가. 담당자 연락처', () => {
     const history = detail.getByTestId('change-history');
     await expect(history).toContainText('백도윤');
     await expect(history).toContainText('010-****-2299');
-    await expect(history).toContainText('2299');
+    await expect(history).toContainText('02-0000-2299');
     await expect(page.getByRole('button', { name: '삭제' })).toHaveCount(0);
     await shot(page, 'contact-detail');
 
     // 고치면 최근 확인일과 확인한 사람이 바뀐다.
     await page.getByRole('button', { name: '수정', exact: true }).click();
     const form = page.getByRole('dialog', { name: '남궁민 담당자 수정' });
-    await form.getByRole('textbox', { name: '내선번호' }).fill('2202');
+    await form.getByRole('textbox', { name: '내선번호' }).fill('02-0000-2202');
     await form.getByRole('button', { name: '저장' }).click();
     await expect(form).toBeHidden();
-    await expect(detail).toContainText('2202');
+    await expect(detail).toContainText('02-0000-2202');
     await expect(detail).toContainText('김민준');
-    await expect(detail.getByTestId('change-history')).toContainText('2201');
+    await expect(detail.getByTestId('change-history')).toContainText('02-0000-2201');
 
     // 결제원 담당자 행은 고치지 못한다.
     await page.keyboard.press('Escape');

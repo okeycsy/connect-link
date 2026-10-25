@@ -7,6 +7,7 @@ import com.connectlink.common.BusinessException;
 import com.connectlink.organization.Business;
 import com.connectlink.organization.ItRole;
 import com.connectlink.organization.JobRole;
+import com.connectlink.organization.OfficePhone;
 import com.connectlink.organization.Organization;
 import com.connectlink.organization.OrganizationService;
 import com.connectlink.organization.OrganizationType;
@@ -61,6 +62,8 @@ public class SignUpService {
     verificationService.ensureNotRegistered(email);
 
     Organization organization = organizationOf(request.organizationId());
+    OfficePhone.requireFullNumberOutsideKftc(
+        organization, request.extensionPhone(), "extensionPhone");
     Map<Business, String> businesses = businessesOf(organization, request.businesses());
     Set<ItRole> itRoles = itRolesOf(request.jobRole(), request.itRoles());
 
