@@ -57,6 +57,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class SuspensionService {
 
+  /** 결제원 작업 안내의 기관(결제원) 코드. */
+  static final String KFTC_CODE = "KFTC";
+
   private final SuspensionRepository repository;
   private final SuspensionAccessPolicy accessPolicy;
   private final OrganizationService organizationService;
@@ -151,7 +154,9 @@ public class SuspensionService {
     Specification<Suspension> spec =
         SuspensionSpecifications.of(business, null, null, null, now, false)
             .and((root, query, cb) -> cb.greaterThan(root.get("endAt"), now))
-            .and((root, query, cb) -> cb.equal(root.get("status"), SuspensionStatus.CONFIRMED));
+            .and((root, query, cb) -> cb.equal(root.get("status"), SuspensionStatus.CONFIRMED))
+            // 결제원 작업 안내는 기관 담당자의 목록에 이미 보인다.
+            .and((root, query, cb) -> cb.equal(root.get("kind"), SuspensionKind.ORGANIZATION));
     if (!manager) {
       spec =
           spec.and(
@@ -212,8 +217,14 @@ public class SuspensionService {
 
   // ---- 등록·수정·삭제 ----
 
-  /** 검토 대기로 등록하고 그 업무 결제원 담당자에게 메일·매터모스트로 알린다. 공문은 저장한 뒤 첨부 API 로 올린다. */
+  /**
+   * 검토 대기로 등록하고 그 업무 결제원 담당자에게 메일·매터모스트로 알린다. 공문은 저장한 뒤 첨부 API 로 올린다. 결제원 작업 안내는 바로 확정이고 알림을 보내지
+   * 않는다(일시중단 목록·홈에만 보인다).
+   */
   public SuspensionDetailResponse create(CurrentUser user, SuspensionSaveRequest body) {
+    if (body.kind() == SuspensionKind.KFTC_WORK) {
+      return createKftcWork(user, body);
+    }
     accessPolicy.ensureCanRegister(user);
     boolean kftc = accessPolicy.registersAsKftc(user);
     List<TargetWork> works = targetWorkService.loadSelectable(body.targetWorkIds(), List.of());
@@ -236,6 +247,27 @@ public class SuspensionService {
             organization.getName() + " 일시중단 등록",
             Snapshot.of(suspension).diff(Snapshot.EMPTY, true)));
     notifier.registered(suspension, kftcRecipients(suspension.getBusinesses(), user));
+    return toDetail(user, suspension);
+  }
+
+  private SuspensionDetailResponse createKftcWork(CurrentUser user, SuspensionSaveRequest body) {
+    if (!accessPolicy.canRegisterKftcWork(user)) {
+      throw new AccessDeniedException(SuspensionAccessPolicy.KFTC_WORK_DENIED);
+    }
+    List<TargetWork> works = targetWorkService.loadSelectable(body.targetWorkIds(), List.of());
+    Organization kftc = organizationService.getByCode(KFTC_CODE);
+    Suspension suspension =
+        repository.saveAndFlush(
+            Suspension.registerKftcWork(
+                kftc, contentOf(body, works), user.email(), user.name(), user.jobTitle(), now()));
+    changeHistoryService.record(
+        user,
+        ChangeHistoryCommand.created(
+            HistoryTargetType.SUSPENSION,
+            suspension.getId(),
+            suspension.getPrimaryBusiness(),
+            "결제원 작업 등록",
+            Snapshot.of(suspension).diff(Snapshot.EMPTY, true)));
     return toDetail(user, suspension);
   }
 
@@ -275,6 +307,9 @@ public class SuspensionService {
             suspension.getPrimaryBusiness(),
             suspension.getOrganization().getName() + " 일시중단 수정",
             changes));
+    if (suspension.isKftcWork()) {
+      return toDetail(user, suspension);
+    }
     String what = before.changedSummary(after);
     // 업무를 뺐으면 빠진 업무 담당자에게도 알린다.
     Set<Business> notified = EnumSet.noneOf(Business.class);
@@ -309,7 +344,9 @@ public class SuspensionService {
                     null)
                 .value("reason", "중단 이유", suspension.getReason(), null)
                 .toList()));
-    notifier.deleted(suspension, kftcRecipients(suspension.getBusinesses(), user), user.name());
+    if (!suspension.isKftcWork()) {
+      notifier.deleted(suspension, kftcRecipients(suspension.getBusinesses(), user), user.name());
+    }
     repository.delete(suspension);
   }
 
@@ -374,6 +411,8 @@ public class SuspensionService {
     SuspensionPeriod period = s.periodAt(now);
     return new SuspensionSummaryResponse(
         s.getId(),
+        s.getKind(),
+        s.getKind().getLabel(),
         targetWorksOf(s),
         businessesOf(s),
         s.getOrganization().getId(),
@@ -400,6 +439,8 @@ public class SuspensionService {
             || s.getStatus() == SuspensionStatus.IN_REVIEW;
     return new SuspensionDetailResponse(
         s.getId(),
+        s.getKind(),
+        s.getKind().getLabel(),
         targetWorksOf(s),
         businessesOf(s),
         s.getOrganization().getId(),

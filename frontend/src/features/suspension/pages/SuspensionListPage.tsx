@@ -1,4 +1,5 @@
 import {
+  Badge,
   Button,
   Card,
   Group,
@@ -99,7 +100,7 @@ export function SuspensionListPage() {
         description={
           manager
             ? `${current?.label ?? '이 업무'} 참가기관의 일시중단입니다. 확인을 시작하고 조치 및 인수인계 사항을 써서 확정합니다.`
-            : `우리 기관의 ${current?.label ?? '이 업무'} 일시중단입니다. 등록하면 결제원 담당자에게 메일과 매터모스트 알림이 갑니다.`
+            : `우리 기관의 ${current?.label ?? '이 업무'} 일시중단과 결제원 작업 안내입니다. 등록하면 결제원 담당자에게 메일과 매터모스트 알림이 갑니다.`
         }
         actions={
           <>
@@ -315,9 +316,16 @@ function SuspensionTable({
                   {r.organizationName}
                 </Text>
               </Group>
-              <Text size="xs" c="dimmed" lineClamp={1}>
-                {r.targetWorks.map((w) => w.name).join(', ')}
-              </Text>
+              <Group gap={4} wrap="nowrap">
+                {r.kind === 'KFTC_WORK' && (
+                  <Badge size="xs" color="sky" variant="light" style={{ flexShrink: 0 }}>
+                    결제원 작업
+                  </Badge>
+                )}
+                <Text size="xs" c="dimmed" lineClamp={1}>
+                  {r.targetWorks.map((w) => w.name).join(', ')}
+                </Text>
+              </Group>
             </Table.Td>
             <Table.Td data-label="중단 일시">
               <Group gap={6} wrap="nowrap">

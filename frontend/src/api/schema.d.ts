@@ -2550,6 +2550,8 @@ export interface components {
       kftcAction?: string | null;
       contacts: components['schemas']['SuspensionContactRequest'][];
       extraNote?: string | null;
+      /** @enum {string|null} */
+      kind?: 'ORGANIZATION' | 'KFTC_WORK' | null;
     };
     SuspensionContactResponse: {
       name: string;
@@ -2559,6 +2561,9 @@ export interface components {
     SuspensionDetailResponse: {
       /** Format: int64 */
       id: number;
+      /** @enum {string} */
+      kind: 'ORGANIZATION' | 'KFTC_WORK';
+      kindLabel: string;
       targetWorks: components['schemas']['SuspensionTargetWorkResponse'][];
       businesses: components['schemas']['SuspensionBusinessResponse'][];
       /** Format: int64 */
@@ -3472,6 +3477,9 @@ export interface components {
     SuspensionSummaryResponse: {
       /** Format: int64 */
       id: number;
+      /** @enum {string} */
+      kind: 'ORGANIZATION' | 'KFTC_WORK';
+      kindLabel: string;
       targetWorks: components['schemas']['SuspensionTargetWorkResponse'][];
       businesses: components['schemas']['SuspensionBusinessResponse'][];
       /** Format: int64 */

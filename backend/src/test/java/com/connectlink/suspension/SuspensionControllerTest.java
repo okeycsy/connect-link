@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.oneOf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -507,9 +508,11 @@ class SuspensionControllerTest {
 
   @Test
   void 기관_담당자는_자기_기관_것만_본다() throws Exception {
-    send(get(BASE).param("business", "account-info"), null, kim())
+    // 자기 기관 건과 결제원 작업 안내만 보인다.
+    send(get(BASE).param("business", "account-info").param("period", "UPCOMING"), null, kim())
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.content[*].organizationName").value(everyItem(is("KB국민은행"))));
+        .andExpect(
+            jsonPath("$.content[*].organizationName").value(everyItem(oneOf("KB국민은행", "금융결제원"))));
     // 기관을 골라도 자기 기관 밖으로 넓어지지 않는다.
     send(
             get(BASE)
@@ -517,10 +520,50 @@ class SuspensionControllerTest {
                 .param("organizationId", String.valueOf(orgId("240"))),
             null,
             kim())
-        .andExpect(jsonPath("$.content[*].organizationName").value(everyItem(is("KB국민은행"))));
+        .andExpect(
+            jsonPath("$.content[*].organizationName").value(everyItem(oneOf("KB국민은행", "금융결제원"))));
     send(get(BASE + "/organizations").param("business", "account-info"), null, kim())
         .andExpect(jsonPath("$.length()").value(1))
         .andExpect(jsonPath("$[0].code").value("004"));
+  }
+
+  @Test
+  void 결제원_작업은_결제원이_올리면_바로_확정이고_알림_없이_관련_업무_기관_담당자에게_보인다() throws Exception {
+    Map<String, Object> body = form("결제원 시스템 점검 작업");
+    body.put("kind", "KFTC_WORK");
+    body.put("organizationId", orgId("004"));
+    body.put("contacts", List.of(contact("홍성민", "010-0000-0001", "hong.sungmin@kftc.example.com")));
+    long outboxBefore = outboxRepository.count();
+    JsonNode created =
+        json(
+            send(post(BASE), body, hong())
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.kind").value("KFTC_WORK"))
+                .andExpect(jsonPath("$.kindLabel").value("결제원 작업"))
+                .andExpect(jsonPath("$.organizationCode").value("KFTC"))
+                .andExpect(jsonPath("$.status").value("CONFIRMED"))
+                .andExpect(jsonPath("$.permissions.confirm").value(false))
+                .andExpect(jsonPath("$.permissions.startReview").value(false)));
+    long id = created.get("id").asLong();
+    // 메일·알림은 보내지 않는다.
+    assertThat(outboxRepository.count()).isEqualTo(outboxBefore);
+
+    // 관련 업무의 참가기관 담당자는 목록과 상세에서 보지만 고치지 못한다.
+    send(get(BASE + "/" + id), null, choi())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.permissions.edit").value(false));
+    send(get(BASE).param("business", "account-info").param("period", "UPCOMING"), null, kim())
+        .andExpect(jsonPath("$.content[*].reason", hasItem("결제원 시스템 점검 작업")));
+    // 다른 업무 담당자는 보지 못하고, 확인을 시작할 수도 없다.
+    send(get(BASE + "/" + id), null, park()).andExpect(status().isForbidden());
+    send(post(BASE + "/" + id + "/review"), null, hong()).andExpect(status().isForbidden());
+  }
+
+  @Test
+  void 참가기관_담당자는_결제원_작업을_올리지_못한다() throws Exception {
+    Map<String, Object> body = form("기관이 올린 결제원 작업");
+    body.put("kind", "KFTC_WORK");
+    send(post(BASE), body, kim()).andExpect(status().isForbidden());
   }
 
   @Test

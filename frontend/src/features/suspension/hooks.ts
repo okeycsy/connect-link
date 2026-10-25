@@ -25,6 +25,7 @@ export type SuspensionDigest = components['schemas']['SuspensionDigestResponse']
 export type SuspensionSchedule = components['schemas']['SuspensionScheduleResponse'];
 export type SuspensionStatus = SuspensionSummary['status'];
 export type SuspensionPeriod = SuspensionSummary['period'];
+export type SuspensionKind = SuspensionSummary['kind'];
 
 export interface SuspensionListParams {
   /** 업무 영역 slug. */

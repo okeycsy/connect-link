@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
  *       사람은 맡지 않은 업무의 건이라도 자기가 올린 건을 보고 고친다.
  *   <li>대상 업무 기준정보는 관리자가 관리한다.
  *   <li>지우기는 등록한 본인만 한다(결제원 담당자도 자기가 올린 것만). 완료한 건은 아무도 고치거나 지우지 않는다.
+ *   <li>결제원 작업 안내: 결제원 계정이 올리면 바로 확정이고 확인 단계가 없다. 관련 업무의 결제원 담당자가 고치고, 관련 업무의 참가기관 담당자가 본다.
  *   <li>이용기관 담당자는 쓰지 않는다(명세가 정하기 전까지, CLAUDE.md 용어집).
  * </ul>
  */
@@ -35,6 +36,7 @@ public class SuspensionAccessPolicy {
   static final String DELETE_DENIED = "일시중단은 등록한 본인만 지웁니다.";
   static final String REVIEW_DENIED = "그 업무의 결제원 담당자만 확인하고 확정합니다.";
   static final String DIGEST_DENIED = "전 영업일 취합은 결제원 담당자만 보냅니다.";
+  static final String KFTC_WORK_DENIED = "결제원 작업 안내는 결제원 담당자만 올립니다.";
   static final String TARGET_WORK_DENIED = "대상 업무 기준정보는 관리자만 관리합니다.";
 
   /** 레일과 무관한 일시중단을 맡는 결제원 전산 세부 직무(운영·상황실·대외계). */
@@ -100,6 +102,7 @@ public class SuspensionAccessPolicy {
   public boolean canView(CurrentUser user, Suspension suspension) {
     return canManage(user, suspension)
         || isOwnOrganization(user, suspension)
+        || seesKftcWork(user, suspension)
         || isActiveRegistrant(user, suspension);
   }
 
@@ -120,7 +123,20 @@ public class SuspensionAccessPolicy {
 
   /** 확인을 시작하거나 조치·인수인계 사항을 써서 확정할 수 있는지. */
   public boolean canReview(CurrentUser user, Suspension suspension) {
-    return suspension.getStatus() != SuspensionStatus.COMPLETED && canManage(user, suspension);
+    return !suspension.isKftcWork()
+        && suspension.getStatus() != SuspensionStatus.COMPLETED
+        && canManage(user, suspension);
+  }
+
+  /** 결제원 작업 안내를 올릴 수 있는지. 결제원 계정과 관리자다. */
+  public boolean canRegisterKftcWork(CurrentUser user) {
+    return registersAsKftc(user);
+  }
+
+  /** 기관 담당자로서 이 결제원 작업 안내를 보는지. 관련 업무 중 하나라도 맡은 참가기관 담당자다. */
+  private boolean seesKftcWork(CurrentUser user, Suspension suspension) {
+    return suspension.isKftcWork()
+        && suspension.getBusinesses().stream().anyMatch(b -> isOrganizationMember(user, b));
   }
 
   /** 전 영업일 취합을 수동으로 보낼 수 있는지. 취합은 전 업무를 묶으므로 결제원 담당자 누구나와 관리자다. */

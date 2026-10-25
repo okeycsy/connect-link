@@ -1,4 +1,5 @@
 import {
+  Badge,
   Alert,
   Button,
   Card,
@@ -88,11 +89,12 @@ function SuspensionView({ slug, suspension }: { slug: string; suspension: Suspen
     setDialog(null);
   };
   const confirmed = suspension.status === 'CONFIRMED';
+  const kftcWork = suspension.kind === 'KFTC_WORK';
 
   return (
     <Stack gap="md">
       <PageHeader
-        title={`${suspension.organizationName} 일시중단`}
+        title={kftcWork ? '결제원 작업' : `${suspension.organizationName} 일시중단`}
         description={
           <>
             {suspension.targetWorks.map((w) => w.name).join(', ')} · 등록{' '}
@@ -106,6 +108,11 @@ function SuspensionView({ slug, suspension }: { slug: string; suspension: Suspen
         }
         status={
           <Group gap={6} wrap="nowrap">
+            {kftcWork && (
+              <Badge color="sky" variant="light">
+                결제원 작업
+              </Badge>
+            )}
             <SuspensionStatusBadge status={suspension.status} />
             <SuspensionPeriodBadge period={suspension.period} />
           </Group>
@@ -160,14 +167,19 @@ function SuspensionView({ slug, suspension }: { slug: string; suspension: Suspen
           <Tabs.Tab value="history">변경 이력</Tabs.Tab>
         </Tabs.List>
         <Tabs.Panel value="content">
-          <Grid gutter="md">
-            <Grid.Col span={{ base: 12, lg: 7 }}>
-              <SuspensionContent suspension={suspension} />
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, lg: 5 }}>
-              <ReviewCard suspension={suspension} />
-            </Grid.Col>
-          </Grid>
+          {kftcWork ? (
+            // 결제원 작업은 올리면 바로 확정이라 검토·확정 기록이 없다.
+            <SuspensionContent suspension={suspension} />
+          ) : (
+            <Grid gutter="md">
+              <Grid.Col span={{ base: 12, lg: 7 }}>
+                <SuspensionContent suspension={suspension} />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, lg: 5 }}>
+                <ReviewCard suspension={suspension} />
+              </Grid.Col>
+            </Grid>
+          )}
         </Tabs.Panel>
         <Tabs.Panel value="history">
           <Card>
@@ -190,7 +202,11 @@ function SuspensionView({ slug, suspension }: { slug: string; suspension: Suspen
         opened={dialog === 'delete'}
         onClose={closeDialog}
         title="일시중단 삭제"
-        message="일시중단과 공문을 지웁니다. 결제원 담당자에게 매터모스트 알림이 갑니다. 되돌릴 수 없습니다."
+        message={
+          kftcWork
+            ? '결제원 작업 안내와 공문을 지웁니다. 참가기관 목록에서도 사라집니다. 되돌릴 수 없습니다.'
+            : '일시중단과 공문을 지웁니다. 결제원 담당자에게 매터모스트 알림이 갑니다. 되돌릴 수 없습니다.'
+        }
         confirmLabel="삭제하기"
         danger
         pending={remove.isPending}
@@ -230,11 +246,12 @@ function Body({ text }: { text: string | null | undefined }) {
 
 /** 등록 양식의 내용. */
 function SuspensionContent({ suspension: s }: { suspension: SuspensionDetail }) {
+  const kftcWork = s.kind === 'KFTC_WORK';
   return (
     <Card>
       <Stack gap="md">
         <Text fw={700} size="xl">
-          중단 내용
+          {kftcWork ? '작업 내용' : '중단 내용'}
         </Text>
         <Field label="중단 일시">
           <Text size="lg" fw={600} className={classes.numeric} data-testid="suspension-period">
@@ -253,10 +270,10 @@ function SuspensionContent({ suspension: s }: { suspension: SuspensionDetail }) 
               : '없음(결제원 운영·상황실·대외계가 확인)'}
           </Text>
         </Field>
-        <Field label="중단 이유(작업 내용)">
+        <Field label={kftcWork ? '작업 내용' : '중단 이유(작업 내용)'}>
           <Body text={s.reason} />
         </Field>
-        <Field label="결제원 조치사항">
+        <Field label={kftcWork ? '기관 협조 사항' : '결제원 조치사항'}>
           <Body text={s.kftcAction} />
         </Field>
         <Field label="담당자 연락처">

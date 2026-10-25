@@ -1,5 +1,6 @@
 package com.connectlink.suspension.dto;
 
+import com.connectlink.suspension.SuspensionKind;
 import com.connectlink.suspension.SuspensionPeriod;
 import com.connectlink.suspension.SuspensionStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -19,6 +20,8 @@ import java.util.List;
  */
 public record SuspensionDetailResponse(
     Long id,
+    SuspensionKind kind,
+    String kindLabel,
     List<SuspensionTargetWorkResponse> targetWorks,
     List<SuspensionBusinessResponse> businesses,
     Long organizationId,
