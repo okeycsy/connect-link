@@ -239,7 +239,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: 16px 24px;
 
   @media (max-width: $mantine-breakpoint-sm) {
     padding: 8px 16px 32px;
@@ -259,19 +259,41 @@
   }
 }
 
-/* 로그인 카드와 데모 계정 카드를 세로로 쌓는 열 */
+/*
+ * 로그인 카드·도움말·데모 계정 카드를 세로로 쌓는 열. 데스크톱에서는 화면 높이(위아래 여백 16 제외)를 넘지 않고,
+ * 넘치는 만큼은 데모 계정 카드가 줄어들어 그 안의 목록만 넘긴다. 로그인 화면이 한 화면에 들어오게(2026-10-25 SHY 요청).
+ */
 .column {
   position: relative;
   z-index: 2;
   width: 100%;
   max-width: 420px;
+  max-height: calc(100vh - 32px);
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    max-height: none;
+  }
 }
 
-/* 데모 계정 카드: 흰 면 + 1px 선, radius 24(카드 규칙). 그림자는 로그인 카드에만 둔다. */
+/* 데모 계정 카드: 흰 면 + 1px 선, radius 24(카드 규칙). 그림자는 로그인 카드에만 둔다. 남는 높이에 맞춰 줄어들고 늘어나지는 않는다. */
 .demoCard {
   position: relative;
   z-index: 2;
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  min-height: 0;
   border-radius: 24px;
   background: var(--cl-card);
   border: 1px solid var(--cl-line);
+}
+
+/* 데모 계정 목록: 카드 안에서 남는 높이만 쓰고 넘기며, 휴대폰 폭에서는 300 까지만 */
+.demoScroll {
+  flex: 1 1 auto;
+  min-height: 0;
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    max-height: 300px;
+  }
 }
