@@ -1,6 +1,15 @@
-import { expect, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 
 import { skipContactReconfirm } from './support/account';
+
+/** 홈이 세로 스크롤 없이 화면(기본 1280×800) 안에 들어오는지 본다. */
+async function expectNoScroll(page: Page) {
+  const { scroll, viewport } = await page.evaluate(() => ({
+    scroll: document.documentElement.scrollHeight,
+    viewport: window.innerHeight,
+  }));
+  expect(scroll).toBeLessThanOrEqual(viewport);
+}
 
 test.describe('홈 대시보드', () => {
   test('건수 요약 없이 할 일이 있는 카드만 보이고, 일시중단은 오늘부터 다가오는 목록이다', async ({
@@ -37,6 +46,8 @@ test.describe('홈 대시보드', () => {
     await expect(cards.getByText(/^(임박|초과)$/)).toHaveCount(0);
     // 모든 카드가 실제 데이터다(샘플 카드 없음).
     await expect(cards.getByText('샘플')).toHaveCount(0);
+    // 1280×800 에서 스크롤 없이 한 화면에 들어온다. SHY 요청(2026-10-25).
+    await expectNoScroll(page);
     await page.screenshot({ path: 'screenshots/home.png', fullPage: true });
   });
 
@@ -109,6 +120,7 @@ test.describe('기관 담당자 홈', () => {
         }
       }
     }
+    await expectNoScroll(page);
     await page.screenshot({
       path: 'screenshots/home-organization.png',
       fullPage: true,

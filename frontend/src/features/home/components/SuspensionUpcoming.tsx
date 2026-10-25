@@ -51,10 +51,10 @@ export function SuspensionUpcoming({ items, today = seoulToday() }: Props) {
   );
 
   return (
-    <Stack gap="sm" data-testid="suspension-upcoming">
+    <Stack gap={8} data-testid="suspension-upcoming">
       {groups.map((g) => (
         <Box key={g.key} data-testid={`suspension-day-${g.key}`}>
-          <Group gap={8} mb={4}>
+          <Group gap={8} mb={2}>
             <Text size="sm" fw={700} c={g.today ? 'clay.7' : 'var(--cl-ink)'}>
               {g.label}
             </Text>
