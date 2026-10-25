@@ -76,7 +76,7 @@ FROM (VALUES
   ('자동이체통합관리', '071', 1560, 1680,
    '우체국금융 전산 정기 점검으로 자동이체 조회가 중단됩니다.', '우체국 조회 요청 차단',
    '윤하은', '010-0000-8101', NULL, NULL,
-   'CONFIRMED', 'hong.sungmin@kftc.example.com', '홍성민', TRUE, '운영팀이 02:00 에 차단하고 04:00 에 풉니다.', 'kim.ops@kftc.example.com', '김태호'),
+   'CONFIRMED', 'moon.seojun@kftc.example.com', '문서준', TRUE, '운영팀이 02:00 에 차단하고 04:00 에 풉니다.', 'kim.ops@kftc.example.com', '김태호'),
   ('자동이체통합관리', '088', 4200, 4380,
    '대외계 회선 교체로 자동이체 해지 전문과 CMS 출금 전문 송수신이 중단됩니다.', '신한은행 해지·출금 전문 보류',
    '이준호', '010-0000-3101', 'lee.junho@shinhan.example.com', NULL,
@@ -84,7 +84,7 @@ FROM (VALUES
   ('자동이체통합관리', '240', -27960, -27780,
    '고객정보 시스템 점검으로 조회가 중단되었습니다.', '삼성증권 조회 차단',
    '최유진', '010-0000-4101', NULL, NULL,
-   'COMPLETED', 'hong.sungmin@kftc.example.com', '홍성민', TRUE, '차단과 해제를 마쳤습니다.', 'kim.ops@kftc.example.com', '김태호'),
+   'COMPLETED', 'moon.seojun@kftc.example.com', '문서준', TRUE, '차단과 해제를 마쳤습니다.', 'kim.ops@kftc.example.com', '김태호'),
   -- CMS
   ('CMS', '088', 1560, 1680,
    '코어뱅킹 정기 점검으로 CMS 출금이체가 중단됩니다.', '신한은행 출금 요청을 작업 뒤 일괄 재처리',

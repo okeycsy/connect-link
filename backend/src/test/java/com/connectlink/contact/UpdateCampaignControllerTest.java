@@ -55,6 +55,10 @@ class UpdateCampaignControllerTest {
     return TestUsers.as(TestUsers.KFTC_ACCOUNT_INFO);
   }
 
+  private static RequestPostProcessor moon() {
+    return TestUsers.as(TestUsers.KFTC_AUTO_TRANSFER);
+  }
+
   private static RequestPostProcessor park() {
     return TestUsers.as(TestUsers.KFTC_CMS);
   }
@@ -135,10 +139,10 @@ class UpdateCampaignControllerTest {
     mockMvc
         .perform(
             json(post(BASE), form("AUTO_TRANSFER", today.plusDays(1), today.plusDays(7)))
-                .with(hong()))
+                .with(moon()))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.status").value("UPCOMING"))
-        .andExpect(jsonPath("$.registrantName").value("홍성민"));
+        .andExpect(jsonPath("$.registrantName").value("문서준"));
     assertThat(
             notificationRepository.findByRecipientEmailAndReadAtIsNull(
                 "lee.junho@shinhan.example.com"))
@@ -174,7 +178,7 @@ class UpdateCampaignControllerTest {
     mockMvc
         .perform(
             json(post(BASE), form("AUTO_TRANSFER", today.plusDays(9), today.plusDays(3)))
-                .with(hong()))
+                .with(moon()))
         .andExpect(status().isBadRequest());
   }
 

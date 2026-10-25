@@ -76,6 +76,10 @@ class SignUpReviewControllerTest {
     return TestUsers.as(TestUsers.KFTC_ACCOUNT_INFO);
   }
 
+  private static RequestPostProcessor moon() {
+    return TestUsers.as(TestUsers.KFTC_AUTO_TRANSFER);
+  }
+
   private static RequestPostProcessor park() {
     return TestUsers.as(TestUsers.KFTC_CMS);
   }
@@ -227,7 +231,7 @@ class SignUpReviewControllerTest {
     Long id = apply(email, "004", "알림대상");
     String title = "KB국민은행 알림대상 님이 가입을 신청했습니다";
 
-    for (CurrentUser reviewer : List.of(TestUsers.ADMIN, TestUsers.KFTC_ACCOUNT_INFO)) {
+    for (CurrentUser reviewer : List.of(TestUsers.ADMIN, TestUsers.KFTC_AUTO_TRANSFER)) {
       assertThat(unreadOf(reviewer))
           .filteredOn(n -> n.getTitle().equals(title))
           .singleElement()
@@ -251,10 +255,10 @@ class SignUpReviewControllerTest {
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("ACCOUNT_PENDING_APPROVAL"));
 
-    postJson("/api/v1/sign-ups/" + id + "/approval", Map.of(), hong())
+    postJson("/api/v1/sign-ups/" + id + "/approval", Map.of(), moon())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("ACTIVE"))
-        .andExpect(jsonPath("$.reviewerName").value("홍성민"))
+        .andExpect(jsonPath("$.reviewerName").value("문서준"))
         .andExpect(jsonPath("$.reviewedAt").exists());
 
     login(email).andExpect(status().isOk()).andExpect(jsonPath("$.name").value("승인대상"));
@@ -273,7 +277,7 @@ class SignUpReviewControllerTest {
     postJson("/api/v1/sign-ups/" + id + "/approval", Map.of(), TestUsers.admin())
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("SIGN_UP_ALREADY_REVIEWED"));
-    postJson("/api/v1/sign-ups/" + id + "/rejection", Map.of("reason", "늦은 반려"), hong())
+    postJson("/api/v1/sign-ups/" + id + "/rejection", Map.of("reason", "늦은 반려"), moon())
         .andExpect(status().isConflict());
   }
 
@@ -282,7 +286,7 @@ class SignUpReviewControllerTest {
     Long id = apply(newEmail(), "004", "권한확인");
 
     mockMvc
-        .perform(get("/api/v1/sign-ups/" + id).with(hong()))
+        .perform(get("/api/v1/sign-ups/" + id).with(moon()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.department").value("디지털금융부"))
         .andExpect(jsonPath("$.extensionPhone").value("02-0000-1234"))
@@ -303,14 +307,14 @@ class SignUpReviewControllerTest {
     String email = newEmail();
     Long id = apply(email, "004", "반려대상");
 
-    postJson("/api/v1/sign-ups/" + id + "/rejection", Map.of("reason", " "), hong())
+    postJson("/api/v1/sign-ups/" + id + "/rejection", Map.of("reason", " "), moon())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.fieldErrors[0].field").value("reason"))
         .andExpect(jsonPath("$.fieldErrors[0].message").value("반려 사유를 적어 주세요."));
     postJson(
             "/api/v1/sign-ups/" + id + "/rejection",
             Map.of("reason", "  소속 기관을 다시 골라 주세요.  "),
-            hong())
+            moon())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("REJECTED"))
         .andExpect(jsonPath("$.rejectionReason").value("소속 기관을 다시 골라 주세요."));
@@ -319,7 +323,7 @@ class SignUpReviewControllerTest {
     assertThat(mail.get("subject").asText()).isEqualTo("[연결이] 가입 신청이 반려되었습니다");
     assertThat(mail.get("body").asText())
         .contains("반려 사유: 소속 기관을 다시 골라 주세요.")
-        .contains("결제원 담당자 홍성민 님");
+        .contains("결제원 담당자 문서준 님");
     login(email)
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("ACCOUNT_REJECTED"));
@@ -329,7 +333,7 @@ class SignUpReviewControllerTest {
     Long again = apply(email, "088", "반려대상");
     assertThat(again).isEqualTo(id);
     mockMvc
-        .perform(get("/api/v1/sign-ups/" + id).with(hong()))
+        .perform(get("/api/v1/sign-ups/" + id).with(moon()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("PENDING_APPROVAL"))
         .andExpect(jsonPath("$.organizationName").value("신한은행"))

@@ -165,13 +165,24 @@ class ChatControllerTest {
 
   @Test
   void 다른_업무_사람도_초대받으면_그_방을_본다() throws Exception {
-    // CMS 박하늘은 계좌통합관리 담당이 아니지만 시드에서 계좌통합관리 단체방에 초대받았다.
+    // 시드의 결제원 현업 담당자는 맡은 업무 하나의 방에만 있다.
     send(get(ROOMS).param("business", "cms"), null, parkCms())
         .andExpect(jsonPath("$[0].name").value("CMS 단체방"))
+        .andExpect(jsonPath("$[*].name").value(not(hasItem("계좌통합관리 단체방"))));
+    send(get(ROOMS + "/" + businessRoom()), null, parkCms()).andExpect(status().isForbidden());
+    // CMS 박하늘은 계좌통합관리 담당이 아니지만 초대받으면 그 방을 본다.
+    send(
+            post(ROOMS + "/" + businessRoom() + "/members"),
+            Map.of("emails", List.of("park.cms@kftc.example.com")),
+            hong())
+        .andExpect(status().isOk());
+    send(get(ROOMS).param("business", "cms"), null, parkCms())
         .andExpect(jsonPath("$[*].name").value(hasItem("계좌통합관리 단체방")));
     send(get(ROOMS + "/" + businessRoom()), null, parkCms())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.permissions.leave").value(true));
+    send(delete(ROOMS + "/" + businessRoom() + "/members/me"), null, parkCms())
+        .andExpect(status().isNoContent());
   }
 
   @Test

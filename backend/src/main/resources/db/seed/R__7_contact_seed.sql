@@ -36,7 +36,7 @@ FROM (VALUES
   ('050',  'ACCOUNT_INFO', '회비',                    '맹소율', '경영관리부',   '회계팀',     '주임', 'BUSINESS', 'PRIMARY',   '02-0000-6601', NULL,            'maeng.soyul@fsb.example.com',    25,  '맹소율'),
   ('048',  'ACCOUNT_INFO', '회비',                    '피재현', '경영지원부',   '재무팀',     '대리', 'BUSINESS', 'PRIMARY',   '02-0000-7601', '010-0000-7601', 'pi.jaehyun@cu.example.com',      25,  '피재현'),
   -- 자동이체통합관리
-  ('KFTC', 'AUTO_TRANSFER', '자동이체 통합조회',      '홍성민', '계좌서비스부', '계좌통합팀', '과장', 'BUSINESS', 'PRIMARY',   '1101', '010-0000-1101', 'hong.sungmin@kftc.example.com', 20,  '홍성민'),
+  ('KFTC', 'AUTO_TRANSFER', '자동이체 통합조회',      '문서준', '계좌서비스부', '자동이체팀', '과장', 'BUSINESS', 'PRIMARY',   '1601', '010-0000-1601', 'moon.seojun@kftc.example.com',  20,  '문서준'),
   ('KFTC', 'AUTO_TRANSFER', NULL,                     '김태호', '정보시스템부', '운영팀',     '대리', 'IT',       'PRIMARY',   '1201', NULL,            'kim.ops@kftc.example.com',      40,  '김태호'),
   ('004',  'AUTO_TRANSFER', '자동이체 통합조회',      '장서윤', '디지털금융부', '수신결제팀', '차장', 'BUSINESS', 'PRIMARY',   '02-0000-2301', '010-0000-2301', 'jang.seoyun@kb.example.com',    100, '장서윤'),
   ('088',  'AUTO_TRANSFER', NULL,                     '이준호', 'IT운영부',     '대외계팀',   '과장', 'IT',       'PRIMARY',   '02-0000-3101', '010-0000-3101', 'lee.junho@shinhan.example.com',  15,  '이준호'),
