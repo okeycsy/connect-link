@@ -11,7 +11,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-/** 발송함. 메일·매터모스트로 보낼 내용을 기록한다. 프로토타입은 여기까지만 하고 실제로 보내지 않는다. */
+/** 발송함. 메일·매터모스트로 보낼 내용을 기록한다. 실제 발송은 켜 둔 서버에서만 {@link OutboxDispatcher} 가 한다. */
 @Entity
 @Table(name = "notification_outbox")
 public class NotificationOutbox extends AuditedEntity {
@@ -44,6 +44,14 @@ public class NotificationOutbox extends AuditedEntity {
 
   @Column(name = "sent_at")
   private LocalDateTime sentAt;
+
+  /** 실제 발송을 해 본 횟수. */
+  @Column(name = "attempts", nullable = false)
+  private int attempts;
+
+  /** 마지막 발송 실패 까닭. */
+  @Column(name = "last_error", length = 500)
+  private String lastError;
 
   protected NotificationOutbox() {}
 
@@ -86,6 +94,31 @@ public class NotificationOutbox extends AuditedEntity {
 
   public OutboxStatus getStatus() {
     return status;
+  }
+
+  public int getAttempts() {
+    return attempts;
+  }
+
+  public String getLastError() {
+    return lastError;
+  }
+
+  /** 보냈다. */
+  void markSent(LocalDateTime now) {
+    this.attempts++;
+    this.status = OutboxStatus.SENT;
+    this.sentAt = now;
+    this.lastError = null;
+  }
+
+  /** 보내지 못했다. 정해진 횟수를 채우면 실패로 끝내고, 아니면 발송 대기로 두어 다음에 다시 보낸다. */
+  void markAttemptFailed(String error, int maxAttempts) {
+    this.attempts++;
+    this.lastError = error == null ? null : error.substring(0, Math.min(error.length(), 500));
+    if (attempts >= maxAttempts) {
+      this.status = OutboxStatus.FAILED;
+    }
   }
 
   public LocalDateTime getSentAt() {

@@ -3467,6 +3467,13 @@ export interface components {
       statusLabel: string;
       /** Format: date-time */
       sentAt?: string | null;
+      /**
+       * Format: int32
+       * @description 실제 발송을 해 본 횟수
+       */
+      attempts: number;
+      /** @description 마지막 발송 실패 까닭 */
+      lastError?: string | null;
       /** Format: date-time */
       createdAt: string;
     };

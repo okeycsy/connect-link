@@ -16,6 +16,9 @@ public interface NotificationOutboxRepository extends JpaRepository<Notification
   List<NotificationOutbox> findTop5ByChannelAndRecipientOrderByIdDesc(
       NotificationChannel channel, String recipient);
 
+  /** 발송기가 보낼 차례인 건. 오래된 것부터. */
+  List<NotificationOutbox> findByStatusOrderByIdAsc(OutboxStatus status, Pageable pageable);
+
   /** 지울 알림을 가리키던 발송 기록에서 알림 연결만 끊는다. 발송 기록은 남는다. */
   @Modifying(flushAutomatically = true)
   @Query(

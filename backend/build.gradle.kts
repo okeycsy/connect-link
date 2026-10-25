@@ -26,6 +26,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")
+    // 실제 메일 발송(내부 SMTP). 발송은 app.notification.delivery.enabled 가 켜진 서버에서만 한다. SHY 승인(2026-10-25).
+    implementation("org.springframework.boot:spring-boot-starter-mail")
     implementation("org.flywaydb:flyway-core")
     implementation("org.springdoc:springdoc-openapi-ui:1.8.0")
     // 엑셀(xlsx) 생성. Spring Boot 가 버전을 관리하지 않아 직접 적는다. 5.2.x 는 Java 8 이상에서 돈다.
