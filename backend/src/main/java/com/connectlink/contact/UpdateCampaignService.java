@@ -15,6 +15,7 @@ import com.connectlink.contact.dto.UpdateCampaignSaveRequest;
 import com.connectlink.contact.dto.UpdateCampaignScheduleResponse;
 import com.connectlink.notification.NotificationChannel;
 import com.connectlink.notification.NotificationCommand;
+import com.connectlink.notification.NotificationProperties;
 import com.connectlink.notification.NotificationService;
 import com.connectlink.notification.NotificationType;
 import com.connectlink.notification.dto.MailPreviewResponse;
@@ -64,6 +65,7 @@ public class UpdateCampaignService {
   private final OrganizationService organizationService;
   private final AccountService accountService;
   private final NotificationService notificationService;
+  private final NotificationProperties notificationProperties;
   private final Clock clock;
 
   public UpdateCampaignService(
@@ -76,6 +78,7 @@ public class UpdateCampaignService {
       OrganizationService organizationService,
       AccountService accountService,
       NotificationService notificationService,
+      NotificationProperties notificationProperties,
       Clock clock) {
     this.campaignRepository = campaignRepository;
     this.organizationRepository = organizationRepository;
@@ -86,6 +89,7 @@ public class UpdateCampaignService {
     this.organizationService = organizationService;
     this.accountService = accountService;
     this.notificationService = notificationService;
+    this.notificationProperties = notificationProperties;
     this.clock = clock;
   }
 
@@ -367,7 +371,8 @@ public class UpdateCampaignService {
             + ")에 우리 기관의 "
             + business.getLabel()
             + " 담당자 현행화 완료가 아직 확인되지 않았습니다. 담당자 정보를 확인해 바뀐 것은 고치고, 모두 맞으면 연락처 화면에서 \"현행화 완료\" 를 눌러 주세요."
-            + " 완료하면 리마인드 메일은 더 가지 않습니다.";
+            + " 완료하면 리마인드 메일은 더 가지 않습니다.\n"
+            + notificationProperties.linkTo("/" + business.getSlug() + "/contacts");
     return new ReminderMessage(title, text);
   }
 

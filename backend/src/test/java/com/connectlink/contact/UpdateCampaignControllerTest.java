@@ -290,6 +290,11 @@ class UpdateCampaignControllerTest {
             jsonPath("$.subject")
                 .value(org.hamcrest.Matchers.startsWith("[금융결제원] (계좌통합관리) 정기 변경 리마인드: ")))
         .andExpect(jsonPath("$.body").value(org.hamcrest.Matchers.containsString("현행화 완료")))
+        .andExpect(
+            jsonPath("$.body")
+                .value(
+                    org.hamcrest.Matchers.endsWith(
+                        "가지 않습니다.\nhttp://localhost:8080/account-info/contacts")))
         .andExpect(jsonPath("$.bodyMaxLength").value(1000))
         .andExpect(jsonPath("$.organizations.length()").value(4))
         .andExpect(jsonPath("$.organizations[?(@.organizationCode == '088')]").isEmpty());
