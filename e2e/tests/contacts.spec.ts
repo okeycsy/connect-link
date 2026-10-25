@@ -180,7 +180,7 @@ test.describe('가. 담당자 연락처', () => {
       .getByText('미확인', { exact: true })
       .click();
     await expect(organizations.getByText('완료', { exact: true })).toHaveCount(0);
-    await expect(organizations).toContainText('SBI저축은행');
+    await expect(organizations).toContainText('저축은행중앙회');
     await progress
       .getByRole('group', { name: '기관' })
       .getByText('정보 변경', { exact: true })

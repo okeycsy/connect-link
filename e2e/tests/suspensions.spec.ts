@@ -407,7 +407,7 @@ test.describe("라. 일시중단", () => {
       .click();
     const history = page.getByTestId("suspension-table");
     await expect(history).toContainText("재해복구 전환 훈련");
-    await expect(history).not.toContainText("SBI저축은행");
+    await expect(history).not.toContainText("신협");
     await shot(page, "suspension-organization-history");
 
     // 전 영업일 취합을 확인 뒤 운영·관제 채널로 수동으로 보낸다.
