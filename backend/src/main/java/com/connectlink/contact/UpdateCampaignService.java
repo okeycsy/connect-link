@@ -351,9 +351,9 @@ public class UpdateCampaignService {
   private ReminderMessage reminderMessage(UpdateCampaign campaign) {
     Business business = campaign.getBusiness();
     String title =
-        "["
+        "[금융결제원] ("
             + business.getLabel()
-            + "] 정기 변경 리마인드: "
+            + ") 정기 변경 리마인드: "
             + campaign.getTitle()
             + " (~"
             + campaign.getEndDate()

@@ -1,12 +1,17 @@
-import { type APIRequestContext, expect, type Page, test } from '@playwright/test';
+import {
+  type APIRequestContext,
+  expect,
+  type Page,
+  test,
+} from "@playwright/test";
 
-import { csrf, mailbox, skipContactReconfirm } from './support/account';
+import { csrf, mailbox, skipContactReconfirm } from "./support/account";
 
 // 이 파일은 공통 세션(데모 관리자) 없이 빈 브라우저로 시작한다. 결제원 담당자(홍성민)와 기관 담당자(김민준)로 로그인한다.
 test.use({ storageState: { cookies: [], origins: [] } });
 
-const SEEDED = '계좌통합관리 수수료 체계 개편 의견 요청';
-const DEMO_PASSWORD = 'demo1234!';
+const SEEDED = "계좌통합관리 수수료 체계 개편 의견 요청";
+const DEMO_PASSWORD = "demo1234!";
 
 /** 전체 화면 캡처. 위로 올린 뒤 찍어야 고정된 상단 바가 중간에 끼지 않는다. */
 async function shot(page: Page, name: string) {
@@ -15,13 +20,13 @@ async function shot(page: Page, name: string) {
 }
 
 async function loginAs(page: Page, button: string) {
-  await page.goto('/login');
-  await page.getByRole('button', { name: button }).click();
+  await page.goto("/login");
+  await page.getByRole("button", { name: button }).click();
   await expect(page).toHaveURL(/\/home$/);
 }
 
 async function apiLogin(request: APIRequestContext, email: string) {
-  const login = await request.post('/api/v1/auth/login', {
+  const login = await request.post("/api/v1/auth/login", {
     data: { email, password: DEMO_PASSWORD },
     headers: await csrf(request),
   });
@@ -29,34 +34,45 @@ async function apiLogin(request: APIRequestContext, email: string) {
 }
 
 /** 홍성민으로 KB국민은행(김민준)만 대상인 계좌통합관리 의견 요청을 만들어 회신중으로 연다. 객관식(필수)·주관식 질문이 하나씩 있다. */
-async function openRequestForGana(request: APIRequestContext, title: string): Promise<number> {
-  await apiLogin(request, 'hong.sungmin@kftc.example.com');
+async function openRequestForGana(
+  request: APIRequestContext,
+  title: string,
+): Promise<number> {
+  await apiLogin(request, "hong.sungmin@kftc.example.com");
   const candidates = (await (
-    await request.get('/api/v1/opinion-requests/recipient-candidates?business=account-info')
+    await request.get(
+      "/api/v1/opinion-requests/recipient-candidates?business=account-info",
+    )
   ).json()) as {
     organizationId: number;
     organizationCode: string;
     members: { contactId: number; email: string }[];
   }[];
-  const gana = candidates.find((c) => c.organizationCode === '004')!;
-  const kim = gana.members.find((m) => m.email === 'kim.minjun@kb.example.com')!;
-  const created = await request.post('/api/v1/opinion-requests', {
+  const gana = candidates.find((c) => c.organizationCode === "004")!;
+  const kim = gana.members.find(
+    (m) => m.email === "kim.minjun@kb.example.com",
+  )!;
+  const created = await request.post("/api/v1/opinion-requests", {
     data: {
-      business: 'ACCOUNT_INFO',
+      business: "ACCOUNT_INFO",
       title,
-      content: '변경안에 대한 의견을 주세요.',
+      content: "변경안에 대한 의견을 주세요.",
       dueDate: new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10),
       questions: [
         {
-          type: 'SINGLE_CHOICE',
-          title: '전환 시점으로 어느 때가 좋습니까?',
+          type: "SINGLE_CHOICE",
+          title: "전환 시점으로 어느 때가 좋습니까?",
           required: true,
           options: [
-            { label: '다음 달', jump: null },
-            { label: '다음 분기', jump: null },
+            { label: "다음 달", jump: null },
+            { label: "다음 분기", jump: null },
           ],
         },
-        { type: 'TEXT', title: '준비에 필요한 기간을 적어 주세요.', required: false },
+        {
+          type: "TEXT",
+          title: "준비에 필요한 기간을 적어 주세요.",
+          required: false,
+        },
       ],
       targets: [
         {
@@ -76,177 +92,240 @@ async function openRequestForGana(request: APIRequestContext, title: string): Pr
   return id;
 }
 
-test.describe('나. 의견 요청', () => {
+test.describe("나. 의견 요청", () => {
   test.beforeEach(async ({ page }) => skipContactReconfirm(page));
 
-  test('결제원 담당자가 회신 현황을 보고 리마인드·엑셀을 쓰고, 새 요청을 만들어 회신을 요청한다', async ({
+  test("결제원 담당자가 회신 현황을 보고 리마인드·엑셀을 쓰고, 새 요청을 만들어 회신을 요청한다", async ({
     page,
     request,
   }) => {
-    await loginAs(page, '홍성민 (결제원 · 현업)로 로그인');
+    await loginAs(page, "홍성민 (결제원 · 현업)로 로그인");
     await page
-      .getByRole('navigation')
-      .getByRole('link', { name: '의견 요청', exact: true })
+      .getByRole("navigation")
+      .getByRole("link", { name: "의견 요청", exact: true })
       .click();
     await expect(page).toHaveURL(/\/account-info\/opinions$/);
-    await expect(page.getByRole('heading', { name: '의견 요청' })).toBeVisible();
-    const seededRow = page.getByTestId('opinion-table').getByRole('button', { name: SEEDED });
-    await expect(seededRow).toContainText('4/6곳');
-    await shot(page, 'opinion-list');
+    await expect(
+      page.getByRole("heading", { name: "의견 요청" }),
+    ).toBeVisible();
+    const seededRow = page
+      .getByTestId("opinion-table")
+      .getByRole("button", { name: SEEDED });
+    await expect(seededRow).toContainText("4/6곳");
+    await shot(page, "opinion-list");
 
     // 회신 현황: 제출 기관 수·회신율·유형별 기관
     await seededRow.click();
-    await expect(page.getByRole('heading', { name: SEEDED })).toBeVisible();
-    await shot(page, 'opinion-detail');
-    await page.getByRole('tab', { name: '회신 현황' }).click();
-    await expect(page.getByTestId('reply-rate')).toHaveText('67%');
-    await expect(page.getByTestId('not-replied-names')).toContainText('KB국민은행, 신협');
+    await expect(page.getByRole("heading", { name: SEEDED })).toBeVisible();
+    await shot(page, "opinion-detail");
+    await page.getByRole("tab", { name: "회신 현황" }).click();
+    await expect(page.getByTestId("reply-rate")).toHaveText("67%");
+    await expect(page.getByTestId("not-replied-names")).toContainText(
+      "KB국민은행, 신협",
+    );
     // 질문별 답: 선택지마다 고른 기관 수와 이름, 주관식 답.
-    const questionSummary = page.getByTestId('question-summary');
-    await expect(questionSummary).toContainText('개편안을 언제부터 적용하는 것이 좋습니까?');
-    await expect(questionSummary).toContainText('SBI저축은행, 저축은행중앙회');
-    await expect(questionSummary).toContainText('약 12만 건');
-    await shot(page, 'opinion-replies');
+    const questionSummary = page.getByTestId("question-summary");
+    await expect(questionSummary).toContainText(
+      "개편안을 언제부터 적용하는 것이 좋습니까?",
+    );
+    await expect(questionSummary).toContainText("SBI저축은행, 저축은행중앙회");
+    await expect(questionSummary).toContainText("약 12만 건");
+    await shot(page, "opinion-replies");
 
     // 미회신만 걸러 보기
     await page
-      .getByRole('group', { name: '회신' })
+      .getByRole("group", { name: "회신" })
       .getByText(/미회신 \d/)
       .click();
-    const statusTable = page.getByTestId('reply-status-table');
-    await expect(statusTable.getByRole('button', { name: 'KB국민은행 회신' })).toBeVisible();
-    await expect(statusTable.getByRole('button', { name: '신한은행 회신' })).toHaveCount(0);
+    const statusTable = page.getByTestId("reply-status-table");
+    await expect(
+      statusTable.getByRole("button", { name: "KB국민은행 회신" }),
+    ).toBeVisible();
+    await expect(
+      statusTable.getByRole("button", { name: "신한은행 회신" }),
+    ).toHaveCount(0);
 
     // 수정 요청한 기관은 패널에서 사유를 본다.
     await page
-      .getByRole('group', { name: '회신' })
+      .getByRole("group", { name: "회신" })
       .getByText(/전체 \d/)
       .click();
-    await statusTable.getByRole('button', { name: '삼성증권 회신' }).click();
-    await expect(page.getByTestId('revision-request')).toBeVisible();
+    await statusTable.getByRole("button", { name: "삼성증권 회신" }).click();
+    await expect(page.getByTestId("revision-request")).toBeVisible();
     await page.waitForTimeout(300);
-    await shot(page, 'opinion-reply-drawer');
-    await page.keyboard.press('Escape');
+    await shot(page, "opinion-reply-drawer");
+    await page.keyboard.press("Escape");
 
     // 리마인드: 미회신 기관 담당자에게 메일이 간다.
-    await page.getByRole('button', { name: '미회신 기관 리마인드' }).click();
-    const remind = page.getByRole('dialog', { name: '리마인드 메일 보내기' });
-    await expect(remind).toContainText('KB국민은행');
+    await page.getByRole("button", { name: "미회신 기관 리마인드" }).click();
+    const remind = page.getByRole("dialog", { name: "리마인드 메일 보내기" });
+    await expect(remind).toContainText("KB국민은행");
     await page.waitForTimeout(300);
-    await shot(page, 'opinion-remind');
-    await remind.getByRole('button', { name: '다음: 메일 확인' }).click();
+    await shot(page, "opinion-remind");
+    await remind.getByRole("button", { name: "다음: 메일 확인" }).click();
     // 보내기 전에 실제로 나갈 제목·본문을 확인하고 고친다.
-    const check = page.getByRole('dialog', { name: '리마인드 메일 확인' });
-    const subject = check.getByRole('textbox', { name: '제목' });
-    await expect(subject).toHaveValue(`회신을 기다립니다: ${SEEDED}`);
-    await expect(check.getByRole('textbox', { name: '본문' })).toHaveValue(/회신해 주세요/);
-    await expect(check.getByTestId('mail-preview')).toContainText('KB국민은행');
+    const check = page.getByRole("dialog", { name: "리마인드 메일 확인" });
+    const subject = check.getByRole("textbox", { name: "제목" });
+    await expect(subject).toHaveValue(
+      new RegExp(
+        `^\\[금융결제원\\] ${SEEDED} 회신 리마인드 \\(~\\d{4}-\\d{2}-\\d{2}까지\\)$`,
+      ),
+    );
+    await expect(check.getByRole("textbox", { name: "본문" })).toHaveValue(
+      /연결이에서 회신해 주세요\.\n.+\/account-info\/opinions\/\d+$/,
+    );
+    await expect(check.getByTestId("mail-preview")).toContainText("KB국민은행");
     await page.waitForTimeout(300);
-    await shot(page, 'opinion-remind-preview');
+    await shot(page, "opinion-remind-preview");
     await subject.fill(`[회신 요청] ${SEEDED}`);
-    await check.getByRole('button', { name: /곳에 보내기$/ }).click();
-    await expect(page.getByTestId('remind-sent')).toContainText('리마인드 메일을 보냈습니다');
-    const mails = await mailbox(request, 'kim.minjun@kb.example.com');
-    expect(mails.some((m) => m.subject === `[회신 요청] ${SEEDED}`)).toBeTruthy();
-    await page.getByRole('tab', { name: '리마인드 이력' }).click();
-    await expect(page.getByTestId('reminder-history')).toContainText('홍성민');
+    await check.getByRole("button", { name: /곳에 보내기$/ }).click();
+    await expect(page.getByTestId("remind-sent")).toContainText(
+      "리마인드 메일을 보냈습니다",
+    );
+    const mails = await mailbox(request, "kim.minjun@kb.example.com");
+    expect(
+      mails.some((m) => m.subject === `[회신 요청] ${SEEDED}`),
+    ).toBeTruthy();
+    await page.getByRole("tab", { name: "리마인드 이력" }).click();
+    await expect(page.getByTestId("reminder-history")).toContainText("홍성민");
 
     // 취합표와 엑셀(내부망)
-    await page.getByRole('tab', { name: '취합표' }).click();
-    await expect(page.getByTestId('collation-table')).toContainText('신한은행');
-    await expect(page.getByTestId('collation-table')).toContainText('수수료 정산, 고객 안내');
-    await shot(page, 'opinion-collation');
+    await page.getByRole("tab", { name: "취합표" }).click();
+    await expect(page.getByTestId("collation-table")).toContainText("신한은행");
+    await expect(page.getByTestId("collation-table")).toContainText(
+      "수수료 정산, 고객 안내",
+    );
+    await shot(page, "opinion-collation");
     const [download] = await Promise.all([
-      page.waitForEvent('download'),
-      page.getByRole('button', { name: '엑셀 다운로드' }).click(),
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "엑셀 다운로드" }).click(),
     ]);
     // 화면은 응답 헤더의 이름으로 저장한다(헤드리스 크롬은 blob 저장 이름을 넘기지 않아 내용과 헤더를 따로 본다).
     const saved = await download.createReadStream();
-    const head: Buffer = await new Promise((resolve) => saved.once('data', resolve));
-    expect(head.subarray(0, 2).toString()).toBe('PK');
+    const head: Buffer = await new Promise((resolve) =>
+      saved.once("data", resolve),
+    );
+    expect(head.subarray(0, 2).toString()).toBe("PK");
     const excel = await page.request.get(
       page
         .url()
-        .replace(/\?.*$/, '')
-        .replace('/account-info/opinions/', '/api/v1/opinion-requests/') + '/collation/excel',
+        .replace(/\?.*$/, "")
+        .replace("/account-info/opinions/", "/api/v1/opinion-requests/") +
+        "/collation/excel",
     );
-    expect(decodeURIComponent(excel.headers()['content-disposition'])).toMatch(
+    expect(decodeURIComponent(excel.headers()["content-disposition"])).toMatch(
       /filename\*=UTF-8''의견취합_.+\.xlsx$/,
     );
 
     // 새 요청: 질문(객관식·주관식)과 첨부자료를 넣고, 세부업무 칩·한 명씩 체크·업권 칩으로 담당자를 고른다.
     const title = `연동 일정 의견 요청 ${Date.now().toString(36).slice(-5)}`;
     await page
-      .getByRole('navigation')
-      .getByRole('link', { name: '의견 요청', exact: true })
+      .getByRole("navigation")
+      .getByRole("link", { name: "의견 요청", exact: true })
       .click();
-    await page.getByRole('link', { name: '새 의견 요청' }).click();
+    await page.getByRole("link", { name: "새 의견 요청" }).click();
     await expect(page).toHaveURL(/\/account-info\/opinions\/new$/);
-    await page.getByLabel('요청명').fill(title);
-    await page.getByLabel('요청 목적·내용').fill('다음 분기 연동 일정 초안에 대한 의견을 주세요.');
+    await page.getByLabel("요청명").fill(title);
     await page
-      .getByRole('textbox', { name: '1번 질문', exact: true })
-      .fill('연동 시작 시기를 골라 주세요.');
-    await page.getByRole('textbox', { name: '1번 질문 선택지 1', exact: true }).fill('1분기');
-    await page.getByRole('textbox', { name: '1번 질문 선택지 2', exact: true }).fill('2분기');
-    await page.getByRole('button', { name: '선택지 추가' }).click();
-    await page.getByRole('textbox', { name: '1번 질문 선택지 3', exact: true }).fill('하반기');
-    await page.getByRole('button', { name: '질문 추가' }).click();
+      .getByLabel("요청 목적·내용")
+      .fill("다음 분기 연동 일정 초안에 대한 의견을 주세요.");
     await page
-      .getByRole('textbox', { name: '2번 질문', exact: true })
-      .fill('연동 담당 부서를 적어 주세요.');
-    await page.getByRole('textbox', { name: '2번 질문 유형' }).click();
-    await page.getByRole('option', { name: '주관식' }).click();
-    await expect(page.getByTestId('question-card').nth(1)).toContainText('기관이 글로 답합니다.');
+      .getByRole("textbox", { name: "1번 질문", exact: true })
+      .fill("연동 시작 시기를 골라 주세요.");
     await page
-      .getByTestId('pending-attachments')
-      .locator('input[type=file]')
+      .getByRole("textbox", { name: "1번 질문 선택지 1", exact: true })
+      .fill("1분기");
+    await page
+      .getByRole("textbox", { name: "1번 질문 선택지 2", exact: true })
+      .fill("2분기");
+    await page.getByRole("button", { name: "선택지 추가" }).click();
+    await page
+      .getByRole("textbox", { name: "1번 질문 선택지 3", exact: true })
+      .fill("하반기");
+    await page.getByRole("button", { name: "질문 추가" }).click();
+    await page
+      .getByRole("textbox", { name: "2번 질문", exact: true })
+      .fill("연동 담당 부서를 적어 주세요.");
+    await page.getByRole("textbox", { name: "2번 질문 유형" }).click();
+    await page.getByRole("option", { name: "주관식" }).click();
+    await expect(page.getByTestId("question-card").nth(1)).toContainText(
+      "기관이 글로 답합니다.",
+    );
+    await page
+      .getByTestId("pending-attachments")
+      .locator("input[type=file]")
       .setInputFiles({
-        name: '연동일정안.pdf',
-        mimeType: 'application/pdf',
-        buffer: Buffer.from('%PDF-1.4 sample'),
+        name: "연동일정안.pdf",
+        mimeType: "application/pdf",
+        buffer: Buffer.from("%PDF-1.4 sample"),
       });
-    await expect(page.getByTestId('pending-attachments')).toContainText('연동일정안.pdf');
+    await expect(page.getByTestId("pending-attachments")).toContainText(
+      "연동일정안.pdf",
+    );
     await page
-      .getByRole('group', { name: '세부업무로 고르기' })
-      .getByText('오픈뱅킹 안심차단', { exact: true })
+      .getByRole("group", { name: "세부업무로 고르기" })
+      .getByText("오픈뱅킹 안심차단", { exact: true })
       .click();
-    await expect(page.getByRole('checkbox', { name: '삼성증권 최유진' })).toBeChecked();
-    await expect(page.getByRole('checkbox', { name: '저축은행중앙회 윤서연' })).toBeChecked();
-    await expect(page.getByRole('checkbox', { name: '신한은행 박지훈' })).not.toBeChecked();
-    await page.getByRole('checkbox', { name: 'KB국민은행 김민준' }).check();
-    await expect(page.getByTestId('target-summary')).toHaveText('대상 3곳 · 회신 담당자 3명');
+    await expect(
+      page.getByRole("checkbox", { name: "삼성증권 최유진" }),
+    ).toBeChecked();
+    await expect(
+      page.getByRole("checkbox", { name: "저축은행중앙회 윤서연" }),
+    ).toBeChecked();
+    await expect(
+      page.getByRole("checkbox", { name: "신한은행 박지훈" }),
+    ).not.toBeChecked();
+    await page.getByRole("checkbox", { name: "KB국민은행 김민준" }).check();
+    await expect(page.getByTestId("target-summary")).toHaveText(
+      "대상 3곳 · 회신 담당자 3명",
+    );
     // 업권을 고르면 그 업권 기관이 담당자 연락처와 함께 모두 대상이 된다(계정이 없는 담당자도 고른다).
     await page
-      .getByRole('group', { name: '업권으로 고르기' })
+      .getByRole("group", { name: "업권으로 고르기" })
       .getByText(/^서민금융기관 \d+곳$/)
       .click();
-    await expect(page.getByRole('checkbox', { name: 'SBI저축은행 대상' })).toBeChecked();
-    await expect(page.getByRole('checkbox', { name: '신협 대상' })).toBeChecked();
-    await expect(page.getByRole('checkbox', { name: '신협 정현우' })).toBeChecked();
-    await expect(page.getByRole('checkbox', { name: 'SBI저축은행 문하린' })).toBeChecked();
-    await expect(page.getByTestId('target-summary')).toHaveText('대상 5곳 · 회신 담당자 6명');
-    await shot(page, 'opinion-editor');
-    await page.getByRole('button', { name: '저장', exact: true }).click();
-
-    await expect(page.getByRole('heading', { name: title })).toBeVisible();
-    await expect(page.getByText('작성중', { exact: true })).toBeVisible();
-    await expect(page.getByTestId('question-list')).toContainText(
-      '1. 연동 시작 시기를 골라 주세요.',
+    await expect(
+      page.getByRole("checkbox", { name: "SBI저축은행 대상" }),
+    ).toBeChecked();
+    await expect(
+      page.getByRole("checkbox", { name: "신협 대상" }),
+    ).toBeChecked();
+    await expect(
+      page.getByRole("checkbox", { name: "신협 정현우" }),
+    ).toBeChecked();
+    await expect(
+      page.getByRole("checkbox", { name: "SBI저축은행 문하린" }),
+    ).toBeChecked();
+    await expect(page.getByTestId("target-summary")).toHaveText(
+      "대상 5곳 · 회신 담당자 6명",
     );
-    await expect(page.getByTestId('question-list')).toContainText('1분기 / 2분기 / 하반기');
-    await expect(page.getByTestId('attachment-panel').first()).toContainText('연동일정안.pdf');
-    await page.getByRole('button', { name: '회신 요청 시작' }).click();
+    await shot(page, "opinion-editor");
+    await page.getByRole("button", { name: "저장", exact: true }).click();
+
+    await expect(page.getByRole("heading", { name: title })).toBeVisible();
+    await expect(page.getByText("작성중", { exact: true })).toBeVisible();
+    await expect(page.getByTestId("question-list")).toContainText(
+      "1. 연동 시작 시기를 골라 주세요.",
+    );
+    await expect(page.getByTestId("question-list")).toContainText(
+      "1분기 / 2분기 / 하반기",
+    );
+    await expect(page.getByTestId("attachment-panel").first()).toContainText(
+      "연동일정안.pdf",
+    );
+    await page.getByRole("button", { name: "회신 요청 시작" }).click();
     await page
-      .getByRole('dialog', { name: '회신 요청 시작' })
-      .getByRole('button', { name: '시작하기' })
+      .getByRole("dialog", { name: "회신 요청 시작" })
+      .getByRole("button", { name: "시작하기" })
       .click();
-    await expect(page.getByText('회신중', { exact: true })).toBeVisible();
-    const opened = await mailbox(request, 'kim.minjun@kb.example.com');
-    expect(opened.some((m) => m.subject.includes(`의견 요청: ${title}`))).toBeTruthy();
+    await expect(page.getByText("회신중", { exact: true })).toBeVisible();
+    const opened = await mailbox(request, "kim.minjun@kb.example.com");
+    expect(
+      opened.some((m) => m.subject.includes(`의견 요청: ${title}`)),
+    ).toBeTruthy();
   });
 
-  test('기관 담당자가 임시저장·최종제출하고, 수정 요청이 승인되면 다시 고친다', async ({
+  test("기관 담당자가 임시저장·최종제출하고, 수정 요청이 승인되면 다시 고친다", async ({
     page,
     browser,
   }) => {
@@ -256,46 +335,54 @@ test.describe('나. 의견 요청', () => {
     });
     const id = await openRequestForGana(hong.request, title);
 
-    await loginAs(page, '김민준 (참가기관 · 현업)로 로그인');
+    await loginAs(page, "김민준 (참가기관 · 현업)로 로그인");
     await page
-      .getByRole('navigation')
-      .getByRole('link', { name: '의견 요청', exact: true })
+      .getByRole("navigation")
+      .getByRole("link", { name: "의견 요청", exact: true })
       .click();
-    const row = page.getByTestId('opinion-table').getByRole('button', { name: title });
-    await expect(row).toContainText('미작성');
+    const row = page
+      .getByTestId("opinion-table")
+      .getByRole("button", { name: title });
+    await expect(row).toContainText("미작성");
     await row.click();
     await expect(page).toHaveURL(new RegExp(`/account-info/opinions/${id}$`));
-    const reply = page.getByTestId('my-reply');
+    const reply = page.getByTestId("my-reply");
 
     // 의견 유형·세부의견 칸은 없고 결제원 담당자가 넣은 질문만 있다.
-    await expect(reply.getByRole('radio', { name: '동의', exact: true })).toHaveCount(0);
-    await expect(reply.getByLabel('세부의견')).toHaveCount(0);
+    await expect(
+      reply.getByRole("radio", { name: "동의", exact: true }),
+    ).toHaveCount(0);
+    await expect(reply.getByLabel("세부의견")).toHaveCount(0);
 
     // 필수 질문에 답하지 않으면 그 질문 아래에 서버 메시지가 뜬다.
-    await reply.getByRole('button', { name: '최종제출' }).click();
-    await expect(reply).toContainText('필수 질문입니다. 답해 주세요.');
-    await reply.getByRole('radio', { name: '다음 분기' }).check();
+    await reply.getByRole("button", { name: "최종제출" }).click();
+    await expect(reply).toContainText("필수 질문입니다. 답해 주세요.");
+    await reply.getByRole("radio", { name: "다음 분기" }).check();
     await reply
-      .getByRole('textbox', { name: '2. 준비에 필요한 기간을 적어 주세요.' })
-      .fill('약 6주');
-    await reply.getByRole('button', { name: '임시저장' }).click();
-    await expect(page.getByTestId('reply-notice')).toContainText('임시저장했습니다');
-    await expect(reply).toContainText('근거자료 올리기');
-    await shot(page, 'opinion-my-reply-draft');
+      .getByRole("textbox", { name: "2. 준비에 필요한 기간을 적어 주세요." })
+      .fill("약 6주");
+    await reply.getByRole("button", { name: "임시저장" }).click();
+    await expect(page.getByTestId("reply-notice")).toContainText(
+      "임시저장했습니다",
+    );
+    await expect(reply).toContainText("근거자료 올리기");
+    await shot(page, "opinion-my-reply-draft");
 
-    await reply.getByRole('button', { name: '최종제출' }).click();
-    await expect(page.getByTestId('submitted-answers')).toContainText('다음 분기');
-    await expect(page.getByTestId('submitted-answers')).toContainText('약 6주');
-    await expect(reply).toContainText('제출');
+    await reply.getByRole("button", { name: "최종제출" }).click();
+    await expect(page.getByTestId("submitted-answers")).toContainText(
+      "다음 분기",
+    );
+    await expect(page.getByTestId("submitted-answers")).toContainText("약 6주");
+    await expect(reply).toContainText("제출");
 
     // 제출한 뒤 고치려면 수정 요청을 한다.
-    await reply.getByRole('button', { name: '수정 요청' }).click();
-    const dialog = page.getByRole('dialog', { name: '회신 수정 요청' });
-    await dialog.getByLabel('수정 사유').fill('일정 근거를 덧붙이려고 합니다.');
-    await dialog.getByRole('button', { name: '요청 보내기' }).click();
-    await expect(reply).toContainText('수정 요청을 보냈습니다');
+    await reply.getByRole("button", { name: "수정 요청" }).click();
+    const dialog = page.getByRole("dialog", { name: "회신 수정 요청" });
+    await dialog.getByLabel("수정 사유").fill("일정 근거를 덧붙이려고 합니다.");
+    await dialog.getByRole("button", { name: "요청 보내기" }).click();
+    await expect(reply).toContainText("수정 요청을 보냈습니다");
     await expect(dialog).toHaveCount(0);
-    await shot(page, 'opinion-my-reply-submitted');
+    await shot(page, "opinion-my-reply-submitted");
 
     // 결제원 담당자가 승인하면 수정 중이 되고 제출한 내용에서 이어 고친다.
     const collation = (await (
@@ -309,100 +396,130 @@ test.describe('나. 의견 요청', () => {
     await hong.close();
 
     await page.reload();
-    await expect(reply).toContainText('수정 요청이 승인되었습니다');
-    await expect(reply.getByRole('radio', { name: '다음 분기' })).toBeChecked();
-    await reply.getByRole('radio', { name: '다음 달' }).check();
-    await reply.getByRole('button', { name: '최종제출' }).click();
-    await expect(page.getByTestId('submitted-answers')).toContainText('다음 달');
+    await expect(reply).toContainText("수정 요청이 승인되었습니다");
+    await expect(reply.getByRole("radio", { name: "다음 분기" })).toBeChecked();
+    await reply.getByRole("radio", { name: "다음 달" }).check();
+    await reply.getByRole("button", { name: "최종제출" }).click();
+    await expect(page.getByTestId("submitted-answers")).toContainText(
+      "다음 달",
+    );
   });
 
-  test('결제원 담당자가 섹션과 답변에 따른 이동을 만들고, 기관은 고른 답의 섹션만 답한다', async ({
+  test("결제원 담당자가 섹션과 답변에 따른 이동을 만들고, 기관은 고른 답의 섹션만 답한다", async ({
     page,
     browser,
   }) => {
     const title = `섹션 이동 확인 ${Date.now().toString(36).slice(-5)}`;
-    await loginAs(page, '홍성민 (결제원 · 현업)로 로그인');
-    await page.goto('/account-info/opinions/new');
-    await page.getByLabel('요청명').fill(title);
-    await page.getByLabel('요청 목적·내용').fill('계좌 별칭 항목 반영 계획을 알려 주세요.');
+    await loginAs(page, "홍성민 (결제원 · 현업)로 로그인");
+    await page.goto("/account-info/opinions/new");
+    await page.getByLabel("요청명").fill(title);
     await page
-      .getByRole('textbox', { name: '1번 질문', exact: true })
-      .fill('계좌 별칭 항목을 반영할 수 있습니까?');
-    await page.getByRole('textbox', { name: '1번 질문 선택지 1', exact: true }).fill('반영 가능');
-    await page.getByRole('textbox', { name: '1번 질문 선택지 2', exact: true }).fill('반영 어려움');
+      .getByLabel("요청 목적·내용")
+      .fill("계좌 별칭 항목 반영 계획을 알려 주세요.");
+    await page
+      .getByRole("textbox", { name: "1번 질문", exact: true })
+      .fill("계좌 별칭 항목을 반영할 수 있습니까?");
+    await page
+      .getByRole("textbox", { name: "1번 질문 선택지 1", exact: true })
+      .fill("반영 가능");
+    await page
+      .getByRole("textbox", { name: "1번 질문 선택지 2", exact: true })
+      .fill("반영 어려움");
 
     // 섹션 둘을 더하고 섹션마다 주관식 질문을 하나씩 넣는다.
-    await page.getByRole('button', { name: '섹션 추가' }).click();
-    await page.getByRole('button', { name: '섹션 추가' }).click();
-    await expect(page.getByTestId('section-card')).toHaveCount(3);
-    await page.getByRole('textbox', { name: '섹션 1 제목' }).fill('반영 여부');
-    await page.getByRole('textbox', { name: '섹션 2 제목' }).fill('반영 계획');
-    await page.getByRole('textbox', { name: '섹션 3 제목' }).fill('반영이 어려운 이유');
+    await page.getByRole("button", { name: "섹션 추가" }).click();
+    await page.getByRole("button", { name: "섹션 추가" }).click();
+    await expect(page.getByTestId("section-card")).toHaveCount(3);
+    await page.getByRole("textbox", { name: "섹션 1 제목" }).fill("반영 여부");
+    await page.getByRole("textbox", { name: "섹션 2 제목" }).fill("반영 계획");
+    await page
+      .getByRole("textbox", { name: "섹션 3 제목" })
+      .fill("반영이 어려운 이유");
     for (const [section, number, question] of [
-      [2, 2, '필요한 개발 기간을 적어 주세요.'],
-      [3, 3, '반영이 어려운 이유를 적어 주세요.'],
+      [2, 2, "필요한 개발 기간을 적어 주세요."],
+      [3, 3, "반영이 어려운 이유를 적어 주세요."],
     ] as const) {
-      await page.getByRole('button', { name: `섹션 ${section}에 질문 추가` }).click();
-      await page.getByRole('textbox', { name: `${number}번 질문`, exact: true }).fill(question);
-      await page.getByRole('textbox', { name: `${number}번 질문 유형` }).click();
-      await page.getByRole('option', { name: '주관식' }).click();
-      await page.getByRole('switch', { name: `${number}번 질문 필수` }).check({ force: true });
+      await page
+        .getByRole("button", { name: `섹션 ${section}에 질문 추가` })
+        .click();
+      await page
+        .getByRole("textbox", { name: `${number}번 질문`, exact: true })
+        .fill(question);
+      await page
+        .getByRole("textbox", { name: `${number}번 질문 유형` })
+        .click();
+      await page.getByRole("option", { name: "주관식" }).click();
+      await page
+        .getByRole("switch", { name: `${number}번 질문 필수` })
+        .check({ force: true });
     }
 
     // 답변에 따라 섹션 이동: 반영 가능 → 섹션 2, 반영 어려움 → 섹션 3. 섹션 2 를 마치면 회신 끝.
     await page
-      .getByRole('switch', { name: '1번 질문 답변에 따라 섹션 이동' })
+      .getByRole("switch", { name: "1번 질문 답변에 따라 섹션 이동" })
       .check({ force: true });
-    await page.getByRole('textbox', { name: '1번 질문 선택지 1 다음' }).click();
-    await page.getByRole('option', { name: '섹션 2. 반영 계획(으)로 이동' }).click();
-    await page.getByRole('textbox', { name: '1번 질문 선택지 2 다음' }).click();
-    await page.getByRole('option', { name: '섹션 3. 반영이 어려운 이유(으)로 이동' }).click();
-    await page.getByRole('textbox', { name: '섹션 2 다음' }).click();
-    await page.getByRole('option', { name: '회신 끝내기' }).click();
-    await page.getByRole('checkbox', { name: 'KB국민은행 김민준' }).check();
-    await shot(page, 'opinion-editor-sections');
-    await page.getByRole('button', { name: '저장', exact: true }).click();
-
-    await expect(page.getByRole('heading', { name: title })).toBeVisible();
-    const list = page.getByTestId('question-list');
-    await expect(list).toContainText('반영 가능 → 섹션 2. 반영 계획(으)로 이동');
-    await expect(list).toContainText('섹션 2 다음: 회신 끝내기');
-    await page.getByRole('button', { name: '회신 요청 시작' }).click();
+    await page.getByRole("textbox", { name: "1번 질문 선택지 1 다음" }).click();
     await page
-      .getByRole('dialog', { name: '회신 요청 시작' })
-      .getByRole('button', { name: '시작하기' })
+      .getByRole("option", { name: "섹션 2. 반영 계획(으)로 이동" })
       .click();
-    await expect(page.getByText('회신중', { exact: true })).toBeVisible();
+    await page.getByRole("textbox", { name: "1번 질문 선택지 2 다음" }).click();
+    await page
+      .getByRole("option", { name: "섹션 3. 반영이 어려운 이유(으)로 이동" })
+      .click();
+    await page.getByRole("textbox", { name: "섹션 2 다음" }).click();
+    await page.getByRole("option", { name: "회신 끝내기" }).click();
+    await page.getByRole("checkbox", { name: "KB국민은행 김민준" }).check();
+    await shot(page, "opinion-editor-sections");
+    await page.getByRole("button", { name: "저장", exact: true }).click();
+
+    await expect(page.getByRole("heading", { name: title })).toBeVisible();
+    const list = page.getByTestId("question-list");
+    await expect(list).toContainText(
+      "반영 가능 → 섹션 2. 반영 계획(으)로 이동",
+    );
+    await expect(list).toContainText("섹션 2 다음: 회신 끝내기");
+    await page.getByRole("button", { name: "회신 요청 시작" }).click();
+    await page
+      .getByRole("dialog", { name: "회신 요청 시작" })
+      .getByRole("button", { name: "시작하기" })
+      .click();
+    await expect(page.getByText("회신중", { exact: true })).toBeVisible();
     const url = page.url();
 
     // 기관 담당자: "반영 어려움" 을 고르면 섹션 2 는 사라지고 섹션 3 이 보인다.
-    const kim = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    const kim = await browser.newContext({
+      storageState: { cookies: [], origins: [] },
+    });
     const kimPage = await kim.newPage();
     await skipContactReconfirm(kimPage);
-    await loginAs(kimPage, '김민준 (참가기관 · 현업)로 로그인');
+    await loginAs(kimPage, "김민준 (참가기관 · 현업)로 로그인");
     await kimPage.goto(url);
-    const reply = kimPage.getByTestId('my-reply');
-    await expect(reply).toContainText('섹션 2. 반영 계획');
-    await reply.getByRole('radio', { name: '반영 어려움' }).check();
-    await expect(reply).not.toContainText('섹션 2. 반영 계획');
-    await expect(reply).toContainText('섹션 3. 반영이 어려운 이유');
+    const reply = kimPage.getByTestId("my-reply");
+    await expect(reply).toContainText("섹션 2. 반영 계획");
+    await reply.getByRole("radio", { name: "반영 어려움" }).check();
+    await expect(reply).not.toContainText("섹션 2. 반영 계획");
+    await expect(reply).toContainText("섹션 3. 반영이 어려운 이유");
     await reply
-      .getByRole('textbox', { name: '3. 반영이 어려운 이유를 적어 주세요.' })
-      .fill('내년 상반기 전산 개편 중이라 어렵습니다.');
-    await shot(kimPage, 'opinion-reply-sections');
-    await reply.getByRole('button', { name: '최종제출' }).click();
-    await expect(kimPage.getByTestId('submitted-answers')).toContainText('반영 어려움');
-    await expect(kimPage.getByTestId('submitted-answers')).not.toContainText('개발 기간');
+      .getByRole("textbox", { name: "3. 반영이 어려운 이유를 적어 주세요." })
+      .fill("내년 상반기 전산 개편 중이라 어렵습니다.");
+    await shot(kimPage, "opinion-reply-sections");
+    await reply.getByRole("button", { name: "최종제출" }).click();
+    await expect(kimPage.getByTestId("submitted-answers")).toContainText(
+      "반영 어려움",
+    );
+    await expect(kimPage.getByTestId("submitted-answers")).not.toContainText(
+      "개발 기간",
+    );
     await kim.close();
 
     // 결제원 담당자: 취합표에 건너뛴 질문이 "건너뜀" 으로 보인다.
     await page.reload();
-    await page.getByRole('tab', { name: '회신 현황' }).click();
-    await expect(page.getByTestId('question-summary')).toContainText(
-      '고른 답에 따라 건너뛴 기관 1곳',
+    await page.getByRole("tab", { name: "회신 현황" }).click();
+    await expect(page.getByTestId("question-summary")).toContainText(
+      "고른 답에 따라 건너뛴 기관 1곳",
     );
-    await page.getByRole('tab', { name: '취합표' }).click();
-    await expect(page.getByTestId('answer-skipped')).toHaveCount(1);
-    await shot(page, 'opinion-collation-skipped');
+    await page.getByRole("tab", { name: "취합표" }).click();
+    await expect(page.getByTestId("answer-skipped")).toHaveCount(1);
+    await shot(page, "opinion-collation-skipped");
   });
 });

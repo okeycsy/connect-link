@@ -812,8 +812,16 @@ class OpinionControllerTest {
     send(post(BASE + "/" + id + "/my-reply/submission"), answer(id, "1월"), kim());
     send(get(BASE + "/" + id + "/reminder-preview"), null, hong())
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.subject").value("회신을 기다립니다: 미리보기 확인"))
-        .andExpect(jsonPath("$.body").value(org.hamcrest.Matchers.containsString("회신해 주세요")))
+        .andExpect(
+            jsonPath("$.subject")
+                .value(
+                    org.hamcrest.Matchers.matchesPattern(
+                        "\\[금융결제원\\] 미리보기 확인 의견 요청 회신 리마인드 \\(~\\d{4}-\\d{2}-\\d{2}까지\\)")))
+        .andExpect(
+            jsonPath("$.body").value(org.hamcrest.Matchers.containsString("연결이에서 회신해 주세요.\n")))
+        .andExpect(
+            jsonPath("$.body")
+                .value(org.hamcrest.Matchers.containsString("/account-info/opinions/" + id)))
         .andExpect(jsonPath("$.subjectMaxLength").value(200))
         .andExpect(jsonPath("$.organizations.length()").value(1))
         .andExpect(jsonPath("$.organizations[0].organizationName").value("삼성증권"))

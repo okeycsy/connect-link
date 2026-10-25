@@ -286,7 +286,9 @@ class UpdateCampaignControllerTest {
     mockMvc
         .perform(get(BASE + "/" + id + "/reminder-preview").with(hong()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.subject").value(org.hamcrest.Matchers.containsString("정기 변경 리마인드")))
+        .andExpect(
+            jsonPath("$.subject")
+                .value(org.hamcrest.Matchers.startsWith("[금융결제원] (계좌통합관리) 정기 변경 리마인드: ")))
         .andExpect(jsonPath("$.body").value(org.hamcrest.Matchers.containsString("현행화 완료")))
         .andExpect(jsonPath("$.bodyMaxLength").value(1000))
         .andExpect(jsonPath("$.organizations.length()").value(4))
