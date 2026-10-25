@@ -44,7 +44,7 @@ FROM (VALUES
    20, 'DRAFT', 'hong.sungmin@kftc.example.com', '홍성민', NULL, NULL, 1, FALSE, NULL),
   ('AUTO_TRANSFER', '자동이체 통합조회 해지 절차 개선',
    '자동이체 통합조회에서 해지 신청 뒤 기관 처리 결과를 고객에게 다시 알리는 절차를 더하려고 합니다. 기관 처리 시간과 의견을 회신해 주세요.',
-   -1, 'OPEN', 'hong.sungmin@kftc.example.com', '홍성민', 9, NULL, 10, FALSE, NULL),
+   -1, 'OPEN', 'moon.seojun@kftc.example.com', '문서준', 9, NULL, 10, FALSE, NULL),
   ('CMS', 'CMS 출금이체 전문 개정 의견 요청',
    'CMS 출금이체 결과 전문의 오류 코드 체계를 정리하려고 합니다. 붙임 코드표를 보고 기관 시스템에 미치는 영향을 알려 주세요.',
    5, 'OPEN', 'park.cms@kftc.example.com', '박하늘', 4, NULL, 5, FALSE, NULL),
@@ -338,6 +338,6 @@ SELECT r.id, m.sender_name, m.organization_count, m.recipient_count, m.organizat
 FROM (VALUES
   ('계좌통합관리 수수료 체계 개편 의견 요청', '홍성민', 2, 1, 'KB국민은행, 신협', 2),
   ('4분기 계좌통합관리업무 회비 사전확인',     '홍성민', 2, 2, 'KB국민은행, 신협', 1),
-  ('자동이체 통합조회 해지 절차 개선',        '홍성민', 1, 1, '신한은행', 1)
+  ('자동이체 통합조회 해지 절차 개선',        '문서준', 1, 1, '신한은행', 1)
 ) AS m (title, sender_name, organization_count, recipient_count, organization_names, sent_days)
 JOIN opinion_request r ON r.title = m.title;

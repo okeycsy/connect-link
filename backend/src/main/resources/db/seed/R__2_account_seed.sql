@@ -21,6 +21,8 @@ FROM (VALUES
    CURRENT_TIMESTAMP - INTERVAL '90' DAY, NULL, NULL, NULL, NULL),
   ('park.cms@kftc.example.com',     '박하늘',      'KFTC', 'ACTIVE',           FALSE, 'BUSINESS', 'CMS사업부',    'CMS운영팀',    '과장', '1401', NULL,
    CURRENT_TIMESTAMP - INTERVAL '90' DAY, NULL, NULL, NULL, NULL),
+  ('moon.seojun@kftc.example.com',  '문서준',      'KFTC', 'ACTIVE',           FALSE, 'BUSINESS', '계좌서비스부', '자동이체팀',   '과장', '1601', '010-0000-1601',
+   CURRENT_TIMESTAMP - INTERVAL '90' DAY, NULL, NULL, NULL, NULL),
   -- 가입 승인을 거친 기관 담당자(관리 > 가입 승인의 "승인" 칩에 보인다).
   ('kim.minjun@kb.example.com',     '김민준',      '004', 'ACTIVE',           FALSE, 'BUSINESS', '디지털금융부', '오픈뱅킹팀',   '대리', '2101', '010-0000-2101',
    CURRENT_TIMESTAMP - INTERVAL '21' DAY, CURRENT_TIMESTAMP - INTERVAL '20' DAY, 'hong.sungmin@kftc.example.com', '홍성민', NULL),
@@ -50,7 +52,8 @@ FROM (VALUES
         applied_at, reviewed_at, reviewer_email, reviewer_name, rejection_reason)
 JOIN organization o ON o.code = a.org_code;
 
--- 담당 업무와 세부업무. 결제원 운영·상황실은 전 업무를 맡는다(명세: 전 업무 조회).
+-- 담당 업무와 세부업무. 결제원 운영·상황실은 전 업무를 맡는다(명세: 전 업무 조회). 결제원 현업·개발 담당자는 보통 업무 하나만 맡아 하나만 둔다.
+-- 참가기관 담당자는 여러 업무를 맡기도 한다.
 INSERT INTO user_account_business (account_id, business, sub_business, created_at, created_by, updated_at, updated_by)
 SELECT u.id, b.business, b.sub_business, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'
 FROM (VALUES
@@ -59,7 +62,6 @@ FROM (VALUES
   ('admin@kftc.example.com',        'LOAN_TRANSFER', NULL),
   ('admin@kftc.example.com',        'CMS',           NULL),
   ('hong.sungmin@kftc.example.com', 'ACCOUNT_INFO',  '본인계좌 일괄지급정지'),
-  ('hong.sungmin@kftc.example.com', 'AUTO_TRANSFER', '자동이체 통합조회'),
   ('kim.ops@kftc.example.com',      'ACCOUNT_INFO',  NULL),
   ('kim.ops@kftc.example.com',      'AUTO_TRANSFER', NULL),
   ('kim.ops@kftc.example.com',      'LOAN_TRANSFER', NULL),
@@ -69,6 +71,7 @@ FROM (VALUES
   ('lee.control@kftc.example.com',  'LOAN_TRANSFER', NULL),
   ('lee.control@kftc.example.com',  'CMS',           NULL),
   ('park.cms@kftc.example.com',     'CMS',           '출금이체'),
+  ('moon.seojun@kftc.example.com',  'AUTO_TRANSFER', '자동이체 통합조회'),
   ('kim.minjun@kb.example.com',     'ACCOUNT_INFO',  '본인계좌 일괄지급정지'),
   ('lee.junho@shinhan.example.com',     'AUTO_TRANSFER', NULL),
   ('lee.junho@shinhan.example.com',     'CMS',           '출금이체 전문 연계'),

@@ -29,7 +29,7 @@ FROM (VALUES
    -20, -2, 'kim.ops@kftc.example.com', '김태호', 17, NULL),
   ('AUTO_TRANSFER', '자동이체 통합조회', '자동이체 통합조회 응답 항목 추가',
    '자동이체 통합조회 응답에 수납기관 연락처와 최근 출금일 항목을 더합니다.',
-   -3, 10, 'hong.sungmin@kftc.example.com', '홍성민', 17, NULL),
+   -3, 10, 'moon.seojun@kftc.example.com', '문서준', 17, NULL),
   ('CMS', '출금이체', '출금이체 전문 연계 테스트',
    '출금이체 요청·결과 전문의 신규 연계 테스트입니다. 이체 한도 초과와 잔액 부족 응답을 꼭 확인해 주세요.',
    -5, 5, 'park.cms@kftc.example.com', '박하늘', 27, NULL),
@@ -148,10 +148,10 @@ FROM (VALUES
   ('오픈뱅킹 안심차단 등록 전문 신설', '050', 0, 'FAILED', '등록 전문의 고객 식별번호 길이가 맞지 않아 거절됩니다.', 'yoon.seoyeon@fsb.example.com', '윤서연', -150, NULL, NULL, NULL, NULL, NULL),
   ('오픈뱅킹 안심차단 등록 전문 신설', '050', 1, 'NOT_STARTED', NULL, 'yoon.seoyeon@fsb.example.com', '윤서연', -150, NULL, NULL, NULL, NULL, NULL),
   -- 자동이체 통합조회 응답 항목 추가: 신한은행 50%(완료 2), 삼성증권·신협은 그 업무 계정이 아직 없어 미등록
-  ('자동이체 통합조회 응답 항목 추가', '088', 0, 'PASSED', NULL, 'lee.junho@shinhan.example.com', '이준호', -40, 100, NULL, 'hong.sungmin@kftc.example.com', '홍성민', -28),
+  ('자동이체 통합조회 응답 항목 추가', '088', 0, 'PASSED', NULL, 'lee.junho@shinhan.example.com', '이준호', -40, 100, NULL, 'moon.seojun@kftc.example.com', '문서준', -28),
   ('자동이체 통합조회 응답 항목 추가', '088', 1, 'FAILED', '최근 출금일이 YYYYMMDD 대신 YYMMDD 로 내려옵니다.', 'lee.junho@shinhan.example.com', '이준호', -30, NULL, NULL, NULL, NULL, NULL),
   ('자동이체 통합조회 응답 항목 추가', '088', 2, 'IN_PROGRESS', '출금 이력 없는 테스트 고객을 만드는 중입니다.', 'lee.junho@shinhan.example.com', '이준호', -30, NULL, NULL, NULL, NULL, NULL),
-  ('자동이체 통합조회 응답 항목 추가', '088', 3, 'PASSED', NULL, 'lee.junho@shinhan.example.com', '이준호', -40, 100, NULL, 'hong.sungmin@kftc.example.com', '홍성민', -28),
+  ('자동이체 통합조회 응답 항목 추가', '088', 3, 'PASSED', NULL, 'lee.junho@shinhan.example.com', '이준호', -40, 100, NULL, 'moon.seojun@kftc.example.com', '문서준', -28),
   -- 출금이체 전문 연계 테스트: 신한은행 53%(002 는 결제원 의견 뒤에 다시 등록해 다시 확인 필요)
   ('출금이체 전문 연계 테스트', '088', 0, 'PASSED', NULL, 'lee.junho@shinhan.example.com', '이준호', -30, 60, '요청 전문은 정상이나 결과 전문 회신이 30초를 넘는 건이 있습니다.', 'park.cms@kftc.example.com', '박하늘', -20),
   ('출금이체 전문 연계 테스트', '088', 1, 'PASSED', '한도 초과 응답코드를 고쳐 다시 확인했습니다.', 'lee.junho@shinhan.example.com', '이준호', -6, 70, '한도 초과 응답코드가 표준과 다릅니다.', 'park.cms@kftc.example.com', '박하늘', -20),
@@ -171,7 +171,7 @@ FROM (VALUES
   ('본인계좌 일괄지급정지 전문 개선 2차', 'kim.ops@kftc.example.com'),
   ('내 계좌 한눈에 연계 개선',        'hong.sungmin@kftc.example.com'),
   ('오픈뱅킹 안심차단 등록 전문 신설', 'kim.ops@kftc.example.com'),
-  ('자동이체 통합조회 응답 항목 추가', 'hong.sungmin@kftc.example.com'),
+  ('자동이체 통합조회 응답 항목 추가', 'moon.seojun@kftc.example.com'),
   ('출금이체 전문 연계 테스트',        'park.cms@kftc.example.com'),
   ('대환대출 이동 신청 전문 개선',     'kim.ops@kftc.example.com')
 ) AS r (plan_title, email)

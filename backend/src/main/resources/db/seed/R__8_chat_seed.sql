@@ -1,6 +1,6 @@
 -- 소통 채널 샘플. 전부 가상 데이터다. local, demo 프로필(과 테스트)에서만 읽는다.
 -- 기관(R__1)·계정(R__2) 시드 뒤에 돈다. 업무마다 단체방이 있고, 계좌통합관리에는 결제원 담당자가 만든 초대방이 하나 더 있다.
--- 계좌통합관리 단체방에는 업무 밖 결제원 사람(CMS 박하늘)을 따로 초대해 두었고, 멘션·확인 공감·읽지 않은 메시지가 함께 보인다.
+-- 계좌통합관리 단체방에는 멘션·확인 공감·읽지 않은 메시지가 함께 보인다. 결제원 현업·개발 담당자는 맡은 업무 하나의 방에만 있다.
 DELETE FROM chat_message_ack;
 DELETE FROM chat_message_mention;
 DELETE FROM chat_message;
@@ -26,7 +26,6 @@ INSERT INTO chat_room_member (room_id, email, name, organization_code, organizat
 SELECT c.id, u.email, u.name, o.code, o.name, o.type, m.invited_by_name,
        c.created_at, 'seed', c.created_at, 'seed'
 FROM (VALUES
-  ('계좌통합관리 단체방',         'park.cms@kftc.example.com',      '홍성민'),
   ('오픈뱅킹 안심차단 전문 테스트', 'hong.sungmin@kftc.example.com',  '홍성민'),
   ('오픈뱅킹 안심차단 전문 테스트', 'kim.ops@kftc.example.com',       '홍성민'),
   ('오픈뱅킹 안심차단 전문 테스트', 'choi.yujin@samsung.example.com', '홍성민'),

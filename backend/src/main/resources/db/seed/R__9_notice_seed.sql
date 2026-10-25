@@ -35,7 +35,7 @@ VALUES
    CURRENT_TIMESTAMP - 1 * INTERVAL '1' DAY, 'seed', CURRENT_TIMESTAMP - 1 * INTERVAL '1' DAY, 'seed'),
   ('AUTO_TRANSFER', 'NOTICE', '자동이체 출금동의 확인 절차 변경 안내',
    '출금동의 확인 절차가 바뀝니다. 변경 내용은 자료실의 시행세칙을 참고해 주세요.',
-   FALSE, NULL, 'hong.sungmin@kftc.example.com', '홍성민',
+   FALSE, NULL, 'moon.seojun@kftc.example.com', '문서준',
    CURRENT_TIMESTAMP - 5 * INTERVAL '1' DAY, 'seed', CURRENT_TIMESTAMP - 5 * INTERVAL '1' DAY, 'seed'),
   ('CMS', 'NOTICE', 'CMS 정산 마감 시각 안내',
    'CMS 정산 마감 시각을 다시 안내드립니다. 마감 뒤 들어온 건은 다음 영업일에 처리됩니다.',
