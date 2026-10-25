@@ -18,6 +18,8 @@ public record NotificationOutboxResponse(
     OutboxStatus status,
     String statusLabel,
     @Schema(nullable = true) LocalDateTime sentAt,
+    @Schema(description = "실제 발송을 해 본 횟수") int attempts,
+    @Schema(nullable = true, description = "마지막 발송 실패 까닭") String lastError,
     LocalDateTime createdAt) {
 
   public static NotificationOutboxResponse from(NotificationOutbox o) {
@@ -32,6 +34,8 @@ public record NotificationOutboxResponse(
         o.getStatus(),
         o.getStatus().getLabel(),
         o.getSentAt(),
+        o.getAttempts(),
+        o.getLastError(),
         o.getCreatedAt());
   }
 }

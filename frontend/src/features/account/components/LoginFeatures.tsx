@@ -5,6 +5,7 @@ import {
   IconClipboardCheck,
   IconMessageReply,
   IconMessages,
+  IconNews,
 } from '@tabler/icons-react';
 import type { ComponentType } from 'react';
 
@@ -18,7 +19,7 @@ interface Feature {
   tone: 'clay' | 'sky' | 'amber';
 }
 
-/** 사이드바 기능 순서(연락처 → 의견 요청 → 기관 테스트 → 일시중단 → 소통 채널)와 같다. */
+/** 사이드바 기능 순서(연락처 → 의견 요청 → 기관 테스트 → 일시중단 → 소통 채널 → 공지·자료실)와 같다. */
 const LOGIN_FEATURES: Feature[] = [
   {
     title: '담당자 연락처',
@@ -50,10 +51,16 @@ const LOGIN_FEATURES: Feature[] = [
     icon: IconMessages,
     tone: 'sky',
   },
+  {
+    title: '공지·자료실',
+    description: '업무 공지와 규약·시행세칙을 한곳에서 찾아봐요.',
+    icon: IconNews,
+    tone: 'amber',
+  },
 ];
 
 /**
- * 로그인 화면의 기능 소개. 넓은 화면에서는 로고와 로그인 카드 사이에 호(弧)를 따라 다섯 줄로 놓이고,
+ * 로그인 화면의 기능 소개. 넓은 화면에서는 로고와 로그인 카드 사이에 호(弧)를 따라 여섯 줄로 놓이고,
  * 좁은 화면에서는 호 없이 목록으로 쌓인다. 장식(호와 점)은 화면 읽기에서 뺀다.
  */
 export function LoginFeatures() {

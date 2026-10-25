@@ -16,7 +16,7 @@ final class SuspensionSpecifications {
   private SuspensionSpecifications() {}
 
   /**
-   * @param organizationCode 이 기관만(기관 담당자의 범위). 없으면 null
+   * @param organizationCode 이 기관과 결제원 작업 안내만(기관 담당자의 범위). 없으면 null
    * @param organizationId 기관별 이력에서 고른 기관. 없으면 null
    * @param period 시간 구분. 없으면 전부
    * @param includeUnlinked 관련 레일 업무가 없는 건도 이 업무 영역에 넣을지
@@ -45,7 +45,11 @@ final class SuspensionSpecifications {
         predicates.add(cb.exists(affected));
       }
       if (organizationCode != null) {
-        predicates.add(cb.equal(root.get("organization").get("code"), organizationCode));
+        // 기관 담당자는 자기 기관 건과 결제원 작업 안내를 본다.
+        predicates.add(
+            cb.or(
+                cb.equal(root.get("organization").get("code"), organizationCode),
+                cb.equal(root.get("kind"), SuspensionKind.KFTC_WORK)));
       }
       if (organizationId != null) {
         predicates.add(cb.equal(root.get("organization").get("id"), organizationId));

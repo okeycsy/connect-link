@@ -15,6 +15,10 @@ public interface OpinionRequestRepository extends JpaRepository<OpinionRequest, 
   Page<OpinionRequest> findByBusinessAndStatus(
       Business business, OpinionRequestStatus status, Pageable pageable);
 
+  /** 자동 리마인드 대상: 한 상태에서 회신 기한이 그날인 요청 전부(업무 상관없이). */
+  List<OpinionRequest> findByStatusAndDueDate(
+      OpinionRequestStatus status, java.time.LocalDate dueDate);
+
   long countByBusinessAndStatus(Business business, OpinionRequestStatus status);
 
   /** 기관 쪽 목록: 이 기관이 대상인 요청 중 한 상태. 작성중은 넘기지 않는다. */

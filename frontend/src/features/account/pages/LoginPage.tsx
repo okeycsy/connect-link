@@ -46,6 +46,7 @@ export function LoginPage() {
   const [params] = useSearchParams();
   const next = safeNextPath(params.get('next'));
   const withdrawn = params.has('withdrawn');
+  const passwordReset = params.has('passwordReset');
   const { data: businesses } = useBusinesses();
   const { data: me } = useMe();
   const { data: demo } = useDemoAccounts();
@@ -145,6 +146,16 @@ export function LoginPage() {
                     가입할 수 있습니다.
                   </Alert>
                 )}
+                {passwordReset && !login.isError && (
+                  <Alert
+                    variant="light"
+                    color="sky"
+                    icon={<IconCircleCheck size={18} />}
+                    data-testid="login-password-reset"
+                  >
+                    비밀번호를 바꿨습니다. 새 비밀번호로 로그인해 주세요.
+                  </Alert>
+                )}
                 {showAlert && (
                   <Alert
                     variant="light"
@@ -168,6 +179,16 @@ export function LoginPage() {
                   autoComplete="current-password"
                   {...form.getInputProps('password')}
                 />
+                <Anchor
+                  component={Link}
+                  to="/password-reset"
+                  size="sm"
+                  ta="right"
+                  mt={-8}
+                  data-testid="login-password-reset-link"
+                >
+                  비밀번호를 잊으셨나요?
+                </Anchor>
                 <Button
                   type="submit"
                   fullWidth

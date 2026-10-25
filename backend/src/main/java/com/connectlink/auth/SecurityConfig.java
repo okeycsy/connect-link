@@ -51,7 +51,7 @@ public class SecurityConfig {
                     .permitAll()
                     .regexMatchers("/(?!api/)[^.]*")
                     .permitAll()
-                    // 공개 API: 상태, 가입 화면이 쓰는 기준정보(조회만), 로그인·로그아웃, 가입, API 문서
+                    // 공개 API: 상태, 가입 화면이 쓰는 기준정보(조회만), 로그인·로그아웃, 가입, 비밀번호 찾기, API 문서
                     .antMatchers(
                         HttpMethod.GET,
                         "/api/v1/businesses",
@@ -64,7 +64,9 @@ public class SecurityConfig {
                         "/api/v1/auth/logout",
                         "/api/v1/email-verifications",
                         "/api/v1/email-verifications/confirm",
-                        "/api/v1/sign-ups")
+                        "/api/v1/sign-ups",
+                        "/api/v1/password-resets",
+                        "/api/v1/password-resets/confirm")
                     .permitAll()
                     // 데모 계정 목록(로그인 화면)과 받은 메일함(가입 화면). 운영 프로필에는 이 API 가 없어 404 다.
                     .antMatchers(HttpMethod.GET, "/api/v1/demo/accounts", "/api/v1/demo/mailbox")

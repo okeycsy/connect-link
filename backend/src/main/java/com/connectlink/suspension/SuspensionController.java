@@ -10,6 +10,7 @@ import com.connectlink.suspension.dto.SuspensionHandoverRequest;
 import com.connectlink.suspension.dto.SuspensionOrganizationResponse;
 import com.connectlink.suspension.dto.SuspensionRegistrableOrganizationResponse;
 import com.connectlink.suspension.dto.SuspensionSaveRequest;
+import com.connectlink.suspension.dto.SuspensionScheduleResponse;
 import com.connectlink.suspension.dto.SuspensionSummaryResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -85,6 +86,17 @@ public class SuspensionController {
   public List<SuspensionOrganizationResponse> organizations(
       @Parameter(description = "업무 영역 slug (예: account-info)") @RequestParam String business) {
     return suspensionService.organizations(
+        currentUserProvider.require(), resolveBusiness(business));
+  }
+
+  @GetMapping("/other-organization-schedules")
+  @Operation(
+      summary = "같은 업무 다른 기관 일시중단 일정 조회",
+      description =
+          "결제원이 확정한 진행 중·예정 일시중단의 기관·일시·대상 업무만 시작 순으로 준다. 그 업무 담당자(결제원·참가기관)가 보고, 기관 담당자에게는 자기 기관 건을 뺀다.")
+  public List<SuspensionScheduleResponse> otherOrganizationSchedules(
+      @Parameter(description = "업무 영역 slug (예: account-info)") @RequestParam String business) {
+    return suspensionService.otherOrganizationSchedules(
         currentUserProvider.require(), resolveBusiness(business));
   }
 

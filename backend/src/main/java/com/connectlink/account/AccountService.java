@@ -4,6 +4,7 @@ import com.connectlink.auth.CurrentUser;
 import com.connectlink.common.BusinessException;
 import com.connectlink.organization.Business;
 import com.connectlink.organization.Organization;
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -64,9 +65,27 @@ public class AccountService {
     return toCurrentUser(account);
   }
 
-  /** 이 이메일의 계정이 지금 사용 중인지. 다른 곳에서 탈퇴한 세션을 끝내려고 API 요청마다 확인한다. */
+  /** 이 이메일의 계정이 지금 사용 중인지. */
   public boolean isActive(String email) {
     return repository.existsByEmailAndStatus(normalizeEmail(email), AccountStatus.ACTIVE);
+  }
+
+  /**
+   * 이 시각에 로그인한 세션을 계속 써도 되는지: 계정이 사용 중이고, 로그인한 뒤에 비밀번호가 바뀌지 않았다. 다른 곳에서 탈퇴했거나 비밀번호를 바꾼 세션을 끝내려고 API
+   * 요청마다 확인한다.
+   *
+   * @param loginAt 세션의 로그인 시각. 모르면(이 규칙 전에 만든 세션) 비밀번호 변경은 따지지 않는다
+   */
+  public boolean isSessionValid(String email, LocalDateTime loginAt) {
+    return repository
+        .findByEmail(normalizeEmail(email))
+        .filter(a -> a.getStatus() == AccountStatus.ACTIVE)
+        .filter(
+            a ->
+                loginAt == null
+                    || a.getPasswordChangedAt() == null
+                    || !loginAt.isBefore(a.getPasswordChangedAt()))
+        .isPresent();
   }
 
   /** 사용 중인 계정 전부. 관리자, 결제원, 참가기관, 이용기관 순이고 같은 구분 안에서는 이름순이다. */

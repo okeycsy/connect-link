@@ -1,6 +1,6 @@
 package com.connectlink.notification;
 
-/** 발송함 상태. 프로토타입은 실제로 보내지 않으므로 {@code PENDING} 에 머문다. */
+/** 발송함 상태. 실제 발송을 끈 서버(데모 기본값)는 {@code PENDING} 에 머문다. */
 public enum OutboxStatus {
   PENDING("발송 대기"),
   SENT("발송됨"),

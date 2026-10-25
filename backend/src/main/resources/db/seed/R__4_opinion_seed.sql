@@ -29,6 +29,9 @@ FROM (VALUES
   ('ACCOUNT_INFO', '오픈뱅킹 연계 전문 항목 추가 검토',
    '계좌정보 통합조회 응답 전문에 계좌 별칭 항목(30바이트)을 더하는 안을 검토하고 있습니다. 기관 시스템 반영 가능 여부와 필요한 개발 기간을 알려 주세요.',
    12, 'OPEN', 'hong.sungmin@kftc.example.com', '홍성민', 2, NULL, 3, FALSE, NULL),
+  ('ACCOUNT_INFO', '계좌통합관리업무 전문 변경 회의 참석 회신',
+   '다음 달 셋째 주 전문 변경 회의 참석 여부와 참석자를 알려 주세요. 회의 안내는 공지·자료실에 있습니다.',
+   5, 'OPEN', 'hong.sungmin@kftc.example.com', '홍성민', 1, NULL, 1, FALSE, NULL),
   ('ACCOUNT_INFO', '계좌정보 일괄해지 화면 문구 개선',
    '일괄해지 화면의 안내 문구를 고객이 이해하기 쉬운 표현으로 바꾸려고 합니다. 붙임 문구안에 대한 의견을 주세요.',
    -25, 'CLOSED', 'hong.sungmin@kftc.example.com', '홍성민', 40, 20, 41, FALSE, NULL),
@@ -98,7 +101,23 @@ FROM (VALUES
 ) AS q (sort_order, question_type, title, required)
 CROSS JOIN opinion_request r
 JOIN opinion_section s ON s.request_id = r.id AND s.sort_order = 0
-WHERE r.title NOT IN ('계좌통합관리 수수료 체계 개편 의견 요청', '오픈뱅킹 연계 전문 항목 추가 검토', '4분기 계좌통합관리업무 회비 사전확인');
+WHERE r.title NOT IN ('계좌통합관리 수수료 체계 개편 의견 요청', '오픈뱅킹 연계 전문 항목 추가 검토', '4분기 계좌통합관리업무 회비 사전확인',
+                      '계좌통합관리업무 전문 변경 회의 참석 회신');
+
+-- 회의 참석 회신 요청은 참석 여부(객관식, 필수)와 참석자(주관식, 선택)를 묻는다. 공지·자료실의 회의 개최 안내(R__9)가 이 요청을 잇는다.
+INSERT INTO opinion_question (request_id, section_id, sort_order, question_type, title, required, created_at, created_by, updated_at, updated_by)
+SELECT r.id, s.id, q.sort_order, q.question_type, q.title, q.required, r.created_at, r.created_by, r.created_at, r.created_by
+FROM (VALUES
+  (0, 'SINGLE_CHOICE', '회의에 참석하십니까?', TRUE),
+  (1, 'TEXT',          '참석자 이름과 직위를 적어 주세요.', FALSE)
+) AS q (sort_order, question_type, title, required)
+JOIN opinion_request r ON r.title = '계좌통합관리업무 전문 변경 회의 참석 회신'
+JOIN opinion_section s ON s.request_id = r.id AND s.sort_order = 0;
+
+INSERT INTO opinion_question_option (question_id, sort_order, label, created_at, created_by, updated_at, updated_by)
+SELECT q.id, o.sort_order, o.label, q.created_at, q.created_by, q.created_at, q.created_by
+FROM (VALUES (0, '참석'), (1, '불참')) AS o (sort_order, label)
+JOIN opinion_question q ON q.sort_order = 0 AND q.title = '회의에 참석하십니까?';
 
 -- 회비 사전확인 요청은 확인 결과(객관식, 필수)와 문의사항(주관식, 선택)을 묻는다.
 INSERT INTO opinion_question (request_id, section_id, sort_order, question_type, title, required, created_at, created_by, updated_at, updated_by)
@@ -169,6 +188,10 @@ FROM (VALUES
   ('오픈뱅킹 연계 전문 항목 추가 검토',       '240'),
   ('오픈뱅킹 연계 전문 항목 추가 검토',       '088'),
   ('오픈뱅킹 연계 전문 항목 추가 검토',       '050'),
+  ('계좌통합관리업무 전문 변경 회의 참석 회신', '004'),
+  ('계좌통합관리업무 전문 변경 회의 참석 회신', '088'),
+  ('계좌통합관리업무 전문 변경 회의 참석 회신', '240'),
+  ('계좌통합관리업무 전문 변경 회의 참석 회신', '050'),
   ('계좌정보 일괄해지 화면 문구 개선',        '004'),
   ('계좌정보 일괄해지 화면 문구 개선',        '240'),
   ('계좌정보 일괄해지 화면 문구 개선',        '088'),
@@ -200,6 +223,8 @@ FROM (VALUES
   ('계좌통합관리 수수료 체계 개편 의견 요청', 'choi.yujin@samsung.example.com'),
   ('오픈뱅킹 연계 전문 항목 추가 검토',       'kim.minjun@kb.example.com'),
   ('오픈뱅킹 연계 전문 항목 추가 검토',       'choi.yujin@samsung.example.com'),
+  ('계좌통합관리업무 전문 변경 회의 참석 회신', 'kim.minjun@kb.example.com'),
+  ('계좌통합관리업무 전문 변경 회의 참석 회신', 'choi.yujin@samsung.example.com'),
   ('계좌정보 일괄해지 화면 문구 개선',        'kim.minjun@kb.example.com'),
   ('계좌정보 일괄해지 화면 문구 개선',        'choi.yujin@samsung.example.com'),
   ('계좌통합관리 수수료 고지 방식 변경',      'kim.minjun@kb.example.com'),

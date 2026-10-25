@@ -69,6 +69,10 @@ public class OpinionRequest extends AuditedEntity {
   @Column(name = "cancelled", nullable = false)
   private boolean cancelled;
 
+  /** 기한 하루 전 자동 리마인드를 보낸 때의 회신 기한. 기한을 바꾸면 새 기한으로 다시 보낸다. */
+  @Column(name = "auto_reminded_for")
+  private LocalDate autoRemindedFor;
+
   @Column(name = "cancel_reason", length = 500)
   private String cancelReason;
 
@@ -198,6 +202,15 @@ public class OpinionRequest extends AuditedEntity {
 
   public String getContent() {
     return content;
+  }
+
+  /** 지금 회신 기한으로 자동 리마인드를 이미 보냈는지. */
+  boolean isAutoRemindedForDueDate() {
+    return dueDate.equals(autoRemindedFor);
+  }
+
+  void markAutoReminded() {
+    this.autoRemindedFor = dueDate;
   }
 
   public LocalDate getDueDate() {

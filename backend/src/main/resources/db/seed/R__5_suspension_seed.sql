@@ -63,6 +63,11 @@ FROM (VALUES
    '전산센터 이전으로 계좌정보 통합조회가 중단되었습니다.', '신협 조회 차단',
    '류지안', '010-0000-7201', NULL, NULL,
    'COMPLETED', 'hong.sungmin@kftc.example.com', '홍성민', TRUE, '운영팀이 차단과 해제를 마쳤습니다.', 'kim.ops@kftc.example.com', '김태호'),
+  -- 결제원 작업 안내(기관은 결제원). 올리면 바로 확정이라 조치 및 인수인계 사항이 없고, 결제원 조치사항 칸은 기관 협조 사항이다.
+  ('계좌통합관리', 'KFTC', 5700, 5880,
+   '결제원 계좌통합관리 시스템 정기 점검으로 계좌정보 통합조회와 일괄해지가 중단됩니다.', '작업 시간 동안 조회·해지 요청을 보내지 말아 주세요. 끝나면 결제원이 재개를 알립니다.',
+   '홍성민', '010-0000-0001', 'hong.sungmin@kftc.example.com', NULL,
+   'CONFIRMED', 'hong.sungmin@kftc.example.com', '홍성민', TRUE, NULL, 'hong.sungmin@kftc.example.com', '홍성민'),
   ('계좌통합관리', '004', -56220, -56040,
    '재해복구 전환 훈련으로 조회가 중단되었습니다.', 'KB국민은행 조회 차단',
    '김민준', '010-0000-2101', 'kim.minjun@kb.example.com', NULL,
@@ -189,3 +194,8 @@ JOIN suspension su ON su.organization_id = o.id
 UPDATE suspension
 SET registrant_job_title = (SELECT a.job_title FROM user_account a WHERE a.email = suspension.registrant_email),
     confirmed_by_job_title = (SELECT a.job_title FROM user_account a WHERE a.email = suspension.confirmed_by_email);
+
+-- 결제원 작업 안내는 기관이 결제원인 건이다.
+UPDATE suspension
+SET kind = 'KFTC_WORK'
+WHERE organization_id = (SELECT o.id FROM organization o WHERE o.code = 'KFTC');

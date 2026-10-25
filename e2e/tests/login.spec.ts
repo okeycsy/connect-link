@@ -130,6 +130,7 @@ test.describe('로그인 화면 안내', () => {
       '기관 테스트',
       '일시중단 공유',
       '소통 채널',
+      '공지·자료실',
     ]) {
       await expect(features.getByText(title, { exact: true })).toBeVisible();
     }

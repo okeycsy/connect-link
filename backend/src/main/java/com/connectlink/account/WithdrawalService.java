@@ -31,6 +31,7 @@ public class WithdrawalService {
 
   private final UserAccountRepository repository;
   private final EmailVerificationRepository verificationRepository;
+  private final PasswordResetRepository passwordResetRepository;
   private final List<WithdrawalCheck> checks;
   private final WithdrawalAccessPolicy accessPolicy;
   private final NotificationService notificationService;
@@ -42,6 +43,7 @@ public class WithdrawalService {
   public WithdrawalService(
       UserAccountRepository repository,
       EmailVerificationRepository verificationRepository,
+      PasswordResetRepository passwordResetRepository,
       List<WithdrawalCheck> checks,
       WithdrawalAccessPolicy accessPolicy,
       NotificationService notificationService,
@@ -51,6 +53,7 @@ public class WithdrawalService {
       Clock clock) {
     this.repository = repository;
     this.verificationRepository = verificationRepository;
+    this.passwordResetRepository = passwordResetRepository;
     this.checks = checks;
     this.accessPolicy = accessPolicy;
     this.notificationService = notificationService;
@@ -171,6 +174,7 @@ public class WithdrawalService {
         now(), actor == null ? null : actor.email(), actor == null ? null : actor.name(), reason);
 
     verificationRepository.deleteByEmail(email);
+    passwordResetRepository.deleteByEmail(email);
     notificationService.deleteAllFor(email);
     events.publishEvent(
         new AccountWithdrawnEvent(

@@ -4,6 +4,7 @@ import {
   Button,
   Card,
   Group,
+  Radio,
   Select,
   SimpleGrid,
   Skeleton,
@@ -32,6 +33,7 @@ import { attachmentKeys, uploadAttachmentFile } from '../../attachment/hooks';
 import { SuspensionBusinessPicker } from '../components/SuspensionBusinessPicker';
 import {
   type SuspensionDetail,
+  type SuspensionKind,
   canRegisterSuspensions,
   registersAsKftc,
   useCreateSuspension,
@@ -53,6 +55,8 @@ interface ContactDraft {
 }
 
 interface Values {
+  /** 종류. 결제원 계정이 새로 올릴 때만 고른다. */
+  kind: SuspensionKind;
   /** 고른 대상 업무 id(문자열). */
   targetWorkIds: string[];
   organizationId: string | null;
@@ -150,6 +154,7 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
 
   const form = useForm<Values>({
     initialValues: {
+      kind: existing?.kind ?? 'ORGANIZATION',
       targetWorkIds: existing ? existing.targetWorks.map((w) => String(w.id)) : [],
       organizationId: existing ? String(existing.organizationId) : null,
       startAt: toPicker(existing?.startAt),
@@ -226,6 +231,7 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
         email: c.email || null,
       })),
       extraNote: values.extraNote || null,
+      kind: values.kind,
     };
     // 지금 업무 영역이 관련 업무에 들면 그대로, 아니면 맡은 관련 업무 영역에서 연다. 맡은 업무가 없으면 지금 업무 영역에서 연다(상세는 업무 영역과
     // 상관없이 열린다).
@@ -249,18 +255,21 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
   };
 
   const ownOrganization = !kftcSide ? organizations.data?.[0] : undefined;
-  const title = existing ? '일시중단 고치기' : '일시중단 등록';
+  const kftcWork = form.values.kind === 'KFTC_WORK';
+  const title = existing ? (kftcWork ? '결제원 작업 고치기' : '일시중단 고치기') : '일시중단 등록';
   return (
     <form onSubmit={form.onSubmit(submit)} noValidate>
       <Stack gap="md">
         <PageHeader
           title={title}
           description={
-            existing
-              ? kftcSide
-                ? '고치면 이 업무 결제원 담당자에게 매터모스트 알림이 갑니다. 기관이 올린 건이면 등록한 사람에게도 알립니다.'
-                : '고치면 결제원 담당자에게 매터모스트 알림이 가고, 확인이 시작된 건은 다시 검토 대기로 돌아갑니다.'
-              : '정해진 양식으로 등록합니다. 저장하면 검토 대기가 되고 고른 대상 업무와 관련된 업무의 결제원 담당자에게 메일과 매터모스트 알림이 갑니다. 관련 업무가 없는 대상 업무는 결제원 운영·상황실·대외계가 받습니다.'
+            kftcWork
+              ? '결제원 시스템 작업으로 업무가 멈추는 일정을 참가기관에 알립니다. 저장하면 바로 확정이고, 관련 업무의 참가기관 담당자가 일시중단 목록에서 봅니다(메일은 보내지 않습니다).'
+              : existing
+                ? kftcSide
+                  ? '고치면 이 업무 결제원 담당자에게 매터모스트 알림이 갑니다. 기관이 올린 건이면 등록한 사람에게도 알립니다.'
+                  : '고치면 결제원 담당자에게 매터모스트 알림이 가고, 확인이 시작된 건은 다시 검토 대기로 돌아갑니다.'
+                : '정해진 양식으로 등록합니다. 저장하면 검토 대기가 되고 고른 대상 업무와 관련된 업무의 결제원 담당자에게 메일과 매터모스트 알림이 갑니다. 관련 업무가 없는 대상 업무는 결제원 운영·상황실·대외계가 받습니다.'
           }
           actions={
             <>
@@ -289,8 +298,22 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
             <Text fw={700} size="xl">
               대상과 일시
             </Text>
+            {!existing && kftcSide && (
+              <Radio.Group
+                label="종류"
+                value={form.values.kind}
+                onChange={(v) => form.setFieldValue('kind', v as SuspensionKind)}
+              >
+                <Group gap="lg" mt={6}>
+                  <Radio value="ORGANIZATION" label="기관 일시중단" />
+                  <Radio value="KFTC_WORK" label="결제원 작업" />
+                </Group>
+              </Radio.Group>
+            )}
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-              {existing ? (
+              {kftcWork ? (
+                <TextInput label="기관" value="금융결제원" readOnly />
+              ) : existing ? (
                 <TextInput label="기관" value={existing.organizationName} readOnly />
               ) : kftcSide ? (
                 <Select
@@ -345,7 +368,7 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
               중단 내용
             </Text>
             <Textarea
-              label="중단 이유(작업 내용)"
+              label={kftcWork ? '작업 내용' : '중단 이유(작업 내용)'}
               placeholder="무슨 작업으로 어떤 거래가 멈추는지 적어 주세요."
               required
               autosize
@@ -354,8 +377,12 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
               {...form.getInputProps('reason')}
             />
             <Textarea
-              label="결제원 조치사항"
-              description="중단 동안 결제원이 해 주어야 할 일입니다. 예: 조회 요청 차단, 고객 안내 문구"
+              label={kftcWork ? '기관 협조 사항' : '결제원 조치사항'}
+              description={
+                kftcWork
+                  ? '작업 동안 참가기관이 해 주어야 할 일입니다. 예: 조회 요청 보내지 않기, 고객 안내'
+                  : '중단 동안 결제원이 해 주어야 할 일입니다. 예: 조회 요청 차단, 고객 안내 문구'
+              }
               autosize
               minRows={2}
               maxLength={2000}

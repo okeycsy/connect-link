@@ -6,6 +6,8 @@ import com.connectlink.auth.dto.LoginRequest;
 import com.connectlink.common.NetworkZoneResolver;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.time.Clock;
+import java.time.LocalDateTime;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
@@ -40,9 +42,13 @@ public class AuthController {
   private final SessionAuthenticationStrategy sessionStrategy =
       new ChangeSessionIdAuthenticationStrategy();
 
-  public AuthController(AccountService accountService, NetworkZoneResolver networkZoneResolver) {
+  private final Clock clock;
+
+  public AuthController(
+      AccountService accountService, NetworkZoneResolver networkZoneResolver, Clock clock) {
     this.accountService = accountService;
     this.networkZoneResolver = networkZoneResolver;
+    this.clock = clock;
   }
 
   @PostMapping("/login")
@@ -62,6 +68,7 @@ public class AuthController {
     context.setAuthentication(authentication);
     SecurityContextHolder.setContext(context);
     securityContextRepository.saveContext(context, httpRequest, httpResponse);
+    LoginSession.markLogin(httpRequest, LocalDateTime.now(clock));
     return CurrentUserResponse.from(user, networkZoneResolver.current());
   }
 

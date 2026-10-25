@@ -192,6 +192,37 @@ export function useSupportInfo() {
   });
 }
 
+/**
+ * 내 정보 > 비밀번호 변경. 지금 비밀번호가 틀리면 400 PASSWORD_MISMATCH(currentPassword 칸), 같은 비밀번호면 PASSWORD_UNCHANGED
+ * (newPassword 칸). 이 세션은 남고 다른 곳에서 로그인한 화면은 끝난다.
+ */
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: async (body: { currentPassword: string; newPassword: string }) => {
+      const result = await api.PUT('/api/v1/me/password', { body });
+      if (!result.response.ok) throw new ApiError(result.response.status, result.error);
+    },
+  });
+}
+
+/** 비밀번호 찾기 ①: 회사 이메일로 인증 코드 받기. 계정 유무와 상관없이 같은 답이고, 재발송 간격 전이면 429. */
+export function useRequestPasswordReset() {
+  return useMutation({
+    mutationFn: async (email: string) =>
+      unwrap(await api.POST('/api/v1/password-resets', { body: { email } })),
+  });
+}
+
+/** 비밀번호 찾기 ②: 코드와 새 비밀번호. 성공하면 그 계정의 모든 세션이 끝나고 새 비밀번호로 로그인한다. */
+export function useConfirmPasswordReset() {
+  return useMutation({
+    mutationFn: async (body: { email: string; code: string; newPassword: string }) => {
+      const result = await api.POST('/api/v1/password-resets/confirm', { body });
+      if (!result.response.ok) throw new ApiError(result.response.status, result.error);
+    },
+  });
+}
+
 /** 가입 ①: 회사 이메일로 인증 코드 받기. 실패는 409 EMAIL_ALREADY_REGISTERED, 429 VERIFICATION_RESEND_TOO_SOON 등. */
 export function useRequestVerification() {
   return useMutation({

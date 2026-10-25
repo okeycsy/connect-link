@@ -12,8 +12,8 @@ import org.springframework.security.web.authentication.logout.SecurityContextLog
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * 세션의 로그인 사용자가 아직 사용 중 계정인지 API 요청마다 확인한다. 다른 브라우저에서 탈퇴했으면 이 세션도 끝내고 로그인 전 요청으로 다룬다(로그인이 필요한 API 는
- * 401). 빈으로 두지 않는다(서블릿 필터로 한 번 더 등록되지 않게 {@link SecurityConfig} 가 직접 만든다).
+ * 세션의 로그인 사용자가 아직 사용 중 계정인지 API 요청마다 확인한다. 다른 브라우저에서 탈퇴했거나 이 세션으로 로그인한 뒤 비밀번호를 바꿨으면 이 세션도 끝내고 로그인 전
+ * 요청으로 다룬다(로그인이 필요한 API 는 401). 빈으로 두지 않는다(서블릿 필터로 한 번 더 등록되지 않게 {@link SecurityConfig} 가 직접 만든다).
  */
 class ActiveAccountFilter extends OncePerRequestFilter {
 
@@ -35,7 +35,7 @@ class ActiveAccountFilter extends OncePerRequestFilter {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     if (authentication != null
         && authentication.getPrincipal() instanceof CurrentUser user
-        && !accountService.isActive(user.email())) {
+        && !accountService.isSessionValid(user.email(), LoginSession.loginAt(request))) {
       new SecurityContextLogoutHandler().logout(request, response, authentication);
     }
     chain.doFilter(request, response);

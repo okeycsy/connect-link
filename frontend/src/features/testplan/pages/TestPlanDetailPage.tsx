@@ -14,7 +14,7 @@ import {
   Text,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconBell, IconPencil, IconSend } from '@tabler/icons-react';
+import { IconBell, IconCopy, IconPencil, IconSend } from '@tabler/icons-react';
 import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
@@ -126,6 +126,14 @@ function TestPlanView({ slug, plan }: { slug: string; plan: TestPlanDetail }) {
                   leftSection={<IconPencil size={16} stroke={1.8} />}
                 >
                   고치기
+                </Button>
+                <Button
+                  variant="default"
+                  component={Link}
+                  to={`/${slug}/tests/new?copyFrom=${plan.id}`}
+                  leftSection={<IconCopy size={16} stroke={1.8} />}
+                >
+                  복사해서 새 테스트
                 </Button>
                 <Button color="red" variant="light" onClick={() => setConfirmDelete(true)}>
                   삭제

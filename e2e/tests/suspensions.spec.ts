@@ -426,3 +426,36 @@ test.describe("라. 일시중단", () => {
     await shot(page, "suspension-digest");
   });
 });
+
+test("기관 담당자는 같은 업무 다른 기관의 확정 일정만 기관·일시·대상 업무로 본다", async ({
+  page,
+}) => {
+  await skipContactReconfirm(page);
+  await loginAs(page, "김민준 (참가기관 · 현업)로 로그인");
+  await page.goto("/account-info/suspensions");
+  const card = page.getByTestId("other-schedules");
+  await expect(card.getByText("저축은행중앙회")).toBeVisible();
+  // 자기 기관 건과 확정 전 건(신한은행·삼성증권 검토 대기·검토 중)은 빠지고, 중단 이유는 보이지 않는다.
+  await expect(card.getByText("KB국민은행")).toHaveCount(0);
+  await expect(card.getByText("신한은행")).toHaveCount(0);
+  await expect(card.getByText(/리허설/)).toHaveCount(0);
+  await shot(page, "suspension-other-schedules");
+});
+
+test("기관 담당자는 관련 업무의 결제원 작업 안내를 자기 기관 건과 함께 보고 확인 칸 없이 내용만 본다", async ({
+  page,
+}) => {
+  await skipContactReconfirm(page);
+  await loginAs(page, "김민준 (참가기관 · 현업)로 로그인");
+  await page.goto("/account-info/suspensions?period=UPCOMING");
+  const table = page.getByTestId("suspension-table");
+  await expect(table.getByText("결제원 작업")).toBeVisible();
+  await table.getByText("금융결제원").click();
+  await expect(
+    page.getByRole("heading", { name: "결제원 작업" }),
+  ).toBeVisible();
+  await expect(page.getByText("기관 협조 사항")).toBeVisible();
+  await expect(page.getByRole("button", { name: "확인 시작" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "고치기" })).toHaveCount(0);
+  await shot(page, "suspension-kftc-work");
+});

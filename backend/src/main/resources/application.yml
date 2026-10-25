@@ -57,9 +57,6 @@ app:
   support:
     # 로그인 화면 "문의 메일 보내기" 주소. 공개 저장소라 실제 주소는 배포 설정(환경 변수 APP_SUPPORT_INQUIRY_EMAIL)으로 넣는다. 비우면 문의하기 칸이 빠진다.
     inquiry-email: ""
-  notification:
-    # 메일 본문에 넣는 연결이 주소. 공개 저장소라 실제 주소는 배포 설정(환경 변수 APP_NOTIFICATION_SITE_URL)으로 넣는다.
-    site-url: http://localhost:8080
   account:
     verification:
       # 회사 이메일 인증. 명세에 없어 기본값을 두었다(docs/decisions.md).
@@ -67,6 +64,21 @@ app:
       max-attempts: 5
       resend-interval: 60s
       token-ttl: 30m
+  notification:
+    # 메일 본문에 넣는 연결이 주소. 공개 저장소라 실제 주소는 배포 설정(환경 변수 APP_NOTIFICATION_SITE_URL)으로 넣는다.
+    site-url: http://localhost:8080
+    delivery:
+      # 발송함의 실제 발송(메일만). 꺼 두면(기본, demo) 발송함에 기록만 한다. 운영은 켜고 spring.mail.host 등 메일 서버 설정과
+      # 아래 주소를 배포 설정(환경 변수)으로 넣는다. 공개 저장소라 실제 값은 여기에 적지 않는다.
+      # 매터모스트는 내부망 서비스라 보내지 않고 발송함에 기록만 남는다.
+      enabled: false
+      # 밀리초다(@Scheduled 가 Spring 5 에서 30s 같은 표기를 읽지 못한다).
+      interval: 30000
+      batch-size: 50
+      max-attempts: 3
+      mail:
+        # 보내는 사람 주소. 비우면 메일은 보내지 않고 발송 대기로 둔다.
+        from: ""
   attachment:
     # 프로토타입 저장소(임시 디렉터리). 운영은 공유 스토리지 경로나 다른 FileStorage 구현으로 바꾼다.
     dir: ${java.io.tmpdir}/connect-link-files
@@ -82,6 +94,12 @@ app:
       # 현행화 완료를 누르지 않은 기관에 요청 메일이나 앞 리마인드에서 이만큼(일) 지나면 리마인드 메일을 다시 보낸다.
       reminder-interval-days: 3
       cron: "0 30 9 * * *"
+  opinion:
+    # 회신 기한이 내일인 회신중 요청의 미회신 기관에 리마인드를 보내는 때(매일 9시).
+    due-reminder-cron: "0 0 9 * * *"
+  testplan:
+    # 수행 종료일·테스트데이터 회신 기한이 내일인 기관 테스트에서 아직 결과·테스트데이터를 내지 않은 기관에 리마인드를 보내는 때(매일 9시).
+    due-reminder-cron: "0 0 9 * * *"
   suspension:
     # 끝난 확정 일시중단을 완료로 바꾸는 주기(ms).
     completion-interval: 60000

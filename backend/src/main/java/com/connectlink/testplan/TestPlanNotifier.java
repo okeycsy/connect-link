@@ -73,6 +73,35 @@ class TestPlanNotifier {
         EnumSet.of(NotificationChannel.EMAIL));
   }
 
+  /** 수행 종료 하루 전, 결과를 다 등록하지 않은 기관 담당자에게 알림과 메일. */
+  void resultDue(TestPlan plan, Collection<String> organizationEmails) {
+    publish(
+        organizationEmails,
+        plan,
+        NotificationType.TEST_RESULT_DUE,
+        headline(plan) + " 수행 종료가 내일입니다",
+        plan.getSubBusiness()
+            + " · 수행 기간 "
+            + periodText(plan)
+            + ". 아직 결과를 등록하지 않은 요구사항이 있습니다. 연결이에서 요구사항별 결과를 등록해 주세요.",
+        EnumSet.of(NotificationChannel.EMAIL));
+  }
+
+  /** 테스트데이터 회신 기한 하루 전, 아직 생성 완료하지 않은 기관 담당자에게 알림과 메일. */
+  void testDataDue(TestPlan plan, Collection<String> organizationEmails) {
+    publish(
+        organizationEmails,
+        plan,
+        NotificationType.TEST_DATA_REQUESTED,
+        headline(plan) + " 테스트데이터 회신 기한이 내일입니다",
+        plan.getSubBusiness()
+            + " · 수행 기간 "
+            + periodText(plan)
+            + ". 아직 생성 완료로 등록되지 않았습니다. "
+            + testDataText(plan),
+        EnumSet.of(NotificationChannel.EMAIL));
+  }
+
   /** "수행 전 테스트데이터를 2026-10-25 까지 만들어 올려 주세요(요청 사항: …)." */
   private static String testDataText(TestPlan plan) {
     String text = "수행 전 테스트데이터를 " + plan.getTestDataDueDate().format(DATE) + " 까지 만들어 올려 주세요";

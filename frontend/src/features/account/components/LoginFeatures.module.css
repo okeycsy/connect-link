@@ -1,6 +1,6 @@
 /*
- * 로그인 기능 소개. 넓은 화면(lg 이상)에서는 높이 600 안에 다섯 줄을 120 간격으로 두고, 아이콘 원의 가운데가
- * 반지름 600 호(왼쪽 40px 에서 시작하는 svg) 위에 오도록 줄마다 왼쪽 여백(30/68/80/68/30)을 준다.
+ * 로그인 기능 소개. 넓은 화면(lg 이상)에서는 높이 600 안에 여섯 줄을 100 간격으로 두고, 아이콘 원의 가운데가
+ * 반지름 600 호(왼쪽 40px 에서 시작하는 svg) 위에 오도록 줄마다 왼쪽 여백(26/61/78/78/61/26)을 준다.
  * 좁은 화면에서는 호를 숨기고 여백 없이 목록으로 쌓는다.
  */
 .root {
@@ -52,20 +52,21 @@
   gap: 18px;
 
   @media (min-width: $mantine-breakpoint-lg) {
-    height: 120px;
+    height: 100px;
 
     &[data-index='0'],
-    &[data-index='4'] {
-      margin-left: 30px;
+    &[data-index='5'] {
+      margin-left: 26px;
     }
 
     &[data-index='1'],
-    &[data-index='3'] {
-      margin-left: 68px;
+    &[data-index='4'] {
+      margin-left: 61px;
     }
 
-    &[data-index='2'] {
-      margin-left: 80px;
+    &[data-index='2'],
+    &[data-index='3'] {
+      margin-left: 78px;
     }
   }
 }

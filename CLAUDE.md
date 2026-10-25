@@ -65,6 +65,7 @@
 | 가입 승인 | `SignUpReviewService`, `SignUpReviewAccessPolicy` | 승인 대기 계정을 승인(`ACTIVE`)하거나 사유를 적어 반려(`REJECTED`)한다. 승인하면 `AccountApprovedEvent`(가입 때 받은 부서·연락처 포함)를 같은 트랜잭션에서 발행한다. 처리할 수 있는 사람은 관리자와 신청 업무를 맡은 결제원 담당자. API `/api/v1/sign-ups`(목록·건수·상세, `/{id}/approval`, `/{id}/rejection`), 화면 `/{업무}/admin/sign-ups` |
 | 탈퇴 | `WithdrawalService`, `WithdrawalAccessPolicy`, `WithdrawalCheck`, `WithdrawalBlocker`, `AccountWithdrawnEvent` | 본인이 비밀번호를 다시 넣어 탈퇴한다(API `/api/v1/me/withdrawal`, 화면 내 정보). 결제원 담당자는 맡은 업무의 참가기관 담당자를 사유를 적어 탈퇴 처리한다(API `/api/v1/accounts/{id}/withdrawal`, 화면 가입 승인 상세). 계정은 `WITHDRAWN` 으로 남고 개인 정보는 지운다. 막는 규칙은 기능 모듈이 `WithdrawalCheck` 빈 하나로 더하고(예: 후임자 규칙), 탈퇴 뒤 자기 데이터는 `AccountWithdrawnEvent` 를 받아 지운다 |
 | 담당자 연락처 | `Contact` | 기관 × 업무 × 사람 한 행. 계정이 없는 담당자(후임자 등)도 존재 가능하며 계정과는 회사 이메일로만 잇는다. 권한 `ContactAccessPolicy`(결제원 담당자는 그 업무 전 기관 관리, 결제원 운영·상황실·대외계는 전 업무 조회, 기관 담당자는 결제원과 자기 기관만 보고 자기 기관을 고친다). 휴대폰·이메일 가리기 `ContactMasking`. 승인되면 `AccountApprovedEvent` 를 받아 만들고, 유일한 기관 담당자의 탈퇴는 `ContactSuccessorWithdrawalCheck` 가 막는다. API `/api/v1/contacts`, 화면 `/{업무}/contacts` |
+| 담당자 일괄 등록 | `ContactImportService`, `ContactImportSheet`, `ContactImportRowStatus` | 결제원 담당자가 기존 명부를 엑셀 양식으로 한 번에 올린다(그 업무 결제원 담당자, 내부망). 줄마다 등록과 같은 규칙으로 검사하고 결과는 `CREATE`(등록)/`SKIP`(같은 이메일이 있어 건너뜀)/`ERROR`(오류)다. 한 줄이라도 오류면 아무것도 등록하지 않는다. API `/api/v1/contacts/import-template`, `/api/v1/contacts/imports`(`dryRun` 이면 검사만) |
 | 기관 업무 참여 | `OrganizationBusiness` | 기관이 참여하는 업무 영역 한 건. 레일별 조회 범위의 기준. 테이블 `organization_business` |
 | 업무 | `Business` | `ACCOUNT_INFO`(계좌통합관리), `AUTO_TRANSFER`(자동이체통합관리), `LOAN_TRANSFER`(대출이동), `CMS` |
 | 세부업무 | `subBusiness` | 자유 텍스트 |
@@ -92,7 +93,7 @@
 | 테스트 결과 | `TestResult` | `PASSED`(정상), `FAILED`(오류), `IN_PROGRESS`(수행중), `NOT_STARTED`(미수행) |
 | 수행률 | `TestProgress` | 요구사항 수행률(결제원 의견, 없으면 정상 100 그 밖 0)의 기관별·전체 평균과 수행 완료 계산. 결과가 바뀔 때마다 `progress_rate` 에 다시 계산해 둔다 |
 | 결과 등록 알림 대상 | `TestPlanRecipient` | 기관이 결과를 등록하면 매터모스트 알림을 받을 결제원 담당자(테스트별). 화면 `/{업무}/tests/{id}/recipients` |
-| 일시중단 | `Suspension` | 참가기관 하나의 업무 중단 한 건(일시, 대상 업무 하나 이상 `SuspensionTargetWork`, 중단 이유, 결제원 조치사항, 담당자 연락처 한 명 이상 `SuspensionContact`, 추가 사항, 공문 첨부). 저장할 때 대상 업무들의 관련 업무(레일)를 `SuspensionBusiness` 로 남기고, 그 업무 레일마다 보이며 그중 한 업무라도 맡은 결제원 담당자가 확인·확정한다. 관련 업무가 하나도 없으면 관리자와 결제원 운영·상황실·대외계가 모든 레일에서 보고 확인한다. 상태 `SuspensionStatus` = `PENDING_REVIEW`(검토 대기), `IN_REVIEW`(검토 중), `CONFIRMED`(확정), `COMPLETED`(완료). 등록은 기관 기준(`/registrable-organizations`)이고 대상 업무는 맡은 업무와 상관없이 고른다. 권한 `SuspensionAccessPolicy`. API `/api/v1/suspensions`, 화면 `/{업무}/suspensions` |
+| 일시중단 | `Suspension`, `SuspensionKind` | 종류 `SuspensionKind` = `ORGANIZATION`(기관 일시중단), `KFTC_WORK`(결제원 작업 안내: 결제원 계정이 올리면 바로 확정, 기관은 결제원, 확인 단계·알림 없음, 관련 업무의 참가기관 담당자가 목록·상세에서 본다, 결제원 조치사항 칸은 기관 협조 사항). 기관 일시중단은 참가기관 하나의 업무 중단 한 건(일시, 대상 업무 하나 이상 `SuspensionTargetWork`, 중단 이유, 결제원 조치사항, 담당자 연락처 한 명 이상 `SuspensionContact`, 추가 사항, 공문 첨부). 저장할 때 대상 업무들의 관련 업무(레일)를 `SuspensionBusiness` 로 남기고, 그 업무 레일마다 보이며 그중 한 업무라도 맡은 결제원 담당자가 확인·확정한다. 관련 업무가 하나도 없으면 관리자와 결제원 운영·상황실·대외계가 모든 레일에서 보고 확인한다. 상태 `SuspensionStatus` = `PENDING_REVIEW`(검토 대기), `IN_REVIEW`(검토 중), `CONFIRMED`(확정), `COMPLETED`(완료). 등록은 기관 기준(`/registrable-organizations`)이고 대상 업무는 맡은 업무와 상관없이 고른다. 권한 `SuspensionAccessPolicy`. API `/api/v1/suspensions`, 화면 `/{업무}/suspensions` |
 | 대상 업무(기준정보) | `TargetWork` | 일시중단에서 고르는 업무 하나(이름, 묶음 `category`, 순서, 사용 여부). 레일 업무(`Business`)와 별개이며 수십 개다. 관련 업무(레일)는 `TargetWorkBusiness`(0개 이상). 쓰지 않는 업무는 새로 고를 수 없고 이미 고른 건에는 남는다. 일시중단 쪽 한 칸은 `SuspensionTargetWork`(고를 때 이름을 남긴다). 관리자만 고친다. API `/api/v1/target-works`, 화면 `/{업무}/admin/target-works` |
 | 일시중단 시기 | `SuspensionPeriod` | 지금 기준 `CURRENT`(진행 중), `UPCOMING`(예정), `PAST`(지난). 저장하지 않고 일시로 계산한다 |
 | 일시중단 확인자 | `SuspensionReviewer` | 확인을 시작한 결제원 담당자 한 명(이름·이메일·직무 표시·시작 일시). 조치 및 인수인계 사항(`handover`)을 쓰면 확정이다 |
@@ -103,7 +104,7 @@
 | 발송함 | `NotificationOutbox` | 프로토타입에서 실제 발송 대신 기록. 상태 `OutboxStatus` = `PENDING`(발송 대기), `SENT`, `FAILED` |
 | 로그인 사용자 | `CurrentUser` | Service 권한 판단에 넘기는 값. 로그인할 때 계정에서 만들어 세션에 둔다. 업무 영역(레일) 조회 범위는 `BusinessAccessPolicy`(관리자는 전 업무, 그 밖에는 담당 업무). 테스트는 `TestUsers` |
 | 내부망/인터넷망 | `NetworkZone` | `INTERNAL`, `EXTERNAL`. 판단은 `NetworkZoneResolver`(헤더 `X-Network-Zone` 은 local·demo 만, 운영은 `app.network.internal-cidrs`). 내부망 전용 위반은 403 `INTERNAL_ONLY` |
-| 첨부파일 | `Attachment` | 대상은 `AttachmentOwnerType`(`OPINION_REQUEST`, `OPINION_REPLY`, `TEST_PLAN`, `TEST_DATA_FORM`(테스트데이터 회신 양식, 테스트 ID), `TEST_DATA`(기관 테스트데이터, 대상 기관 행 ID), `SUSPENSION`, `CHAT_MESSAGE`, `DEMO`) + `ownerId`. 파일 저장소 `FileStorage` |
+| 첨부파일 | `Attachment` | 대상은 `AttachmentOwnerType`(`OPINION_REQUEST`, `OPINION_REPLY`, `TEST_PLAN`, `TEST_DATA_FORM`(테스트데이터 회신 양식, 테스트 ID), `TEST_DATA`(기관 테스트데이터, 대상 기관 행 ID), `SUSPENSION`, `CHAT_MESSAGE`, `NOTICE`(공지·자료실 글), `DEMO`) + `ownerId`. 파일 저장소 `FileStorage` |
 | 변경 이력 | `ChangeHistory` | 대상은 `HistoryTargetType`(`ORGANIZATION`, `CONTACT`, `OPINION_REQUEST`, `OPINION_REPLY`, `TEST_PLAN`, `TEST_PLAN_TARGET`(기관별 결과), `SUSPENSION`) + `targetId`. 종류 `ChangeAction` = `CREATED`/`UPDATED`/`DELETED`, 항목 `FieldChange`(field, label, before, after) |
 | 채팅방 | `ChatRoom` | 소통 채널의 방 하나. 종류 `ChatRoomType` = `BUSINESS`(업무 단체방, 업무마다 하나를 저절로 만든다), `CUSTOM`(초대방, 그 업무 결제원 담당자가 만든다). 권한 `ChatAccessPolicy`, 구성원 판단 `ChatMembership`. API `/api/v1/chat-rooms`, 화면 `/{업무}/chat/{방 id}` |
 | 채팅방 구성원 | `ChatRoomMember` | 따로 초대한 사람 한 행(이름·기관을 남긴다). 업무 단체방은 그 업무를 맡은 사용 중 계정(이용기관 빼고) 전부에 초대한 사람을 더하고, 초대방은 초대한 사람만이다. 초대받은 사람만 나간다 |
@@ -112,6 +113,7 @@
 | 확인 공감 | `ChatMessageAck` | 메시지에 "확인" 을 누른 사람 한 명(기관 이름을 남겨 기관별로 묶어 보인다). 보낸 사람은 누르지 못한다 |
 | 읽음 표시 | `ChatReadMark` | 사람 × 방 하나의 마지막으로 읽은 메시지. 방의 읽지 않은 수, 메시지의 읽지 않은 사람 수, 읽지 않은 내 기관 멘션을 여기서 센다 |
 | 문의 안내·이용 가이드 | `SupportInfo`, `SupportProperties` | 로그인 화면 아래 카드. 문의 메일 주소는 설정 `app.support.inquiry-email`(공개 저장소라 실제 주소는 배포 설정에만, 비우면 문의하기 칸이 빠진다)이고 로그인 없이 API `/api/v1/support-info` 로 읽는다. 이용 가이드는 참가기관 담당자용 화면 `/guide`, 기능별 `/guide/{기능}`(로그인 없이, 내용은 `guideTopics.ts`) |
+| 공지·자료실 | `Notice`, `NoticeCategory`, `NoticeAccessPolicy` | 글 한 건. 분류 `NoticeCategory` = `NOTICE`(공지), `RULE`(규약), `ENFORCEMENT_RULE`(시행세칙), 규약·시행세칙은 시행일(`effectiveDate`)을 둘 수 있다. 업무(`business`)가 있으면 그 업무를 맡은 결제원·참가기관 담당자만 보고 그 업무 결제원 담당자가 쓴다. 업무가 비면 전 업무 공통 공지라 모두 보고 관리자만 쓴다(규약·시행세칙은 공통으로 못 둔다, 400 `NOTICE_COMMON_REGULATION`). 고정(`pinned`) 글이 먼저다. 업무 글에는 같은 업무 의견 요청 하나를 이을 수 있고(`opinionRequestId`, 예: 회의 개최 안내 + 참석 회신, 다른 업무·공통 공지면 400 `NOTICE_OPINION_MISMATCH`), 그 요청을 볼 수 있는 사람에게만 보이며 대상 기관 담당자는 글에서 "회신하기"로 간다. 첨부 `NOTICE`. API `/api/v1/notices`, 화면 `/{업무}/notices` |
 | 전역 검색 묶음 | `SearchCategory` | `ORGANIZATION`, `CONTACT`, `OPINION_REQUEST`, `TEST_PLAN`, `SUSPENSION`. 기능 모듈은 `SearchProvider` 빈 하나로 자기 묶음을 채운다 |
 
 용어집에 없는 개념이 필요하면 이름을 정해 이 표에 추가하는 것까지 같은 작업에 포함한다.
@@ -140,6 +142,7 @@ connect-link/
 │       │   ├── testplan/      # 다. 기관 테스트
 │       │   ├── suspension/    # 라. 일시중단
 │       │   ├── chat/          # 마. 소통 채널
+│       │   ├── notice/        # 공지·자료실(업무별 공지·규약·시행세칙, 전 업무 공통 공지)
 │       │   └── notification/  # 알림 인터페이스와 발송함
 │       ├── main/resources/
 │       │   ├── application.yml, application-local.yml, application-demo.yml
@@ -153,7 +156,7 @@ connect-link/
 │       ├── api/               # schema.d.ts(생성물), client.ts
 │       ├── app/               # 라우터, 레이아웃(AppShell), 테마, 인증 상태
 │       ├── features/
-│       │   ├── account/ contact/ opinion/ testplan/ suspension/ chat/ notification/ attachment/ history/
+│       │   ├── account/ contact/ opinion/ testplan/ suspension/ chat/ notice/ notification/ attachment/ history/
 │       │   │   └── (각각) pages/, components/, hooks.ts(Query 훅), *.test.tsx
 │       ├── shared/            # 공통 컴포넌트(PageHeader, BrandMark, OrgMonogram), 포맷터(날짜, 전화번호), list/(목록 패턴), state/(빈·오류·권한 없음·내부망 전용 안내)
 │       └── main.tsx
@@ -196,7 +199,7 @@ connect-link/
 - **디자인 시스템은 `frontend/CLAUDE.md`(B안 메신저형)를 따른다.** 색·글꼴·radius·앱 셸 치수·컴포넌트 모양과 금지 사항이 거기 있고, 화면 모양에 관해서는 그 문서가 우선한다.
 - UI는 Mantine 컴포넌트와 Mantine 테마(`app/theme.ts`)만 쓴다. 인라인 스타일과 별도 CSS 파일은 Mantine으로 안 될 때만 최소로 쓴다.
 - 글꼴은 Pretendard Variable 을 npm 패키지(`pretendard`)로 번들해서 쓴다. 외부에서 웹폰트를 불러오지 않는다. 글꼴은 `frontend/src/app/fonts.css` 의 `--cl-font-sans` 한 곳에서만 정하고, 바꾸는 방법은 `frontend/CLAUDE.md` 3절에 있다. 숫자 서체(Geist) 도입은 확인 대기.
-- 화면 구성: Mantine `AppShell`, 왼쪽 레일(업무 영역: 계좌통합관리 / 자동이체통합관리 / 대출이동 / CMS) + 사이드바(기능: 홈 / 연락처 / 의견 요청 / 기관 테스트 / 일시중단 / 소통 채널 / 관리, 바로가기에 알림 센터), 상단 바에 전역 검색·알림·사용자 정보. 주소는 `/{업무 slug}/{기능}`. 디자인 토큰과 셸 치수는 `frontend/CLAUDE.md`, 화면 범위와 구조 결정은 `docs/design/common-screens.md`, 분류는 `docs/service-taxonomy.md`를 따른다. `demo` 프로필이면 상단에 데모 도구(계정 전환, 망 전환, 발송함)를 보인다.
+- 화면 구성: Mantine `AppShell`, 왼쪽 레일(업무 영역: 계좌통합관리 / 자동이체통합관리 / 대출이동 / CMS) + 사이드바(기능: 홈 / 연락처 / 의견 요청 / 기관 테스트 / 일시중단 / 소통 채널 / 공지·자료실 / 관리, 바로가기에 알림 센터), 상단 바에 전역 검색·알림·사용자 정보. 주소는 `/{업무 slug}/{기능}`. 디자인 토큰과 셸 치수는 `frontend/CLAUDE.md`, 화면 범위와 구조 결정은 `docs/design/common-screens.md`, 분류는 `docs/service-taxonomy.md`를 따른다. `demo` 프로필이면 상단에 데모 도구(계정 전환, 망 전환, 발송함)를 보인다.
 - 날짜 표기 `YYYY-MM-DD`, 일시 `YYYY-MM-DD HH:mm`. 예외로 목록의 좁은 칸에 넣는 기간은 짧은 날짜 `'YY.MM.DD`(`formatShortDate`)를 쓴다(지금은 기관 테스트 목록의 수행 기간). 전화번호 표기와 마스킹 형식은 `shared/format.ts` 한 곳에서만 처리한다(마스킹 판단 자체는 서버가 한다).
 - 데스크톱 우선(1280px 기준), 태블릿 폭에서 깨지지 않게 한다. 휴대폰 폭(sm, 768px 미만)에서도 쓸 수 있게 한다(모바일 웹, `frontend/CLAUDE.md` 5.1절).
 - 화면 문구는 한국어로 컴포넌트에 직접 쓴다. 다국어 처리는 하지 않는다.

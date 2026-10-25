@@ -11,24 +11,26 @@ import {
   Text,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconAlertTriangle, IconUserOff } from '@tabler/icons-react';
+import { IconAlertTriangle, IconKey, IconUserOff } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 
 import { OrgMonogram } from '../../../shared/OrgMonogram';
 import { ErrorState } from '../../../shared/state/StateView';
 import { MyContactsCard } from '../../contact/components/MyContactsCard';
+import { PasswordChangeModal } from '../components/PasswordChangeModal';
 import { WithdrawModal } from '../components/WithdrawModal';
 import { useMe, useWithdrawalCheck } from '../hooks';
 import { PageHeader } from '../../../shared/PageHeader';
 
 /**
  * 내 정보. 서버가 아는 로그인 사용자 정보와 연락처 모듈의 내 담당자 정보(업무별)를 보여 주고, 여기서 연락처를 고치거나 "변동 없음"으로
- * 확인하고 탈퇴한다. 담당 업무와 직무는 계정 값이며 레일(업무 영역)의 조회 범위를 정한다.
+ * 확인하고, 비밀번호를 바꾸고, 탈퇴한다. 담당 업무와 직무는 계정 값이며 레일(업무 영역)의 조회 범위를 정한다.
  */
 export function MyInfoPage() {
   const { data: me, isPending, isError, error } = useMe();
   const { data: withdrawal } = useWithdrawalCheck();
   const [withdrawOpened, withdrawModal] = useDisclosure(false);
+  const [passwordOpened, passwordModal] = useDisclosure(false);
 
   if (isError) return <ErrorState error={error} />;
 
@@ -103,6 +105,31 @@ export function MyInfoPage() {
         </Grid.Col>
 
         <Grid.Col span={12}>
+          <Card data-testid="my-password">
+            <Group justify="space-between" align="flex-start" wrap="nowrap" gap="lg">
+              <div>
+                <Text fw={700} size="lg">
+                  비밀번호
+                </Text>
+                <Text size="sm" c="dimmed" mt={4}>
+                  지금 비밀번호를 확인하고 새 비밀번호로 바꿉니다. 다른 곳에서 로그인해 있던 화면은
+                  로그아웃됩니다.
+                </Text>
+              </div>
+              <Button
+                variant="light"
+                leftSection={<IconKey size={16} />}
+                disabled={!me}
+                onClick={passwordModal.open}
+                style={{ flex: '0 0 auto' }}
+              >
+                비밀번호 변경
+              </Button>
+            </Group>
+          </Card>
+        </Grid.Col>
+
+        <Grid.Col span={12}>
           <Card data-testid="my-withdraw">
             <Group justify="space-between" align="flex-start" wrap="nowrap" gap="lg">
               <div>
@@ -154,6 +181,7 @@ export function MyInfoPage() {
           </Card>
         </Grid.Col>
       </Grid>
+      <PasswordChangeModal opened={passwordOpened} onClose={passwordModal.close} />
       {me && <WithdrawModal me={me} opened={withdrawOpened} onClose={withdrawModal.close} />}
     </Stack>
   );

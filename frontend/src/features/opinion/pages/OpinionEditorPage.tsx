@@ -15,7 +15,7 @@ import { notifications } from '@mantine/notifications';
 import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { ApiError, fieldErrorsOf } from '../../../api/client';
 import { PageHeader } from '../../../shared/PageHeader';
@@ -23,6 +23,8 @@ import { ErrorState, StateView } from '../../../shared/state/StateView';
 import { AttachmentPanel } from '../../attachment/components/AttachmentPanel';
 import { PendingAttachments } from '../../attachment/components/PendingAttachments';
 import { attachmentKeys, uploadAttachmentFile } from '../../attachment/hooks';
+import { type Notice, useLinkNoticeOpinion, useNotice } from '../../notice/hooks';
+import { meetingReplyTitle } from '../noticeReply';
 import { useCurrentBusiness } from '../../organization/hooks';
 import { QuestionBuilder } from '../components/QuestionBuilder';
 import { type TargetValue, TargetPicker } from '../components/TargetPicker';
@@ -48,6 +50,41 @@ interface Values {
   dueDate: string;
   sections: SectionDraft[];
   questions: QuestionDraft[];
+}
+
+/** 공지가 회의 안내인지(제목에 "회의"). 회의면 참석 여부 회신으로 채우고, 아니면 요청명·질문을 비워 작성자가 채운다. */
+function isMeetingNotice(notice: Notice): boolean {
+  return notice.title.includes('회의');
+}
+
+/** 회의 공지에서 "회신 받기: 예" 로 넘어왔을 때 채우는 질문. 참석 여부와 참석자를 묻고, 고쳐 쓸 수 있다. */
+function noticeReplyForm(): Pick<Values, 'sections' | 'questions'> {
+  return {
+    sections: [{ key: 's-first', title: '', description: '', jump: JUMP_NEXT }],
+    questions: [
+      {
+        key: 'n-attend',
+        sectionKey: 's-first',
+        type: 'SINGLE_CHOICE',
+        title: '참석하십니까?',
+        required: true,
+        branching: false,
+        options: [
+          { label: '참석', jump: JUMP_NEXT },
+          { label: '불참', jump: JUMP_NEXT },
+        ],
+      },
+      {
+        key: 'n-attendees',
+        sectionKey: 's-first',
+        type: 'TEXT',
+        title: '참석자 이름과 직위를 적어 주세요.',
+        required: false,
+        branching: false,
+        options: [],
+      },
+    ],
+  };
 }
 
 /** 고치는 요청의 섹션·질문을 편집 값으로. 섹션 키는 서버 ID 로 만든다. */
@@ -95,13 +132,57 @@ function initialForm(existing?: OpinionRequestDetail): Pick<Values, 'sections' |
 /**
  * 새 의견 요청과 요청 고치기. 주소에 :id 가 있으면 고치기다. 첨부자료는 여기서 고르고, 새 요청이면 저장한 뒤 바로 올린다.
  * 질문은 작성중일 때만 고친다(회신을 받기 시작하면 답과 어긋나지 않게 서버가 막는다).
+ * 새 요청 주소에 `?copyFrom=요청 ID` 가 있으면 그 요청의 내용·질문·대상을 채워 시작한다(복사해서 만들기, 회신 기한·첨부자료는 새로).
+ * `?notice=공지 ID` 가 있으면 공지에서 "회신 받기: 예" 로 넘어온 것이라 제목·질문을 채우고, 저장하면 그 공지에 잇는다.
  */
 export function OpinionEditorPage() {
   const { business: slug = '', id } = useParams<{ business: string; id?: string }>();
+  const [searchParams] = useSearchParams();
+  const copyFromId = id ? null : Number(searchParams.get('copyFrom')) || null;
   const requestId = id ? Number(id) : null;
-  const detail = useOpinionRequest(requestId);
+  const noticeId = id || copyFromId ? null : Number(searchParams.get('notice')) || null;
+  const detail = useOpinionRequest(requestId ?? copyFromId);
+  const notice = useNotice(noticeId);
 
-  if (requestId == null) return <OpinionEditor slug={slug} />;
+  if (noticeId != null) {
+    if (notice.isError) {
+      return (
+        <Stack gap="md">
+          <PageHeader title="회신 받을 의견 요청" />
+          <ErrorState error={notice.error} homeLink={`/${slug}/home`} />
+        </Stack>
+      );
+    }
+    if (!notice.data) {
+      return (
+        <Stack gap="md">
+          <PageHeader title="회신 받을 의견 요청" />
+          <Skeleton h={320} />
+        </Stack>
+      );
+    }
+    return <OpinionEditor key={`notice-${noticeId}`} slug={slug} fromNotice={notice.data} />;
+  }
+  if (requestId == null && copyFromId == null) return <OpinionEditor slug={slug} />;
+  if (copyFromId != null) {
+    if (detail.isError) {
+      return (
+        <Stack gap="md">
+          <PageHeader title="복사해서 새 의견 요청" />
+          <ErrorState error={detail.error} homeLink={`/${slug}/home`} />
+        </Stack>
+      );
+    }
+    if (!detail.data) {
+      return (
+        <Stack gap="md">
+          <PageHeader title="복사해서 새 의견 요청" />
+          <Skeleton h={320} />
+        </Stack>
+      );
+    }
+    return <OpinionEditor key={copyFromId} slug={slug} copyFrom={detail.data} />;
+  }
   if (detail.isError) {
     return (
       <Stack gap="md">
@@ -133,11 +214,24 @@ export function OpinionEditorPage() {
   return <OpinionEditor slug={slug} existing={detail.data} />;
 }
 
-function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionRequestDetail }) {
+function OpinionEditor({
+  slug,
+  existing,
+  copyFrom,
+  fromNotice,
+}: {
+  slug: string;
+  existing?: OpinionRequestDetail;
+  /** 복사해서 만들 때 원래 요청. 저장하면 새 작성중 요청이다. */
+  copyFrom?: OpinionRequestDetail;
+  /** 회신을 받을 공지. 저장하면 새 요청을 이 공지에 잇는다. */
+  fromNotice?: Notice;
+}) {
   const navigate = useNavigate();
   const current = useCurrentBusiness();
   const candidates = useRecipientCandidates(slug);
   const create = useCreateOpinionRequest();
+  const linkNotice = useLinkNoticeOpinion();
   const update = useUpdateOpinionRequest(existing?.id ?? 0);
   const mutation = existing ? update : create;
   const queryClient = useQueryClient();
@@ -148,17 +242,22 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
 
+  const source = existing ?? copyFrom;
   const form = useForm<Values>({
     initialValues: {
-      title: existing?.title ?? '',
-      content: existing?.content ?? '',
+      title:
+        source?.title ??
+        (fromNotice && isMeetingNotice(fromNotice) ? meetingReplyTitle(fromNotice.title) : ''),
+      content:
+        source?.content ??
+        (fromNotice ? `공지·자료실의 "${fromNotice.title}" 글에 대한 회신을 요청합니다.` : ''),
       dueDate: existing?.dueDate ?? dayjs().add(7, 'day').format('YYYY-MM-DD'),
-      ...initialForm(existing),
+      ...(fromNotice && isMeetingNotice(fromNotice) ? noticeReplyForm() : initialForm(source)),
     },
   });
   const [targets, setTargets] = useState<TargetValue[]>(
     () =>
-      existing?.targets.map((t) => ({
+      source?.targets.map((t) => ({
         organizationId: t.organizationId,
         recipientEmails: t.recipients.map((r) => r.email),
       })) ?? [],
@@ -238,6 +337,17 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
         {
           onSuccess: async (d) => {
             await uploadPending(d.id);
+            if (fromNotice) {
+              try {
+                await linkNotice.mutateAsync({ notice: fromNotice, opinionRequestId: d.id });
+              } catch {
+                notifications.show({
+                  title: '공지에 잇지 못했습니다',
+                  message: '공지 고치기에서 회신 받기를 다시 골라 주세요.',
+                  color: 'red',
+                });
+              }
+            }
             navigate(`/${slug}/opinions/${d.id}`);
           },
         },
@@ -245,7 +355,13 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
     }
   };
 
-  const title = existing ? '의견 요청 고치기' : '새 의견 요청';
+  const title = existing
+    ? '의견 요청 고치기'
+    : copyFrom
+      ? '복사해서 새 의견 요청'
+      : fromNotice
+        ? '회신 받을 의견 요청'
+        : '새 의견 요청';
   return (
     <form onSubmit={form.onSubmit(submit)} noValidate>
       <Stack gap="md">
@@ -254,7 +370,11 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
           description={
             existing?.status === 'OPEN'
               ? '회신중인 요청입니다. 저장하면 새로 넣은 담당자에게 요청 메일이, 남은 담당자에게 변경 알림이 갑니다.'
-              : `${current?.label ?? '이 업무'} 참가기관에 보낼 의견 요청입니다. 저장하면 작성중으로 남고, 상세에서 회신 요청을 시작합니다.`
+              : copyFrom
+                ? `"${copyFrom.title}" 의 내용·질문·대상 기관을 채웠습니다. 회신 기한과 첨부자료는 새로 정하고, 저장하면 작성중인 새 요청이 됩니다.`
+                : fromNotice
+                  ? `공지 "${fromNotice.title}" 의 회신을 받을 요청입니다. ${isMeetingNotice(fromNotice) ? '회의 참석 여부·참석자 질문을 채워 두었으니 대상 기관과 회신 기한을 고르세요.' : '요청명과 질문, 대상 기관과 회신 기한을 채워 주세요.'} 저장하면 공지에 이어지고, 상세에서 회신 요청을 시작합니다.`
+                  : `${current?.label ?? '이 업무'} 참가기관에 보낼 의견 요청입니다. 저장하면 작성중으로 남고, 상세에서 회신 요청을 시작합니다.`
           }
           actions={
             <>

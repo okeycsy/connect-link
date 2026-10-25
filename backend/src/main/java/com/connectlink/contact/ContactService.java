@@ -245,6 +245,22 @@ public class ContactService {
   }
 
   /**
+   * 일괄 등록 검사: 이 양식으로 등록할 수 있는지 등록과 같은 규칙(기관, 권한, 전산 세부 직무)으로 본다. 못 하면 등록과 같은 예외를 던진다.
+   *
+   * @return 같은 기관·업무에 같은 회사 이메일이 이미 있는지(있으면 일괄 등록은 그 줄을 건너뛴다)
+   */
+  boolean checkImportable(CurrentUser user, ContactSaveRequest body) {
+    Business business = body.business();
+    Organization organization = organizationFor(user, business, body.organizationId());
+    accessPolicy.ensureCanCreate(user, business, organization);
+    Contact.Content content = contentOf(body);
+    return repository
+        .findByBusinessAndOrganizationIdOrderByRankAscNameAsc(business, organization.getId())
+        .stream()
+        .anyMatch(c -> c.getEmail().equals(content.email()));
+  }
+
+  /**
    * 담당자 정보를 고친다. 저장하면 바뀐 것이 없어도 최근 확인일이 갱신된다(확인한 것으로 본다). 바뀐 항목은 변경 전·후 이력으로 남고, 정기 변경 주간이면 그 기관을
    * "정보 변경" 으로 남긴다. 기관과 업무는 바뀌지 않는다.
    */

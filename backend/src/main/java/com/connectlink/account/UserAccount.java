@@ -53,6 +53,10 @@ public class UserAccount extends AuditedEntity {
   @Column(name = "password_hash", nullable = false, length = 100)
   private String passwordHash;
 
+  /** 비밀번호를 마지막으로 바꾼 시각(비밀번호 변경·찾기). 그 전에 로그인한 세션은 끝난다. 가입한 뒤 바꾼 적이 없으면 null. */
+  @Column(name = "password_changed_at")
+  private LocalDateTime passwordChangedAt;
+
   @Column(name = "name", nullable = false, length = 50)
   private String name;
 
@@ -324,6 +328,23 @@ public class UserAccount extends AuditedEntity {
     this.mobilePhone = null;
     this.businesses.clear();
     this.itRoles.clear();
+  }
+
+  /**
+   * 비밀번호를 바꾼다(내 정보의 비밀번호 변경, 로그인 화면의 비밀번호 찾기).
+   *
+   * @throws IllegalStateException 사용 중 계정이 아니면
+   */
+  public void changePassword(String passwordHash, LocalDateTime now) {
+    if (status != AccountStatus.ACTIVE) {
+      throw new IllegalStateException("사용 중 계정만 비밀번호를 바꿀 수 있습니다: " + status);
+    }
+    this.passwordHash = passwordHash;
+    this.passwordChangedAt = now;
+  }
+
+  public LocalDateTime getPasswordChangedAt() {
+    return passwordChangedAt;
   }
 
   /** 회사 이메일의 도메인이 소속 기관에 등록된 도메인과 같은지. 기관에 도메인이 없으면 false 다. */

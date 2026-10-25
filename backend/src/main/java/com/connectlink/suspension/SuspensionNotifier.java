@@ -8,6 +8,7 @@ import com.connectlink.organization.Business;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -15,7 +16,8 @@ import org.springframework.stereotype.Component;
 
 /**
  * 일시중단 모듈의 알림. 모두 {@link NotificationService} 를 거쳐 알림 센터에 남고, 채널은 명세를 따른다: 새로 등록하면 멈추는 업무들의 결제원
- * 담당자에게 메일과 매터모스트(그 순서), 고치거나 지우면 매터모스트. 등록한 기관 담당자에게는 확정·수정 소식을 알림 센터로만 알린다.
+ * 담당자에게 메일과 매터모스트(그 순서), 고치거나 지우면 매터모스트. 확정하면 등록한 사람에게 알림 센터와 메일, 일시중단의 기관 담당자 연락처에 메일을 보낸다. 결제원이
+ * 고친 소식은 등록한 사람에게 알림 센터로만 알린다.
  */
 @Component
 class SuspensionNotifier {
@@ -102,18 +104,36 @@ class SuspensionNotifier {
         EnumSet.of(NotificationChannel.MATTERMOST));
   }
 
-  /** 등록한 사람에게: 결제원이 확정했다. 알림 센터에만. */
-  void confirmed(Suspension suspension, Map<String, Business> registrant) {
-    publish(
-        registrant,
-        suspension,
-        headline(suspension) + " 일시중단이 확정되었습니다",
+  /**
+   * 결제원이 확정했다. 등록한 사람(확정한 사람이 아니면)에게 알림 센터와 메일, 일시중단에 적힌 기관 담당자 연락처에는 메일만 보낸다(계정이 없을 수 있다).
+   *
+   * @param registrant 등록한 사람과 알림을 보일 업무 영역. 확정한 사람이 등록했으면 비어 있다
+   * @param skipEmail 확정한 사람의 이메일. 연락처에 있어도 보내지 않는다
+   */
+  void confirmed(Suspension suspension, Map<String, Business> registrant, String skipEmail) {
+    String title = headline(suspension) + " 일시중단이 확정되었습니다";
+    String body =
         periodText(suspension.getStartAt(), suspension.getEndAt())
             + " · "
             + suspension.getConfirmedByName()
-            + " 님이 조치 및 인수인계 사항을 썼습니다.",
+            + " 님이 조치 및 인수인계 사항을 썼습니다. 연결이 일시중단 화면에서 확인해 주세요.";
+    publish(
+        registrant,
+        suspension,
+        title,
+        body,
         b -> linkOf(suspension, b),
-        Set.of());
+        EnumSet.of(NotificationChannel.EMAIL));
+    Set<String> sent = new HashSet<>(registrant.keySet());
+    sent.add(skipEmail);
+    for (SuspensionContact contact : suspension.getContacts()) {
+      String email = contact.getEmail();
+      if (email == null || email.isBlank() || !sent.add(email)) {
+        continue;
+      }
+      notificationService.sendToChannel(
+          NotificationChannel.EMAIL, email, cut(title, TITLE_MAX), cut(body, BODY_MAX));
+    }
   }
 
   /** 등록한 사람에게: 다른 사람(결제원 담당자)이 내용을 고쳤다. 알림 센터에만. */

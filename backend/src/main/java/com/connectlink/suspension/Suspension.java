@@ -36,7 +36,12 @@ public class Suspension extends AuditedEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  /** 중단하는 참가기관. 등록한 뒤에는 바꾸지 않는다. */
+  /** 종류. 등록한 뒤에는 바꾸지 않는다. */
+  @Enumerated(EnumType.STRING)
+  @Column(name = "kind", nullable = false, length = 20)
+  private SuspensionKind kind = SuspensionKind.ORGANIZATION;
+
+  /** 중단하는 참가기관(결제원 작업이면 결제원). 등록한 뒤에는 바꾸지 않는다. */
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "organization_id")
   private Organization organization;
@@ -158,6 +163,37 @@ public class Suspension extends AuditedEntity {
     suspension.registrantJobTitle = registrantJobTitle;
     suspension.registrantKftc = registrantKftc;
     return suspension;
+  }
+
+  /**
+   * 결제원 작업 안내로 등록한다. 결제원이 직접 하는 작업이라 따로 확인하지 않고 올린 사람이 확정한 것으로 바로 확정이다.
+   *
+   * @param kftc 결제원 기관
+   */
+  public static Suspension registerKftcWork(
+      Organization kftc,
+      Content content,
+      String registrantEmail,
+      String registrantName,
+      String registrantJobTitle,
+      LocalDateTime now) {
+    Suspension suspension =
+        register(kftc, content, registrantEmail, registrantName, registrantJobTitle, true);
+    suspension.kind = SuspensionKind.KFTC_WORK;
+    suspension.status = SuspensionStatus.CONFIRMED;
+    suspension.confirmedAt = now;
+    suspension.confirmedByEmail = registrantEmail;
+    suspension.confirmedByName = registrantName;
+    suspension.confirmedByJobTitle = registrantJobTitle;
+    return suspension;
+  }
+
+  public SuspensionKind getKind() {
+    return kind;
+  }
+
+  public boolean isKftcWork() {
+    return kind == SuspensionKind.KFTC_WORK;
   }
 
   /**

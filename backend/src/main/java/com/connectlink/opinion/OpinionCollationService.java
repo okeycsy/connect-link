@@ -36,7 +36,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class OpinionCollationService {
 
+  /** 자동 리마인드 이력의 보낸 사람. */
+  static final String AUTO_SENDER = "연결이(자동)";
+
   private final OpinionRequestService requestService;
+  private final OpinionRequestRepository requestRepository;
   private final OpinionReplyRepository replyRepository;
   private final OpinionReminderRepository reminderRepository;
   private final OpinionNotifier notifier;
@@ -44,11 +48,13 @@ public class OpinionCollationService {
 
   public OpinionCollationService(
       OpinionRequestService requestService,
+      OpinionRequestRepository requestRepository,
       OpinionReplyRepository replyRepository,
       OpinionReminderRepository reminderRepository,
       OpinionNotifier notifier,
       NetworkZoneResolver networkZoneResolver) {
     this.requestService = requestService;
+    this.requestRepository = requestRepository;
     this.replyRepository = replyRepository;
     this.reminderRepository = reminderRepository;
     this.notifier = notifier;
@@ -83,25 +89,60 @@ public class OpinionCollationService {
           "리마인드 메일을 받을 미회신 기관 담당자가 없습니다. 대상 기관의 회신 담당자를 확인해 주세요.");
     }
     OpinionNotifier.Message message = notifier.reminderMessage(request, daysLeft(request));
-    notifier.remind(
-        request,
-        targets.emails(),
-        new OpinionNotifier.Message(
-            body.subject() == null ? message.title() : body.subject().strip(),
-            body.body() == null ? message.body() : body.body().strip()));
+    return toResponse(
+        sendReminder(
+            request,
+            targets,
+            user.name(),
+            new OpinionNotifier.Message(
+                body.subject() == null ? message.title() : body.subject().strip(),
+                body.body() == null ? message.body() : body.body().strip())));
+  }
+
+  /**
+   * 회신 기한 하루 전 자동 리마인드(예약 작업). 회신 기한이 내일인 회신중 요청마다 아직 회신을 제출하지 않은 기관의 회신 담당자에게 기본 문구로 리마인드 메일을 보내고
+   * 이력을 남긴다(보낸 사람 "{@value #AUTO_SENDER}"). 같은 기한으로는 한 번만 보낸다.
+   *
+   * @return 리마인드를 보낸 요청 수
+   */
+  @Transactional
+  public int remindDueTomorrow() {
+    int sent = 0;
+    for (OpinionRequest request :
+        requestRepository.findByStatusAndDueDate(
+            OpinionRequestStatus.OPEN, requestService.today().plusDays(1))) {
+      if (request.isAutoRemindedForDueDate()) {
+        continue;
+      }
+      request.markAutoReminded();
+      ReminderTargets targets = reminderTargets(request, null);
+      if (!targets.emails().isEmpty()) {
+        sendReminder(
+            request, targets, AUTO_SENDER, notifier.reminderMessage(request, daysLeft(request)));
+        sent++;
+      }
+    }
+    return sent;
+  }
+
+  /** 받을 기관 담당자에게 리마인드를 보내고 이력을 남긴다. */
+  private OpinionReminder sendReminder(
+      OpinionRequest request,
+      ReminderTargets targets,
+      String senderName,
+      OpinionNotifier.Message message) {
+    notifier.remind(request, targets.emails(), message);
     List<String> organizations =
         targets.organizations().stream()
             .map(MailPreviewResponse.Organization::organizationName)
             .toList();
-    OpinionReminder reminder =
-        reminderRepository.saveAndFlush(
-            new OpinionReminder(
-                request,
-                user.name(),
-                organizations.size(),
-                targets.emails().size(),
-                String.join(", ", organizations)));
-    return toResponse(reminder);
+    return reminderRepository.saveAndFlush(
+        new OpinionReminder(
+            request,
+            senderName,
+            organizations.size(),
+            targets.emails().size(),
+            String.join(", ", organizations)));
   }
 
   /** 리마인드 메일 미리보기. 지금 보내면 나갈 기본 제목·본문과 받을 기관. 보내기와 같은 규칙으로 기관을 고른다. */
