@@ -73,6 +73,7 @@
 | 직무 | `JobRole` | `BUSINESS`(현업), `IT`(전산) |
 | 전산 세부 직무 | `ItRole` (복수 선택) | `DEV`, `OPS`, `INFRA`, `EXTERNAL_LINK`(대외계), `CONTROL_ROOM`(상황실) |
 | 주/부담당 | `ContactRank` | `PRIMARY`, `SECONDARY` |
+| 사무실 번호 규칙 | `OfficePhone` | 내선번호 칸(`extensionPhone`). 결제원 담당자는 4자리 내선, 다른 기관 담당자는 지역번호부터 전체 번호(숫자 9자리 이상). 가입 신청·담당자 등록·수정·일괄 등록에 같은 규칙, 어기면 400 `OFFICE_PHONE_FULL_NUMBER_REQUIRED` |
 | 최근 확인일 | `lastConfirmedAt` | 수정·확인 시 갱신. 6개월이 지나면 "확인 필요"(`needsConfirm`)이고 로그인 뒤 확인 창과 매일 알림(`ContactReconfirmJob`)이 있다 |
 | 정기 변경(현행화) 주간 | `UpdateCampaign` | 업무별 현행화 기간. 상태 `UpdateCampaignStatus` = `UPCOMING`(예정), `OPEN`(진행 중), `CLOSED`(종료), 저장하지 않고 날짜로 계산한다. 기관별 현행화는 `UpdateCampaignOrganization`("현행화 완료" 일시·처리자, 정보 변경 일시), 진행 현황 거르기 `UpdateCampaignProgressFilter` = `ALL`/`COMPLETED`/`INCOMPLETE`/`CHANGED`. 주기(기본 6개월)가 돌아오면 `UpdateCampaignJob` 이 주간을 스스로 등록(`autoCreated`)해 변경 요청 메일을 보내고, 미완료 기관에는 간격마다 리마인드 메일(`UpdateCampaignReminder`, 알림 `CONTACT_CHANGE_REMINDER`)을 다시 보낸다. 설정 `app.contact.campaign.*`(`UpdateCampaignProperties`). API `/api/v1/update-campaigns`(`/schedule`, `/{id}/reminders`), 화면 `/{업무}/contacts/update-campaigns` |
 | 의견 요청 | `OpinionRequest` | 상태 `OpinionRequestStatus` = `DRAFT`(작성중), `OPEN`(회신중), `CLOSED`(마감). 회신중 요청을 취소하면 `CLOSED` + `cancelled`. 권한 `OpinionAccessPolicy`. API `/api/v1/opinion-requests`, 화면 `/{업무}/opinions` |
