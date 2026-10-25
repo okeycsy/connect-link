@@ -103,11 +103,14 @@ test.describe('다. 기관 테스트', () => {
       .getByRole('group', { name: '세부업무로 고르기' })
       .getByText('본인계좌 일괄지급정지')
       .click();
+    await expect(page.getByRole('checkbox', { name: 'KB국민은행 김민준' })).toBeChecked();
     await expect(page.getByRole('checkbox', { name: 'KB국민은행 남궁민' })).toBeChecked();
-    await expect(page.getByTestId('target-summary')).toHaveText('대상 1곳 · 테스트 담당자 2명');
+    // 앞 시나리오가 같은 세부업무 연락처를 더할 수 있어 사람 수는 따지지 않는다.
+    const summary = page.getByTestId('target-summary');
+    await expect(summary).toHaveText(/^대상 1곳 · 테스트 담당자 \d+명$/);
     // 담당자를 고르지 않은 기관은 업무 담당자 전원에게 메일이 간다.
     await page.getByRole('checkbox', { name: '삼성증권 대상' }).check();
-    await expect(page.getByTestId('target-summary')).toHaveText('대상 2곳 · 테스트 담당자 2명');
+    await expect(summary).toHaveText(/^대상 2곳 · 테스트 담당자 \d+명$/);
     // 맨 위 테스트데이터 사전 요청은 늘 펼쳐져 있다. 필요 없음을 체크하면 접히고, 풀면 다시 보인다.
     const dataRequest = page.getByTestId('test-data-request');
     const skip = dataRequest.getByRole('checkbox', { name: /사전 요청이 필요 없습니다/ });
@@ -140,7 +143,7 @@ test.describe('다. 기관 테스트', () => {
     const targets = page.getByTestId('target-table');
     await expect(targets).toContainText('KB국민은행');
     await expect(targets).toContainText('삼성증권');
-    await expect(targets).toContainText('테스트 담당자 김민준, 남궁민');
+    await expect(targets).toContainText(/테스트 담당자 .*김민준.*남궁민/);
     await expect(targets).toContainText('업무 담당자 전원');
     await expect(targets).toContainText('미생성');
     await expect(page.getByTestId('test-data-request-bar')).toContainText('생성 완료 0/2');
