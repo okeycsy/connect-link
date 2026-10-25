@@ -14,6 +14,7 @@ import {
   UpdateCampaignPage,
 } from '../features/contact/pages/UpdateCampaignPage';
 import { HomePage } from '../features/home/pages/HomePage';
+import { NoticeListPage } from '../features/notice/pages/NoticeListPage';
 import { NotificationCenterPage } from '../features/notification/pages/NotificationCenterPage';
 import { NotificationOutboxPage } from '../features/notification/pages/NotificationOutboxPage';
 import { OpinionDetailPage } from '../features/opinion/pages/OpinionDetailPage';
@@ -48,6 +49,7 @@ const BUILT_FEATURES: FeatureMenuItem['key'][] = [
   'tests',
   'suspensions',
   'chat',
+  'notices',
 ];
 
 /**
@@ -120,6 +122,7 @@ export const router = createBrowserRouter([
           { path: 'suspensions/:id', element: <SuspensionDetailPage /> },
           { path: 'suspensions/:id/edit', element: <SuspensionEditorPage /> },
           { path: 'chat', element: <ChatPage /> },
+          { path: 'notices', element: <NoticeListPage /> },
           { path: 'chat/:roomId', element: <ChatPage /> },
           ...FEATURE_MENU.filter((m) => !BUILT_FEATURES.includes(m.key)).map((m) => ({
             path: m.path,

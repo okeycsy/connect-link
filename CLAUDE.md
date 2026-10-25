@@ -104,7 +104,7 @@
 | 발송함 | `NotificationOutbox` | 프로토타입에서 실제 발송 대신 기록. 상태 `OutboxStatus` = `PENDING`(발송 대기), `SENT`, `FAILED` |
 | 로그인 사용자 | `CurrentUser` | Service 권한 판단에 넘기는 값. 로그인할 때 계정에서 만들어 세션에 둔다. 업무 영역(레일) 조회 범위는 `BusinessAccessPolicy`(관리자는 전 업무, 그 밖에는 담당 업무). 테스트는 `TestUsers` |
 | 내부망/인터넷망 | `NetworkZone` | `INTERNAL`, `EXTERNAL`. 판단은 `NetworkZoneResolver`(헤더 `X-Network-Zone` 은 local·demo 만, 운영은 `app.network.internal-cidrs`). 내부망 전용 위반은 403 `INTERNAL_ONLY` |
-| 첨부파일 | `Attachment` | 대상은 `AttachmentOwnerType`(`OPINION_REQUEST`, `OPINION_REPLY`, `TEST_PLAN`, `TEST_DATA_FORM`(테스트데이터 회신 양식, 테스트 ID), `TEST_DATA`(기관 테스트데이터, 대상 기관 행 ID), `SUSPENSION`, `CHAT_MESSAGE`, `DEMO`) + `ownerId`. 파일 저장소 `FileStorage` |
+| 첨부파일 | `Attachment` | 대상은 `AttachmentOwnerType`(`OPINION_REQUEST`, `OPINION_REPLY`, `TEST_PLAN`, `TEST_DATA_FORM`(테스트데이터 회신 양식, 테스트 ID), `TEST_DATA`(기관 테스트데이터, 대상 기관 행 ID), `SUSPENSION`, `CHAT_MESSAGE`, `NOTICE`(공지·자료실 글), `DEMO`) + `ownerId`. 파일 저장소 `FileStorage` |
 | 변경 이력 | `ChangeHistory` | 대상은 `HistoryTargetType`(`ORGANIZATION`, `CONTACT`, `OPINION_REQUEST`, `OPINION_REPLY`, `TEST_PLAN`, `TEST_PLAN_TARGET`(기관별 결과), `SUSPENSION`) + `targetId`. 종류 `ChangeAction` = `CREATED`/`UPDATED`/`DELETED`, 항목 `FieldChange`(field, label, before, after) |
 | 채팅방 | `ChatRoom` | 소통 채널의 방 하나. 종류 `ChatRoomType` = `BUSINESS`(업무 단체방, 업무마다 하나를 저절로 만든다), `CUSTOM`(초대방, 그 업무 결제원 담당자가 만든다). 권한 `ChatAccessPolicy`, 구성원 판단 `ChatMembership`. API `/api/v1/chat-rooms`, 화면 `/{업무}/chat/{방 id}` |
 | 채팅방 구성원 | `ChatRoomMember` | 따로 초대한 사람 한 행(이름·기관을 남긴다). 업무 단체방은 그 업무를 맡은 사용 중 계정(이용기관 빼고) 전부에 초대한 사람을 더하고, 초대방은 초대한 사람만이다. 초대받은 사람만 나간다 |
@@ -113,6 +113,7 @@
 | 확인 공감 | `ChatMessageAck` | 메시지에 "확인" 을 누른 사람 한 명(기관 이름을 남겨 기관별로 묶어 보인다). 보낸 사람은 누르지 못한다 |
 | 읽음 표시 | `ChatReadMark` | 사람 × 방 하나의 마지막으로 읽은 메시지. 방의 읽지 않은 수, 메시지의 읽지 않은 사람 수, 읽지 않은 내 기관 멘션을 여기서 센다 |
 | 문의 안내·이용 가이드 | `SupportInfo`, `SupportProperties` | 로그인 화면 아래 카드. 문의 메일 주소는 설정 `app.support.inquiry-email`(공개 저장소라 실제 주소는 배포 설정에만, 비우면 문의하기 칸이 빠진다)이고 로그인 없이 API `/api/v1/support-info` 로 읽는다. 이용 가이드는 참가기관 담당자용 화면 `/guide`, 기능별 `/guide/{기능}`(로그인 없이, 내용은 `guideTopics.ts`) |
+| 공지·자료실 | `Notice`, `NoticeCategory`, `NoticeAccessPolicy` | 글 한 건. 분류 `NoticeCategory` = `NOTICE`(공지), `RULE`(규약), `ENFORCEMENT_RULE`(시행세칙), 규약·시행세칙은 시행일(`effectiveDate`)을 둘 수 있다. 업무(`business`)가 있으면 그 업무를 맡은 결제원·참가기관 담당자만 보고 그 업무 결제원 담당자가 쓴다. 업무가 비면 전 업무 공통 공지라 모두 보고 관리자만 쓴다(규약·시행세칙은 공통으로 못 둔다, 400 `NOTICE_COMMON_REGULATION`). 고정(`pinned`) 글이 먼저다. 첨부 `NOTICE`. API `/api/v1/notices`, 화면 `/{업무}/notices` |
 | 전역 검색 묶음 | `SearchCategory` | `ORGANIZATION`, `CONTACT`, `OPINION_REQUEST`, `TEST_PLAN`, `SUSPENSION`. 기능 모듈은 `SearchProvider` 빈 하나로 자기 묶음을 채운다 |
 
 용어집에 없는 개념이 필요하면 이름을 정해 이 표에 추가하는 것까지 같은 작업에 포함한다.
@@ -141,6 +142,7 @@ connect-link/
 │       │   ├── testplan/      # 다. 기관 테스트
 │       │   ├── suspension/    # 라. 일시중단
 │       │   ├── chat/          # 마. 소통 채널
+│       │   ├── notice/        # 공지·자료실(업무별 공지·규약·시행세칙, 전 업무 공통 공지)
 │       │   └── notification/  # 알림 인터페이스와 발송함
 │       ├── main/resources/
 │       │   ├── application.yml, application-local.yml, application-demo.yml
@@ -154,7 +156,7 @@ connect-link/
 │       ├── api/               # schema.d.ts(생성물), client.ts
 │       ├── app/               # 라우터, 레이아웃(AppShell), 테마, 인증 상태
 │       ├── features/
-│       │   ├── account/ contact/ opinion/ testplan/ suspension/ chat/ notification/ attachment/ history/
+│       │   ├── account/ contact/ opinion/ testplan/ suspension/ chat/ notice/ notification/ attachment/ history/
 │       │   │   └── (각각) pages/, components/, hooks.ts(Query 훅), *.test.tsx
 │       ├── shared/            # 공통 컴포넌트(PageHeader, BrandMark, OrgMonogram), 포맷터(날짜, 전화번호), list/(목록 패턴), state/(빈·오류·권한 없음·내부망 전용 안내)
 │       └── main.tsx
@@ -197,7 +199,7 @@ connect-link/
 - **디자인 시스템은 `frontend/CLAUDE.md`(B안 메신저형)를 따른다.** 색·글꼴·radius·앱 셸 치수·컴포넌트 모양과 금지 사항이 거기 있고, 화면 모양에 관해서는 그 문서가 우선한다.
 - UI는 Mantine 컴포넌트와 Mantine 테마(`app/theme.ts`)만 쓴다. 인라인 스타일과 별도 CSS 파일은 Mantine으로 안 될 때만 최소로 쓴다.
 - 글꼴은 Pretendard Variable 을 npm 패키지(`pretendard`)로 번들해서 쓴다. 외부에서 웹폰트를 불러오지 않는다. 글꼴은 `frontend/src/app/fonts.css` 의 `--cl-font-sans` 한 곳에서만 정하고, 바꾸는 방법은 `frontend/CLAUDE.md` 3절에 있다. 숫자 서체(Geist) 도입은 확인 대기.
-- 화면 구성: Mantine `AppShell`, 왼쪽 레일(업무 영역: 계좌통합관리 / 자동이체통합관리 / 대출이동 / CMS) + 사이드바(기능: 홈 / 연락처 / 의견 요청 / 기관 테스트 / 일시중단 / 소통 채널 / 관리, 바로가기에 알림 센터), 상단 바에 전역 검색·알림·사용자 정보. 주소는 `/{업무 slug}/{기능}`. 디자인 토큰과 셸 치수는 `frontend/CLAUDE.md`, 화면 범위와 구조 결정은 `docs/design/common-screens.md`, 분류는 `docs/service-taxonomy.md`를 따른다. `demo` 프로필이면 상단에 데모 도구(계정 전환, 망 전환, 발송함)를 보인다.
+- 화면 구성: Mantine `AppShell`, 왼쪽 레일(업무 영역: 계좌통합관리 / 자동이체통합관리 / 대출이동 / CMS) + 사이드바(기능: 홈 / 연락처 / 의견 요청 / 기관 테스트 / 일시중단 / 소통 채널 / 공지·자료실 / 관리, 바로가기에 알림 센터), 상단 바에 전역 검색·알림·사용자 정보. 주소는 `/{업무 slug}/{기능}`. 디자인 토큰과 셸 치수는 `frontend/CLAUDE.md`, 화면 범위와 구조 결정은 `docs/design/common-screens.md`, 분류는 `docs/service-taxonomy.md`를 따른다. `demo` 프로필이면 상단에 데모 도구(계정 전환, 망 전환, 발송함)를 보인다.
 - 날짜 표기 `YYYY-MM-DD`, 일시 `YYYY-MM-DD HH:mm`. 예외로 목록의 좁은 칸에 넣는 기간은 짧은 날짜 `'YY.MM.DD`(`formatShortDate`)를 쓴다(지금은 기관 테스트 목록의 수행 기간). 전화번호 표기와 마스킹 형식은 `shared/format.ts` 한 곳에서만 처리한다(마스킹 판단 자체는 서버가 한다).
 - 데스크톱 우선(1280px 기준), 태블릿 폭에서 깨지지 않게 한다. 휴대폰 폭(sm, 768px 미만)에서도 쓸 수 있게 한다(모바일 웹, `frontend/CLAUDE.md` 5.1절).
 - 화면 문구는 한국어로 컴포넌트에 직접 쓴다. 다국어 처리는 하지 않는다.
