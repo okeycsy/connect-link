@@ -25,6 +25,7 @@ import com.connectlink.notification.NotificationType;
 import com.connectlink.organization.Business;
 import com.connectlink.organization.ItRole;
 import com.connectlink.organization.JobRole;
+import com.connectlink.organization.OfficePhone;
 import com.connectlink.organization.Organization;
 import com.connectlink.organization.OrganizationService;
 import com.connectlink.organization.OrganizationType;
@@ -227,7 +228,7 @@ public class ContactService {
     Organization organization = organizationFor(user, business, body.organizationId());
     accessPolicy.ensureCanCreate(user, business, organization);
     ensureInternalIfKftc(user, "담당자 등록");
-    Contact.Content content = contentOf(body);
+    Contact.Content content = contentOf(organization, body);
     ensureNoDuplicate(organization, business, content.email(), null);
     Contact contact =
         repository.saveAndFlush(
@@ -253,7 +254,7 @@ public class ContactService {
     Business business = body.business();
     Organization organization = organizationFor(user, business, body.organizationId());
     accessPolicy.ensureCanCreate(user, business, organization);
-    Contact.Content content = contentOf(body);
+    Contact.Content content = contentOf(organization, body);
     return repository
         .findByBusinessAndOrganizationIdOrderByRankAscNameAsc(business, organization.getId())
         .stream()
@@ -268,7 +269,7 @@ public class ContactService {
     Contact contact = load(id);
     accessPolicy.ensureCanEdit(user, contact);
     ensureInternalIfKftc(user, "담당자 수정");
-    Contact.Content content = contentOf(body);
+    Contact.Content content = contentOf(contact.getOrganization(), body);
     ensureNoDuplicate(
         contact.getOrganization(), contact.getBusiness(), content.email(), contact.getId());
     Snapshot before = Snapshot.of(contact);
@@ -629,8 +630,12 @@ public class ContactService {
                 .toList()));
   }
 
-  /** 양식 값을 저장할 모양으로. 글은 앞뒤 공백을 떼고 빈 글은 null, 이메일은 소문자, 현업이면 전산 세부 직무를 버린다. */
-  private static Contact.Content contentOf(ContactSaveRequest body) {
+  /**
+   * 양식 값을 저장할 모양으로. 글은 앞뒤 공백을 떼고 빈 글은 null, 이메일은 소문자, 현업이면 전산 세부 직무를 버린다. 결제원이 아닌 기관 담당자의 내선번호는 전체
+   * 번호여야 한다({@link OfficePhone}).
+   */
+  private static Contact.Content contentOf(Organization organization, ContactSaveRequest body) {
+    OfficePhone.requireFullNumberOutsideKftc(organization, body.extensionPhone(), "extensionPhone");
     Set<ItRole> itRoles = EnumSet.noneOf(ItRole.class);
     if (body.jobRole() == JobRole.IT) {
       if (body.itRoles() == null || body.itRoles().isEmpty()) {

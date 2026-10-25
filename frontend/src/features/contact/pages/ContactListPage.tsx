@@ -342,7 +342,7 @@ function ContactTable({
           <Table.Th w={96}>직무</Table.Th>
           <Table.Th>부서 · 팀</Table.Th>
           <Table.Th>세부업무</Table.Th>
-          <Table.Th w={80}>내선</Table.Th>
+          <Table.Th w={124}>내선</Table.Th>
           <Table.Th w={124}>휴대폰</Table.Th>
           <Table.Th w={168}>최근 확인일</Table.Th>
         </Table.Tr>

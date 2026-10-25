@@ -66,7 +66,7 @@ test.describe('회원가입', () => {
     await step4.getByLabel('직급').fill('대리');
     await step4.getByLabel('부서').fill('디지털금융부');
     await step4.getByRole('textbox', { name: '팀', exact: true }).fill('플랫폼팀');
-    await step4.getByLabel('내선번호').fill('1234');
+    await step4.getByLabel('내선번호').fill('02-0000-1234');
     await step4.getByLabel('휴대폰번호').fill('010-0000-7777');
     // 서버 규칙에 맞지 않는 비밀번호는 서버 메시지를 그 칸 아래에 보여 준다.
     await step4

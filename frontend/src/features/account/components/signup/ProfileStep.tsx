@@ -18,6 +18,10 @@ import type { SignUpForm } from './signUpForm';
  * 신청 전에 한 번 더 보게 한다.
  */
 export function ProfileStep({ form, email }: { form: SignUpForm; email: string }) {
+  const { data: organizations } = useOrganizations();
+  const organizationId = form.values.organizationId;
+  // 결제원은 4자리 내선, 다른 기관은 결제원에서 바로 걸 수 있게 전체 번호를 받는다(서버가 검사한다).
+  const kftc = organizations?.find((o) => String(o.id) === organizationId)?.type === 'KFTC';
   return (
     <Stack gap="lg">
       <Summary form={form} email={email} />
@@ -29,7 +33,8 @@ export function ProfileStep({ form, email }: { form: SignUpForm; email: string }
         <TextInput
           label="내선번호"
           withAsterisk
-          placeholder="예: 1234"
+          placeholder={kftc ? '예: 1234' : '예: 02-0000-0000'}
+          description={kftc ? undefined : '지역번호부터 전체 번호를 적어 주세요.'}
           inputMode="tel"
           {...form.getInputProps('extensionPhone')}
         />

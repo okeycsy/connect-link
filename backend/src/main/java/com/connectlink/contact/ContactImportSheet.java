@@ -78,7 +78,7 @@ final class ContactImportSheet {
         "디지털금융부",
         "계좌서비스팀",
         "과장",
-        "1234",
+        "02-0000-1234",
         "010-0000-0000",
         "hong@kb.example.com"
       };
