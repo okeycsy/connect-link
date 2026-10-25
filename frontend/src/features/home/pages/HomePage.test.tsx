@@ -53,14 +53,14 @@ const home = {
         {
           title: 'KB국민은행',
           subtitle: '01:00 ~ 05:00 · 정기 점검 · 검토 대기',
-          dueAt: '2026-10-25',
+          dueAt: '2026-10-27',
           urgency: 'NONE',
           link: '/account-info/suspensions?id=3',
         },
         {
           title: '하나은행',
           subtitle: '00:00 ~ 02:00 · DB 작업 · 확정',
-          dueAt: '2026-10-27',
+          dueAt: '2026-10-28',
           urgency: 'NONE',
           link: '/account-info/suspensions?id=4',
         },
@@ -109,26 +109,24 @@ describe('HomePage', () => {
     expect(screen.queryByText('최근 소식')).not.toBeInTheDocument();
   });
 
-  it('다가오는 일시중단은 진행 중 건을 맨 위에, 그다음 오늘부터 날짜별로 묶고 주말을 표시한다', async () => {
+  it('다가오는 일시중단은 진행 중 건을 맨 위에, 그다음 오늘부터 날짜별로 묶어 3건까지 보이고 주말을 표시한다', async () => {
     renderWithProviders(<HomePage />);
 
     const list = await screen.findByTestId('suspension-upcoming');
     const days = within(list)
       .getAllByTestId(/^suspension-day-/)
       .map((d) => d.dataset.testid);
+    // 네 번째 건(하나은행, 10월 28일)은 홈에 두지 않고 "모두 보기" 에서 본다. SHY 요청(2026-10-25).
     expect(days).toEqual([
       'suspension-day-ongoing',
       `suspension-day-${TODAY}`,
-      'suspension-day-2026-10-25',
       'suspension-day-2026-10-27',
     ]);
+    expect(within(list).queryByText('하나은행')).not.toBeInTheDocument();
     expect(screen.getByTestId('suspension-day-ongoing')).toHaveTextContent('지금 진행 중');
     expect(screen.getByTestId('suspension-day-ongoing')).toHaveTextContent('우리은행');
     expect(screen.getByTestId(`suspension-day-${TODAY}`)).toHaveTextContent(
       '오늘 · 10월 24일(토)주말',
-    );
-    expect(screen.getByTestId('suspension-day-2026-10-25')).toHaveTextContent(
-      '내일 · 10월 25일(일)주말',
     );
     expect(screen.getByTestId('suspension-day-2026-10-27')).toHaveTextContent('10월 27일(화)');
     expect(screen.getByTestId('suspension-day-2026-10-27')).not.toHaveTextContent('주말');
