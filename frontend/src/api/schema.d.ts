@@ -1584,26 +1584,6 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/v1/organizations/{id}/overview': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * 기관 한눈에 보기
-     * @description 참가기관 하나의 그 업무 담당자, 회신을 기다리는 의견 요청, 진행 중 기관 테스트, 진행 중·예정·최근 일시중단. 결제원 담당자만 본다(그 밖 403). 그 업무에 참여하지 않는 기관이면 404 ORGANIZATION_NOT_FOUND.
-     */
-    get: operations['overview'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   '/api/v1/organizations/search': {
     parameters: {
       query?: never;
@@ -3415,33 +3395,6 @@ export interface components {
       sector?: 'BANK' | 'SECURITIES' | 'MICROFINANCE' | 'INSURANCE' | null;
       sectorLabel?: string | null;
       businesses: ('ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS')[];
-    };
-    OrganizationOverviewItem: {
-      title: string;
-      subtitle?: string | null;
-      badge?: string | null;
-      attention: boolean;
-      link: string;
-      extensionPhone?: string | null;
-      mobilePhone?: string | null;
-      email?: string | null;
-    };
-    OrganizationOverviewResponse: {
-      /** Format: int64 */
-      organizationId: number;
-      organizationCode: string;
-      organizationName: string;
-      sectorLabel?: string | null;
-      /** @enum {string} */
-      business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
-      sections: components['schemas']['OrganizationOverviewSection'][];
-    };
-    OrganizationOverviewSection: {
-      /** @enum {string} */
-      key: 'CONTACT' | 'OPINION_REQUEST' | 'TEST_PLAN' | 'SUSPENSION';
-      title: string;
-      items: components['schemas']['OrganizationOverviewItem'][];
-      link: string;
     };
     PageResponseOrganizationDetailResponse: {
       content: components['schemas']['OrganizationDetailResponse'][];
@@ -6276,31 +6229,6 @@ export interface operations {
         };
         content: {
           '*/*': components['schemas']['SearchResponse'];
-        };
-      };
-    };
-  };
-  overview: {
-    parameters: {
-      query: {
-        /** @description 업무 영역 slug (예: account-info) */
-        business: string;
-      };
-      header?: never;
-      path: {
-        id: number;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          '*/*': components['schemas']['OrganizationOverviewResponse'];
         };
       };
     };

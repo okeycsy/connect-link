@@ -120,21 +120,3 @@ export function useUpdateOrganization() {
     },
   });
 }
-
-export type OrganizationOverview = components['schemas']['OrganizationOverviewResponse'];
-export type OrganizationOverviewSection = components['schemas']['OrganizationOverviewSection'];
-export type OrganizationOverviewItem = components['schemas']['OrganizationOverviewItem'];
-
-/** 기관 한눈에 보기. 결제원 담당자만 쓴다. */
-export function useOrganizationOverview(business: string, id: number | null) {
-  return useQuery({
-    queryKey: ['organizations', 'overview', business, id] as const,
-    queryFn: async () =>
-      unwrap(
-        await api.GET('/api/v1/organizations/{id}/overview', {
-          params: { path: { id: id! }, query: { business } },
-        }),
-      ),
-    enabled: Boolean(business) && id != null,
-  });
-}

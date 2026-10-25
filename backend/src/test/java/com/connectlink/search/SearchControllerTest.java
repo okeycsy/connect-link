@@ -36,7 +36,7 @@ class SearchControllerTest {
         .andExpect(jsonPath("$.groups[0].hits[0].subtitle").value("참가기관 · 088"))
         .andExpect(
             jsonPath("$.groups[0].hits[0].link")
-                .value(org.hamcrest.Matchers.startsWith("/cms/organizations/")))
+                .value(org.hamcrest.Matchers.startsWith("/cms/admin/organizations?org=")))
         .andExpect(jsonPath("$.groups[1].category").value("CONTACT"))
         .andExpect(jsonPath("$.groups[1].source").value("LIVE"))
         .andExpect(jsonPath("$.groups[1].hits[0].title").value("이준호 · 신한은행"))
