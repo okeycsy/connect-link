@@ -1,5 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { skipContactReconfirm } from "./support/account";
+
 // 공지·자료실: 결제원 담당자(홍성민)가 업무 공지를 올리고, 참가기관 담당자(김민준)가 공통 공지·규약과 함께 본다.
 test.use({
   storageState: { cookies: [], origins: [] },
@@ -35,11 +37,10 @@ test("결제원 담당자가 공지를 올리고 기관 담당자가 본다", as
   await shot(kftc, "notices-kftc");
 
   const bank = await browser.newPage();
+  // 김민준은 6개월 넘게 확인하지 않은 담당자라 로그인 뒤 확인 창이 뜰 수 있다. 이 시나리오와 상관없어 띄우지 않는다.
+  await skipContactReconfirm(bank);
   await loginAs(bank, "김민준 (참가기관 · 현업)로 로그인");
   await bank.goto("/account-info/notices");
-  // 김민준은 6개월 넘게 확인하지 않은 담당자라 로그인 뒤 확인 창이 뜬다. 이 시나리오와 상관없어 닫는다.
-  await expect(bank.getByTestId("contact-reconfirm")).toBeVisible();
-  await bank.keyboard.press("Escape");
   await expect(bank.getByTestId("notice-list")).toContainText(
     "연결이 이용 안내",
   );
