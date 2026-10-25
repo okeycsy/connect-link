@@ -24,6 +24,7 @@ import { AttachmentPanel } from '../../attachment/components/AttachmentPanel';
 import { PendingAttachments } from '../../attachment/components/PendingAttachments';
 import { attachmentKeys, uploadAttachmentFile } from '../../attachment/hooks';
 import { type Notice, useLinkNoticeOpinion, useNotice } from '../../notice/hooks';
+import { meetingReplyTitle } from '../noticeReply';
 import { useCurrentBusiness } from '../../organization/hooks';
 import { QuestionBuilder } from '../components/QuestionBuilder';
 import { type TargetValue, TargetPicker } from '../components/TargetPicker';
@@ -51,7 +52,12 @@ interface Values {
   questions: QuestionDraft[];
 }
 
-/** 공지에서 "회신 받기: 예" 로 넘어왔을 때 채우는 질문. 회의 참석 회신이 흔한 모양이라 참석 여부와 참석자를 묻고, 고쳐 쓸 수 있다. */
+/** 공지가 회의 안내인지(제목에 "회의"). 회의면 참석 여부 회신으로 채우고, 아니면 요청명·질문을 비워 작성자가 채운다. */
+function isMeetingNotice(notice: Notice): boolean {
+  return notice.title.includes('회의');
+}
+
+/** 회의 공지에서 "회신 받기: 예" 로 넘어왔을 때 채우는 질문. 참석 여부와 참석자를 묻고, 고쳐 쓸 수 있다. */
 function noticeReplyForm(): Pick<Values, 'sections' | 'questions'> {
   return {
     sections: [{ key: 's-first', title: '', description: '', jump: JUMP_NEXT }],
@@ -239,12 +245,14 @@ function OpinionEditor({
   const source = existing ?? copyFrom;
   const form = useForm<Values>({
     initialValues: {
-      title: source?.title ?? (fromNotice ? `${fromNotice.title} 회신` : ''),
+      title:
+        source?.title ??
+        (fromNotice && isMeetingNotice(fromNotice) ? meetingReplyTitle(fromNotice.title) : ''),
       content:
         source?.content ??
         (fromNotice ? `공지·자료실의 "${fromNotice.title}" 글에 대한 회신을 요청합니다.` : ''),
       dueDate: existing?.dueDate ?? dayjs().add(7, 'day').format('YYYY-MM-DD'),
-      ...(fromNotice ? noticeReplyForm() : initialForm(source)),
+      ...(fromNotice && isMeetingNotice(fromNotice) ? noticeReplyForm() : initialForm(source)),
     },
   });
   const [targets, setTargets] = useState<TargetValue[]>(
@@ -365,7 +373,7 @@ function OpinionEditor({
               : copyFrom
                 ? `"${copyFrom.title}" 의 내용·질문·대상 기관을 채웠습니다. 회신 기한과 첨부자료는 새로 정하고, 저장하면 작성중인 새 요청이 됩니다.`
                 : fromNotice
-                  ? `공지 "${fromNotice.title}" 의 회신을 받을 요청입니다. 참석 여부·참석자 질문을 채워 두었으니 대상 기관과 회신 기한을 고르세요. 저장하면 공지에 이어지고, 상세에서 회신 요청을 시작합니다.`
+                  ? `공지 "${fromNotice.title}" 의 회신을 받을 요청입니다. ${isMeetingNotice(fromNotice) ? '회의 참석 여부·참석자 질문을 채워 두었으니 대상 기관과 회신 기한을 고르세요.' : '요청명과 질문, 대상 기관과 회신 기한을 채워 주세요.'} 저장하면 공지에 이어지고, 상세에서 회신 요청을 시작합니다.`
                   : `${current?.label ?? '이 업무'} 참가기관에 보낼 의견 요청입니다. 저장하면 작성중으로 남고, 상세에서 회신 요청을 시작합니다.`
           }
           actions={
