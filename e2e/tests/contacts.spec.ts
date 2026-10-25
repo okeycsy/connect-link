@@ -218,16 +218,23 @@ test.describe('가. 담당자 연락처', () => {
     const organizations = page.getByTestId('campaign-organizations');
     const cu = organizations.getByRole('row').filter({ hasText: '신협' });
     await cu.getByRole('button', { name: '신협 리마인드' }).click();
-    const dialog = page.getByRole('dialog', { name: '리마인드 메일 보내기' });
+    const dialog = page.getByRole('dialog', { name: '리마인드 메일 확인' });
     await expect(dialog).toContainText('신협 담당자에게');
-    await dialog.getByRole('button', { name: '보내기' }).click();
+    // 보내기 전에 받는 곳과 실제로 나갈 제목·본문을 보여 준다.
+    await expect(dialog.getByTestId('mail-preview')).toContainText('신협');
+    await expect(dialog.getByRole('textbox', { name: '제목' })).toHaveValue(
+      /^\[금융결제원\] \(계좌통합관리\) 정기 변경 리마인드: /,
+    );
+    await page.waitForTimeout(300);
+    await shot(page, 'update-campaign-reminder-preview');
+    await dialog.getByRole('button', { name: /곳에 보내기$/ }).click();
     await expect(dialog).toBeHidden();
     await expect(cu).toContainText(/\d+회 · 최근/);
 
     // 미확인 기관 전부에 보내기
     await page.getByRole('button', { name: '미확인 기관 리마인드' }).click();
     await expect(dialog).toContainText('현행화 완료를 누르지 않은');
-    await dialog.getByRole('button', { name: '보내기' }).click();
+    await dialog.getByRole('button', { name: /곳에 보내기$/ }).click();
     // 앞의 신협 리마인드 알림이 아직 떠 있을 수 있어 마지막 알림을 본다.
     await expect(page.getByText(/리마인드 메일을 보냈습니다/).last()).toBeVisible();
     await shot(page, 'update-campaign-reminder');

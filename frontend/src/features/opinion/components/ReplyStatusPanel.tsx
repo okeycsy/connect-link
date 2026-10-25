@@ -173,18 +173,22 @@ export function ReplyStatusPanel({ request }: { request: OpinionRequestDetail })
         <RemindModal
           opened
           onClose={() => setRemindOpen(false)}
+          requestId={request.id}
           rows={notReplied}
           pending={remind.isPending}
           error={remind.error}
-          onSend={(ids) =>
-            remind.mutate(ids, {
-              onSuccess: (r) => {
-                setRemindOpen(false);
-                setSentMessage(
-                  `${r.organizationCount}곳 ${r.recipientCount}명에게 리마인드 메일을 보냈습니다.`,
-                );
+          onSend={(ids, draft) =>
+            remind.mutate(
+              { organizationIds: ids, ...draft },
+              {
+                onSuccess: (r) => {
+                  setRemindOpen(false);
+                  setSentMessage(
+                    `${r.organizationCount}곳 ${r.recipientCount}명에게 리마인드 메일을 보냈습니다.`,
+                  );
+                },
               },
-            })
+            )
           }
         />
       )}

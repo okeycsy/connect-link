@@ -3,6 +3,7 @@ package com.connectlink.opinion;
 import com.connectlink.auth.CurrentUser;
 import com.connectlink.common.BusinessException;
 import com.connectlink.common.NetworkZoneResolver;
+import com.connectlink.notification.dto.MailPreviewResponse;
 import com.connectlink.opinion.OpinionReply.Answer;
 import com.connectlink.opinion.OpinionReplyAnswer.Stage;
 import com.connectlink.opinion.dto.OpinionCollationResponse;
@@ -13,6 +14,7 @@ import com.connectlink.opinion.dto.OpinionCollationResponse.RowAnswer;
 import com.connectlink.opinion.dto.OpinionCollationResponse.Summary;
 import com.connectlink.opinion.dto.OpinionCollationResponse.TextAnswer;
 import com.connectlink.opinion.dto.OpinionReminderResponse;
+import com.connectlink.opinion.dto.OpinionReminderSendRequest;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -67,15 +69,69 @@ public class OpinionCollationService {
 
   /**
    * 미회신 기관의 회신 담당자에게 리마인드 메일을 보내고 이력을 남긴다. 기관을 고르지 않으면 미회신 기관 전부이고, 회신한 기관은 골라도 빠진다. 받을 담당자가 한 명도
-   * 없으면 400 이다.
+   * 없으면 400 이다. 제목·본문을 넘기면 기본 문구 대신 그 문구로 보낸다.
    */
   @Transactional
   public OpinionReminderResponse remind(
+      CurrentUser user, Long requestId, OpinionReminderSendRequest body) {
+    OpinionRequest request = loadOpen(user, requestId);
+    ReminderTargets targets = reminderTargets(request, body.organizationIds());
+    if (targets.emails().isEmpty()) {
+      throw new BusinessException(
+          HttpStatus.BAD_REQUEST,
+          "OPINION_REMINDER_NO_RECIPIENT",
+          "리마인드 메일을 받을 미회신 기관 담당자가 없습니다. 대상 기관의 회신 담당자를 확인해 주세요.");
+    }
+    OpinionNotifier.Message message = notifier.reminderMessage(request, daysLeft(request));
+    notifier.remind(
+        request,
+        targets.emails(),
+        new OpinionNotifier.Message(
+            body.subject() == null ? message.title() : body.subject().strip(),
+            body.body() == null ? message.body() : body.body().strip()));
+    List<String> organizations =
+        targets.organizations().stream()
+            .map(MailPreviewResponse.Organization::organizationName)
+            .toList();
+    OpinionReminder reminder =
+        reminderRepository.saveAndFlush(
+            new OpinionReminder(
+                request,
+                user.name(),
+                organizations.size(),
+                targets.emails().size(),
+                String.join(", ", organizations)));
+    return toResponse(reminder);
+  }
+
+  /** 리마인드 메일 미리보기. 지금 보내면 나갈 기본 제목·본문과 받을 기관. 보내기와 같은 규칙으로 기관을 고른다. */
+  public MailPreviewResponse reminderPreview(
       CurrentUser user, Long requestId, List<Long> organizationIds) {
+    OpinionRequest request = loadOpen(user, requestId);
+    ReminderTargets targets = reminderTargets(request, organizationIds);
+    OpinionNotifier.Message message = notifier.reminderMessage(request, daysLeft(request));
+    return MailPreviewResponse.of(
+        message.title(),
+        message.body(),
+        targets.organizations(),
+        targets.emails().size(),
+        targets.skipped());
+  }
+
+  private OpinionRequest loadOpen(CurrentUser user, Long requestId) {
     OpinionRequest request = requestService.loadManaged(user, requestId);
     if (request.getStatus() != OpinionRequestStatus.OPEN) {
       throw BusinessException.conflict("OPINION_REQUEST_STATUS", "회신중 요청에만 리마인드 메일을 보냅니다.");
     }
+    return request;
+  }
+
+  private long daysLeft(OpinionRequest request) {
+    return ChronoUnit.DAYS.between(requestService.today(), request.getDueDate());
+  }
+
+  /** 리마인드를 받을 미회신 기관(고른 기관만, 비우면 전부)과 받을 이메일, 회신 담당자가 없어 건너뛸 기관. */
+  private ReminderTargets reminderTargets(OpinionRequest request, List<Long> organizationIds) {
     Set<Long> replied =
         replyRepository.findByTarget_Request_Id(request.getId()).stream()
             .filter(OpinionReply::isReplied)
@@ -83,35 +139,35 @@ public class OpinionCollationService {
             .collect(Collectors.toSet());
     Set<Long> chosen =
         organizationIds == null || organizationIds.isEmpty() ? null : Set.copyOf(organizationIds);
-    List<String> organizations = new ArrayList<>();
+    List<MailPreviewResponse.Organization> organizations = new ArrayList<>();
+    List<String> skipped = new ArrayList<>();
     Set<String> emails = new LinkedHashSet<>();
     for (OpinionTarget target : request.getTargets()) {
       if (replied.contains(target.getId())
-          || (chosen != null && !chosen.contains(target.getOrganization().getId()))
-          || target.getRecipients().isEmpty()) {
+          || (chosen != null && !chosen.contains(target.getOrganization().getId()))) {
         continue;
       }
-      organizations.add(target.getOrganization().getName());
-      target.getRecipients().forEach(r -> emails.add(r.getEmail()));
+      if (target.getRecipients().isEmpty()) {
+        skipped.add(target.getOrganization().getName());
+        continue;
+      }
+      Set<String> mine = new LinkedHashSet<>();
+      target.getRecipients().forEach(r -> mine.add(r.getEmail()));
+      emails.addAll(mine);
+      organizations.add(
+          new MailPreviewResponse.Organization(
+              target.getOrganization().getId(),
+              target.getOrganization().getName(),
+              target.getOrganization().getCode(),
+              mine.size()));
     }
-    if (emails.isEmpty()) {
-      throw new BusinessException(
-          HttpStatus.BAD_REQUEST,
-          "OPINION_REMINDER_NO_RECIPIENT",
-          "리마인드 메일을 받을 미회신 기관 담당자가 없습니다. 대상 기관의 회신 담당자를 확인해 주세요.");
-    }
-    notifier.remind(
-        request, emails, ChronoUnit.DAYS.between(requestService.today(), request.getDueDate()));
-    OpinionReminder reminder =
-        reminderRepository.saveAndFlush(
-            new OpinionReminder(
-                request,
-                user.name(),
-                organizations.size(),
-                emails.size(),
-                String.join(", ", organizations)));
-    return toResponse(reminder);
+    return new ReminderTargets(organizations, emails, skipped);
   }
+
+  private record ReminderTargets(
+      List<MailPreviewResponse.Organization> organizations,
+      Set<String> emails,
+      List<String> skipped) {}
 
   /** 리마인드 메일 발송 이력, 최신순. */
   public List<OpinionReminderResponse> reminders(CurrentUser user, Long requestId) {

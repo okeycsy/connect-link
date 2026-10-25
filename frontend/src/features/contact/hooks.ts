@@ -293,15 +293,43 @@ export function useUpdateCampaignSchedule(business: string) {
   });
 }
 
-/** 진행 중 주간의 미회신 기관에 리마인드 메일을 지금 보낸다. 기관을 비우면 미완료 기관 전부다. */
+/** 리마인드 메일 미리보기: 지금 보내면 나갈 기본 제목·본문과 받을 기관. 기관을 비우면 미완료 기관 전부다. */
+export function useCampaignReminderPreview(id: number, organizationIds: number[], enabled = true) {
+  return useQuery({
+    queryKey: ['update-campaigns', 'reminder-preview', id, organizationIds] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET('/api/v1/update-campaigns/{id}/reminder-preview', {
+          params: { path: { id }, query: { organizationIds } },
+        }),
+      ),
+    enabled,
+    refetchOnWindowFocus: false,
+  });
+}
+
+/**
+ * 진행 중 주간의 미회신 기관에 리마인드 메일을 지금 보낸다. 기관을 비우면 미완료 기관 전부이고, 제목·본문은 미리보기에서 확인(고친)
+ * 문구다.
+ */
 export function useSendCampaignReminders() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, organizationIds }: { id: number; organizationIds?: number[] }) =>
+    mutationFn: async ({
+      id,
+      organizationIds,
+      subject,
+      body,
+    }: {
+      id: number;
+      organizationIds?: number[];
+      subject: string;
+      body: string;
+    }) =>
       unwrap(
         await api.POST('/api/v1/update-campaigns/{id}/reminders', {
           params: { path: { id } },
-          body: { organizationIds: organizationIds ?? null },
+          body: { organizationIds: organizationIds ?? null, subject, body },
         }),
       ),
     onSuccess: () => invalidateCampaigns(queryClient),

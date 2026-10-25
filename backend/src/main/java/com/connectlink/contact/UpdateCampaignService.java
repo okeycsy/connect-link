@@ -15,8 +15,10 @@ import com.connectlink.contact.dto.UpdateCampaignSaveRequest;
 import com.connectlink.contact.dto.UpdateCampaignScheduleResponse;
 import com.connectlink.notification.NotificationChannel;
 import com.connectlink.notification.NotificationCommand;
+import com.connectlink.notification.NotificationProperties;
 import com.connectlink.notification.NotificationService;
 import com.connectlink.notification.NotificationType;
+import com.connectlink.notification.dto.MailPreviewResponse;
 import com.connectlink.organization.Business;
 import com.connectlink.organization.Organization;
 import com.connectlink.organization.OrganizationService;
@@ -63,6 +65,7 @@ public class UpdateCampaignService {
   private final OrganizationService organizationService;
   private final AccountService accountService;
   private final NotificationService notificationService;
+  private final NotificationProperties notificationProperties;
   private final Clock clock;
 
   public UpdateCampaignService(
@@ -75,6 +78,7 @@ public class UpdateCampaignService {
       OrganizationService organizationService,
       AccountService accountService,
       NotificationService notificationService,
+      NotificationProperties notificationProperties,
       Clock clock) {
     this.campaignRepository = campaignRepository;
     this.organizationRepository = organizationRepository;
@@ -85,6 +89,7 @@ public class UpdateCampaignService {
     this.organizationService = organizationService;
     this.accountService = accountService;
     this.notificationService = notificationService;
+    this.notificationProperties = notificationProperties;
     this.clock = clock;
   }
 
@@ -216,21 +221,65 @@ public class UpdateCampaignService {
    */
   public UpdateCampaignReminderResultResponse sendReminders(
       CurrentUser user, Long id, UpdateCampaignReminderRequest body) {
+    UpdateCampaign campaign = loadOpenForReminder(user, id);
+    ReminderMessage message = reminderMessage(campaign);
+    if (body != null) {
+      message =
+          new ReminderMessage(
+              body.subject() == null ? message.title() : body.subject().strip(),
+              body.body() == null ? message.text() : body.body().strip());
+    }
+    return remind(
+        campaign,
+        chosenPending(campaign, body == null ? null : body.organizationIds()),
+        user.name(),
+        message);
+  }
+
+  /** 리마인드 메일 미리보기. 지금 보내면 나갈 기본 제목·본문과 받을 기관. 보내기와 같은 규칙으로 기관을 고른다. */
+  public MailPreviewResponse reminderPreview(
+      CurrentUser user, Long id, List<Long> organizationIds) {
+    UpdateCampaign campaign = loadOpenForReminder(user, id);
+    ReminderMessage message = reminderMessage(campaign);
+    List<BusinessMember> members = accountService.listActiveMembers(campaign.getBusiness());
+    List<MailPreviewResponse.Organization> organizations = new ArrayList<>();
+    List<String> skipped = new ArrayList<>();
+    Set<String> emails = new LinkedHashSet<>();
+    for (OrganizationResponse organization : chosenPending(campaign, organizationIds)) {
+      Set<String> mine = recipientsOf(campaign.getBusiness(), organization, members);
+      if (mine.isEmpty()) {
+        skipped.add(organization.name());
+        continue;
+      }
+      emails.addAll(mine);
+      organizations.add(
+          new MailPreviewResponse.Organization(
+              organization.id(), organization.name(), organization.code(), mine.size()));
+    }
+    return MailPreviewResponse.of(
+        message.title(), message.text(), organizations, emails.size(), skipped);
+  }
+
+  private UpdateCampaign loadOpenForReminder(CurrentUser user, Long id) {
     UpdateCampaign campaign = load(id);
     accessPolicy.ensureCanManage(user, campaign.getBusiness());
     if (campaign.statusOn(today()) != UpdateCampaignStatus.OPEN) {
       throw BusinessException.conflict(
           "UPDATE_CAMPAIGN_NOT_OPEN", "진행 중인 정기 변경 주간에만 리마인드를 보낼 수 있습니다.");
     }
+    return campaign;
+  }
+
+  /** 미완료 기관 중 고른 기관. 비우면 미완료 기관 전부다. */
+  private List<OrganizationResponse> chosenPending(
+      UpdateCampaign campaign, List<Long> organizationIds) {
     Set<Long> chosen =
-        body == null || body.organizationIds() == null || body.organizationIds().isEmpty()
+        organizationIds == null || organizationIds.isEmpty()
             ? null
-            : new HashSet<>(body.organizationIds());
-    List<OrganizationResponse> organizations =
-        pendingOrganizations(campaign).stream()
-            .filter(o -> chosen == null || chosen.contains(o.id()))
-            .toList();
-    return remind(campaign, organizations, user.name());
+            : new HashSet<>(organizationIds);
+    return pendingOrganizations(campaign).stream()
+        .filter(o -> chosen == null || chosen.contains(o.id()))
+        .toList();
   }
 
   /**
@@ -296,18 +345,19 @@ public class UpdateCampaignService {
         due.add(organization);
       }
     }
-    return remind(campaign, due, null).organizationCount();
+    return remind(campaign, due, null, reminderMessage(campaign)).organizationCount();
   }
 
-  /** 기관마다 받을 사람에게 리마인드 메일을 보내고 기록한다. 받을 사람이 없는 기관은 건너뛴다. */
-  private UpdateCampaignReminderResultResponse remind(
-      UpdateCampaign campaign, List<OrganizationResponse> organizations, String senderName) {
+  /** 리마인드 메일 제목과 본문 한 벌. */
+  private record ReminderMessage(String title, String text) {}
+
+  /** 리마인드 메일의 기본 문구. 예약 작업은 이 문구로 보내고, 화면에서 보낼 때는 미리보기로 보여 준 뒤 고친 문구로 보낼 수 있다. */
+  private ReminderMessage reminderMessage(UpdateCampaign campaign) {
     Business business = campaign.getBusiness();
-    List<BusinessMember> members = accountService.listActiveMembers(business);
     String title =
-        "["
+        "[금융결제원] ("
             + business.getLabel()
-            + "] 정기 변경 리마인드: "
+            + ") 정기 변경 리마인드: "
             + campaign.getTitle()
             + " (~"
             + campaign.getEndDate()
@@ -321,7 +371,19 @@ public class UpdateCampaignService {
             + ")에 우리 기관의 "
             + business.getLabel()
             + " 담당자 현행화 완료가 아직 확인되지 않았습니다. 담당자 정보를 확인해 바뀐 것은 고치고, 모두 맞으면 연락처 화면에서 \"현행화 완료\" 를 눌러 주세요."
-            + " 완료하면 리마인드 메일은 더 가지 않습니다.";
+            + " 완료하면 리마인드 메일은 더 가지 않습니다.\n"
+            + notificationProperties.linkTo("/" + business.getSlug() + "/contacts");
+    return new ReminderMessage(title, text);
+  }
+
+  /** 기관마다 받을 사람에게 리마인드 메일을 보내고 기록한다. 받을 사람이 없는 기관은 건너뛴다. */
+  private UpdateCampaignReminderResultResponse remind(
+      UpdateCampaign campaign,
+      List<OrganizationResponse> organizations,
+      String senderName,
+      ReminderMessage message) {
+    Business business = campaign.getBusiness();
+    List<BusinessMember> members = accountService.listActiveMembers(business);
     int sent = 0;
     int recipients = 0;
     int skipped = 0;
@@ -338,8 +400,8 @@ public class UpdateCampaignService {
                 email,
                 NotificationType.CONTACT_CHANGE_REMINDER,
                 business,
-                title,
-                text,
+                message.title(),
+                message.text(),
                 "/" + business.getSlug() + "/contacts",
                 Set.of(NotificationChannel.EMAIL)));
       }
