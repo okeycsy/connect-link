@@ -83,7 +83,7 @@ class ContactControllerTest {
   @Autowired private UserAccountRepository accountRepository;
   @Autowired private NotificationRepository notificationRepository;
 
-  /** 결제원 계좌통합관리·자동이체통합관리 현업. */
+  /** 결제원 계좌통합관리 현업. */
   private static RequestPostProcessor hong() {
     return TestUsers.as(TestUsers.KFTC_ACCOUNT_INFO);
   }
@@ -396,7 +396,7 @@ class ContactControllerTest {
   @Test
   void 내_담당자_정보는_업무별로_본다() throws Exception {
     mockMvc
-        .perform(get(BASE + "/me").with(hong()))
+        .perform(get(BASE + "/me").with(TestUsers.as(SHINHAN_IT)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.length()").value(2))
         .andExpect(jsonPath("$[*].self", everyItem(org.hamcrest.Matchers.is(true))));

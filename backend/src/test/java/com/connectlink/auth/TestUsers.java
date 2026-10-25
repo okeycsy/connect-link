@@ -55,7 +55,7 @@ public final class TestUsers {
           JobRole.BUSINESS,
           Set.of());
 
-  /** 결제원 계좌통합관리·자동이체통합관리 현업 담당자(관리자 아님). 그 업무의 가입 신청을 승인한다. */
+  /** 결제원 계좌통합관리 현업 담당자(관리자 아님). 그 업무의 가입 신청을 승인한다. */
   public static final CurrentUser KFTC_ACCOUNT_INFO =
       new CurrentUser(
           "hong.sungmin@kftc.example.com",
@@ -64,7 +64,21 @@ public final class TestUsers {
           "금융결제원",
           OrganizationType.KFTC,
           false,
-          Set.of(Business.ACCOUNT_INFO, Business.AUTO_TRANSFER),
+          Set.of(Business.ACCOUNT_INFO),
+          JobRole.BUSINESS,
+          Set.of(),
+          "과장");
+
+  /** 결제원 자동이체통합관리 현업 담당자(관리자 아님). 결제원 현업 담당자는 업무 하나만 맡는다. */
+  public static final CurrentUser KFTC_AUTO_TRANSFER =
+      new CurrentUser(
+          "moon.seojun@kftc.example.com",
+          "문서준",
+          "KFTC",
+          "금융결제원",
+          OrganizationType.KFTC,
+          false,
+          Set.of(Business.AUTO_TRANSFER),
           JobRole.BUSINESS,
           Set.of(),
           "과장");

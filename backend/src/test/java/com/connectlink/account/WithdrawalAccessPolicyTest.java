@@ -41,7 +41,7 @@ class WithdrawalAccessPolicyTest {
   void 그_업무를_맡은_결제원_담당자는_참가기관_담당자를_탈퇴_처리한다() {
     assertThat(
             policy.canWithdraw(
-                TestUsers.KFTC_ACCOUNT_INFO,
+                TestUsers.KFTC_AUTO_TRANSFER,
                 account(OrganizationType.FINANCE_ORGANIZATION, Business.AUTO_TRANSFER)))
         .isTrue();
   }
