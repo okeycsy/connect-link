@@ -5,7 +5,7 @@ import { renderWithProviders } from '../../../test/render';
 import { UserGuidePage } from './UserGuidePage';
 
 describe('UserGuidePage', () => {
-  it('목차에서 기능 여섯 개의 가이드로 간다', () => {
+  it('목차에서 기능 일곱 개의 가이드로 간다', () => {
     renderWithProviders(<UserGuidePage />, { route: '/guide', path: '/guide' });
 
     expect(screen.getByRole('link', { name: /회원가입 및 계정 생성 안내/ })).toHaveAttribute(
@@ -15,6 +15,10 @@ describe('UserGuidePage', () => {
     expect(screen.getByRole('link', { name: /업무별 채팅 이용 안내/ })).toHaveAttribute(
       'href',
       '/guide/chat',
+    );
+    expect(screen.getByRole('link', { name: /공지·자료실 이용 안내/ })).toHaveAttribute(
+      'href',
+      '/guide/notices',
     );
   });
 
