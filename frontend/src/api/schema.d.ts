@@ -265,6 +265,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/me/password': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * 비밀번호 변경
+     * @description 지금 비밀번호를 확인하고 새 비밀번호로 바꾼다. 이 세션은 남고 다른 곳의 세션은 끝난다. 지금 비밀번호가 틀리면 400 PASSWORD_MISMATCH, 같은 비밀번호면 400 PASSWORD_UNCHANGED.
+     */
+    put: operations['change'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/contacts/{id}': {
     parameters: {
       query?: never;
@@ -597,6 +617,46 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/password-resets': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 비밀번호 찾기 코드 받기
+     * @description 사용 중 계정의 회사 이메일로 숫자 6자리 코드를 보낸다(계정 유무와 상관없이 같은 답). 재발송 간격 전이면 429 VERIFICATION_RESEND_TOO_SOON.
+     */
+    post: operations['request'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/password-resets/confirm': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 비밀번호 찾기: 코드 확인과 새 비밀번호
+     * @description 코드가 맞으면 새 비밀번호로 바꾸고 그 계정의 모든 세션을 끝낸다. 틀리면 400 VERIFICATION_CODE_MISMATCH, 정해진 횟수를 넘기면 VERIFICATION_ATTEMPTS_EXCEEDED, 유효 시간이 지났으면 VERIFICATION_EXPIRED.
+     */
+    post: operations['confirm_1'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/organizations': {
     parameters: {
       query?: never;
@@ -883,7 +943,7 @@ export interface paths {
      * 회사 이메일 인증 코드 받기
      * @description 숫자 6자리 코드를 메일로 보낸다(프로토타입은 발송함에 기록). 이미 계정이 있으면 409 EMAIL_ALREADY_REGISTERED, 재발송 간격 전이면 429 VERIFICATION_RESEND_TOO_SOON.
      */
-    post: operations['request'];
+    post: operations['request_1'];
     delete?: never;
     options?: never;
     head?: never;
@@ -903,7 +963,7 @@ export interface paths {
      * 회사 이메일 인증 코드 확인
      * @description 맞으면 가입 신청에 쓸 인증 토큰을 준다. 틀리면 400 VERIFICATION_CODE_MISMATCH, 정해진 횟수를 넘기면 VERIFICATION_ATTEMPTS_EXCEEDED, 유효 시간이 지나면 VERIFICATION_EXPIRED.
      */
-    post: operations['confirm_1'];
+    post: operations['confirm_2'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1007,7 +1067,7 @@ export interface paths {
      * 변동 없음 확인
      * @description 내용은 그대로 두고 최근 확인일만 오늘로 한다. 고칠 수 있는 사람이 한다.
      */
-    post: operations['confirm_2'];
+    post: operations['confirm_3'];
     delete?: never;
     options?: never;
     head?: never;
@@ -2566,6 +2626,10 @@ export interface components {
       /** @enum {string|null} */
       replyStatus?: 'DRAFT' | 'SUBMITTED' | 'REVISION_REQUESTED' | 'REVISING' | null;
     };
+    PasswordChangeRequest: {
+      currentPassword: string;
+      newPassword: string;
+    };
     ContactSaveRequest: {
       /** @enum {string} */
       business: 'ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS';
@@ -2795,6 +2859,19 @@ export interface components {
       reviewedAt?: string | null;
       reviewerName?: string | null;
       rejectionReason?: string | null;
+    };
+    PasswordResetRequest: {
+      email: string;
+    };
+    PasswordResetResponse: {
+      email: string;
+      /** Format: int64 */
+      resendAfterSeconds: number;
+    };
+    PasswordResetConfirmRequest: {
+      email: string;
+      code: string;
+      newPassword: string;
     };
     OrganizationCreateRequest: {
       code: string;
@@ -4133,6 +4210,28 @@ export interface operations {
       };
     };
   };
+  change: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PasswordChangeRequest'];
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   get_7: {
     parameters: {
       query?: never;
@@ -4688,6 +4787,52 @@ export interface operations {
       };
     };
   };
+  request: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PasswordResetRequest'];
+      };
+    };
+    responses: {
+      /** @description Accepted */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['PasswordResetResponse'];
+        };
+      };
+    };
+  };
+  confirm_1: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PasswordResetConfirmRequest'];
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   listOrganizations: {
     parameters: {
       query?: never;
@@ -5081,7 +5226,7 @@ export interface operations {
       };
     };
   };
-  request: {
+  request_1: {
     parameters: {
       query?: never;
       header?: never;
@@ -5105,7 +5250,7 @@ export interface operations {
       };
     };
   };
-  confirm_1: {
+  confirm_2: {
     parameters: {
       query?: never;
       header?: never;
@@ -5247,7 +5392,7 @@ export interface operations {
       };
     };
   };
-  confirm_2: {
+  confirm_3: {
     parameters: {
       query?: never;
       header?: never;

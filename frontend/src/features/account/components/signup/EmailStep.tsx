@@ -1,8 +1,7 @@
 import { Alert, Box, Button, Group, Stack, Text, TextInput } from '@mantine/core';
 import { useQueryClient } from '@tanstack/react-query';
-import { useInterval } from '@mantine/hooks';
 import { IconCircleCheck, IconMailCheck } from '@tabler/icons-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { fieldErrorsOf } from '../../../../api/client';
 import { formatDateTime } from '../../../../shared/format';
@@ -14,6 +13,7 @@ import {
 } from '../../hooks';
 import { notificationKeys } from '../../../notification/hooks';
 import { DemoMailbox } from './DemoMailbox';
+import { useSecondsUntil } from './useSecondsUntil';
 import type { SignUpForm } from './signUpForm';
 
 /** 보낸 인증 코드. 다시 받기 시각은 서버가 준 남은 초로 이 브라우저 시계에 맞춰 둔다. */
@@ -192,20 +192,4 @@ export function EmailStep({ form, sent, verified, demo, onSent, onVerified, onRe
       {demo && sent && !verified && <DemoMailbox email={sent.email} />}
     </Stack>
   );
-}
-
-/** 주어진 시각(밀리초)까지 남은 초(올림). 지났거나 없으면 0. 1초마다 다시 센다. */
-function useSecondsUntil(target: number | undefined): number {
-  const [now, setNow] = useState(() => Date.now());
-  const interval = useInterval(() => setNow(Date.now()), 1000);
-  useEffect(() => {
-    if (!target) return;
-    setNow(Date.now());
-    interval.start();
-    return interval.stop;
-    // interval 객체는 렌더마다 새로 만들어져 의존성에서 뺀다.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [target]);
-  if (!target) return 0;
-  return Math.max(0, Math.ceil((target - now) / 1000));
 }

@@ -5,6 +5,7 @@ import { UserGuidePage } from '../features/account/pages/UserGuidePage';
 import { MyInfoPage } from '../features/account/pages/MyInfoPage';
 import { SignUpApprovalPage } from '../features/account/pages/SignUpApprovalPage';
 import { SignUpPage } from '../features/account/pages/SignUpPage';
+import { PasswordResetPage } from '../features/account/pages/PasswordResetPage';
 import { SignUpPendingPage } from '../features/account/pages/SignUpPendingPage';
 import { ChatPage } from '../features/chat/pages/ChatPage';
 import { ContactListPage } from '../features/contact/pages/ContactListPage';
@@ -57,6 +58,7 @@ export const router = createBrowserRouter([
   // 로그인 전 화면: 로그인, 회원가입(4단계), 승인 대기
   { path: '/login', element: <LoginPage /> },
   { path: '/sign-up', element: <SignUpPage /> },
+  { path: '/password-reset', element: <PasswordResetPage /> },
   { path: '/sign-up/pending', element: <SignUpPendingPage /> },
   { path: '/guide', element: <UserGuidePage /> },
   { path: '/guide/:topic', element: <UserGuidePage /> },
