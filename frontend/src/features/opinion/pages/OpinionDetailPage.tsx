@@ -10,7 +10,7 @@ import {
   Tabs,
   Text,
 } from '@mantine/core';
-import { IconPencil } from '@tabler/icons-react';
+import { IconCopy, IconPencil } from '@tabler/icons-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
@@ -127,6 +127,16 @@ function OpinionDetail({ slug, request }: { slug: string; request: OpinionReques
                 leftSection={<IconPencil size={16} stroke={1.8} />}
               >
                 고치기
+              </Button>
+            )}
+            {p.manage && (
+              <Button
+                variant="default"
+                component={Link}
+                to={`/${slug}/opinions/new?copyFrom=${request.id}`}
+                leftSection={<IconCopy size={16} stroke={1.8} />}
+              >
+                복사해서 새 요청
               </Button>
             )}
             {p.delete && (

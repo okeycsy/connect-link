@@ -20,7 +20,7 @@ import { IconArrowDown, IconArrowUp, IconPlus, IconTrash } from '@tabler/icons-r
 import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { ApiError, fieldErrorsOf } from '../../../api/client';
 import { PageHeader } from '../../../shared/PageHeader';
@@ -65,13 +65,22 @@ interface Values {
 /**
  * 기관 테스트 만들기와 고치기. 주소에 :id 가 있으면 고치기다. 단위업무/개발 건, 테스트 내용과 수행 기간, 요구사항(번호 001, 002 … 순서),
  * 대상 참가기관, 가이드·참고자료를 받는다. 테스트데이터는 수행 전에 받으므로 그 요청(회신 기한·요청 사항·회신 양식)을 맨 위에 둔다. 저장하면 바로 대상 기관에 열리고 대상 기관 담당자에게 메일이 간다.
+ * 만들기 주소에 `?copyFrom=테스트 ID` 가 있으면 그 테스트의 단위업무·내용·요구사항·대상 기관·테스트데이터 요청 사항을 채워 시작한다(복사해서 만들기,
+ * 기간·첨부는 새로).
  */
 export function TestPlanEditorPage() {
   const { business: slug = '', id } = useParams<{ business: string; id?: string }>();
+  const [searchParams] = useSearchParams();
+  const copyFromId = id ? null : Number(searchParams.get('copyFrom')) || null;
   const planId = id ? Number(id) : null;
-  const detail = useTestPlan(planId);
+  const detail = useTestPlan(planId ?? copyFromId);
   const { data: me } = useMe();
-  const title = planId == null ? '기관 테스트 만들기' : '기관 테스트 고치기';
+  const title =
+    planId != null
+      ? '기관 테스트 고치기'
+      : copyFromId != null
+        ? '복사해서 기관 테스트 만들기'
+        : '기관 테스트 만들기';
 
   if (me && !canManageTestPlans(me, slug)) {
     return (
@@ -85,7 +94,7 @@ export function TestPlanEditorPage() {
       </Stack>
     );
   }
-  if (planId == null) return <TestPlanEditor slug={slug} />;
+  if (planId == null && copyFromId == null) return <TestPlanEditor slug={slug} />;
   if (detail.isError) {
     return (
       <Stack gap="md">
@@ -102,10 +111,22 @@ export function TestPlanEditorPage() {
       </Stack>
     );
   }
+  if (copyFromId != null) {
+    return <TestPlanEditor key={copyFromId} slug={slug} copyFrom={detail.data} />;
+  }
   return <TestPlanEditor slug={slug} existing={detail.data} />;
 }
 
-function TestPlanEditor({ slug, existing }: { slug: string; existing?: TestPlanDetail }) {
+function TestPlanEditor({
+  slug,
+  existing,
+  copyFrom,
+}: {
+  slug: string;
+  existing?: TestPlanDetail;
+  /** 복사해서 만들 때 원래 테스트. 저장하면 새 테스트로 바로 열린다. */
+  copyFrom?: TestPlanDetail;
+}) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const current = useCurrentBusiness();
@@ -119,8 +140,9 @@ function TestPlanEditor({ slug, existing }: { slug: string; existing?: TestPlanD
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [pendingFormFiles, setPendingFormFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
+  const source = existing ?? copyFrom;
   const [organizationIds, setOrganizationIds] = useState<number[]>(
-    () => existing?.targets.map((t) => t.organizationId) ?? [],
+    () => source?.targets.map((t) => t.organizationId) ?? [],
   );
   const locked = useMemo(
     () =>
@@ -133,19 +155,20 @@ function TestPlanEditor({ slug, existing }: { slug: string; existing?: TestPlanD
 
   const form = useForm<Values>({
     initialValues: {
-      subBusiness: existing?.subBusiness ?? '',
-      title: existing?.title ?? '',
-      description: existing?.description ?? '',
+      subBusiness: source?.subBusiness ?? '',
+      title: source?.title ?? '',
+      description: source?.description ?? '',
       startDate: existing?.startDate ?? dayjs().format('YYYY-MM-DD'),
       endDate: existing?.endDate ?? dayjs().add(14, 'day').format('YYYY-MM-DD'),
       // 새 테스트는 요청 칸을 펼쳐 둔다. 필요 없으면 "필요 없음" 을 체크해 넘어간다.
-      testDataRequested: existing ? existing.testDataRequest != null : true,
+      testDataRequested: source ? source.testDataRequest != null : true,
       testDataDueDate:
         existing?.testDataRequest?.dueDate ?? existing?.startDate ?? dayjs().format('YYYY-MM-DD'),
-      testDataInstruction: existing?.testDataRequest?.instruction ?? '',
-      items: existing?.items.map((i) => ({
+      testDataInstruction: source?.testDataRequest?.instruction ?? '',
+      // 복사하면 요구사항은 새 요구사항이다(ID 없이 내용만).
+      items: source?.items.map((i) => ({
         key: `i${i.id}`,
-        id: i.id,
+        id: existing ? i.id : null,
         title: i.title,
         description: i.description ?? '',
       })) ?? [{ key: 'n-first', id: null, title: '', description: '' }],
@@ -248,11 +271,19 @@ function TestPlanEditor({ slug, existing }: { slug: string; existing?: TestPlanD
     <form onSubmit={form.onSubmit(submit)} noValidate>
       <Stack gap="md">
         <PageHeader
-          title={existing ? '기관 테스트 고치기' : '기관 테스트 만들기'}
+          title={
+            existing
+              ? '기관 테스트 고치기'
+              : copyFrom
+                ? '복사해서 기관 테스트 만들기'
+                : '기관 테스트 만들기'
+          }
           description={
             existing
               ? '내용·요구사항·대상 기관을 고칩니다. 결과를 등록한 요구사항과 기관은 뺄 수 없습니다. 새로 더한 기관 담당자에게 메일이 갑니다.'
-              : '저장하면 바로 대상 기관에 열리고 대상 기관 담당자에게 메일이 갑니다. 만든 사람이 결과 등록 알림 대상이 됩니다.'
+              : copyFrom
+                ? `"${copyFrom.title}" 의 내용·요구사항·대상 기관을 채웠습니다. 수행 기간과 첨부는 새로 정하고, 저장하면 바로 대상 기관에 열립니다.`
+                : '저장하면 바로 대상 기관에 열리고 대상 기관 담당자에게 메일이 갑니다. 만든 사람이 결과 등록 알림 대상이 됩니다.'
           }
           actions={
             <>

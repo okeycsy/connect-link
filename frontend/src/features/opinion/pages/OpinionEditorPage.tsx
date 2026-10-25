@@ -15,7 +15,7 @@ import { notifications } from '@mantine/notifications';
 import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { ApiError, fieldErrorsOf } from '../../../api/client';
 import { PageHeader } from '../../../shared/PageHeader';
@@ -95,13 +95,35 @@ function initialForm(existing?: OpinionRequestDetail): Pick<Values, 'sections' |
 /**
  * 새 의견 요청과 요청 고치기. 주소에 :id 가 있으면 고치기다. 첨부자료는 여기서 고르고, 새 요청이면 저장한 뒤 바로 올린다.
  * 질문은 작성중일 때만 고친다(회신을 받기 시작하면 답과 어긋나지 않게 서버가 막는다).
+ * 새 요청 주소에 `?copyFrom=요청 ID` 가 있으면 그 요청의 내용·질문·대상을 채워 시작한다(복사해서 만들기, 회신 기한·첨부자료는 새로).
  */
 export function OpinionEditorPage() {
   const { business: slug = '', id } = useParams<{ business: string; id?: string }>();
+  const [searchParams] = useSearchParams();
+  const copyFromId = id ? null : Number(searchParams.get('copyFrom')) || null;
   const requestId = id ? Number(id) : null;
-  const detail = useOpinionRequest(requestId);
+  const detail = useOpinionRequest(requestId ?? copyFromId);
 
-  if (requestId == null) return <OpinionEditor slug={slug} />;
+  if (requestId == null && copyFromId == null) return <OpinionEditor slug={slug} />;
+  if (copyFromId != null) {
+    if (detail.isError) {
+      return (
+        <Stack gap="md">
+          <PageHeader title="복사해서 새 의견 요청" />
+          <ErrorState error={detail.error} homeLink={`/${slug}/home`} />
+        </Stack>
+      );
+    }
+    if (!detail.data) {
+      return (
+        <Stack gap="md">
+          <PageHeader title="복사해서 새 의견 요청" />
+          <Skeleton h={320} />
+        </Stack>
+      );
+    }
+    return <OpinionEditor key={copyFromId} slug={slug} copyFrom={detail.data} />;
+  }
   if (detail.isError) {
     return (
       <Stack gap="md">
@@ -133,7 +155,16 @@ export function OpinionEditorPage() {
   return <OpinionEditor slug={slug} existing={detail.data} />;
 }
 
-function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionRequestDetail }) {
+function OpinionEditor({
+  slug,
+  existing,
+  copyFrom,
+}: {
+  slug: string;
+  existing?: OpinionRequestDetail;
+  /** 복사해서 만들 때 원래 요청. 저장하면 새 작성중 요청이다. */
+  copyFrom?: OpinionRequestDetail;
+}) {
   const navigate = useNavigate();
   const current = useCurrentBusiness();
   const candidates = useRecipientCandidates(slug);
@@ -148,17 +179,18 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
 
+  const source = existing ?? copyFrom;
   const form = useForm<Values>({
     initialValues: {
-      title: existing?.title ?? '',
-      content: existing?.content ?? '',
+      title: source?.title ?? '',
+      content: source?.content ?? '',
       dueDate: existing?.dueDate ?? dayjs().add(7, 'day').format('YYYY-MM-DD'),
-      ...initialForm(existing),
+      ...initialForm(source),
     },
   });
   const [targets, setTargets] = useState<TargetValue[]>(
     () =>
-      existing?.targets.map((t) => ({
+      source?.targets.map((t) => ({
         organizationId: t.organizationId,
         recipientEmails: t.recipients.map((r) => r.email),
       })) ?? [],
@@ -245,7 +277,7 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
     }
   };
 
-  const title = existing ? '의견 요청 고치기' : '새 의견 요청';
+  const title = existing ? '의견 요청 고치기' : copyFrom ? '복사해서 새 의견 요청' : '새 의견 요청';
   return (
     <form onSubmit={form.onSubmit(submit)} noValidate>
       <Stack gap="md">
@@ -254,7 +286,9 @@ function OpinionEditor({ slug, existing }: { slug: string; existing?: OpinionReq
           description={
             existing?.status === 'OPEN'
               ? '회신중인 요청입니다. 저장하면 새로 넣은 담당자에게 요청 메일이, 남은 담당자에게 변경 알림이 갑니다.'
-              : `${current?.label ?? '이 업무'} 참가기관에 보낼 의견 요청입니다. 저장하면 작성중으로 남고, 상세에서 회신 요청을 시작합니다.`
+              : copyFrom
+                ? `"${copyFrom.title}" 의 내용·질문·대상 기관을 채웠습니다. 회신 기한과 첨부자료는 새로 정하고, 저장하면 작성중인 새 요청이 됩니다.`
+                : `${current?.label ?? '이 업무'} 참가기관에 보낼 의견 요청입니다. 저장하면 작성중으로 남고, 상세에서 회신 요청을 시작합니다.`
           }
           actions={
             <>
