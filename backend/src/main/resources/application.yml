@@ -66,8 +66,9 @@ app:
       token-ttl: 30m
   notification:
     delivery:
-      # 발송함의 실제 발송. 꺼 두면(기본, demo) 발송함에 기록만 한다. 운영은 켜고 spring.mail.host 등 메일 서버 설정과
+      # 발송함의 실제 발송(메일만). 꺼 두면(기본, demo) 발송함에 기록만 한다. 운영은 켜고 spring.mail.host 등 메일 서버 설정과
       # 아래 주소를 배포 설정(환경 변수)으로 넣는다. 공개 저장소라 실제 값은 여기에 적지 않는다.
+      # 매터모스트는 내부망 서비스라 보내지 않고 발송함에 기록만 남는다.
       enabled: false
       # 밀리초다(@Scheduled 가 Spring 5 에서 30s 같은 표기를 읽지 못한다).
       interval: 30000
@@ -76,10 +77,6 @@ app:
       mail:
         # 보내는 사람 주소. 비우면 메일은 보내지 않고 발송 대기로 둔다.
         from: ""
-      mattermost:
-        # 매터모스트 들어오는 웹훅 주소(채널 덮어쓰기 허용). 비우면 매터모스트는 발송 대기로 둔다.
-        webhook-url: ""
-        username: 연결이
   attachment:
     # 프로토타입 저장소(임시 디렉터리). 운영은 공유 스토리지 경로나 다른 FileStorage 구현으로 바꾼다.
     dir: ${java.io.tmpdir}/connect-link-files

@@ -1,6 +1,9 @@
 package com.connectlink.notification;
 
-/** 발송함 한 건을 한 채널로 실제로 내보낸다. 채널마다 빈 하나({@link MailDelivery}, {@link MattermostDelivery}). */
+/**
+ * 발송함 한 건을 한 채널로 실제로 내보낸다. 채널마다 빈 하나다. 지금은 메일({@link MailDelivery})뿐이고, 빈이 없는 채널(매터모스트)의 건은 발송함에
+ * 기록만 남는다.
+ */
 public interface ChannelDelivery {
 
   NotificationChannel channel();

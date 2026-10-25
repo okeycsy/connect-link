@@ -2,14 +2,9 @@ package com.connectlink.notification;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.sun.net.httpserver.HttpServer;
-import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,10 +52,6 @@ class OutboxDispatcherTest {
   @Autowired private OutboxDispatcher dispatcher;
   @Autowired private NotificationSender sender;
   @Autowired private NotificationOutboxRepository outboxRepository;
-  @Autowired private NotificationDeliveryProperties properties;
-
-  private HttpServer webhook;
-  private final List<String> webhookBodies = new ArrayList<>();
 
   @BeforeEach
   void setUp() throws Exception {
@@ -69,25 +60,6 @@ class OutboxDispatcherTest {
     pending.forEach(o -> o.markSent(LocalDateTime.now()));
     outboxRepository.saveAll(pending);
     FakeMail.SENT.clear();
-    webhook = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-    webhook.createContext(
-        "/hooks/test",
-        exchange -> {
-          webhookBodies.add(
-              new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
-          exchange.sendResponseHeaders(200, -1);
-          exchange.close();
-        });
-    webhook.start();
-    properties
-        .getMattermost()
-        .setWebhookUrl("http://127.0.0.1:" + webhook.getAddress().getPort() + "/hooks/test");
-  }
-
-  @AfterEach
-  void tearDown() {
-    webhook.stop(0);
-    properties.getMattermost().setWebhookUrl("");
   }
 
   private NotificationOutbox latest(String recipient) {
@@ -98,21 +70,17 @@ class OutboxDispatcherTest {
   }
 
   @Test
-  void 발송_대기_메일과_매터모스트를_보내고_발송됨으로_바꾼다() {
+  void 발송_대기_메일을_보내고_발송됨으로_바꾼다() {
     sender.send(
         new OutboundMessage(
             NotificationChannel.EMAIL, "kim@kb.example.com", "[연결이] 제목", "본문", null));
-    sender.send(new OutboundMessage(NotificationChannel.MATTERMOST, "~kftc-ops", "취합", "내용", null));
 
-    assertThat(dispatcher.dispatch()).isEqualTo(2);
+    assertThat(dispatcher.dispatch()).isEqualTo(1);
 
     assertThat(latest("kim@kb.example.com").getStatus()).isEqualTo(OutboxStatus.SENT);
-    assertThat(latest("~kftc-ops").getStatus()).isEqualTo(OutboxStatus.SENT);
     assertThat(FakeMail.SENT).hasSize(1);
     assertThat(FakeMail.SENT.get(0).getFrom()).isEqualTo("noreply@connect-link.example.com");
     assertThat(FakeMail.SENT.get(0).getSubject()).isEqualTo("[연결이] 제목");
-    assertThat(webhookBodies).hasSize(1);
-    assertThat(webhookBodies.get(0)).contains("\"channel\":\"kftc-ops\"").contains("**취합**\\n내용");
     assertThat(dispatcher.dispatch()).isZero();
   }
 
@@ -134,8 +102,7 @@ class OutboxDispatcherTest {
   }
 
   @Test
-  void 설정이_없는_채널은_보내지_않고_발송_대기로_둔다() {
-    properties.getMattermost().setWebhookUrl("");
+  void 매터모스트는_보내지_않고_발송함에_기록만_남긴다() {
     sender.send(new OutboundMessage(NotificationChannel.MATTERMOST, "@kim", "제목", "본문", null));
 
     assertThat(dispatcher.dispatch()).isZero();
