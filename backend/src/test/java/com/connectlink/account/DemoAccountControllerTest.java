@@ -36,7 +36,7 @@ class DemoAccountControllerTest {
         .andExpect(jsonPath("$.accounts[1].roleLabel").value(Matchers.startsWith("결제원 · ")))
         .andExpect(
             jsonPath("$.accounts[*].email")
-                .value(Matchers.not(Matchers.hasItem("jung.daeun@sbi.example.com"))));
+                .value(Matchers.not(Matchers.hasItem("jung.daeun@woori.example.com"))));
   }
 
   @Test

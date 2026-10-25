@@ -270,7 +270,7 @@ class SignUpControllerTest {
 
   @Test
   void 유효_시간이_지난_코드는_거부한다() throws Exception {
-    String email = "expired@sbi.example.com";
+    String email = "expired@woori.example.com";
     requestCode(email).andExpect(status().isCreated());
     String code = latestCode(email);
     clock.advance(Duration.ofMinutes(10));

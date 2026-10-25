@@ -14,7 +14,6 @@ INSERT INTO organization (code, name, type, email_domain, active, created_at, cr
   ('KFTC',  '금융결제원',     'KFTC',                 'kftc.example.com',      TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
   ('004',   'KB국민은행',    'FINANCE_ORGANIZATION', 'kb.example.com',        TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
   ('088',   '신한은행',      'FINANCE_ORGANIZATION', 'shinhan.example.com',   TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
-  ('103',   'SBI저축은행',   'FINANCE_ORGANIZATION', 'sbi.example.com',       TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
   ('240',   '삼성증권',      'FINANCE_ORGANIZATION', 'samsung.example.com',   TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
   ('071',   '우체국',       'FINANCE_ORGANIZATION', 'epost.example.com',     TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
   ('020',   '우리은행',      'FINANCE_ORGANIZATION', 'woori.example.com',     TRUE, CURRENT_TIMESTAMP, 'seed', CURRENT_TIMESTAMP, 'seed'),
@@ -28,7 +27,6 @@ INSERT INTO organization (code, name, type, email_domain, active, created_at, cr
 UPDATE organization SET sector = CASE code
   WHEN '004'  THEN 'BANK'
   WHEN '088'  THEN 'BANK'
-  WHEN '103'  THEN 'MICROFINANCE'
   WHEN '050'  THEN 'MICROFINANCE'
   WHEN '240'  THEN 'SECURITIES'
   WHEN '020'  THEN 'BANK'
@@ -45,7 +43,6 @@ FROM (VALUES
   ('KFTC',    'ACCOUNT_INFO'), ('KFTC',  'AUTO_TRANSFER'), ('KFTC',  'LOAN_TRANSFER'), ('KFTC',  'CMS'),
   ('004',     'ACCOUNT_INFO'), ('004',  'AUTO_TRANSFER'), ('004',  'LOAN_TRANSFER'), ('004',  'CMS'),
   ('088',     'ACCOUNT_INFO'), ('088',  'AUTO_TRANSFER'), ('088',  'CMS'),
-  ('103',     'ACCOUNT_INFO'), ('103',  'LOAN_TRANSFER'),
   ('240',     'ACCOUNT_INFO'), ('240',   'AUTO_TRANSFER'),
   ('071',   'AUTO_TRANSFER'), ('071', 'CMS'),
   ('020',    'LOAN_TRANSFER'), ('020',  'CMS'),

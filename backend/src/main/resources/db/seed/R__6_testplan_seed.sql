@@ -87,7 +87,7 @@ FROM (VALUES
   ('출금이체 전문 연계 테스트',        '088',  53,  0, -6),
   ('출금이체 전문 연계 테스트',        '071', 0,   0, NULL),
   ('대환대출 이동 신청 전문 개선',     '004',  0,   0, NULL),
-  ('대환대출 이동 신청 전문 개선',     '103',  0,   0, NULL),
+  ('대환대출 이동 신청 전문 개선',     '090',  0,   0, NULL),
   ('대환대출 이동 신청 전문 개선',     '020', 0,   0, NULL)
 ) AS t (plan_title, org_code, progress_rate, completed_count, last_hour)
 JOIN test_plan p ON p.title = t.plan_title
@@ -95,7 +95,7 @@ JOIN organization o ON o.code = t.org_code;
 
 -- 기관 결과와 결제원 의견. 시각은 오늘 0시 기준 시간(reported_hour, feedback_hour)이다.
 -- 출금이체 002 는 결제원 의견(70%) 뒤에 신한은행이 결과를 다시 등록해 "다시 확인" 상태다.
--- 대환대출 이동 신청 전문 개선(대출이동)은 대상 기관에 대출이동 담당 계정이 아직 없어(SBI저축은행은 가입 승인 대기) 결과가 없다.
+-- 대환대출 이동 신청 전문 개선(대출이동)은 대상 기관에 대출이동 담당 계정이 아직 없어(우리은행 정다은은 가입 승인 대기) 결과가 없다.
 INSERT INTO test_item_result (test_item_id, test_plan_target_id, result, note, reported_by_email, reported_by_name, reported_at,
                               feedback_rate, feedback_note, feedback_by_email, feedback_by_name, feedback_at,
                               created_at, created_by, updated_at, updated_by)

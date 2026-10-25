@@ -21,8 +21,8 @@ test.describe('관리 > 기관·업무 기준정보', () => {
     await expect(page.getByRole('heading', { name: '기관·업무 기준정보' })).toBeVisible();
 
     const table = page.getByTestId('organization-table');
-    // 대출이동 참여 기관(사용 중)만: 금융결제원, KB국민은행, SBI저축은행, 우리은행, 카카오뱅크
-    await expect(page.getByTestId('organization-count')).toHaveText('5곳');
+    // 대출이동 참여 기관(사용 중)만: 금융결제원, KB국민은행, 우리은행, 카카오뱅크
+    await expect(page.getByTestId('organization-count')).toHaveText('4곳');
     await expect(table.getByText('카카오뱅크')).toBeVisible();
     await expect(table.getByText('신한은행')).toHaveCount(0);
     await page.screenshot({ path: 'screenshots/admin-organizations.png', fullPage: true });
@@ -30,17 +30,17 @@ test.describe('관리 > 기관·업무 기준정보', () => {
 
   test('필터 칩과 검색으로 목록을 거른다', async ({ page }) => {
     await page.goto('/loan-transfer/admin/organizations');
-    await expect(page.getByTestId('organization-count')).toHaveText('5곳');
+    await expect(page.getByTestId('organization-count')).toHaveText('4곳');
 
     await chip(page, '업무', '전체 업무').click();
-    await expect(page.getByTestId('organization-count')).toHaveText('11곳');
+    await expect(page.getByTestId('organization-count')).toHaveText('10곳');
 
     // 샘플에는 사용 중지된 기관이 없어 상태 전체도 같은 수다.
     await chip(page, '상태', '전체').click();
-    await expect(page.getByTestId('organization-count')).toHaveText('11곳');
+    await expect(page.getByTestId('organization-count')).toHaveText('10곳');
 
     await page.getByLabel('기관 검색').fill('저축');
-    await expect(page.getByTestId('organization-count')).toHaveText('2곳');
+    await expect(page.getByTestId('organization-count')).toHaveText('1곳');
     await expect(page.getByTestId('organization-table').getByText('저축은행중앙회')).toBeVisible();
   });
 

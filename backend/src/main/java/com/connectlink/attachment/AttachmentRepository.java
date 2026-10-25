@@ -11,4 +11,6 @@ public interface AttachmentRepository extends JpaRepository<Attachment, Long> {
 
   List<Attachment> findByOwnerTypeAndOwnerIdInOrderByCreatedAtAscIdAsc(
       AttachmentOwnerType ownerType, Collection<Long> ownerIds);
+
+  List<Attachment> findByStorageKeyStartingWith(String prefix);
 }
