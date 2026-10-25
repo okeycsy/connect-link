@@ -3,7 +3,6 @@ import {
   Anchor,
   Box,
   Button,
-  Group,
   Image,
   Paper,
   PasswordInput,
@@ -21,7 +20,6 @@ import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { errorCodeOf, fieldErrorsOf } from '../../../api/client';
 import kftcLogo from '../../../assets/brand/kftc-logo.png';
 import { BrandMark } from '../../../shared/BrandMark';
-import { useBusinesses } from '../../organization/hooks';
 import { DemoAccountList } from '../components/DemoAccountList';
 import { LoginFeatures } from '../components/LoginFeatures';
 import { LoginHelpCard } from '../components/LoginHelpCard';
@@ -48,7 +46,6 @@ export function LoginPage() {
   const next = safeNextPath(params.get('next'));
   const withdrawn = params.has('withdrawn');
   const passwordReset = params.has('passwordReset');
-  const { data: businesses } = useBusinesses();
   const { data: me } = useMe();
   const { data: demo } = useDemoAccounts();
   const { data: support } = useSupportInfo();
@@ -103,13 +100,7 @@ export function LoginPage() {
             <Text size="xl" c="var(--cl-ink-soft)" maw={460} lh={1.75}>
               결제원과 참가기관 담당자가 서로 찾고, 묻고, 함께 확인하는 업무 공간이에요.
             </Text>
-            <Group gap="xs">
-              {businesses?.map((b) => (
-                <Box key={b.code} className={classes.chip}>
-                  {b.label}
-                </Box>
-              ))}
-            </Group>
+            {/* 업무명 칩(계좌통합관리 …)은 뺐다. 로고가 주인공이 되게(2026-10-25 SHY 요청). */}
           </Stack>
           <Text c="dimmed" size="sm">
             샘플 데이터로 동작하는 프로토타입입니다.

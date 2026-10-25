@@ -6,8 +6,8 @@
   display: grid;
   background: var(--cl-page);
 
-  /* 넓은 화면(lg 이상): 소개 | 기능 소개(호) | 로그인 세 칸 */
-  grid-template-columns: minmax(0, 1.1fr) minmax(330px, 0.9fr) minmax(400px, 1fr);
+  /* 넓은 화면(lg 이상): 소개 | 기능 소개(호) | 로그인 세 칸. 소개(로고)가 주인공이라 기능 소개보다 넓다(2026-10-25 SHY 요청). */
+  grid-template-columns: minmax(0, 1.2fr) minmax(340px, 0.8fr) minmax(400px, 1fr);
   grid-template-areas: 'panel features sheet';
 
   /* 중간 폭: 기능 소개는 왼쪽 소개 아래로 내려간다. */
@@ -211,26 +211,16 @@
 }
 
 .headlineLogo {
-  height: 210px;
+  height: 260px;
   margin-top: 8px;
 
   @media (max-width: $mantine-breakpoint-xl) {
-    height: 170px;
+    height: 220px;
   }
 
   @media (max-width: $mantine-breakpoint-md) {
     height: 140px;
   }
-}
-
-.chip {
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--mantine-color-clay-8);
-  background: var(--cl-card);
-  border: 1px solid var(--cl-line);
 }
 
 .sheet {
