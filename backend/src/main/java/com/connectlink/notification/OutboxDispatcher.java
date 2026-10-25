@@ -43,8 +43,8 @@ public class OutboxDispatcher {
   }
 
   @Scheduled(
-      fixedDelayString = "${app.notification.delivery.interval:30s}",
-      initialDelayString = "${app.notification.delivery.interval:30s}")
+      fixedDelayString = "${app.notification.delivery.interval:30000}",
+      initialDelayString = "${app.notification.delivery.interval:30000}")
   public void scheduled() {
     if (properties.isEnabled()) {
       dispatch();

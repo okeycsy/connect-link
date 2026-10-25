@@ -69,7 +69,8 @@ app:
       # 발송함의 실제 발송. 꺼 두면(기본, demo) 발송함에 기록만 한다. 운영은 켜고 spring.mail.host 등 메일 서버 설정과
       # 아래 주소를 배포 설정(환경 변수)으로 넣는다. 공개 저장소라 실제 값은 여기에 적지 않는다.
       enabled: false
-      interval: 30s
+      # 밀리초다(@Scheduled 가 Spring 5 에서 30s 같은 표기를 읽지 못한다).
+      interval: 30000
       batch-size: 50
       max-attempts: 3
       mail:
