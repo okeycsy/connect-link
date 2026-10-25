@@ -40,7 +40,7 @@ public record OpinionCollationResponse(
   public record OptionCount(Long optionId, String label, int count, List<String> organizations) {}
 
   @Schema(name = "OpinionCollationTextAnswer")
-  public record TextAnswer(String organizationName, String text) {}
+  public record TextAnswer(String organizationCode, String organizationName, String text) {}
 
   /**
    * @param value 답을 글로(객관식은 고른 선택지를 ", " 로 이음). 답하지 않았으면 null

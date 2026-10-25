@@ -18,6 +18,7 @@ import { ChipFilter } from '../../../shared/list/ChipFilter';
 import { DetailDrawer } from '../../../shared/list/DetailDrawer';
 import tableClasses from '../../../shared/list/ResponsiveTable.module.css';
 import { TableEmpty } from '../../../shared/list/TableEmpty';
+import { OrgMonogram } from '../../../shared/OrgMonogram';
 import { StateView } from '../../../shared/state/StateView';
 import { stateKindOf } from '../../../shared/state/stateKind';
 import { AttachmentPanel } from '../../attachment/components/AttachmentPanel';
@@ -133,7 +134,13 @@ export function ReplyStatusPanel({ request }: { request: OpinionRequestDetail })
                 }}
               >
                 <Table.Td>
-                  <Group gap={6}>
+                  <Group gap={6} wrap="nowrap">
+                    <OrgMonogram
+                      name={r.organizationName}
+                      type="FINANCE_ORGANIZATION"
+                      code={r.organizationCode}
+                      size={24}
+                    />
                     <Text fw={600}>{r.organizationName}</Text>
                     {!r.replied && (
                       <Badge size="xs" color="amber">
