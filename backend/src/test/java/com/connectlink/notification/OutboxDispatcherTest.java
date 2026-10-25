@@ -17,8 +17,8 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.test.context.ActiveProfiles;
 
 /**
- * 발송함의 실제 발송: 발송 대기 건을 메일·매터모스트로 보내고 상태를 바꾼다. 메일 서버는 가짜 {@link JavaMailSenderImpl}, 매터모스트는 이 테스트가
- * 띄운 웹훅 서버다. 발송함을 실제로 바꾸므로 따로 쓰는 DB 다.
+ * 발송함의 실제 발송: 발송 대기 메일을 보내고 상태를 바꾼다. 매터모스트는 보내지 않고 기록만 남는다. 메일 서버는 가짜 {@link JavaMailSenderImpl} 다.
+ * 발송함을 실제로 바꾸므로 따로 쓰는 DB 다.
  */
 @SpringBootTest(
     properties = {
