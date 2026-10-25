@@ -108,9 +108,9 @@ class UpdateCampaignControllerTest {
     mockMvc
         .perform(get(BASE + "/" + id + "/progress").with(hong()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.campaign.targetCount").value(6))
-        .andExpect(jsonPath("$.campaign.progressRate").value(33))
-        .andExpect(jsonPath("$.organizations.length()").value(6))
+        .andExpect(jsonPath("$.campaign.targetCount").value(5))
+        .andExpect(jsonPath("$.campaign.progressRate").value(40))
+        .andExpect(jsonPath("$.organizations.length()").value(5))
         .andExpect(jsonPath("$.organizations[0].completed").value(false));
     mockMvc
         .perform(get(BASE + "/" + id + "/progress").param("filter", "COMPLETED").with(hong()))
@@ -118,7 +118,7 @@ class UpdateCampaignControllerTest {
             jsonPath("$.organizations[*].organizationCode", containsInAnyOrder("088", "240")));
     mockMvc
         .perform(get(BASE + "/" + id + "/progress").param("filter", "INCOMPLETE").with(hong()))
-        .andExpect(jsonPath("$.organizations.length()").value(4))
+        .andExpect(jsonPath("$.organizations.length()").value(3))
         .andExpect(jsonPath("$.organizations[*].organizationCode", not(hasItem("088"))));
     mockMvc
         .perform(get(BASE + "/" + id + "/progress").param("filter", "CHANGED").with(hong()))
@@ -239,7 +239,7 @@ class UpdateCampaignControllerTest {
     mockMvc
         .perform(post(BASE + "/" + id + "/reminders").with(csrf()).with(hong()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.organizationCount").value(4))
+        .andExpect(jsonPath("$.organizationCount").value(3))
         .andExpect(jsonPath("$.skippedOrganizationCount").value(0));
     // 미완료 KB국민은행 담당자는 받고, 현행화 완료한 신한은행 담당자는 받지 않는다.
     assertThat(remindersTo("kim.minjun@kb.example.com")).isEqualTo(1);
@@ -296,7 +296,7 @@ class UpdateCampaignControllerTest {
     mockMvc
         .perform(post("/api/v1/demo/update-campaign-runs").with(csrf()).with(hong()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.remindedOrganizationCount").value(3));
+        .andExpect(jsonPath("$.remindedOrganizationCount").value(2));
     assertThat(remindersOf(id, "004")).isEqualTo(1);
     assertThat(remindersOf(id, "048")).isEqualTo(1);
     assertThat(remindersOf(id, "088")).isZero();

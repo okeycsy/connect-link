@@ -64,6 +64,19 @@ class ContactControllerTest {
           JobRole.IT,
           Set.of(ItRole.CONTROL_ROOM));
 
+  /** 신한은행 전산(대외계) 담당자. 자동이체통합관리·CMS 에서 신한은행의 유일한 담당자다. */
+  private static final CurrentUser SHINHAN_IT =
+      new CurrentUser(
+          "lee.junho@shinhan.example.com",
+          "이준호",
+          "088",
+          "신한은행",
+          OrganizationType.FINANCE_ORGANIZATION,
+          false,
+          Set.of(Business.AUTO_TRANSFER, Business.CMS),
+          JobRole.IT,
+          Set.of(ItRole.DEV, ItRole.EXTERNAL_LINK));
+
   @Autowired private MockMvc mockMvc;
   @Autowired private ObjectMapper objectMapper;
   @Autowired private ContactRepository contactRepository;
@@ -149,7 +162,7 @@ class ContactControllerTest {
     mockMvc
         .perform(get(BASE).param("business", "account-info").with(hong()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.totalElements").value(11))
+        .andExpect(jsonPath("$.totalElements").value(16))
         .andExpect(jsonPath("$.content[0].organizationType").value("KFTC"))
         .andExpect(jsonPath("$.content[*].organizationCode", hasItem("240")));
   }
@@ -159,7 +172,7 @@ class ContactControllerTest {
     mockMvc
         .perform(get(BASE).param("business", "account-info").with(TestUsers.as(CONTROL_ROOM)))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.totalElements").value(11))
+        .andExpect(jsonPath("$.totalElements").value(16))
         .andExpect(jsonPath("$.content[0].permissions.edit").value(false));
   }
 
@@ -176,7 +189,7 @@ class ContactControllerTest {
     mockMvc
         .perform(get(BASE).param("business", "account-info").with(gana()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.totalElements").value(4))
+        .andExpect(jsonPath("$.totalElements").value(5))
         .andExpect(
             jsonPath("$.content[*].organizationCode", everyItem(in(List.of("KFTC", "004")))));
     mockMvc
@@ -208,7 +221,7 @@ class ContactControllerTest {
             jsonPath("$.content[*].needsConfirm", everyItem(org.hamcrest.Matchers.is(true))));
     mockMvc
         .perform(get(BASE + "/counts").param("business", "account-info").with(hong()))
-        .andExpect(jsonPath("$.total").value(11))
+        .andExpect(jsonPath("$.total").value(16))
         .andExpect(jsonPath("$.needsConfirm").value(3));
   }
 
@@ -469,7 +482,7 @@ class ContactControllerTest {
                 json(post(BASE + "/organization-confirmations"), Map.of("business", "ACCOUNT_INFO"))
                     .with(gana())))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.confirmedCount").value(2))
+        .andExpect(jsonPath("$.confirmedCount").value(3))
         .andExpect(jsonPath("$.campaignTitle").value("하반기 담당자 정기 변경"));
     mockMvc
         .perform(
@@ -493,7 +506,7 @@ class ContactControllerTest {
                     Map.of("business", "ACCOUNT_INFO", "organizationId", otherOrg))
                 .with(gana()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.confirmedCount").value(2));
+        .andExpect(jsonPath("$.confirmedCount").value(3));
     assertThat(
             contactRepository
                 .findById(contactId("choi.yujin@samsung.example.com", Business.ACCOUNT_INFO))
@@ -524,7 +537,7 @@ class ContactControllerTest {
   @Test
   void 기관의_유일한_담당자는_후임자를_등록하기_전에_탈퇴하지_못한다() throws Exception {
     mockMvc
-        .perform(get("/api/v1/me/withdrawal").with(saa()))
+        .perform(get("/api/v1/me/withdrawal").with(TestUsers.as(SHINHAN_IT)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.allowed").value(false))
         .andExpect(jsonPath("$.blockers[*].code", hasItem("CONTACT_SUCCESSOR_REQUIRED")));

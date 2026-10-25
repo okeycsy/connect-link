@@ -84,4 +84,10 @@ public class Attachment extends AuditedEntity {
   public String getStorageKey() {
     return storageKey;
   }
+
+  /** 샘플 첨부의 내용을 저장소에 넣은 뒤 키와 크기를 맞춘다. 샘플 시드({@code SampleAttachmentLoader})만 쓴다. */
+  public void replaceContent(String storageKey, long sizeBytes) {
+    this.storageKey = storageKey;
+    this.sizeBytes = sizeBytes;
+  }
 }

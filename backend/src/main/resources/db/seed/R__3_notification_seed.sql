@@ -5,11 +5,11 @@ DELETE FROM notification_outbox;
 DELETE FROM notification;
 
 INSERT INTO notification (recipient_email, type, business, title, body, link, read_at, created_at, created_by, updated_at, updated_by) VALUES
-  ('admin@kftc.example.com', 'SIGNUP_REQUESTED', 'LOAN_TRANSFER', 'SBI저축은행 정다은 님이 가입을 신청했습니다', '대출이동 · 전산(개발) 담당자. 이메일 도메인이 기관과 일치합니다.',
-   '/loan-transfer/admin/sign-ups?id=' || CAST((SELECT u.id FROM user_account u WHERE u.email = 'jung.daeun@sbi.example.com') AS VARCHAR(20)), NULL, CURRENT_TIMESTAMP - INTERVAL '1' HOUR, 'seed', CURRENT_TIMESTAMP - INTERVAL '1' HOUR, 'seed'),
+  ('admin@kftc.example.com', 'SIGNUP_REQUESTED', 'LOAN_TRANSFER', '우리은행 정다은 님이 가입을 신청했습니다', '대출이동 · 전산(개발) 담당자. 이메일 도메인이 기관과 일치합니다.',
+   '/loan-transfer/admin/sign-ups?id=' || CAST((SELECT u.id FROM user_account u WHERE u.email = 'jung.daeun@woori.example.com') AS VARCHAR(20)), NULL, CURRENT_TIMESTAMP - INTERVAL '1' HOUR, 'seed', CURRENT_TIMESTAMP - INTERVAL '1' HOUR, 'seed'),
   ('admin@kftc.example.com', 'OPINION_REPLY_DUE', 'ACCOUNT_INFO', '의견 요청 "계좌통합관리 수수료 체계 개편" 회신 기한이 2일 남았습니다', '회신 12/18 기관. 미회신 6곳에 리마인드를 보낼 수 있습니다.', '/account-info/opinions', NULL, CURRENT_TIMESTAMP - INTERVAL '3' HOUR, 'seed', CURRENT_TIMESTAMP - INTERVAL '3' HOUR, 'seed'),
   ('admin@kftc.example.com', 'SUSPENSION_CHANGED', 'CMS', '신한은행 CMS 일시중단이 확정되었습니다', '2026-10-18 02:00~04:00 · 코어뱅킹 정기 점검', '/cms/suspensions', NULL, CURRENT_TIMESTAMP - INTERVAL '5' HOUR, 'seed', CURRENT_TIMESTAMP - INTERVAL '5' HOUR, 'seed'),
-  ('admin@kftc.example.com', 'CONTACT_CHANGE_REQUESTED', 'AUTO_TRANSFER', 'SBI저축은행 담당자 변경 요청', '자동이체통합관리 전산 담당자가 이창수 → 박민지 로 바뀌었습니다. 확인이 필요합니다.', '/auto-transfer/contacts', NULL, CURRENT_TIMESTAMP - INTERVAL '1' DAY, 'seed', CURRENT_TIMESTAMP - INTERVAL '1' DAY, 'seed'),
+  ('admin@kftc.example.com', 'CONTACT_CHANGE_REQUESTED', 'AUTO_TRANSFER', '저축은행중앙회 담당자 변경 요청', '자동이체통합관리 전산 담당자가 이창수 → 박민지 로 바뀌었습니다. 확인이 필요합니다.', '/auto-transfer/contacts', NULL, CURRENT_TIMESTAMP - INTERVAL '1' DAY, 'seed', CURRENT_TIMESTAMP - INTERVAL '1' DAY, 'seed'),
   ('admin@kftc.example.com', 'CONTACT_RECONFIRM_DUE', 'LOAN_TRANSFER', '대출이동 담당자 7명이 6개월 넘게 확인되지 않았습니다', '정기 변경 주간에 맞춰 확인 요청 메일이 발송되었습니다.', '/loan-transfer/contacts', NULL, CURRENT_TIMESTAMP - INTERVAL '2' DAY, 'seed', CURRENT_TIMESTAMP - INTERVAL '2' DAY, 'seed'),
   ('admin@kftc.example.com', 'TEST_PLAN_OPENED', 'ACCOUNT_INFO', '기관 테스트 "본인계좌 일괄지급정지 2차" 가 등록되었습니다', '대상 7개 기관, 요구사항 14건. 수행률 0%.', '/account-info/tests', CURRENT_TIMESTAMP - INTERVAL '2' DAY, CURRENT_TIMESTAMP - INTERVAL '3' DAY, 'seed', CURRENT_TIMESTAMP - INTERVAL '2' DAY, 'seed'),
   ('admin@kftc.example.com', 'OPINION_REQUEST_OPENED', 'CMS', '의견 요청 "CMS 출금 한도 안내 문구" 가 회신중으로 바뀌었습니다', '대상 9개 기관, 회신 기한 2026-10-24', '/cms/opinions', CURRENT_TIMESTAMP - INTERVAL '4' DAY, CURRENT_TIMESTAMP - INTERVAL '4' DAY, 'seed', CURRENT_TIMESTAMP - INTERVAL '4' DAY, 'seed'),
