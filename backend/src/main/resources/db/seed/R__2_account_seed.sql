@@ -36,7 +36,7 @@ FROM (VALUES
   ('jung.hyunwoo@cu.example.com',    '정현우',      '048', 'ACTIVE',           FALSE, 'IT',       '전산정보부',   '채널개발팀',   '대리', '7101', NULL,
    CURRENT_TIMESTAMP - INTERVAL '60' DAY, NULL, NULL, NULL, NULL),
   -- 승인 대기 신청. 오승현은 회사 이메일 도메인이 기관과 다르다.
-  ('jung.daeun@sbi.example.com',    '정다은',      '103', 'PENDING_APPROVAL', FALSE, 'IT',       '전산부',       '개발팀',       '주임', '5101', '010-0000-5101',
+  ('jung.daeun@woori.example.com',  '정다은',      '020', 'PENDING_APPROVAL', FALSE, 'IT',       '전산부',       '개발팀',       '주임', '5101', '010-0000-5101',
    CURRENT_TIMESTAMP - INTERVAL '1' HOUR, NULL, NULL, NULL, NULL),
   ('han.yerin@kb.example.com',     '한예린',      '004', 'PENDING_APPROVAL', FALSE, 'BUSINESS', '디지털금융부', '오픈뱅킹팀',   '주임', '2102', NULL,
    CURRENT_TIMESTAMP - INTERVAL '1' DAY, NULL, NULL, NULL, NULL),
@@ -76,7 +76,7 @@ FROM (VALUES
   ('park.jihoon@shinhan.example.com',    'ACCOUNT_INFO',  '내 계좌 한눈에'),
   ('yoon.seoyeon@fsb.example.com',  'ACCOUNT_INFO',  '오픈뱅킹 안심차단'),
   ('jung.hyunwoo@cu.example.com',    'ACCOUNT_INFO',  '내 계좌 한눈에'),
-  ('jung.daeun@sbi.example.com',    'LOAN_TRANSFER', '신규기관 주택담보대출'),
+  ('jung.daeun@woori.example.com',    'LOAN_TRANSFER', '신규기관 주택담보대출'),
   ('han.yerin@kb.example.com',     'ACCOUNT_INFO',  '계좌정보 통합조회'),
   ('oh.seunghyun@mail.example.com',      'ACCOUNT_INFO',  NULL),
   ('oh.seunghyun@mail.example.com',      'AUTO_TRANSFER', '자동이체 전문 개발'),
@@ -93,7 +93,7 @@ FROM (VALUES
   ('lee.control@kftc.example.com', 'CONTROL_ROOM'),
   ('lee.junho@shinhan.example.com',    'DEV'),
   ('lee.junho@shinhan.example.com',    'EXTERNAL_LINK'),
-  ('jung.daeun@sbi.example.com',   'DEV'),
+  ('jung.daeun@woori.example.com',   'DEV'),
   ('oh.seunghyun@mail.example.com',     'DEV'),
   ('jung.hyunwoo@cu.example.com',   'DEV')
 ) AS r (email, it_role)

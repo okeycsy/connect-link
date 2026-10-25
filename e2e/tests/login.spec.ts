@@ -52,7 +52,7 @@ test.describe('로그인', () => {
       '이메일 또는 비밀번호가 맞지 않습니다.',
     );
 
-    await loginWithForm(page, 'jung.daeun@sbi.example.com', PASSWORD);
+    await loginWithForm(page, 'jung.daeun@woori.example.com', PASSWORD);
     await expect(page.getByTestId('login-error')).toContainText('가입 승인 전입니다.');
     await expect(page).toHaveURL(/\/login$/);
     await page.screenshot({ path: 'screenshots/login-pending.png', fullPage: true });
@@ -112,7 +112,7 @@ test.describe('로그인', () => {
     const body = await demo.json();
     expect(body.accounts[0].email).toBe('admin@kftc.example.com');
     expect(body.accounts.map((a: { email: string }) => a.email)).not.toContain(
-      'jung.daeun@sbi.example.com',
+      'jung.daeun@woori.example.com',
     );
   });
 });

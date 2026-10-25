@@ -157,13 +157,11 @@ SELECT r.id, o.id, r.created_at, r.created_by, r.created_at, r.created_by
 FROM (VALUES
   ('계좌통합관리 수수료 체계 개편 의견 요청', '004'),
   ('계좌통합관리 수수료 체계 개편 의견 요청', '088'),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', '103'),
   ('계좌통합관리 수수료 체계 개편 의견 요청', '050'),
   ('계좌통합관리 수수료 체계 개편 의견 요청', '240'),
   ('계좌통합관리 수수료 체계 개편 의견 요청', '048'),
   ('4분기 계좌통합관리업무 회비 사전확인', '004'),
   ('4분기 계좌통합관리업무 회비 사전확인', '088'),
-  ('4분기 계좌통합관리업무 회비 사전확인', '103'),
   ('4분기 계좌통합관리업무 회비 사전확인', '240'),
   ('4분기 계좌통합관리업무 회비 사전확인', '050'),
   ('4분기 계좌통합관리업무 회비 사전확인', '048'),
@@ -174,7 +172,7 @@ FROM (VALUES
   ('계좌정보 일괄해지 화면 문구 개선',        '004'),
   ('계좌정보 일괄해지 화면 문구 개선',        '240'),
   ('계좌정보 일괄해지 화면 문구 개선',        '088'),
-  ('계좌정보 일괄해지 화면 문구 개선',        '103'),
+  ('계좌정보 일괄해지 화면 문구 개선',        '050'),
   ('계좌통합관리 수수료 고지 방식 변경',      '004'),
   ('계좌통합관리 수수료 고지 방식 변경',      '240'),
   ('야간 배치 시간 조정 의견 요청',           '004'),
@@ -188,7 +186,6 @@ FROM (VALUES
   ('CMS 출금이체 전문 개정 의견 요청',        '020'),
   ('CMS 출금이체 전문 개정 의견 요청',        '048'),
   ('대출이동 신규기관 접수시간 연장',         '004'),
-  ('대출이동 신규기관 접수시간 연장',         '103'),
   ('대출이동 신규기관 접수시간 연장',         '020'),
   ('대출이동 신규기관 접수시간 연장',         '090')
 ) AS t (title, org_code)
@@ -201,11 +198,6 @@ SELECT t.id, u.email, u.name, b.sub_business, t.created_at, t.created_by, t.crea
 FROM (VALUES
   ('계좌통합관리 수수료 체계 개편 의견 요청', 'kim.minjun@kb.example.com'),
   ('계좌통합관리 수수료 체계 개편 의견 요청', 'choi.yujin@samsung.example.com'),
-  ('4분기 계좌통합관리업무 회비 사전확인', 'kim.minjun@kb.example.com'),
-  ('4분기 계좌통합관리업무 회비 사전확인', 'park.jihoon@shinhan.example.com'),
-  ('4분기 계좌통합관리업무 회비 사전확인', 'choi.yujin@samsung.example.com'),
-  ('4분기 계좌통합관리업무 회비 사전확인', 'yoon.seoyeon@fsb.example.com'),
-  ('4분기 계좌통합관리업무 회비 사전확인', 'jung.hyunwoo@cu.example.com'),
   ('오픈뱅킹 연계 전문 항목 추가 검토',       'kim.minjun@kb.example.com'),
   ('오픈뱅킹 연계 전문 항목 추가 검토',       'choi.yujin@samsung.example.com'),
   ('계좌정보 일괄해지 화면 문구 개선',        'kim.minjun@kb.example.com'),
@@ -220,7 +212,22 @@ JOIN user_account u ON u.email = p.email
 JOIN opinion_target t ON t.request_id = r.id AND t.organization_id = u.organization_id
 JOIN user_account_business b ON b.account_id = u.id AND b.business = r.business;
 
--- 기관 회신. submitted_days 가 있으면 제출한 회신이다. 회비 사전확인은 KB국민은행이 아직 회신하지 않았고(데모 김민준으로 회신해 볼 수 있다) 신협은 임시저장이다. 삼성증권은 수수료 개편 회신을 제출한 뒤 수정 요청을 해 두었다.
+-- 회비 사전확인 요청의 회신 담당자는 연락처(R__7)에서 계좌통합관리 세부업무 "회비" 담당자를 고른 것이다(계정 없는 담당자).
+-- 연락처 시드는 이 파일 뒤에 돌아서, 같은 사람(이름·이메일·세부업무)을 여기에 적는다.
+INSERT INTO opinion_target_recipient (target_id, email, name, sub_business, created_at, created_by, updated_at, updated_by)
+SELECT t.id, p.email, p.name, '회비', t.created_at, t.created_by, t.created_at, t.created_by
+FROM (VALUES
+  ('004', 'bae.sua@kb.example.com',          '배수아'),
+  ('088', 'oh.taeyun@shinhan.example.com',   '오태윤'),
+  ('240', 'kwon.dohyun@samsung.example.com', '권도현'),
+  ('050', 'maeng.soyul@fsb.example.com',     '맹소율'),
+  ('048', 'pi.jaehyun@cu.example.com',       '피재현')
+) AS p (org_code, email, name)
+JOIN organization o ON o.code = p.org_code
+JOIN opinion_request r ON r.title = '4분기 계좌통합관리업무 회비 사전확인'
+JOIN opinion_target t ON t.request_id = r.id AND t.organization_id = o.id;
+
+-- 기관 회신. submitted_days 가 있으면 제출한 회신이다. 회비 사전확인은 기관의 회비 담당자(계정 없음)가 회신했고, KB국민은행은 아직 회신하지 않았고(같은 기관 계정 김민준으로 회신해 볼 수 있다) 신협은 임시저장이다. 삼성증권은 수수료 개편 회신을 제출한 뒤 수정 요청을 해 두었다.
 INSERT INTO opinion_reply (target_id, status, replier_email, replier_name, submitted_at,
                            revision_reason, revision_requested_at, revision_rejection_reason, created_at, created_by, updated_at, updated_by)
 SELECT t.id, p.status, p.replier_email, p.replier_name,
@@ -232,25 +239,23 @@ SELECT t.id, p.status, p.replier_email, p.replier_name,
        CURRENT_TIMESTAMP - COALESCE(p.submitted_days, 1) * INTERVAL '1' DAY, p.replier_email
 FROM (VALUES
   ('계좌통합관리 수수료 체계 개편 의견 요청', '088', 'SUBMITTED', 'park.jihoon@shinhan.example.com', '박지훈', 5, CAST(NULL AS VARCHAR(500))),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', '103', 'SUBMITTED', 'jung.daeun@sbi.example.com', '정다은', 4, NULL),
   ('계좌통합관리 수수료 체계 개편 의견 요청', '050', 'SUBMITTED', 'yoon.seoyeon@fsb.example.com', '윤서연', 3, NULL),
   ('계좌통합관리 수수료 체계 개편 의견 요청', '240', 'REVISION_REQUESTED', 'choi.yujin@samsung.example.com', '최유진', 2, '내부 검토 결과 적용 시기를 내년 7월로 바꾸고 싶습니다.'),
   ('계좌통합관리 수수료 체계 개편 의견 요청', '048', 'DRAFT', 'kang.doyoon@cu.example.com', '강도윤', NULL, NULL),
-  ('4분기 계좌통합관리업무 회비 사전확인', '088', 'SUBMITTED', 'park.jihoon@shinhan.example.com', '박지훈', 2, NULL),
-  ('4분기 계좌통합관리업무 회비 사전확인', '240', 'SUBMITTED', 'choi.yujin@samsung.example.com', '최유진', 2, NULL),
-  ('4분기 계좌통합관리업무 회비 사전확인', '103', 'SUBMITTED', 'jung.daeun@sbi.example.com', '정다은', 1, NULL),
-  ('4분기 계좌통합관리업무 회비 사전확인', '050', 'SUBMITTED', 'yoon.seoyeon@fsb.example.com', '윤서연', 1, NULL),
-  ('4분기 계좌통합관리업무 회비 사전확인', '048', 'DRAFT', 'jung.hyunwoo@cu.example.com', '정현우', NULL, NULL),
+  ('4분기 계좌통합관리업무 회비 사전확인', '088', 'SUBMITTED', 'oh.taeyun@shinhan.example.com', '오태윤', 2, NULL),
+  ('4분기 계좌통합관리업무 회비 사전확인', '240', 'SUBMITTED', 'kwon.dohyun@samsung.example.com', '권도현', 2, NULL),
+  ('4분기 계좌통합관리업무 회비 사전확인', '050', 'SUBMITTED', 'maeng.soyul@fsb.example.com', '맹소율', 1, NULL),
+  ('4분기 계좌통합관리업무 회비 사전확인', '048', 'DRAFT', 'pi.jaehyun@cu.example.com', '피재현', NULL, NULL),
   ('오픈뱅킹 연계 전문 항목 추가 검토', '088', 'SUBMITTED', 'park.jihoon@shinhan.example.com', '박지훈', 1, NULL),
   ('계좌정보 일괄해지 화면 문구 개선', '004', 'SUBMITTED', 'kim.minjun@kb.example.com', '김민준', 30, NULL),
   ('계좌정보 일괄해지 화면 문구 개선', '240', 'SUBMITTED', 'choi.yujin@samsung.example.com', '최유진', 29, NULL),
   ('계좌정보 일괄해지 화면 문구 개선', '088', 'SUBMITTED', 'park.jihoon@shinhan.example.com', '박지훈', 27, NULL),
-  ('계좌정보 일괄해지 화면 문구 개선', '103', 'SUBMITTED', 'jung.daeun@sbi.example.com', '정다은', 26, NULL),
+  ('계좌정보 일괄해지 화면 문구 개선', '050', 'SUBMITTED', 'yoon.seoyeon@fsb.example.com', '윤서연', 26, NULL),
   ('자동이체 통합조회 해지 절차 개선', '004', 'SUBMITTED', 'han.gana2@kb.example.com', '한가람', 6, NULL),
   ('자동이체 통합조회 해지 절차 개선', '071', 'SUBMITTED', 'yoon.haeun@epost.example.com', '윤하은', 4, NULL),
   ('CMS 출금이체 전문 개정 의견 요청', '020', 'SUBMITTED', 'jung.jaewon@woori.example.com', '정재원', 1, NULL),
   ('대출이동 신규기관 접수시간 연장', '004', 'SUBMITTED', 'kim.minjun@kb.example.com', '김민준', 35, NULL),
-  ('대출이동 신규기관 접수시간 연장', '103', 'SUBMITTED', 'jung.daeun@sbi.example.com', '정다은', 34, NULL),
+  ('대출이동 신규기관 접수시간 연장', '090', 'SUBMITTED', 'seok.daon@kakaobank.example.com', '석다온', 34, NULL),
   ('대출이동 신규기관 접수시간 연장', '020', 'SUBMITTED', 'jung.jaewon@woori.example.com', '정재원', 33, NULL)
 ) AS p (title, org_code, status, replier_email, replier_name, submitted_days, revision_reason)
 JOIN opinion_request r ON r.title = p.title
@@ -264,10 +269,6 @@ FROM (VALUES
   ('계좌통합관리 수수료 체계 개편 의견 요청', '088', 'SUBMITTED', 0, '내년 1월', CAST(NULL AS VARCHAR(4000))),
   ('계좌통합관리 수수료 체계 개편 의견 요청', '088', 'SUBMITTED', 1, '수수료 정산', NULL),
   ('계좌통합관리 수수료 체계 개편 의견 요청', '088', 'SUBMITTED', 2, NULL, '약 12만 건'),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', '103', 'SUBMITTED', 0, '내년 7월', NULL),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', '103', 'SUBMITTED', 1, '수수료 정산', NULL),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', '103', 'SUBMITTED', 1, '고객 안내', NULL),
-  ('계좌통합관리 수수료 체계 개편 의견 요청', '103', 'SUBMITTED', 2, NULL, '약 8천 건'),
   ('계좌통합관리 수수료 체계 개편 의견 요청', '050', 'SUBMITTED', 0, '내년 7월', NULL),
   ('계좌통합관리 수수료 체계 개편 의견 요청', '050', 'SUBMITTED', 1, '수수료 정산', NULL),
   ('계좌통합관리 수수료 체계 개편 의견 요청', '050', 'SUBMITTED', 1, '전산 개발', NULL),
@@ -276,9 +277,8 @@ FROM (VALUES
   ('계좌통합관리 수수료 체계 개편 의견 요청', '240', 'SUBMITTED', 2, NULL, '약 3만 건'),
   ('계좌통합관리 수수료 체계 개편 의견 요청', '048', 'DRAFT', 0, '내후년 1월', NULL),
   ('4분기 계좌통합관리업무 회비 사전확인', '088', 'SUBMITTED', 0, '의견없음', NULL),
-  ('4분기 계좌통합관리업무 회비 사전확인', '240', 'SUBMITTED', 0, '의견없음', NULL),
-  ('4분기 계좌통합관리업무 회비 사전확인', '103', 'SUBMITTED', 0, '확인 필요', NULL),
-  ('4분기 계좌통합관리업무 회비 사전확인', '103', 'SUBMITTED', 1, NULL, '8월 실적(191,700건)에 시스템 점검 중 재조회된 건이 포함된 것 같습니다. 중복 건을 빼고 다시 산정해 주실 수 있을까요?'),
+  ('4분기 계좌통합관리업무 회비 사전확인', '240', 'SUBMITTED', 0, '확인 필요', NULL),
+  ('4분기 계좌통합관리업무 회비 사전확인', '240', 'SUBMITTED', 1, NULL, '8월 실적(398,200건)에 시스템 점검 중 재조회된 건이 포함된 것 같습니다. 중복 건을 빼고 다시 산정해 주실 수 있을까요?'),
   ('4분기 계좌통합관리업무 회비 사전확인', '050', 'SUBMITTED', 0, '확인 필요', NULL),
   ('4분기 계좌통합관리업무 회비 사전확인', '050', 'SUBMITTED', 1, NULL, '중앙회 경유 회원 저축은행 조회분이 함께 집계된 것인지 확인 부탁드립니다. 기본회비가 기관별로 부과되는지도 궁금합니다.'),
   ('4분기 계좌통합관리업무 회비 사전확인', '048', 'DRAFT', 0, '의견없음', NULL),
@@ -289,15 +289,15 @@ FROM (VALUES
   ('계좌정보 일괄해지 화면 문구 개선', '240', 'SUBMITTED', 0, '조건부 동의', NULL),
   ('계좌정보 일괄해지 화면 문구 개선', '240', 'SUBMITTED', 1, NULL, '"해지" 대신 "연결 끊기" 표현을 함께 써 주세요.'),
   ('계좌정보 일괄해지 화면 문구 개선', '088', 'SUBMITTED', 0, '동의', NULL),
-  ('계좌정보 일괄해지 화면 문구 개선', '103', 'SUBMITTED', 0, '이견', NULL),
-  ('계좌정보 일괄해지 화면 문구 개선', '103', 'SUBMITTED', 1, NULL, '고객 문의가 늘 수 있어 지금 문구를 유지하기를 바랍니다.'),
+  ('계좌정보 일괄해지 화면 문구 개선', '050', 'SUBMITTED', 0, '이견', NULL),
+  ('계좌정보 일괄해지 화면 문구 개선', '050', 'SUBMITTED', 1, NULL, '고객 문의가 늘 수 있어 지금 문구를 유지하기를 바랍니다.'),
   ('자동이체 통합조회 해지 절차 개선', '004', 'SUBMITTED', 0, '동의', NULL),
   ('자동이체 통합조회 해지 절차 개선', '071', 'SUBMITTED', 0, '조건부 동의', NULL),
   ('자동이체 통합조회 해지 절차 개선', '071', 'SUBMITTED', 1, NULL, '처리 결과 통지는 영업일 기준 2일 안으로 해 주세요.'),
   ('CMS 출금이체 전문 개정 의견 요청', '020', 'SUBMITTED', 0, '동의', NULL),
   ('대출이동 신규기관 접수시간 연장', '004', 'SUBMITTED', 0, '동의', NULL),
-  ('대출이동 신규기관 접수시간 연장', '103', 'SUBMITTED', 0, '조건부 동의', NULL),
-  ('대출이동 신규기관 접수시간 연장', '103', 'SUBMITTED', 1, NULL, '18시 연장 시 상담 인력 배치가 필요해 시행을 한 달 늦춰 주세요.'),
+  ('대출이동 신규기관 접수시간 연장', '090', 'SUBMITTED', 0, '조건부 동의', NULL),
+  ('대출이동 신규기관 접수시간 연장', '090', 'SUBMITTED', 1, NULL, '18시 연장 시 상담 인력 배치가 필요해 시행을 한 달 늦춰 주세요.'),
   ('대출이동 신규기관 접수시간 연장', '020', 'SUBMITTED', 0, '동의', NULL)
 ) AS a (title, org_code, stage, question_order, option_label, text_value)
 JOIN opinion_request r ON r.title = a.title

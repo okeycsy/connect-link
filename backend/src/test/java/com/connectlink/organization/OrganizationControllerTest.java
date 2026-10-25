@@ -39,7 +39,7 @@ class OrganizationControllerTest {
     mockMvc
         .perform(get("/api/v1/organizations"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$", hasSize(11)))
+        .andExpect(jsonPath("$", hasSize(10)))
         .andExpect(jsonPath("$[0].code").value("KFTC"))
         .andExpect(jsonPath("$[0].typeLabel").value("결제원"))
         .andExpect(jsonPath("$[0].businesses", hasSize(4)));
@@ -52,8 +52,8 @@ class OrganizationControllerTest {
         .andExpect(jsonPath("$[?(@.code == '088')].businesses[*]").isArray())
         .andExpect(
             jsonPath(
-                "$[?(@.code == '103')].businesses[*]",
-                org.hamcrest.Matchers.contains("ACCOUNT_INFO", "LOAN_TRANSFER")));
+                "$[?(@.code == '020')].businesses[*]",
+                org.hamcrest.Matchers.contains("LOAN_TRANSFER", "CMS")));
   }
 
   @Test
@@ -87,12 +87,12 @@ class OrganizationControllerTest {
     mockMvc
         .perform(get("/api/v1/organizations/search").with(TestUsers.admin()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.totalElements").value(11))
+        .andExpect(jsonPath("$.totalElements").value(10))
         .andExpect(jsonPath("$.content[0].code").value("KFTC"))
         .andExpect(jsonPath("$.content[0].businesses", hasSize(4)))
         .andExpect(jsonPath("$.content[0].businesses[0].slug").value("account-info"))
         .andExpect(jsonPath("$.content[1].name").value("KB국민은행"))
-        .andExpect(jsonPath("$.content[10].typeLabel").value("이용기관"));
+        .andExpect(jsonPath("$.content[9].typeLabel").value("이용기관"));
   }
 
   @Test
@@ -100,7 +100,7 @@ class OrganizationControllerTest {
     mockMvc
         .perform(get("/api/v1/organizations/search").param("keyword", "은행").with(TestUsers.admin()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.totalElements").value(5));
+        .andExpect(jsonPath("$.totalElements").value(4));
     mockMvc
         .perform(
             get("/api/v1/organizations/search").param("keyword", "004").with(TestUsers.admin()))
@@ -119,7 +119,7 @@ class OrganizationControllerTest {
                 .param("business", "loan-transfer")
                 .param("active", "true")
                 .with(TestUsers.admin()))
-        .andExpect(jsonPath("$.totalElements").value(5))
+        .andExpect(jsonPath("$.totalElements").value(4))
         .andExpect(jsonPath("$.content[*].active", everyItem(is(true))));
     // 시드에는 사용 중지된 기관이 없어 하나 만들어 끈다.
     String inactive = createInactive("OLDBANK", "옛은행");

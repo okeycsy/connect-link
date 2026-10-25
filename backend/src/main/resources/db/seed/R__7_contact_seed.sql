@@ -23,11 +23,17 @@ FROM (VALUES
   ('004',  'ACCOUNT_INFO', '계좌정보 통합조회',       '남궁민', '전산부',       '채널개발팀', '과장', 'IT',       'PRIMARY',   '2201', '010-0000-2201', 'namgung.min@kb.example.com',    30,  '김민준'),
   ('088',  'ACCOUNT_INFO', '내 계좌 한눈에',          '박지훈', '디지털채널부', '계좌서비스팀', '과장', 'BUSINESS', 'PRIMARY', '3103', NULL,            'park.jihoon@shinhan.example.com', 2,   '박지훈'),
   ('088',  'ACCOUNT_INFO', '내 계좌 한눈에',          '신서준', '디지털채널부', '계좌서비스팀', '대리', 'BUSINESS', 'SECONDARY', '3104', '010-0000-3104', 'shin.seojun@shinhan.example.com', 2,   '박지훈'),
-  ('103',  'ACCOUNT_INFO', NULL,                      '문하린', '수신부',       '전자금융팀', '차장', 'BUSINESS', 'PRIMARY',   '5201', '010-0000-5201', 'moon.harin@sbi.example.com',    250, '문하린'),
+  ('050',  'ACCOUNT_INFO', NULL,                      '문하린', '수신업무부',   '전자금융팀', '차장', 'BUSINESS', 'SECONDARY', '6202', '010-0000-6202', 'moon.harin@fsb.example.com',    250, '문하린'),
   ('240',  'ACCOUNT_INFO', '오픈뱅킹 안심차단',       '최유진', '리테일영업부', '계좌관리팀', '대리', 'BUSINESS', 'PRIMARY',   '4101', NULL,            'choi.yujin@samsung.example.com',  1,   '최유진'),
   ('050',  'ACCOUNT_INFO', '오픈뱅킹 안심차단',       '윤서연', '수신업무부',   '전자금융팀', '대리', 'BUSINESS', 'PRIMARY',   '6101', NULL,            'yoon.seoyeon@fsb.example.com',    60,  '윤서연'),
   ('048',  'ACCOUNT_INFO', '내 계좌 한눈에',          '정현우', '전산정보부',   '채널개발팀', '대리', 'IT',       'PRIMARY',   '7101', NULL,            'jung.hyunwoo@cu.example.com',      1,   '정현우'),
   ('048',  'ACCOUNT_INFO', '내 계좌 한눈에',          '류지안', '수신부',       '전자금융팀', '과장', 'BUSINESS', 'PRIMARY',   '7201', '010-0000-7201', 'ryu.jian@cu.example.com',       190, '류지안'),
+  -- 계좌통합관리 회비 담당자(세부업무 "회비"). 계정은 없고, 회비 사전확인 의견 요청(R__4)의 회신 담당자로 고른다.
+  ('004',  'ACCOUNT_INFO', '회비',                    '배수아', '재무관리부',   '수수료정산팀', '과장', 'BUSINESS', 'PRIMARY', '2601', '010-0000-2601', 'bae.sua@kb.example.com',         25,  '배수아'),
+  ('088',  'ACCOUNT_INFO', '회비',                    '오태윤', '재무기획부',   '정산팀',     '대리', 'BUSINESS', 'PRIMARY',   '3601', '010-0000-3601', 'oh.taeyun@shinhan.example.com',  25,  '오태윤'),
+  ('240',  'ACCOUNT_INFO', '회비',                    '권도현', '재무팀',       '비용관리파트', '과장', 'BUSINESS', 'PRIMARY', '4601', '010-0000-4601', 'kwon.dohyun@samsung.example.com', 25, '권도현'),
+  ('050',  'ACCOUNT_INFO', '회비',                    '맹소율', '경영관리부',   '회계팀',     '주임', 'BUSINESS', 'PRIMARY',   '6601', NULL,            'maeng.soyul@fsb.example.com',    25,  '맹소율'),
+  ('048',  'ACCOUNT_INFO', '회비',                    '피재현', '경영지원부',   '재무팀',     '대리', 'BUSINESS', 'PRIMARY',   '7601', '010-0000-7601', 'pi.jaehyun@cu.example.com',      25,  '피재현'),
   -- 자동이체통합관리
   ('KFTC', 'AUTO_TRANSFER', '자동이체 통합조회',      '홍성민', '계좌서비스부', '계좌통합팀', '과장', 'BUSINESS', 'PRIMARY',   '1101', '010-0000-1101', 'hong.sungmin@kftc.example.com', 20,  '홍성민'),
   ('KFTC', 'AUTO_TRANSFER', NULL,                     '김태호', '정보시스템부', '운영팀',     '대리', 'IT',       'PRIMARY',   '1201', NULL,            'kim.ops@kftc.example.com',      40,  '김태호'),
@@ -41,7 +47,6 @@ FROM (VALUES
   ('KFTC', 'LOAN_TRANSFER', '대환대출 인프라',        '진대호', '대출서비스부', '대출이동팀', '차장', 'BUSINESS', 'PRIMARY',   '1501', '010-0000-1501', 'jin.daeho@kftc.example.com',    60,  '진대호'),
   ('KFTC', 'LOAN_TRANSFER', NULL,                     '김태호', '정보시스템부', '운영팀',     '대리', 'IT',       'PRIMARY',   '1201', NULL,            'kim.ops@kftc.example.com',      40,  '김태호'),
   ('004',  'LOAN_TRANSFER', '신용대출 이동',          '왕보람', '여신부',       '대출상품팀', '과장', 'BUSINESS', 'PRIMARY',   '2401', '010-0000-2401', 'wang.boram@kb.example.com',     120, '왕보람'),
-  ('103',  'LOAN_TRANSFER', '신규기관 주택담보대출',  '표은우', '여신부',       '대출심사팀', '대리', 'BUSINESS', 'PRIMARY',   '5301', '010-0000-5301', 'pyo.eunwoo@sbi.example.com',    185, '표은우'),
   ('020',  'LOAN_TRANSFER', NULL,                     '차민결', '대출지원부',   '약관대출팀', '대리', 'BUSINESS', 'PRIMARY',   '9101', '010-0000-9101', 'cha.mingyeol@woori.example.com', 20,  '차민결'),
   ('090',  'LOAN_TRANSFER', NULL,                     '석다온', '리테일금융부', '대출운영팀', '과장', 'BUSINESS', 'PRIMARY',   '9201', '010-0000-9201', 'seok.daon@kakaobank.example.com',    70,  '석다온'),
   -- CMS
