@@ -40,6 +40,22 @@ const notices = [
     updatedAt: '2026-08-26T09:00:00',
     canEdit: false,
   },
+  {
+    id: 3,
+    business: 'ACCOUNT_INFO',
+    businessLabel: '계좌통합관리',
+    category: 'NOTICE',
+    categoryLabel: '공지',
+    title: '전문 변경 회의 개최 안내',
+    content: '회의를 엽니다.',
+    pinned: false,
+    effectiveDate: null,
+    authorName: '홍성민',
+    createdAt: '2026-10-24T09:00:00',
+    updatedAt: '2026-10-24T09:00:00',
+    opinionRequest: { id: 9, title: '전문 변경 회의 참석 회신', status: 'OPEN', replyable: true },
+    canEdit: false,
+  },
 ];
 
 const calls = vi.hoisted(() => ({ list: [] as Record<string, unknown>[] }));
@@ -107,5 +123,19 @@ describe('NoticeListPage', () => {
       path: '/:business/notices',
     });
     expect(await screen.findByRole('button', { name: '글 쓰기' })).toBeInTheDocument();
+  });
+
+  it('회의 안내에 이은 참석 회신 요청은 글에서 회신하기로 바로 간다', async () => {
+    me.current = { admin: false, organizationType: 'FINANCE_ORGANIZATION', businesses: [] };
+    renderWithProviders(<NoticeListPage />, {
+      route: '/account-info/notices?id=3',
+      path: '/:business/notices',
+    });
+    const box = await screen.findByTestId('notice-opinion');
+    expect(box).toHaveTextContent('전문 변경 회의 참석 회신');
+    expect(screen.getByRole('link', { name: '회신하기' })).toHaveAttribute(
+      'href',
+      '/account-info/opinions/9',
+    );
   });
 });

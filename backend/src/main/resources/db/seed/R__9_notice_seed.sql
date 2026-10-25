@@ -30,7 +30,7 @@ VALUES
    CURRENT_TIMESTAMP - 7 * INTERVAL '1' DAY, 'seed', CURRENT_TIMESTAMP - 7 * INTERVAL '1' DAY, 'seed'),
   ('ACCOUNT_INFO', 'NOTICE', '계좌통합관리업무 전문 변경 회의 개최 안내',
    '다음 달 셋째 주에 전문 변경 회의를 엽니다. 일시와 장소는 첨부 파일을 참고해 주세요.
-참석 여부는 의견 요청 메뉴의 회신 요청으로 알려 주세요.',
+참석 여부와 참석자는 아래 "회신하기"로 알려 주세요.',
    FALSE, NULL, 'hong.sungmin@kftc.example.com', '홍성민',
    CURRENT_TIMESTAMP - 1 * INTERVAL '1' DAY, 'seed', CURRENT_TIMESTAMP - 1 * INTERVAL '1' DAY, 'seed'),
   ('AUTO_TRANSFER', 'NOTICE', '자동이체 출금동의 확인 절차 변경 안내',
@@ -41,3 +41,8 @@ VALUES
    'CMS 정산 마감 시각을 다시 안내드립니다. 마감 뒤 들어온 건은 다음 영업일에 처리됩니다.',
    FALSE, NULL, 'park.cms@kftc.example.com', '박하늘',
    CURRENT_TIMESTAMP - 2 * INTERVAL '1' DAY, 'seed', CURRENT_TIMESTAMP - 2 * INTERVAL '1' DAY, 'seed');
+
+-- 회의 개최 안내는 참석 회신을 받는 의견 요청(R__4)을 잇는다.
+UPDATE notice
+SET opinion_request_id = (SELECT r.id FROM opinion_request r WHERE r.title = '계좌통합관리업무 전문 변경 회의 참석 회신')
+WHERE title = '계좌통합관리업무 전문 변경 회의 개최 안내';

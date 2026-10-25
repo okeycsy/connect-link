@@ -10,12 +10,13 @@ import {
   Text,
   UnstyledButton,
 } from '@mantine/core';
-import { IconPin, IconPlus } from '@tabler/icons-react';
+import { IconArrowRight, IconPin, IconPlus } from '@tabler/icons-react';
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 import { useMe } from '../../account/hooks';
 import { AttachmentPanel } from '../../attachment/components/AttachmentPanel';
+import { OpinionStatusBadge } from '../../opinion/components/OpinionBadges';
 import { useCurrentBusiness } from '../../organization/hooks';
 import { ConfirmModal } from '../../../shared/ConfirmModal';
 import { formatDate } from '../../../shared/format';
@@ -157,6 +158,7 @@ export function NoticeListPage() {
                     <Text size="xs" c="dimmed">
                       {n.authorName} · {formatDate(n.createdAt)}
                       {n.effectiveDate && ` · 시행 ${formatDate(n.effectiveDate)}`}
+                      {n.opinionRequest?.replyable && ' · 회신 요청 있음'}
                     </Text>
                   </Stack>
                 </Group>
@@ -217,6 +219,36 @@ export function NoticeListPage() {
             <Text size="md" style={{ whiteSpace: 'pre-wrap' }}>
               {selected.content}
             </Text>
+            {selected.opinionRequest && (
+              <Card withBorder bg="var(--cl-sunken)" data-testid="notice-opinion">
+                <Group justify="space-between" wrap="nowrap" gap="sm">
+                  <Stack gap={4} style={{ minWidth: 0 }}>
+                    <Group gap={6}>
+                      <Text size="xs" c="dimmed">
+                        회신 요청
+                      </Text>
+                      <OpinionStatusBadge
+                        status={selected.opinionRequest.status}
+                        cancelled={false}
+                        size="xs"
+                      />
+                    </Group>
+                    <Text fw={600} lineClamp={2}>
+                      {selected.opinionRequest.title}
+                    </Text>
+                  </Stack>
+                  <Button
+                    component={Link}
+                    to={`/${slug}/opinions/${selected.opinionRequest.id}`}
+                    variant={selected.opinionRequest.replyable ? 'filled' : 'light'}
+                    rightSection={<IconArrowRight size={16} />}
+                    style={{ flexShrink: 0 }}
+                  >
+                    {selected.opinionRequest.replyable ? '회신하기' : '의견 요청 보기'}
+                  </Button>
+                </Group>
+              </Card>
+            )}
             <Stack gap="xs">
               <Text fw={700}>첨부</Text>
               <AttachmentPanel

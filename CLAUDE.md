@@ -113,7 +113,7 @@
 | 확인 공감 | `ChatMessageAck` | 메시지에 "확인" 을 누른 사람 한 명(기관 이름을 남겨 기관별로 묶어 보인다). 보낸 사람은 누르지 못한다 |
 | 읽음 표시 | `ChatReadMark` | 사람 × 방 하나의 마지막으로 읽은 메시지. 방의 읽지 않은 수, 메시지의 읽지 않은 사람 수, 읽지 않은 내 기관 멘션을 여기서 센다 |
 | 문의 안내·이용 가이드 | `SupportInfo`, `SupportProperties` | 로그인 화면 아래 카드. 문의 메일 주소는 설정 `app.support.inquiry-email`(공개 저장소라 실제 주소는 배포 설정에만, 비우면 문의하기 칸이 빠진다)이고 로그인 없이 API `/api/v1/support-info` 로 읽는다. 이용 가이드는 참가기관 담당자용 화면 `/guide`, 기능별 `/guide/{기능}`(로그인 없이, 내용은 `guideTopics.ts`) |
-| 공지·자료실 | `Notice`, `NoticeCategory`, `NoticeAccessPolicy` | 글 한 건. 분류 `NoticeCategory` = `NOTICE`(공지), `RULE`(규약), `ENFORCEMENT_RULE`(시행세칙), 규약·시행세칙은 시행일(`effectiveDate`)을 둘 수 있다. 업무(`business`)가 있으면 그 업무를 맡은 결제원·참가기관 담당자만 보고 그 업무 결제원 담당자가 쓴다. 업무가 비면 전 업무 공통 공지라 모두 보고 관리자만 쓴다(규약·시행세칙은 공통으로 못 둔다, 400 `NOTICE_COMMON_REGULATION`). 고정(`pinned`) 글이 먼저다. 첨부 `NOTICE`. API `/api/v1/notices`, 화면 `/{업무}/notices` |
+| 공지·자료실 | `Notice`, `NoticeCategory`, `NoticeAccessPolicy` | 글 한 건. 분류 `NoticeCategory` = `NOTICE`(공지), `RULE`(규약), `ENFORCEMENT_RULE`(시행세칙), 규약·시행세칙은 시행일(`effectiveDate`)을 둘 수 있다. 업무(`business`)가 있으면 그 업무를 맡은 결제원·참가기관 담당자만 보고 그 업무 결제원 담당자가 쓴다. 업무가 비면 전 업무 공통 공지라 모두 보고 관리자만 쓴다(규약·시행세칙은 공통으로 못 둔다, 400 `NOTICE_COMMON_REGULATION`). 고정(`pinned`) 글이 먼저다. 업무 글에는 같은 업무 의견 요청 하나를 이을 수 있고(`opinionRequestId`, 예: 회의 개최 안내 + 참석 회신, 다른 업무·공통 공지면 400 `NOTICE_OPINION_MISMATCH`), 그 요청을 볼 수 있는 사람에게만 보이며 대상 기관 담당자는 글에서 "회신하기"로 간다. 첨부 `NOTICE`. API `/api/v1/notices`, 화면 `/{업무}/notices` |
 | 전역 검색 묶음 | `SearchCategory` | `ORGANIZATION`, `CONTACT`, `OPINION_REQUEST`, `TEST_PLAN`, `SUSPENSION`. 기능 모듈은 `SearchProvider` 빈 하나로 자기 묶음을 채운다 |
 
 용어집에 없는 개념이 필요하면 이름을 정해 이 표에 추가하는 것까지 같은 작업에 포함한다.

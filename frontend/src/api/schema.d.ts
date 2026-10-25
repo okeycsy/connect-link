@@ -2825,6 +2825,8 @@ export interface components {
       pinned: boolean;
       /** Format: date */
       effectiveDate?: string | null;
+      /** Format: int64 */
+      opinionRequestId?: number | null;
     };
     NoticeResponse: {
       /** Format: int64 */
@@ -2845,8 +2847,17 @@ export interface components {
       createdAt: string;
       /** Format: date-time */
       updatedAt: string;
+      opinionRequest: components['schemas']['OpinionRequestLinkResponse'];
       canEdit: boolean;
     };
+    OpinionRequestLinkResponse: {
+      /** Format: int64 */
+      id: number;
+      title: string;
+      /** @enum {string} */
+      status: 'DRAFT' | 'OPEN' | 'CLOSED';
+      replyable: boolean;
+    } | null;
     PasswordChangeRequest: {
       currentPassword: string;
       newPassword: string;

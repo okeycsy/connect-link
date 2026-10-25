@@ -1,5 +1,6 @@
 package com.connectlink.notice;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
@@ -13,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.connectlink.auth.TestUsers;
+import com.connectlink.opinion.OpinionRequestRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
@@ -161,5 +163,68 @@ class NoticeControllerTest {
     send(post(BASE), body("ACCOUNT_INFO", "NOTICE", " "), hong())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.fieldErrors[0].field").value("title"));
+  }
+
+  @Test
+  void 회의_안내에_이은_참석_회신_요청은_대상_기관_담당자에게_회신하기로_보인다() throws Exception {
+    String json =
+        send(get(BASE).param("business", "account-info"), null, kim())
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString(StandardCharsets.UTF_8);
+    JsonNode meeting = null;
+    for (JsonNode n : objectMapper.readTree(json).get("content")) {
+      if (n.get("title").asText().equals("계좌통합관리업무 전문 변경 회의 개최 안내")) {
+        meeting = n;
+      }
+    }
+    assertThat(meeting).isNotNull();
+    assertThat(meeting.at("/opinionRequest/title").asText()).isEqualTo("계좌통합관리업무 전문 변경 회의 참석 회신");
+    assertThat(meeting.at("/opinionRequest/replyable").asBoolean()).isTrue();
+    long noticeId = meeting.get("id").asLong();
+
+    // 결제원 담당자는 요청을 보지만 회신하지 않는다.
+    send(get(BASE + "/" + noticeId), null, hong())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.opinionRequest.status").value("OPEN"))
+        .andExpect(jsonPath("$.opinionRequest.replyable").value(false));
+  }
+
+  @Test
+  void 볼_수_없는_의견_요청은_잇지_않은_것처럼_보이고_다른_업무_요청은_이을_수_없다() throws Exception {
+    // 작성중 요청을 이으면 기관 담당자에게는 보이지 않는다.
+    Long draftId = opinionId("야간 배치 시간 조정 의견 요청");
+    Map<String, Object> linked = body("ACCOUNT_INFO", "NOTICE", "작성중 요청을 이은 공지");
+    linked.put("opinionRequestId", draftId);
+    Long id = create(linked, hong());
+    send(get(BASE + "/" + id), null, kim())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.opinionRequest").doesNotExist());
+    send(get(BASE + "/" + id), null, hong())
+        .andExpect(jsonPath("$.opinionRequest.id").value(draftId));
+
+    Map<String, Object> wrong = body("ACCOUNT_INFO", "NOTICE", "다른 업무 요청");
+    wrong.put("opinionRequestId", opinionId("CMS 출금이체 전문 개정 의견 요청"));
+    send(post(BASE), wrong, hong())
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("NOTICE_OPINION_MISMATCH"))
+        .andExpect(jsonPath("$.fieldErrors[0].field").value("opinionRequestId"));
+
+    Map<String, Object> common = body(null, "NOTICE", "공통 공지에 잇기");
+    common.put("opinionRequestId", draftId);
+    send(post(BASE), common, TestUsers.admin())
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("NOTICE_OPINION_MISMATCH"));
+  }
+
+  @Autowired private OpinionRequestRepository opinionRequestRepository;
+
+  private Long opinionId(String title) {
+    return opinionRequestRepository.findAll().stream()
+        .filter(r -> r.getTitle().equals(title))
+        .findFirst()
+        .orElseThrow()
+        .getId();
   }
 }

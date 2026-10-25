@@ -21,6 +21,7 @@ import com.connectlink.opinion.dto.OpinionRecipientResponse;
 import com.connectlink.opinion.dto.OpinionRequestCountsResponse;
 import com.connectlink.opinion.dto.OpinionRequestCreateRequest;
 import com.connectlink.opinion.dto.OpinionRequestDetailResponse;
+import com.connectlink.opinion.dto.OpinionRequestLinkResponse;
 import com.connectlink.opinion.dto.OpinionRequestPermissions;
 import com.connectlink.opinion.dto.OpinionRequestSummaryResponse;
 import com.connectlink.opinion.dto.OpinionRequestUpdateRequest;
@@ -623,6 +624,30 @@ public class OpinionRequestService {
             .toList(),
         reply != null && reply.isReplied(),
         reply == null ? null : reply.getStatus());
+  }
+
+  // ---- 다른 모듈에 잇기 ----
+
+  /** 다른 화면에 이어 보일 요청. 없거나 이 사용자가 볼 수 없으면 빈 값이다. */
+  @Transactional(readOnly = true)
+  public Optional<OpinionRequestLinkResponse> link(CurrentUser user, Long id) {
+    return repository
+        .findById(id)
+        .filter(r -> accessPolicy.canView(user, r))
+        .map(
+            r ->
+                new OpinionRequestLinkResponse(
+                    r.getId(),
+                    r.getTitle(),
+                    r.getStatus(),
+                    r.getStatus() == OpinionRequestStatus.OPEN
+                        && accessPolicy.isTargetMember(user, r)));
+  }
+
+  /** 이 업무 영역의 요청인지. 아니면(없거나 다른 업무) false 다. */
+  @Transactional(readOnly = true)
+  public boolean belongsTo(Long id, Business business) {
+    return repository.findById(id).map(r -> r.getBusiness() == business).orElse(false);
   }
 
   // ---- 공통 ----

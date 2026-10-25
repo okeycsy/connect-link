@@ -7,6 +7,7 @@ import com.connectlink.common.BusinessException;
 import com.connectlink.common.PageResponse;
 import com.connectlink.notice.dto.NoticeResponse;
 import com.connectlink.notice.dto.NoticeSaveRequest;
+import com.connectlink.opinion.OpinionRequestService;
 import com.connectlink.organization.Business;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,14 +31,17 @@ public class NoticeService {
   private final NoticeRepository repository;
   private final NoticeAccessPolicy accessPolicy;
   private final AttachmentService attachmentService;
+  private final OpinionRequestService opinionRequestService;
 
   public NoticeService(
       NoticeRepository repository,
       NoticeAccessPolicy accessPolicy,
-      AttachmentService attachmentService) {
+      AttachmentService attachmentService,
+      OpinionRequestService opinionRequestService) {
     this.repository = repository;
     this.accessPolicy = accessPolicy;
     this.attachmentService = attachmentService;
+    this.opinionRequestService = opinionRequestService;
   }
 
   /** 이 업무의 글과 공통 공지. category 가 있으면 그 분류만이다. */
@@ -71,6 +75,7 @@ public class NoticeService {
   public NoticeResponse create(CurrentUser user, NoticeSaveRequest body) {
     accessPolicy.ensureCanManage(user, body.business());
     ensureCategoryFits(body.business(), body.category());
+    ensureOpinionFits(body.business(), body.opinionRequestId());
     Notice notice = new Notice(body.business(), user.email(), user.name());
     apply(notice, body);
     return toResponse(user, repository.save(notice));
@@ -80,6 +85,7 @@ public class NoticeService {
     Notice notice = load(id);
     accessPolicy.ensureCanManage(user, notice.getBusiness());
     ensureCategoryFits(notice.getBusiness(), body.category());
+    ensureOpinionFits(notice.getBusiness(), body.opinionRequestId());
     apply(notice, body);
     return toResponse(user, notice);
   }
@@ -103,7 +109,22 @@ public class NoticeService {
         body.title().trim(),
         body.content().trim(),
         body.pinned(),
-        body.category().isRegulation() ? body.effectiveDate() : null);
+        body.category().isRegulation() ? body.effectiveDate() : null,
+        body.opinionRequestId());
+  }
+
+  /** 이어 둘 의견 요청은 글과 같은 업무의 것이어야 한다. 공통 공지에는 잇지 않는다. */
+  private void ensureOpinionFits(Business business, Long opinionRequestId) {
+    if (opinionRequestId == null) {
+      return;
+    }
+    if (business == null || !opinionRequestService.belongsTo(opinionRequestId, business)) {
+      throw BusinessException.onField(
+          HttpStatus.BAD_REQUEST,
+          "NOTICE_OPINION_MISMATCH",
+          "opinionRequestId",
+          "같은 업무의 의견 요청만 이을 수 있습니다.");
+    }
   }
 
   /** 규약·시행세칙은 업무 자료라 공통으로 둘 수 없다. */
@@ -131,6 +152,9 @@ public class NoticeService {
         n.getAuthorName(),
         n.getCreatedAt(),
         n.getUpdatedAt(),
+        n.getOpinionRequestId() == null
+            ? null
+            : opinionRequestService.link(user, n.getOpinionRequestId()).orElse(null),
         accessPolicy.canManage(user, n.getBusiness()));
   }
 }

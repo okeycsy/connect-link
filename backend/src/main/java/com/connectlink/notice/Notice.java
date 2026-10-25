@@ -47,6 +47,10 @@ public class Notice extends AuditedEntity {
   @Column(name = "effective_date")
   private LocalDate effectiveDate;
 
+  /** 이어 둔 의견 요청(예: 회의 참석 회신). 없으면 null. */
+  @Column(name = "opinion_request_id")
+  private Long opinionRequestId;
+
   @Column(name = "author_email", nullable = false, length = 200)
   private String authorEmail;
 
@@ -66,13 +70,19 @@ public class Notice extends AuditedEntity {
       String title,
       String content,
       boolean pinned,
-      LocalDate effectiveDate) {
+      LocalDate effectiveDate,
+      Long opinionRequestId) {
     this.category = category;
+    this.opinionRequestId = opinionRequestId;
     this.title = title;
     this.content = content;
     this.pinned = pinned;
     this.effectiveDate = effectiveDate;
     touch();
+  }
+
+  public Long getOpinionRequestId() {
+    return opinionRequestId;
   }
 
   public Long getId() {
