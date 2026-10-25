@@ -28,7 +28,9 @@ test.describe('홈 대시보드', () => {
     const suspensionBox = (await cards.getByTestId('home-card-SUSPENSIONS').boundingBox())!;
     const signUpBox = (await cards.getByTestId('home-card-SIGNUP_APPROVAL').boundingBox())!;
     expect(signUpBox.x).toBeLessThan(suspensionBox.x);
-    expect(suspensionBox.height).toBeLessThan(640);
+    // 다가오는 일시중단은 3건까지라 윗줄이 자리를 덜 차지한다. SHY 요청(2026-10-25).
+    await expect(upcoming.getByRole('link')).toHaveCount(3);
+    expect(suspensionBox.height).toBeLessThan(480);
     // 윗줄 두 카드는 높이를 맞춘다.
     expect(Math.abs(suspensionBox.height - signUpBox.height)).toBeLessThan(2);
     // 임박·초과 글자 배지는 없다.

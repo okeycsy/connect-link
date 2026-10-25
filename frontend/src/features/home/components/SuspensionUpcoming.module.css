@@ -1,14 +1,7 @@
-/* 큰 칸에서는 남는 높이를 목록이 채우고, 넘치면 목록 안에서 스크롤한다. */
-.list[data-fill] {
-  flex: 1 1 auto;
-  max-height: 460px;
-  overflow-y: auto;
-}
-
 /* 일시중단 한 줄: sunken 바탕 radius 14(홈 할 일 줄과 같다). 진행 중·오늘 건은 흰 바탕 + clay-3 선. */
 .row {
   display: block;
-  padding: 10px 14px;
+  padding: 8px 14px;
   border-radius: 14px;
   background: var(--cl-sunken);
   transition: background 160ms var(--cl-ease);

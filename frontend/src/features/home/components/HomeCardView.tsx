@@ -7,7 +7,7 @@ import type { HomeCard, HomeItem } from '../hooks';
 import classes from './HomeCardView.module.css';
 import { SuspensionUpcoming } from './SuspensionUpcoming';
 
-/** 일시중단 밖 카드에 보이는 할 일 줄 수. 나머지는 "모두 보기" 에서 본다. SHY 요청(2026-10-24). */
+/** 카드에 보이는 할 일 줄 수(다가오는 일시중단 포함, 2026-10-25). 나머지는 "모두 보기" 에서 본다. SHY 요청(2026-10-24). */
 const MAX_ROWS = 3;
 
 /** 기한 배지 색: 초과 빨강 채움, 임박 앰버, 여유 스카이. frontend/CLAUDE.md "상태 색". */
@@ -17,7 +17,7 @@ interface Props {
   card: HomeCard;
   /** 세로로 쌓이는 자리(오른쪽 열). 높이를 채우지 않는다. */
   stacked?: boolean;
-  /** 왼쪽 큰 칸. 남는 높이를 내용(다가오는 일시중단 목록)이 채운다. */
+  /** 윗줄 칸. 같은 줄 카드와 높이를 맞춘다. */
   tall?: boolean;
 }
 
@@ -70,7 +70,7 @@ export function HomeCardView({ card, stacked = false, tall = false }: Props) {
         )}
 
         {suspensions ? (
-          <SuspensionUpcoming items={card.items} fill={tall} />
+          <SuspensionUpcoming items={card.items.slice(0, MAX_ROWS)} />
         ) : (
           card.items.length > 0 && (
             <Stack gap={8} className={classes.items}>
