@@ -22,6 +22,7 @@ export type SuspensionRegistrableOrganization =
 export type TargetWork = components['schemas']['TargetWorkResponse'];
 export type TargetWorkSaveRequest = components['schemas']['TargetWorkSaveRequest'];
 export type SuspensionDigest = components['schemas']['SuspensionDigestResponse'];
+export type SuspensionSchedule = components['schemas']['SuspensionScheduleResponse'];
 export type SuspensionStatus = SuspensionSummary['status'];
 export type SuspensionPeriod = SuspensionSummary['period'];
 
@@ -43,6 +44,7 @@ export const suspensionKeys = {
     ['suspensions', 'counts', business, organizationId ?? null] as const,
   detail: (id: number) => ['suspensions', 'detail', id] as const,
   organizations: (business: string) => ['suspensions', 'organizations', business] as const,
+  otherSchedules: (business: string) => ['suspensions', 'other-schedules', business] as const,
   registrableOrganizations: () => ['suspensions', 'registrable-organizations'] as const,
 };
 
@@ -113,6 +115,20 @@ export function useSuspensionOrganizations(business: string) {
       ),
     enabled: Boolean(business),
     staleTime: 60_000,
+  });
+}
+
+/** 같은 업무 다른 기관의 확정된 진행 중·예정 일시중단 일정(기관·일시·대상 업무만). 기관 담당자에게는 자기 기관 건이 빠진다. */
+export function useOtherOrganizationSchedules(business: string) {
+  return useQuery({
+    queryKey: suspensionKeys.otherSchedules(business),
+    queryFn: async () =>
+      unwrap(
+        await api.GET('/api/v1/suspensions/other-organization-schedules', {
+          params: { query: { business } },
+        }),
+      ),
+    enabled: Boolean(business),
   });
 }
 

@@ -75,6 +75,18 @@ vi.mock('../../../api/client', async (importOriginal) => {
           if (path === '/api/v1/suspensions/organizations') {
             return ok([{ id: 3, code: '088', name: '신한은행' }]);
           }
+          if (path === '/api/v1/suspensions/other-organization-schedules') {
+            return ok([
+              {
+                organizationCode: '004',
+                organizationName: 'KB국민은행',
+                startAt: '2026-10-20T00:00:00',
+                endAt: '2026-10-20T06:00:00',
+                targetWorkNames: 'CMS 출금이체',
+                period: 'UPCOMING',
+              },
+            ]);
+          }
           if (path === '/api/v1/suspensions') {
             state.queries.push(options?.params?.query ?? {});
             return ok({
@@ -134,5 +146,20 @@ describe('SuspensionListPage', () => {
     expect(screen.queryByRole('textbox', { name: '기관' })).not.toBeInTheDocument();
     expect(screen.queryByTestId('pending-review-count')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '수동으로 보내기' })).not.toBeInTheDocument();
+  });
+
+  it('기관 담당자는 다른 기관의 확정 일정(기관·일시·대상 업무)을 보고 결제원 담당자에게는 이 칸이 없다', async () => {
+    state.me = DARA;
+    const { unmount } = renderPage();
+    const card = await screen.findByTestId('other-schedules');
+    expect(await within(card).findByText('KB국민은행')).toBeInTheDocument();
+    expect(within(card).getByText('2026-10-20 00:00 ~ 06:00')).toBeInTheDocument();
+    expect(within(card).getByText('CMS 출금이체')).toBeInTheDocument();
+    unmount();
+
+    state.me = KFTC;
+    renderPage();
+    await screen.findByTestId('suspension-table');
+    expect(screen.queryByTestId('other-schedules')).not.toBeInTheDocument();
   });
 });

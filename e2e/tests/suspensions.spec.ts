@@ -426,3 +426,18 @@ test.describe("라. 일시중단", () => {
     await shot(page, "suspension-digest");
   });
 });
+
+test("기관 담당자는 같은 업무 다른 기관의 확정 일정만 기관·일시·대상 업무로 본다", async ({
+  page,
+}) => {
+  await skipContactReconfirm(page);
+  await loginAs(page, "김민준 (참가기관 · 현업)로 로그인");
+  await page.goto("/account-info/suspensions");
+  const card = page.getByTestId("other-schedules");
+  await expect(card.getByText("저축은행중앙회")).toBeVisible();
+  // 자기 기관 건과 확정 전 건(신한은행·삼성증권 검토 대기·검토 중)은 빠지고, 중단 이유는 보이지 않는다.
+  await expect(card.getByText("KB국민은행")).toHaveCount(0);
+  await expect(card.getByText("신한은행")).toHaveCount(0);
+  await expect(card.getByText(/리허설/)).toHaveCount(0);
+  await shot(page, "suspension-other-schedules");
+});

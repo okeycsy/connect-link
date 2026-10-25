@@ -741,4 +741,65 @@ class SuspensionControllerTest {
         .contains(NotificationChannel.MATTERMOST);
     send(post("/api/v1/suspension-digests"), null, kim()).andExpect(status().isForbidden());
   }
+
+  @Test
+  void 기관_담당자는_같은_업무_다른_기관의_확정된_일정만_내용_없이_본다() throws Exception {
+    Long confirmed = createAsKim("다른 기관 일정 확정");
+    send(post(BASE + "/" + confirmed + "/review"), null, hong()).andExpect(status().isOk());
+    send(post(BASE + "/" + confirmed + "/confirmation"), Map.of("handover", "확정합니다."), hong())
+        .andExpect(status().isOk());
+    createAsKim("다른 기관 일정 미확정");
+
+    // 삼성증권 담당자에게는 KB국민은행의 확정 건만 일정으로 보인다(중단 이유는 없다).
+    String body =
+        send(
+                get(BASE + "/other-organization-schedules").param("business", "account-info"),
+                null,
+                choi())
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[*].organizationCode", hasItem("004")))
+            .andExpect(jsonPath("$[0].reason").doesNotExist())
+            .andReturn()
+            .getResponse()
+            .getContentAsString(StandardCharsets.UTF_8);
+    assertThat(objectMapper.readTree(body).findValuesAsText("targetWorkNames")).isNotEmpty();
+    long kbCount =
+        objectMapper.readTree(body).findValuesAsText("organizationCode").stream()
+            .filter("004"::equals)
+            .count();
+    assertThat(kbCount).isEqualTo(countConfirmedUpcoming("004"));
+
+    // KB국민은행 담당자 자신에게는 자기 기관 건이 빠진다.
+    send(get(BASE + "/other-organization-schedules").param("business", "account-info"), null, kim())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[*].organizationCode", not(hasItem("004"))));
+  }
+
+  @Test
+  void 담당_업무가_아니면_다른_기관_일정도_보지_못한다() throws Exception {
+    send(get(BASE + "/other-organization-schedules").param("business", "cms"), null, choi())
+        .andExpect(status().isForbidden());
+    send(
+            get(BASE + "/other-organization-schedules").param("business", "account-info"),
+            null,
+            park())
+        .andExpect(status().isForbidden());
+  }
+
+  /** 결제원 담당자(홍성민)가 보는 그 기관의 확정된 진행 중·예정 건 수. */
+  private long countConfirmedUpcoming(String code) throws Exception {
+    return objectMapper
+        .readTree(
+            send(
+                    get(BASE + "/other-organization-schedules").param("business", "account-info"),
+                    null,
+                    hong())
+                .andReturn()
+                .getResponse()
+                .getContentAsString(StandardCharsets.UTF_8))
+        .findValuesAsText("organizationCode")
+        .stream()
+        .filter(code::equals)
+        .count();
+  }
 }

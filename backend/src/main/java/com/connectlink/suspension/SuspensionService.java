@@ -25,6 +25,7 @@ import com.connectlink.suspension.dto.SuspensionPermissions;
 import com.connectlink.suspension.dto.SuspensionRegistrableOrganizationResponse;
 import com.connectlink.suspension.dto.SuspensionReviewerResponse;
 import com.connectlink.suspension.dto.SuspensionSaveRequest;
+import com.connectlink.suspension.dto.SuspensionScheduleResponse;
 import com.connectlink.suspension.dto.SuspensionSummaryResponse;
 import com.connectlink.suspension.dto.SuspensionTargetWorkResponse;
 import java.time.Clock;
@@ -41,6 +42,7 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
@@ -132,6 +134,45 @@ public class SuspensionService {
     Suspension suspension = load(id);
     accessPolicy.ensureCanView(user, suspension);
     return toDetail(user, suspension);
+  }
+
+  /**
+   * 같은 업무 다른 기관의 진행 중·예정 일시중단 일정(시작 순). 결제원이 확정한 건만이고 일정(기관·일시·대상 업무)만 내려보낸다. 그 업무 담당자(결제원·참가기관)가
+   * 본다. 기관 담당자에게는 자기 기관 건을 뺀다.
+   */
+  @Transactional(readOnly = true)
+  public List<SuspensionScheduleResponse> otherOrganizationSchedules(
+      CurrentUser user, Business business) {
+    boolean manager = accessPolicy.canManage(user, business);
+    if (!manager && !accessPolicy.isOrganizationMember(user, business)) {
+      throw new AccessDeniedException(SuspensionAccessPolicy.VIEW_DENIED);
+    }
+    LocalDateTime now = now();
+    Specification<Suspension> spec =
+        SuspensionSpecifications.of(business, null, null, null, now, false)
+            .and((root, query, cb) -> cb.greaterThan(root.get("endAt"), now))
+            .and((root, query, cb) -> cb.equal(root.get("status"), SuspensionStatus.CONFIRMED));
+    if (!manager) {
+      spec =
+          spec.and(
+              (root, query, cb) ->
+                  cb.notEqual(root.get("organization").get("code"), user.organizationCode()));
+    }
+    return repository
+        .findAll(spec, Sort.by(Sort.Order.asc("startAt"), Sort.Order.asc("id")))
+        .stream()
+        .map(
+            s ->
+                new SuspensionScheduleResponse(
+                    s.getOrganization().getCode(),
+                    s.getOrganization().getName(),
+                    s.getStartAt(),
+                    s.getEndAt(),
+                    s.targetWorkNames(),
+                    s.getStartAt().isAfter(now)
+                        ? SuspensionPeriod.UPCOMING
+                        : SuspensionPeriod.CURRENT))
+        .toList();
   }
 
   /** 이 업무에서 일시중단을 등록하거나 이력을 볼 기관. 결제원 담당자에게는 그 업무에 참여하는 사용 중 참가기관 전부(이름순), 기관 담당자에게는 자기 기관 하나다. */

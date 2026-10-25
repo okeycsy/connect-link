@@ -1533,6 +1533,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/suspensions/other-organization-schedules': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 같은 업무 다른 기관 일시중단 일정 조회
+     * @description 결제원이 확정한 진행 중·예정 일시중단의 기관·일시·대상 업무만 시작 순으로 준다. 그 업무 담당자(결제원·참가기관)가 보고, 기관 담당자에게는 자기 기관 건을 뺀다.
+     */
+    get: operations['otherOrganizationSchedules'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/suspensions/organizations': {
     parameters: {
       query?: never;
@@ -3470,6 +3490,17 @@ export interface components {
       code: string;
       name: string;
       businesses: ('ACCOUNT_INFO' | 'AUTO_TRANSFER' | 'LOAN_TRANSFER' | 'CMS')[];
+    };
+    SuspensionScheduleResponse: {
+      organizationCode: string;
+      organizationName: string;
+      /** Format: date-time */
+      startAt: string;
+      /** Format: date-time */
+      endAt: string;
+      targetWorkNames: string;
+      /** @enum {string} */
+      period: 'CURRENT' | 'UPCOMING' | 'PAST';
     };
     SuspensionOrganizationResponse: {
       /** Format: int64 */
@@ -6396,6 +6427,29 @@ export interface operations {
         };
         content: {
           '*/*': components['schemas']['SuspensionRegistrableOrganizationResponse'][];
+        };
+      };
+    };
+  };
+  otherOrganizationSchedules: {
+    parameters: {
+      query: {
+        /** @description 업무 영역 slug (예: account-info) */
+        business: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['SuspensionScheduleResponse'][];
         };
       };
     };

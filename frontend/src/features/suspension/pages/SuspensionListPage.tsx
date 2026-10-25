@@ -29,11 +29,13 @@ import classes from '../components/SuspensionTable.module.css';
 import {
   type SuspensionDigest,
   type SuspensionPeriod,
+  type SuspensionSchedule,
   type SuspensionSummary,
   canManageSuspensions,
   canRegisterSuspensions,
   useSendSuspensionDigest,
   useSuspensionCounts,
+  useOtherOrganizationSchedules,
   useSuspensionOrganizations,
   useSuspensions,
 } from '../hooks';
@@ -72,6 +74,7 @@ export function SuspensionListPage() {
   });
   const { data: counts } = useSuspensionCounts(slug, organizationId);
   const organizations = useSuspensionOrganizations(manager ? slug : '');
+  const otherSchedules = useOtherOrganizationSchedules(manager ? '' : slug);
 
   const setParams = (next: { period?: SuspensionPeriod; org?: number | null }) => {
     const params: Record<string, string> = { period: next.period ?? period };
@@ -187,6 +190,23 @@ export function SuspensionListPage() {
           </Group>
         )}
       </Card>
+
+      {!manager && (
+        <Card data-testid="other-schedules">
+          <Stack gap={2} mb="sm">
+            <Text fw={700}>다른 기관 일정</Text>
+            <Text size="sm" c="dimmed">
+              {current?.label ?? '이 업무'}에서 결제원이 확정한 다른 기관의 진행 중·예정
+              일시중단입니다. 일정만 보이고 자세한 내용은 그 기관과 결제원만 봅니다.
+            </Text>
+          </Stack>
+          {otherSchedules.isError ? (
+            <ErrorState error={otherSchedules.error} />
+          ) : (
+            <ScheduleTable rows={otherSchedules.data} />
+          )}
+        </Card>
+      )}
 
       <ConfirmModal
         opened={confirmDigest}
@@ -327,6 +347,58 @@ function SuspensionTable({
           </Table.Tr>
         ))}
         {rows && rows.length === 0 && <TableEmpty colSpan={5} message={EMPTY_MESSAGE[period]} />}
+      </Table.Tbody>
+    </Table>
+  );
+}
+
+/** 다른 기관 일정. 행은 열리지 않는다(일정만 공유). */
+function ScheduleTable({ rows }: { rows: SuspensionSchedule[] | undefined }) {
+  if (!rows) {
+    return (
+      <Stack gap="xs">
+        {[0, 1].map((i) => (
+          <Skeleton key={i} h={44} />
+        ))}
+      </Stack>
+    );
+  }
+  return (
+    <Table verticalSpacing="sm" className={tableClasses.stack}>
+      <Table.Thead>
+        <Table.Tr>
+          <Table.Th w={180}>기관</Table.Th>
+          <Table.Th w={290}>중단 일시</Table.Th>
+          <Table.Th>대상 업무</Table.Th>
+        </Table.Tr>
+      </Table.Thead>
+      <Table.Tbody>
+        {rows.map((r, i) => (
+          <Table.Tr key={`${r.organizationCode}-${r.startAt}-${i}`}>
+            <Table.Td>
+              <Group gap={8} wrap="nowrap">
+                <OrgLogo code={r.organizationCode} />
+                <Text size="md" fw={600}>
+                  {r.organizationName}
+                </Text>
+              </Group>
+            </Table.Td>
+            <Table.Td data-label="중단 일시">
+              <Group gap={6} wrap="nowrap">
+                <Text size="sm" className={classes.when}>
+                  {formatDateTimeRange(r.startAt, r.endAt)}
+                </Text>
+                <SuspensionPeriodBadge period={r.period} size="xs" />
+              </Group>
+            </Table.Td>
+            <Table.Td data-label="대상 업무">
+              <Text size="sm">{r.targetWorkNames}</Text>
+            </Table.Td>
+          </Table.Tr>
+        ))}
+        {rows.length === 0 && (
+          <TableEmpty colSpan={3} message="확정된 다른 기관 일정이 없습니다." />
+        )}
       </Table.Tbody>
     </Table>
   );
