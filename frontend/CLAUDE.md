@@ -157,8 +157,7 @@
 
 ### 카드
 
-- **흰 본문 위**: 기본 `<Card>`(테두리 1px `line`, radius 24, 그림자 없음).
-- **page 바탕 위(홈)**: 테두리 없는 흰 면(`HomeCardView` 의 `.card`). 왼쪽 굵은 테두리는 쓰지 않는다.
+- **흰 본문 위**: 기본 `<Card>`(테두리 1px `line`, radius 24, 그림자 없음). 홈도 다른 화면처럼 흰 본문이라(2026-10-25 SHY 요청) `HomeCardView` 도 이 모양이다. 왼쪽 굵은 테두리는 쓰지 않는다.
 
 ### 홈 배치 (`features/home/pages/HomePage.tsx`)
 
