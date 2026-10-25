@@ -247,4 +247,30 @@ describe('SignUpPage', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '다음' })).toBeDisabled();
   });
+  it('서버에 보낸 코드 기록이 없으면 바로 다시 받을 수 있게 이메일 칸으로 되돌린다', async () => {
+    const message = '이 이메일로 보낸 인증 코드 기록이 없습니다. 인증 코드를 다시 받아 주세요.';
+    POST.mockImplementation(async (path: string) => {
+      if (path === '/api/v1/email-verifications') {
+        return ok({ email: EMAIL, expiresAt: '2026-10-16T10:10:00', resendAfterSeconds: 60 }, 201);
+      }
+      return fail(400, {
+        code: 'VERIFICATION_NOT_REQUESTED',
+        detail: message,
+        fieldErrors: [{ field: 'code', message }],
+      });
+    });
+    renderWithProviders(<SignUpPage />, { route: '/sign-up', path: '/sign-up' });
+
+    change('회사 이메일', EMAIL);
+    fireEvent.click(screen.getByRole('button', { name: '인증 코드 받기' }));
+    await screen.findByLabelText('인증 코드', { exact: false });
+    change('인증 코드', '123456');
+    fireEvent.click(screen.getByRole('button', { name: '확인' }));
+
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    // 재발송 간격을 기다리지 않고 같은 이메일로 바로 다시 받는다.
+    expect(screen.queryByLabelText('인증 코드', { exact: false })).not.toBeInTheDocument();
+    expect(screen.getByLabelText('회사 이메일', { exact: false })).toHaveValue(EMAIL);
+    expect(screen.getByRole('button', { name: '인증 코드 받기' })).toBeEnabled();
+  });
 });
