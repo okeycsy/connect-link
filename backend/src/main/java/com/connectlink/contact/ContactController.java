@@ -4,6 +4,7 @@ import com.connectlink.auth.CurrentUserProvider;
 import com.connectlink.common.BusinessException;
 import com.connectlink.common.PageResponse;
 import com.connectlink.contact.dto.ContactCountsResponse;
+import com.connectlink.contact.dto.ContactImportResponse;
 import com.connectlink.contact.dto.ContactOrganizationConfirmRequest;
 import com.connectlink.contact.dto.ContactOrganizationConfirmResponse;
 import com.connectlink.contact.dto.ContactOrganizationResponse;
@@ -14,6 +15,8 @@ import com.connectlink.organization.JobRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import javax.validation.Valid;
@@ -31,8 +34,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 /** 가. 담당자 연락처: 목록·상세, 등록·수정·삭제, "변동 없음" 확인, 기관 현행화 완료, 내 연락처, 로그인 확인 알림, 엑셀. */
 @RestController
@@ -41,10 +46,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class ContactController {
 
   private final ContactService contactService;
+  private final ContactImportService importService;
   private final CurrentUserProvider currentUserProvider;
 
-  public ContactController(ContactService contactService, CurrentUserProvider currentUserProvider) {
+  public ContactController(
+      ContactService contactService,
+      ContactImportService importService,
+      CurrentUserProvider currentUserProvider) {
     this.contactService = contactService;
+    this.importService = importService;
     this.currentUserProvider = currentUserProvider;
   }
 
@@ -122,6 +132,41 @@ public class ContactController {
         .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
         .contentType(MediaType.parseMediaType(ContactExcel.CONTENT_TYPE))
         .body(excel.content());
+  }
+
+  @GetMapping(value = "/import-template", produces = ContactExcel.CONTENT_TYPE)
+  @Operation(
+      summary = "담당자 일괄 등록 양식 내려받기",
+      description = "머리글·예시 줄·적는 법 시트가 있는 xlsx. 그 업무 결제원 담당자만, 내부망에서만(403 INTERNAL_ONLY).")
+  public ResponseEntity<byte[]> importTemplate(
+      @Parameter(description = "업무 영역 slug (예: account-info)") @RequestParam String business) {
+    Business resolved = resolveBusiness(business);
+    byte[] content = importService.template(currentUserProvider.require(), resolved);
+    ContentDisposition disposition =
+        ContentDisposition.attachment()
+            .filename("담당자일괄등록양식_" + resolved.getLabel() + ".xlsx", StandardCharsets.UTF_8)
+            .build();
+    return ResponseEntity.ok()
+        .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+        .contentType(MediaType.parseMediaType(ContactExcel.CONTENT_TYPE))
+        .body(content);
+  }
+
+  @PostMapping(value = "/imports", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @Operation(
+      summary = "담당자 일괄 등록 (multipart: file)",
+      description =
+          "채운 양식을 줄마다 화면 등록과 같은 규칙으로 검사한다. dryRun 이면 검사만 하고, 아니면 오류가 없을 때만 등록한다(한 줄이라도 오류면 아무것도 등록하지"
+              + " 않는다). 같은 기관·업무에 같은 이메일이 있으면 건너뛴다. 읽지 못하는 파일이면 400 CONTACT_IMPORT_INVALID_FILE.")
+  public ContactImportResponse importContacts(
+      @Parameter(description = "업무 영역 slug (예: account-info)") @RequestParam String business,
+      @RequestParam(defaultValue = "false") boolean dryRun,
+      @RequestPart("file") MultipartFile file)
+      throws IOException {
+    try (InputStream in = file.getInputStream()) {
+      return importService.importContacts(
+          currentUserProvider.require(), resolveBusiness(business), in, dryRun);
+    }
   }
 
   @PostMapping

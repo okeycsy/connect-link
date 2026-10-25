@@ -14,7 +14,13 @@ import {
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { IconCalendarEvent, IconDownload, IconPlus, IconSearch } from '@tabler/icons-react';
+import {
+  IconCalendarEvent,
+  IconDownload,
+  IconFileImport,
+  IconPlus,
+  IconSearch,
+} from '@tabler/icons-react';
 import { Fragment, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 
@@ -31,6 +37,7 @@ import { CampaignBanner } from '../components/CampaignBanner';
 import { ContactNeedsConfirmBadge, ContactRankBadge } from '../components/ContactBadges';
 import { ContactDrawer } from '../components/ContactDrawer';
 import { ContactFormModal } from '../components/ContactFormModal';
+import { ContactImportModal } from '../components/ContactImportModal';
 import classes from '../components/ContactTable.module.css';
 import {
   type Contact,
@@ -69,6 +76,7 @@ export function ContactListPage() {
   const [page, setPage] = useState(0);
   const [editing, setEditing] = useState<Contact | null>(null);
   const [creating, setCreating] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   // 인터넷망에서는 거르기 조건을 보내지 않는다(서버가 403 INTERNAL_ONLY 로 막는다).
   const params: ContactListParams = internal
@@ -134,6 +142,15 @@ export function ContactListPage() {
                 }
               >
                 엑셀
+              </Button>
+            )}
+            {manager && internal && (
+              <Button
+                variant="light"
+                leftSection={<IconFileImport size={16} stroke={1.8} />}
+                onClick={() => setImporting(true)}
+              >
+                일괄 등록
               </Button>
             )}
             {canCreate && (
@@ -271,6 +288,12 @@ export function ContactListPage() {
             business={current.code}
             organizations={createOrganizations}
             onSaved={(saved) => select(saved.id)}
+          />
+          <ContactImportModal
+            business={slug}
+            businessLabel={current.label}
+            opened={importing}
+            onClose={() => setImporting(false)}
           />
         </>
       )}

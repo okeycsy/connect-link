@@ -1134,6 +1134,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/contacts/imports': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 담당자 일괄 등록 (multipart: file)
+     * @description 채운 양식을 줄마다 화면 등록과 같은 규칙으로 검사한다. dryRun 이면 검사만 하고, 아니면 오류가 없을 때만 등록한다(한 줄이라도 오류면 아무것도 등록하지 않는다). 같은 기관·업무에 같은 이메일이 있으면 건너뛴다. 읽지 못하는 파일이면 400 CONTACT_IMPORT_INVALID_FILE.
+     */
+    post: operations['importContacts'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/chat-rooms': {
     parameters: {
       query?: never;
@@ -1904,6 +1924,26 @@ export interface paths {
      * @description 로그인한 사람 본인의 담당자 행(맡은 업무마다 하나). 내 정보 화면이 쓴다.
      */
     get: operations['mine'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/contacts/import-template': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 담당자 일괄 등록 양식 내려받기
+     * @description 머리글·예시 줄·적는 법 시트가 있는 xlsx. 그 업무 결제원 담당자만, 내부망에서만(403 INTERNAL_ONLY).
+     */
+    get: operations['importTemplate'];
     put?: never;
     post?: never;
     delete?: never;
@@ -3048,6 +3088,30 @@ export interface components {
       /** Format: int32 */
       confirmedCount: number;
       campaignTitle?: string | null;
+    };
+    ContactImportResponse: {
+      /** Format: int32 */
+      totalCount: number;
+      /** Format: int32 */
+      createCount: number;
+      /** Format: int32 */
+      skipCount: number;
+      /** Format: int32 */
+      errorCount: number;
+      saved: boolean;
+      rows: components['schemas']['ContactImportRowResponse'][];
+    };
+    ContactImportRowResponse: {
+      /** Format: int32 */
+      rowNumber: number;
+      organizationCode?: string | null;
+      organizationName?: string | null;
+      name?: string | null;
+      email?: string | null;
+      /** @enum {string} */
+      status: 'CREATE' | 'SKIP' | 'ERROR';
+      statusLabel: string;
+      message?: string | null;
     };
     ChatRoomCreateRequest: {
       /** @enum {string} */
@@ -5534,6 +5598,37 @@ export interface operations {
       };
     };
   };
+  importContacts: {
+    parameters: {
+      query: {
+        /** @description 업무 영역 slug (예: account-info) */
+        business: string;
+        dryRun?: boolean;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        'multipart/form-data': {
+          /** Format: binary */
+          file: string;
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['ContactImportResponse'];
+        };
+      };
+    };
+  };
   list_11: {
     parameters: {
       query: {
@@ -6531,6 +6626,29 @@ export interface operations {
         };
         content: {
           '*/*': components['schemas']['ContactResponse'][];
+        };
+      };
+    };
+  };
+  importTemplate: {
+    parameters: {
+      query: {
+        /** @description 업무 영역 slug (예: account-info) */
+        business: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': string[];
         };
       };
     };

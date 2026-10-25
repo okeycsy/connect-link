@@ -211,6 +211,61 @@ export function useDownloadContactExcel() {
   });
 }
 
+export type ContactImportResponse = components['schemas']['ContactImportResponse'];
+
+/** 담당자 일괄 등록 양식 내려받기(그 업무 결제원 담당자, 내부망 전용). */
+export function useDownloadContactImportTemplate() {
+  return useMutation({
+    mutationFn: async (business: string) => {
+      const result = await api.GET('/api/v1/contacts/import-template', {
+        params: { query: { business } },
+        parseAs: 'blob',
+      });
+      if (result.error !== undefined || !result.response.ok || !result.data) {
+        throw new ApiError(result.response.status, result.error);
+      }
+      saveBlob(
+        result.data as unknown as Blob,
+        fileNameOf(result.response) ?? '담당자일괄등록양식.xlsx',
+      );
+    },
+  });
+}
+
+/**
+ * 담당자 일괄 등록. dryRun 이면 검사만 하고, 아니면 오류가 없을 때만 등록한다. 등록했으면 목록·건수를 다시 읽는다. 파일을 읽지 못하면 400
+ * CONTACT_IMPORT_INVALID_FILE(file 칸).
+ */
+export function useImportContacts() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      business,
+      file,
+      dryRun,
+    }: {
+      business: string;
+      file: File;
+      dryRun: boolean;
+    }) =>
+      unwrap(
+        await api.POST('/api/v1/contacts/imports', {
+          params: { query: { business, dryRun } },
+          // OpenAPI 는 파일을 string(binary) 으로 적는다. 실제 전송은 아래 serializer 가 FormData 로 만든다.
+          body: { file: file as unknown as string },
+          bodySerializer: () => {
+            const form = new FormData();
+            form.append('file', file);
+            return form;
+          },
+        }),
+      ),
+    onSuccess: (result) => {
+      if (result.saved) invalidate(queryClient);
+    },
+  });
+}
+
 // ---- 정기 변경 주간 ----
 
 export function useUpdateCampaigns(business: string) {
