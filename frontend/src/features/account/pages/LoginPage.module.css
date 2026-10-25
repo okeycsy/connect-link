@@ -163,8 +163,27 @@
   z-index: 1;
   padding: 48px 56px;
 
+  /* 휴대폰 폭: 위에 금융결제원 로고 자리를 비운다. */
   @media (max-width: $mantine-breakpoint-sm) {
-    padding: 24px;
+    padding: 64px 24px 24px;
+  }
+}
+
+/*
+ * 맨 왼쪽 위 금융결제원 로고. 파일(assets/brand/kftc-logo.png)은 SHY 가 준 로고의 흰 바탕을 투명하게 하고 여백을 잘라 둔 것이다.
+ * 높이 38 은 시안(글자 높이 약 38)보다 10% 작게 맞춘 값이다. 휴대폰 폭에서는 조금 더 작게 같은 자리에 둔다.
+ */
+.kftcLogo {
+  position: absolute;
+  top: 18px;
+  left: 24px;
+  z-index: 2;
+  height: 38px;
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    top: 18px;
+    left: 20px;
+    height: 32px;
   }
 }
 

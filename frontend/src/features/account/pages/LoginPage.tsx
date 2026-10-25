@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Group,
+  Image,
   Paper,
   PasswordInput,
   ScrollArea,
@@ -18,6 +19,7 @@ import { useState } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { errorCodeOf, fieldErrorsOf } from '../../../api/client';
+import kftcLogo from '../../../assets/brand/kftc-logo.png';
 import { BrandMark } from '../../../shared/BrandMark';
 import { useBusinesses } from '../../organization/hooks';
 import { DemoAccountList } from '../components/DemoAccountList';
@@ -84,6 +86,9 @@ export function LoginPage() {
       <Box className={classes.blobTopRight} aria-hidden />
       <Box className={classes.blobLeft} aria-hidden />
       <Box className={classes.blobBottomRight} aria-hidden />
+
+      {/* 맨 왼쪽 위 금융결제원 로고(SHY 시안보다 10% 작게) */}
+      <Image src={kftcLogo} alt="금융결제원" w="auto" fit="contain" className={classes.kftcLogo} />
 
       <Box className={classes.panel}>
         <Stack gap="xl" justify="space-between" h="100%">
