@@ -7,6 +7,8 @@ import com.connectlink.attachment.AttachmentService;
 import com.connectlink.auth.CurrentUser;
 import com.connectlink.common.BusinessException;
 import com.connectlink.common.PageResponse;
+import com.connectlink.contact.BusinessContact;
+import com.connectlink.contact.ContactService;
 import com.connectlink.history.ChangeHistoryCommand;
 import com.connectlink.history.ChangeHistoryService;
 import com.connectlink.history.FieldChanges;
@@ -29,12 +31,15 @@ import com.connectlink.testplan.dto.TestPlanPermissions;
 import com.connectlink.testplan.dto.TestPlanRecipientResponse;
 import com.connectlink.testplan.dto.TestPlanSaveRequest;
 import com.connectlink.testplan.dto.TestPlanSummaryResponse;
+import com.connectlink.testplan.dto.TestTargetContactRequest;
+import com.connectlink.testplan.dto.TestTargetContactResponse;
 import com.connectlink.testplan.dto.TestTargetSummaryResponse;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -63,6 +68,7 @@ public class TestPlanService {
   private final TestPlanAccessPolicy accessPolicy;
   private final OrganizationService organizationService;
   private final AccountService accountService;
+  private final ContactService contactService;
   private final AttachmentService attachmentService;
   private final ChangeHistoryService changeHistoryService;
   private final TestPlanNotifier notifier;
@@ -73,6 +79,7 @@ public class TestPlanService {
       TestPlanAccessPolicy accessPolicy,
       OrganizationService organizationService,
       AccountService accountService,
+      ContactService contactService,
       AttachmentService attachmentService,
       ChangeHistoryService changeHistoryService,
       TestPlanNotifier notifier,
@@ -81,6 +88,7 @@ public class TestPlanService {
     this.accessPolicy = accessPolicy;
     this.organizationService = organizationService;
     this.accountService = accountService;
+    this.contactService = contactService;
     this.attachmentService = attachmentService;
     this.changeHistoryService = changeHistoryService;
     this.notifier = notifier;
@@ -118,17 +126,40 @@ public class TestPlanService {
     return toDetail(user, plan);
   }
 
-  /** 대상 기관 후보. 그 업무에 참여하는 사용 중 참가기관(이름순)이다. 결제원 담당자만 쓴다. */
+  /**
+   * 대상 기관 후보와 그 기관의 같은 업무 담당자 연락처. 그 업무에 참여하는 사용 중 참가기관(이름순)이다. 담당자가 없는 기관도 나온다(테스트 담당자 없이 대상에 넣으면
+   * 그 기관의 업무 담당자 전원이 메일을 받는다). 결제원 담당자만 쓴다.
+   */
   @Transactional(readOnly = true)
   public List<TestPlanOrganizationResponse> organizations(CurrentUser user, Business business) {
     accessPolicy.ensureCanManage(user, business);
+    Map<Long, List<BusinessContact>> contactsByOrganization =
+        contactService.listByBusiness(business).stream()
+            .collect(Collectors.groupingBy(BusinessContact::organizationId));
     return organizationService.listActive().stream()
         .filter(o -> o.type() == OrganizationType.FINANCE_ORGANIZATION)
         .filter(o -> o.businesses().contains(business))
         .map(
             o ->
                 new TestPlanOrganizationResponse(
-                    o.id(), o.code(), o.name(), o.sector(), o.sectorLabel()))
+                    o.id(),
+                    o.code(),
+                    o.name(),
+                    o.sector(),
+                    o.sectorLabel(),
+                    contactsByOrganization.getOrDefault(o.id(), List.of()).stream()
+                        .map(
+                            c ->
+                                new TestPlanOrganizationResponse.Member(
+                                    c.contactId(),
+                                    c.name(),
+                                    c.email(),
+                                    c.subBusiness(),
+                                    c.jobRoleLabel(),
+                                    c.department(),
+                                    c.team(),
+                                    c.jobTitle()))
+                        .toList()))
         .toList();
   }
 
@@ -147,6 +178,7 @@ public class TestPlanService {
     for (Organization organization : loadTargets(body.organizationIds(), body.business())) {
       plan.addTarget(organization);
     }
+    applyContacts(plan, body.targetContacts());
     plan.replaceRecipients(ownerAsRecipient(user, body.business()));
     plan.changeTestDataRequest(testDataRequestOf(body));
     if (plan.isTestDataRequested()) {
@@ -163,7 +195,7 @@ public class TestPlanService {
             plan.getBusiness(),
             plan.getTitle() + " 기관 테스트 등록",
             Snapshot.of(plan).diff(Snapshot.EMPTY, true)));
-    notifier.opened(plan, organizationEmails(plan.getBusiness(), targetCodes(plan.getTargets())));
+    notifier.opened(plan, targetEmails(plan, plan.getTargets()));
     return toDetail(user, plan);
   }
 
@@ -180,6 +212,7 @@ public class TestPlanService {
     }
     validate(body);
     Snapshot before = Snapshot.of(plan);
+    Set<String> emailsBefore = targetEmails(plan, plan.getTargets());
     boolean wasRequested = plan.isTestDataRequested();
     if (wasRequested
         && body.testDataRequest() == null
@@ -190,13 +223,17 @@ public class TestPlanService {
     plan.change(contentOf(body));
     plan.changeTestDataRequest(testDataRequestOf(body));
     applyItems(plan, body.items());
-    Set<String> added = applyTargets(plan, body.organizationIds());
+    applyTargets(plan, body.organizationIds());
+    applyContacts(plan, body.targetContacts());
+    // 새로 메일을 받게 된 사람(새 대상 기관의 담당자, 이미 있던 기관에 새로 고른 테스트 담당자)에게 열림 메일을 보낸다.
+    Set<String> newEmails = targetEmails(plan, plan.getTargets());
+    newEmails.removeAll(emailsBefore);
     if (!wasRequested && plan.isTestDataRequested()) {
-      // 새로 요청했으면 이미 있던 대상 기관에 요청 메일을 보낸다. 새로 더한 기관은 열림 메일에 함께 담긴다.
-      Set<String> existing = targetCodes(plan.getTargets());
-      existing.removeAll(added);
+      // 새로 요청했으면 이미 메일을 받던 사람에게 요청 메일을 보낸다. 새로 받는 사람은 열림 메일에 함께 담긴다.
+      Set<String> existing = targetEmails(plan, plan.getTargets());
+      existing.removeAll(newEmails);
       if (!existing.isEmpty()) {
-        notifier.testDataRequested(plan, organizationEmails(plan.getBusiness(), existing));
+        notifier.testDataRequested(plan, existing);
       }
       plan.testDataRequestSent(now());
     }
@@ -211,8 +248,8 @@ public class TestPlanService {
             plan.getBusiness(),
             plan.getTitle() + " 기관 테스트 수정",
             changes));
-    if (!added.isEmpty()) {
-      notifier.opened(plan, organizationEmails(plan.getBusiness(), added));
+    if (!newEmails.isEmpty()) {
+      notifier.opened(plan, newEmails);
     }
     return toDetail(user, plan);
   }
@@ -227,25 +264,24 @@ public class TestPlanService {
     if (!plan.isTestDataRequested()) {
       throw BusinessException.conflict("TEST_DATA_NOT_REQUESTED", "테스트데이터를 요청하지 않은 기관 테스트입니다.");
     }
-    Set<String> codes =
-        targetCodes(
-            plan.getTargets().stream()
-                .filter(t -> t.getTestDataStatus() != TestDataStatus.CREATED)
-                .toList());
-    if (codes.isEmpty()) {
+    List<TestPlanTarget> pending =
+        plan.getTargets().stream()
+            .filter(t -> t.getTestDataStatus() != TestDataStatus.CREATED)
+            .toList();
+    if (pending.isEmpty()) {
       throw BusinessException.conflict("TEST_DATA_ALL_CREATED", "모든 대상 기관이 테스트데이터를 생성 완료했습니다.");
     }
     LocalDateTime now = now();
-    notifier.testDataRequested(plan, organizationEmails(plan.getBusiness(), codes));
+    notifier.testDataRequested(plan, targetEmails(plan, pending));
     plan.testDataRequestSent(now);
     repository.flush();
-    return new TestDataRequestSentResponse(codes.size(), now);
+    return new TestDataRequestSentResponse(pending.size(), now);
   }
 
   /**
    * 기한 하루 전 자동 리마인드(예약 작업). 수행 종료일이 내일인 진행 중 테스트는 결과를 다 등록하지 않은 기관(결과가 없거나 미수행·수행중인 요구사항이 있다)에,
-   * 테스트데이터 회신 기한이 내일인 테스트는 아직 생성 완료하지 않은 기관에 보낸다. 받는 사람은 그 기관의 그 업무 담당자(사용 중 계정)이고, 같은 기한으로는 한 번만
-   * 보낸다.
+   * 테스트데이터 회신 기한이 내일인 테스트는 아직 생성 완료하지 않은 기관에 보낸다. 받는 사람은 그 기관의 테스트 담당자(고르지 않았으면 그 업무 담당자 전원)이고, 같은
+   * 기한으로는 한 번만 보낸다.
    *
    * @return 리마인드를 받은 기관 수(테스트·종류별로 센다)
    */
@@ -258,13 +294,12 @@ public class TestPlanService {
         continue;
       }
       plan.markEndReminded();
-      Set<String> codes =
-          targetCodes(
-              plan.getTargets().stream().filter(t -> !resultsAllReported(plan, t)).toList());
-      Set<String> emails = organizationEmails(plan.getBusiness(), codes);
+      List<TestPlanTarget> pending =
+          plan.getTargets().stream().filter(t -> !resultsAllReported(plan, t)).toList();
+      Set<String> emails = targetEmails(plan, pending);
       if (!emails.isEmpty()) {
         notifier.resultDue(plan, emails);
-        organizations += codes.size();
+        organizations += pending.size();
       }
     }
     for (TestPlan plan : repository.findByTestDataRequestedTrueAndTestDataDueDate(tomorrow)) {
@@ -272,15 +307,14 @@ public class TestPlanService {
         continue;
       }
       plan.markTestDataReminded();
-      Set<String> codes =
-          targetCodes(
-              plan.getTargets().stream()
-                  .filter(t -> t.getTestDataStatus() != TestDataStatus.CREATED)
-                  .toList());
-      Set<String> emails = organizationEmails(plan.getBusiness(), codes);
+      List<TestPlanTarget> pending =
+          plan.getTargets().stream()
+              .filter(t -> t.getTestDataStatus() != TestDataStatus.CREATED)
+              .toList();
+      Set<String> emails = targetEmails(plan, pending);
       if (!emails.isEmpty()) {
         notifier.testDataDue(plan, emails);
-        organizations += codes.size();
+        organizations += pending.size();
       }
     }
     return organizations;
@@ -516,7 +550,10 @@ public class TestPlanService {
         isCompleted(target, items.size()),
         target.getLastReportedAt(),
         target.getTestDataStatus(),
-        target.getTestDataStatus().getLabel());
+        target.getTestDataStatus().getLabel(),
+        target.getContacts().stream()
+            .map(c -> new TestTargetContactResponse(c.getName(), c.getEmail(), c.getSubBusiness()))
+            .toList());
   }
 
   /** 결제원이 확인할 결과인지: 오류이거나, 정상인데 결제원 의견이 없거나 지난 의견. 홈 카드의 집계와 같은 기준이다. */
@@ -620,12 +657,8 @@ public class TestPlanService {
     plan.replaceItems(itemDrafts(items));
   }
 
-  /**
-   * 대상 기관을 요청 목록대로 맞춘다. 결과나 테스트데이터를 등록한 기관은 뺄 수 없다.
-   *
-   * @return 새로 더한 기관 코드
-   */
-  private Set<String> applyTargets(TestPlan plan, List<Long> organizationIds) {
+  /** 대상 기관을 요청 목록대로 맞춘다. 결과나 테스트데이터를 등록한 기관은 뺄 수 없다. */
+  private void applyTargets(TestPlan plan, List<Long> organizationIds) {
     List<Organization> organizations = loadTargets(organizationIds, plan.getBusiness());
     Set<Long> ids = organizations.stream().map(Organization::getId).collect(Collectors.toSet());
     for (TestPlanTarget target : plan.getTargets()) {
@@ -643,14 +676,11 @@ public class TestPlanService {
         plan.removeTarget(target);
       }
     }
-    Set<String> added = new LinkedHashSet<>();
     for (Organization organization : organizations) {
       if (plan.findTarget(organization.getId()).isEmpty()) {
         plan.addTarget(organization);
-        added.add(organization.getCode());
       }
     }
-    return added;
   }
 
   /** 대상 기관은 그 업무에 참여하는 사용 중 참가기관이어야 한다. */
@@ -670,6 +700,58 @@ public class TestPlanService {
       organizations.add(organization);
     }
     return organizations;
+  }
+
+  /**
+   * 대상 기관별 테스트 담당자를 요청대로 맞춘다. 요청에 없는 기관은 담당자를 비운다. 담당자는 그 기관의 같은 업무 담당자 연락처여야 하고, 고를 때의 이름·세부업무를
+   * 남긴다.
+   */
+  private void applyContacts(TestPlan plan, List<TestTargetContactRequest> requests) {
+    Map<Long, List<String>> emailsByOrganization = new HashMap<>();
+    for (TestTargetContactRequest request : requests) {
+      if (plan.findTarget(request.organizationId()).isEmpty()
+          || emailsByOrganization.put(request.organizationId(), request.emails()) != null) {
+        throw BusinessException.onField(
+            HttpStatus.BAD_REQUEST,
+            "TEST_TARGET_CONTACT_INVALID",
+            "targetContacts",
+            "테스트 담당자는 고른 대상 기관마다 한 번씩만 정할 수 있습니다.");
+      }
+    }
+    Map<Long, Map<String, BusinessContact>> contacts = new HashMap<>();
+    if (!emailsByOrganization.isEmpty()) {
+      contactService
+          .listByBusiness(plan.getBusiness())
+          .forEach(
+              c ->
+                  contacts
+                      .computeIfAbsent(c.organizationId(), k -> new HashMap<>())
+                      .put(c.email(), c));
+    }
+    for (TestPlanTarget target : plan.getTargets()) {
+      Organization organization = target.getOrganization();
+      Map<String, BusinessContact> candidates =
+          contacts.getOrDefault(organization.getId(), Map.of());
+      Map<String, TestPlanTargetContact.Snapshot> picked = new LinkedHashMap<>();
+      for (String email : emailsByOrganization.getOrDefault(organization.getId(), List.of())) {
+        BusinessContact contact = candidates.get(email);
+        if (contact == null) {
+          throw BusinessException.onField(
+              HttpStatus.BAD_REQUEST,
+              "TEST_TARGET_CONTACT_INVALID",
+              "targetContacts",
+              organization.getName()
+                  + " 의 "
+                  + plan.getBusiness().getLabel()
+                  + " 담당자가 아닌 사람을 테스트 담당자로 골랐습니다.");
+        }
+        picked.put(
+            email,
+            new TestPlanTargetContact.Snapshot(
+                contact.email(), contact.name(), contact.subBusiness()));
+      }
+      target.replaceContacts(picked);
+    }
   }
 
   private static BusinessException invalidTarget(Business business) {
@@ -707,12 +789,23 @@ public class TestPlanService {
         .collect(Collectors.toSet());
   }
 
-  /** 그 기관들의 그 업무 담당자(사용 중 계정) 이메일. */
-  private Set<String> organizationEmails(Business business, Set<String> organizationCodes) {
-    return accountService.listActiveMembers(business).stream()
-        .filter(m -> organizationCodes.contains(m.organizationCode()))
-        .map(BusinessMember::email)
-        .collect(Collectors.toCollection(LinkedHashSet::new));
+  /** 그 대상 기관들에서 메일을 받을 사람. 테스트 담당자를 고른 기관은 그 사람들, 고르지 않은 기관은 그 업무 담당자(사용 중 계정) 전원이다. */
+  private Set<String> targetEmails(TestPlan plan, List<TestPlanTarget> targets) {
+    Set<String> emails = new LinkedHashSet<>();
+    Set<String> allMemberCodes = new HashSet<>();
+    for (TestPlanTarget target : targets) {
+      if (target.getContacts().isEmpty()) {
+        allMemberCodes.add(target.getOrganization().getCode());
+      } else {
+        target.getContacts().forEach(c -> emails.add(c.getEmail()));
+      }
+    }
+    if (!allMemberCodes.isEmpty()) {
+      accountService.listActiveMembers(plan.getBusiness()).stream()
+          .filter(m -> allMemberCodes.contains(m.organizationCode()))
+          .forEach(m -> emails.add(m.email()));
+    }
+    return emails;
   }
 
   /** 기관이 테스트데이터를 등록했는지(생성 여부·메모를 저장했거나 파일을 올렸다). */
@@ -745,12 +838,6 @@ public class TestPlanService {
         targets.size());
   }
 
-  private static Set<String> targetCodes(List<TestPlanTarget> targets) {
-    return targets.stream()
-        .map(t -> t.getOrganization().getCode())
-        .collect(Collectors.toCollection(LinkedHashSet::new));
-  }
-
   private static String blankToNull(String value) {
     return value == null || value.isBlank() ? null : value.trim();
   }
@@ -772,9 +859,10 @@ public class TestPlanService {
       String period,
       String items,
       String targets,
+      String targetContacts,
       String testData) {
 
-    static final Snapshot EMPTY = new Snapshot(null, null, null, null, null, null, null);
+    static final Snapshot EMPTY = new Snapshot(null, null, null, null, null, null, null, null);
 
     static Snapshot of(TestPlan plan) {
       return new Snapshot(
@@ -787,7 +875,24 @@ public class TestPlanService {
               .collect(Collectors.joining("\n")),
           FieldChanges.join(
               plan.getTargets().stream().map(t -> t.getOrganization().getName()).toList()),
+          contactsText(plan),
           testDataText(plan));
+    }
+
+    /** "KB국민은행: 김민준, 남궁민" 을 줄마다. 테스트 담당자를 고른 기관만 적고, 아무도 없으면 null. */
+    private static String contactsText(TestPlan plan) {
+      String text =
+          plan.getTargets().stream()
+              .filter(t -> !t.getContacts().isEmpty())
+              .map(
+                  t ->
+                      t.getOrganization().getName()
+                          + ": "
+                          + t.getContacts().stream()
+                              .map(TestPlanTargetContact::getName)
+                              .collect(Collectors.joining(", ")))
+              .collect(Collectors.joining("\n"));
+      return text.isEmpty() ? null : text;
     }
 
     /** "회신 기한 2026-10-25 · 요청 사항". 요청하지 않으면 null. */
@@ -810,6 +915,7 @@ public class TestPlanService {
       add(changes, all, "period", "수행 기간", before.period, period);
       add(changes, all, "items", "요구사항", before.items, items);
       add(changes, all, "targets", "대상 기관", before.targets, targets);
+      add(changes, all, "targetContacts", "테스트 담당자", before.targetContacts, targetContacts);
       add(changes, all, "testData", "테스트데이터 요청", before.testData, testData);
       return changes.toList();
     }

@@ -5,6 +5,7 @@
 DELETE FROM test_item_comment;
 DELETE FROM test_item_result;
 DELETE FROM test_plan_recipient;
+DELETE FROM test_plan_target_contact;
 DELETE FROM test_plan_target;
 DELETE FROM test_item;
 DELETE FROM test_plan;
@@ -92,6 +93,20 @@ FROM (VALUES
 ) AS t (plan_title, org_code, progress_rate, completed_count, last_hour)
 JOIN test_plan p ON p.title = t.plan_title
 JOIN organization o ON o.code = t.org_code;
+
+-- 테스트 담당자(담당자 연락처에서 세부업무를 보고 고른 사람, 이름·세부업무는 R__7 연락처와 같다). 고르지 않은 기관은 그 기관 업무 담당자 전원이 메일을 받는다.
+-- 남궁민은 계정이 없는 연락처라 계정 전원 대신 연락처로 고르는 차이를 보여 준다.
+INSERT INTO test_plan_target_contact (test_plan_target_id, email, name, sub_business, created_at, created_by, updated_at, updated_by)
+SELECT t.id, c.email, c.name, c.sub_business, p.created_at, p.created_by, p.created_at, p.created_by
+FROM (VALUES
+  ('본인계좌 일괄지급정지 전문 개선 2차', '004', 'kim.minjun@kb.example.com',       '김민준', '본인계좌 일괄지급정지'),
+  ('본인계좌 일괄지급정지 전문 개선 2차', '004', 'namgung.min@kb.example.com',      '남궁민', '본인계좌 일괄지급정지'),
+  ('내 계좌 한눈에 연계 개선',        '088', 'park.jihoon@shinhan.example.com', '박지훈', '내 계좌 한눈에'),
+  ('내 계좌 한눈에 연계 개선',        '048', 'jung.hyunwoo@cu.example.com',     '정현우', '내 계좌 한눈에')
+) AS c (plan_title, org_code, email, name, sub_business)
+JOIN test_plan p ON p.title = c.plan_title
+JOIN organization o ON o.code = c.org_code
+JOIN test_plan_target t ON t.test_plan_id = p.id AND t.organization_id = o.id;
 
 -- 기관 결과와 결제원 의견. 시각은 오늘 0시 기준 시간(reported_hour, feedback_hour)이다.
 -- 출금이체 002 는 결제원 의견(70%) 뒤에 신한은행이 결과를 다시 등록해 "다시 확인" 상태다.

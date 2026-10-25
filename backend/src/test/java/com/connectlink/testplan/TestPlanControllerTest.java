@@ -235,6 +235,105 @@ class TestPlanControllerTest {
   }
 
   @Test
+  void 대상_기관_후보에는_그_업무_담당자_연락처가_세부업무와_함께_나온다() throws Exception {
+    send(get(BASE + "/organizations").param("business", "account-info"), null, hong())
+        .andExpect(status().isOk())
+        .andExpect(
+            jsonPath("$[?(@.code == '004')].members[*].email")
+                .value(hasItem("namgung.min@kb.example.com")))
+        .andExpect(jsonPath("$[?(@.code == '004')].members[*].subBusiness").value(hasItem("회비")))
+        .andExpect(
+            jsonPath("$[?(@.code == '004')].members[*].email")
+                .value(not(hasItem("choi.yujin@samsung.example.com"))));
+  }
+
+  /** 발송함에서 그 표지의 열림 메일을 받은 사람. */
+  private List<String> mailed(String mark) {
+    return outboxRepository.findAll().stream()
+        .filter(o -> o.getChannel() == NotificationChannel.EMAIL)
+        .filter(o -> o.getSubject() != null && o.getSubject().contains(mark))
+        .map(NotificationOutbox::getRecipient)
+        .toList();
+  }
+
+  @Test
+  void 테스트_담당자를_고르면_그_사람에게만_고르지_않은_기관은_업무_담당자_전원에게_메일이_간다() throws Exception {
+    Map<String, Object> body = form("담당자 고르기 확인", List.of("004", "240"), "확인");
+    // 계정이 없는 연락처(남궁민)도 고를 수 있다. 삼성증권은 고르지 않는다.
+    body.put(
+        "targetContacts",
+        List.of(
+            Map.of(
+                "organizationId", orgId("004"), "emails", List.of("NamGung.Min@kb.example.com"))));
+    JsonNode plan =
+        json(
+            send(post(BASE), body, hong())
+                .andExpect(status().isCreated())
+                .andExpect(
+                    jsonPath("$.targets[?(@.organizationCode == '004')].contacts[0].name")
+                        .value(hasItem("남궁민")))
+                .andExpect(
+                    jsonPath("$.targets[?(@.organizationCode == '004')].contacts[0].subBusiness")
+                        .value(hasItem("본인계좌 일괄지급정지")))
+                .andExpect(
+                    jsonPath("$.targets[?(@.organizationCode == '240')].contacts.length()")
+                        .value(hasItem(0))));
+    assertThat(mailed("담당자 고르기 확인"))
+        .contains("namgung.min@kb.example.com", "choi.yujin@samsung.example.com")
+        .doesNotContain("kim.minjun@kb.example.com");
+
+    // 고치며 김민준을 더하면 김민준만 새로 열림 메일을 받는다.
+    Map<String, Object> change = form("담당자 고르기 확인", List.of("004", "240"));
+    change.put("items", itemsOf(plan));
+    change.put(
+        "targetContacts",
+        List.of(
+            Map.of(
+                "organizationId",
+                orgId("004"),
+                "emails",
+                List.of("namgung.min@kb.example.com", "kim.minjun@kb.example.com"))));
+    send(put(BASE + "/" + plan.get("id").asLong()), change, hong())
+        .andExpect(status().isOk())
+        .andExpect(
+            jsonPath("$.targets[?(@.organizationCode == '004')].contacts.length()")
+                .value(hasItem(2)));
+    assertThat(mailed("담당자 고르기 확인"))
+        .filteredOn(e -> e.equals("namgung.min@kb.example.com"))
+        .hasSize(1);
+    assertThat(mailed("담당자 고르기 확인")).contains("kim.minjun@kb.example.com");
+  }
+
+  @Test
+  void 그_기관의_업무_담당자가_아닌_사람이나_대상이_아닌_기관에는_테스트_담당자를_정하지_못한다() throws Exception {
+    Map<String, Object> other = form("다른 기관 담당자", List.of("004"), "확인");
+    other.put(
+        "targetContacts",
+        List.of(
+            Map.of(
+                "organizationId",
+                orgId("004"),
+                "emails",
+                List.of("choi.yujin@samsung.example.com"))));
+    send(post(BASE), other, hong())
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("TEST_TARGET_CONTACT_INVALID"));
+
+    Map<String, Object> notTarget = form("대상 아닌 기관 담당자", List.of("004"), "확인");
+    notTarget.put(
+        "targetContacts",
+        List.of(
+            Map.of(
+                "organizationId",
+                orgId("240"),
+                "emails",
+                List.of("choi.yujin@samsung.example.com"))));
+    send(post(BASE), notTarget, hong())
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("TEST_TARGET_CONTACT_INVALID"));
+  }
+
+  @Test
   void 양식이_틀리면_필드별로_알려_준다() throws Exception {
     Map<String, Object> period = form("거꾸로 된 기간", List.of("004"), "확인");
     period.put("endDate", LocalDate.now().minusDays(1).toString());

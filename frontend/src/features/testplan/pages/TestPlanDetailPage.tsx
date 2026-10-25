@@ -367,6 +367,11 @@ function TargetTable({
                     </Text>
                   )}
                 </Group>
+                <Text size="xs" c="dimmed" data-testid="target-contacts">
+                  {t.contacts.length > 0
+                    ? `테스트 담당자 ${t.contacts.map((c) => c.name).join(', ')}`
+                    : '업무 담당자 전원'}
+                </Text>
               </Table.Td>
               {showTestData && (
                 <Table.Td data-label="테스트데이터">

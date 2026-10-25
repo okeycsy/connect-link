@@ -1,24 +1,29 @@
 package com.connectlink.testplan;
 
 import com.connectlink.account.AccountWithdrawnEvent;
+import java.util.Locale;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 계정이 탈퇴하면 기관 테스트의 결과 등록 알림 대상에서 빼고, 알림 대상이 아무도 남지 않은 테스트에는 후임자를 넣는다({@link
- * TestPlanService#handOverRecipients}). 탈퇴와 같은 트랜잭션이라 실패하면 탈퇴도 되돌아간다. 그 사람이 등록한 결과와 의견, 답글은 기관·결제원의
- * 기록이라 남긴다(이름은 쓸 때 그대로).
+ * TestPlanService#handOverRecipients}). 같은 이메일의 기관 테스트 담당자도 뺀다(아무도 남지 않으면 그 기관의 업무 담당자 전원이 메일을
+ * 받는다). 탈퇴와 같은 트랜잭션이라 실패하면 탈퇴도 되돌아간다. 그 사람이 등록한 결과와 의견, 답글은 기관·결제원의 기록이라 남긴다(이름은 쓸 때 그대로).
  */
 @Component
 class TestPlanAccountListener {
 
   private final TestPlanRecipientRepository recipientRepository;
+  private final TestPlanTargetContactRepository contactRepository;
   private final TestPlanService testPlanService;
 
   TestPlanAccountListener(
-      TestPlanRecipientRepository recipientRepository, TestPlanService testPlanService) {
+      TestPlanRecipientRepository recipientRepository,
+      TestPlanTargetContactRepository contactRepository,
+      TestPlanService testPlanService) {
     this.recipientRepository = recipientRepository;
+    this.contactRepository = contactRepository;
     this.testPlanService = testPlanService;
   }
 
@@ -29,6 +34,10 @@ class TestPlanAccountListener {
       TestPlan plan = recipient.getPlan();
       plan.removeRecipient(event.accountId());
       testPlanService.handOverRecipients(plan, event.accountId());
+    }
+    String email = event.email().toLowerCase(Locale.ROOT);
+    for (TestPlanTargetContact contact : contactRepository.findByEmail(email)) {
+      contact.getTarget().removeContact(email);
     }
   }
 }

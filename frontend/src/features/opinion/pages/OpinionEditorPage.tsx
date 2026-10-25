@@ -18,6 +18,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { ApiError, fieldErrorsOf } from '../../../api/client';
+import { ContactTargetPicker, type TargetValue } from '../../../shared/ContactTargetPicker';
 import { PageHeader } from '../../../shared/PageHeader';
 import { ErrorState, StateView } from '../../../shared/state/StateView';
 import { AttachmentPanel } from '../../attachment/components/AttachmentPanel';
@@ -27,7 +28,6 @@ import { type Notice, useLinkNoticeOpinion, useNotice } from '../../notice/hooks
 import { meetingReplyTitle } from '../noticeReply';
 import { useCurrentBusiness } from '../../organization/hooks';
 import { QuestionBuilder } from '../components/QuestionBuilder';
-import { type TargetValue, TargetPicker } from '../components/TargetPicker';
 import {
   type OpinionRequestDetail,
   useCreateOpinionRequest,
@@ -491,13 +491,19 @@ function OpinionEditor({
                 기관의 같은 업무 담당자는 누구나 요청을 보고 회신할 수 있습니다.
               </Text>
             </div>
-            <TargetPicker
+            <ContactTargetPicker
               candidates={candidates.data}
               loading={candidates.isPending}
               error={candidates.error}
               value={targets}
               onChange={setTargets}
               lockedOrganizationIds={locked}
+              labels={{
+                person: '회신 담당자',
+                locked: '회신 있음',
+                noMembers:
+                  '이 업무 담당자 연락처가 없습니다. 대상으로 넣을 수는 있지만 메일은 가지 않습니다.',
+              }}
             />
           </Stack>
         </Card>
