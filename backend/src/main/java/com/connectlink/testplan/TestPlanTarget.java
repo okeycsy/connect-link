@@ -5,6 +5,7 @@ import com.connectlink.organization.Organization;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import javax.persistence.CascadeType;
@@ -19,6 +20,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import org.hibernate.annotations.BatchSize;
 
@@ -78,6 +80,12 @@ public class TestPlanTarget extends AuditedEntity {
   @BatchSize(size = 50)
   private List<TestItemResult> results = new ArrayList<>();
 
+  /** 테스트 담당자(고른 순서). 비면 그 기관의 업무 담당자 전원이 메일을 받는다. */
+  @OneToMany(mappedBy = "target", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OrderBy("id ASC")
+  @BatchSize(size = 50)
+  private List<TestPlanTargetContact> contacts = new ArrayList<>();
+
   protected TestPlanTarget() {}
 
   TestPlanTarget(TestPlan plan, Organization organization) {
@@ -122,6 +130,22 @@ public class TestPlanTarget extends AuditedEntity {
     this.testDataReportedByJobTitle = jobTitle;
     this.testDataReportedAt = now;
     return true;
+  }
+
+  /** 테스트 담당자를 요청한 사람들(이메일 → 고를 때 값)로 맞춘다. 이미 있는 사람은 그대로 둔다. */
+  void replaceContacts(Map<String, TestPlanTargetContact.Snapshot> requested) {
+    contacts.removeIf(c -> !requested.containsKey(c.getEmail()));
+    requested.forEach(
+        (email, snapshot) -> {
+          if (contacts.stream().noneMatch(c -> c.getEmail().equals(email))) {
+            contacts.add(new TestPlanTargetContact(this, snapshot));
+          }
+        });
+  }
+
+  /** 탈퇴한 사람을 테스트 담당자에서 뺀다. */
+  void removeContact(String email) {
+    contacts.removeIf(c -> c.getEmail().equals(email));
   }
 
   /** 결과를 모두 지운다. 테스트를 지울 때 요구사항보다 먼저 지우려고 쓴다. */
@@ -184,5 +208,9 @@ public class TestPlanTarget extends AuditedEntity {
 
   public List<TestItemResult> getResults() {
     return List.copyOf(results);
+  }
+
+  public List<TestPlanTargetContact> getContacts() {
+    return List.copyOf(contacts);
   }
 }

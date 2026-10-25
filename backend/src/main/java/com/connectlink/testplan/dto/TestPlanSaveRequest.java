@@ -17,6 +17,7 @@ import javax.validation.constraints.Size;
  * @param description 테스트 내용·수행 가이드
  * @param items 요구사항(정한 순서). 하나 이상
  * @param organizationIds 대상 참가기관. 그 업무에 참여하는 사용 중 참가기관, 하나 이상
+ * @param targetContacts 대상 기관별 테스트 담당자(담당자 연락처에서 고른다). 빠진 기관은 그 기관의 업무 담당자 전원이 메일을 받는다
  * @param testDataRequest 수행 기간 전에 받을 테스트데이터 요청. 받지 않으면 null
  */
 public record TestPlanSaveRequest(
@@ -30,10 +31,12 @@ public record TestPlanSaveRequest(
     @NotNull(message = "수행 종료일을 골라 주세요.") LocalDate endDate,
     @Valid @Size(max = 200, message = "요구사항은 200개까지입니다.") List<TestItemRequest> items,
     List<Long> organizationIds,
+    @Valid List<TestTargetContactRequest> targetContacts,
     @Valid @Schema(nullable = true) TestDataRequestForm testDataRequest) {
 
   public TestPlanSaveRequest {
     items = items == null ? List.of() : List.copyOf(items);
     organizationIds = organizationIds == null ? List.of() : List.copyOf(organizationIds);
+    targetContacts = targetContacts == null ? List.of() : List.copyOf(targetContacts);
   }
 }

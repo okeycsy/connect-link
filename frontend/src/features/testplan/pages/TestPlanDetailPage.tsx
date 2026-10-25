@@ -21,6 +21,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ConfirmModal } from '../../../shared/ConfirmModal';
 import { formatDate, formatDateTime } from '../../../shared/format';
 import tableClasses from '../../../shared/list/ResponsiveTable.module.css';
+import { OrgMonogram } from '../../../shared/OrgMonogram';
 import { PageHeader } from '../../../shared/PageHeader';
 import { ErrorState, StateView } from '../../../shared/state/StateView';
 import { AttachmentPanel } from '../../attachment/components/AttachmentPanel';
@@ -358,6 +359,12 @@ function TargetTable({
             >
               <Table.Td>
                 <Group gap="xs" wrap="nowrap">
+                  <OrgMonogram
+                    name={t.organizationName}
+                    type="FINANCE_ORGANIZATION"
+                    size={28}
+                    code={t.organizationCode}
+                  />
                   <Text size="md" fw={600}>
                     {t.organizationName}
                   </Text>
@@ -367,6 +374,11 @@ function TargetTable({
                     </Text>
                   )}
                 </Group>
+                <Text size="xs" c="dimmed" data-testid="target-contacts">
+                  {t.contacts.length > 0
+                    ? `테스트 담당자 ${t.contacts.map((c) => c.name).join(', ')}`
+                    : '업무 담당자 전원'}
+                </Text>
               </Table.Td>
               {showTestData && (
                 <Table.Td data-label="테스트데이터">

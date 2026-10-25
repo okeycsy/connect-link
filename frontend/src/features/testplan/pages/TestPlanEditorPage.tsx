@@ -23,6 +23,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { ApiError, fieldErrorsOf } from '../../../api/client';
+import {
+  type ContactTargetCandidate,
+  ContactTargetPicker,
+  type TargetValue,
+} from '../../../shared/ContactTargetPicker';
 import { PageHeader } from '../../../shared/PageHeader';
 import { ErrorState, StateView } from '../../../shared/state/StateView';
 import { useMe } from '../../account/hooks';
@@ -30,7 +35,6 @@ import { AttachmentPanel } from '../../attachment/components/AttachmentPanel';
 import { PendingAttachments } from '../../attachment/components/PendingAttachments';
 import { attachmentKeys, uploadAttachmentFile } from '../../attachment/hooks';
 import { useCurrentBusiness } from '../../organization/hooks';
-import { TargetOrgPicker } from '../components/TargetOrgPicker';
 import {
   type TestPlanDetail,
   canManageTestPlans,
@@ -141,8 +145,24 @@ function TestPlanEditor({
   const [pendingFormFiles, setPendingFormFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const source = existing ?? copyFrom;
-  const [organizationIds, setOrganizationIds] = useState<number[]>(
-    () => source?.targets.map((t) => t.organizationId) ?? [],
+  const [targets, setTargets] = useState<TargetValue[]>(
+    () =>
+      source?.targets.map((t) => ({
+        organizationId: t.organizationId,
+        recipientEmails: t.contacts.map((c) => c.email),
+      })) ?? [],
+  );
+  const candidates = useMemo<ContactTargetCandidate[] | undefined>(
+    () =>
+      organizations.data?.map((o) => ({
+        organizationId: o.id,
+        organizationCode: o.code,
+        organizationName: o.name,
+        sector: o.sector,
+        sectorLabel: o.sectorLabel,
+        members: o.members,
+      })),
+    [organizations.data],
   );
   const locked = useMemo(
     () =>
@@ -196,7 +216,10 @@ function TestPlanEditor({
       Object.keys(fieldErrors).some(
         (k) => !knownFields.includes(k) && !/^items\.\d+\.(title|description)$/.test(k),
       ))
-      ? (fieldErrors.items ?? fieldErrors.organizationIds ?? mutation.error.message)
+      ? (fieldErrors.items ??
+        fieldErrors.organizationIds ??
+        fieldErrors.targetContacts ??
+        mutation.error.message)
       : undefined;
 
   /** 저장 뒤 고른 파일을 올린다. 가이드(TEST_PLAN)와 테스트데이터 회신 양식(TEST_DATA_FORM)이 같은 길을 쓴다. */
@@ -242,7 +265,10 @@ function TestPlanEditor({
         title: i.title,
         description: i.description || null,
       })),
-      organizationIds,
+      organizationIds: targets.map((t) => t.organizationId),
+      targetContacts: targets
+        .filter((t) => t.recipientEmails.length > 0)
+        .map((t) => ({ organizationId: t.organizationId, emails: t.recipientEmails })),
       testDataRequest: values.testDataRequested
         ? {
             // 빈 날짜는 서버가 필드 메시지로 알려 준다.
@@ -529,20 +555,29 @@ function TestPlanEditor({
           <Stack gap="sm">
             <div>
               <Text fw={700} size="xl">
-                대상 기관
+                대상 기관·테스트 담당자
               </Text>
               <Text size="sm" c="dimmed">
-                이 업무에 참여하는 참가기관 중에서 고릅니다. 기관 담당자는 자기 기관 결과만 보고
-                등록합니다.
+                {current?.label ?? '이 업무'} 담당자 연락처에서 고릅니다. 업무 전체, 세부업무,
+                업권으로 묶어 고르고 한 명씩 더하거나 뺍니다. 테스트 담당자에게 열림·테스트데이터
+                요청·기한 안내 메일이 가고, 담당자를 고르지 않은 기관은 그 기관 업무 담당자 전원이
+                받습니다. 결과는 대상 기관의 같은 업무 담당자 누구나 등록합니다.
               </Text>
             </div>
-            <TargetOrgPicker
-              organizations={organizations.data}
+            <ContactTargetPicker
+              candidates={candidates}
               loading={organizations.isPending}
               error={organizations.error}
-              value={organizationIds}
-              onChange={setOrganizationIds}
-              lockedIds={locked}
+              value={targets}
+              onChange={setTargets}
+              lockedOrganizationIds={locked}
+              labels={{
+                person: '테스트 담당자',
+                locked: '결과 있음',
+                noMembers:
+                  '이 업무 담당자 연락처가 없습니다. 대상으로 넣으면 그 기관 업무 담당자 전원에게 메일이 갑니다.',
+                nobodyPicked: '담당자를 고르지 않으면 이 기관 업무 담당자 전원에게 메일이 갑니다.',
+              }}
             />
           </Stack>
         </Card>

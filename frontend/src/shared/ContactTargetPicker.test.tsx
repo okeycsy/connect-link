@@ -2,9 +2,12 @@ import { fireEvent, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 
-import { renderWithProviders } from '../../../test/render';
-import type { OpinionRecipientCandidate } from '../hooks';
-import { type TargetValue, TargetPicker } from './TargetPicker';
+import { renderWithProviders } from '../test/render';
+import {
+  type ContactTargetCandidate,
+  ContactTargetPicker,
+  type TargetValue,
+} from './ContactTargetPicker';
 
 const member = (contactId: number, name: string, subBusiness: string | null) => ({
   contactId,
@@ -17,7 +20,7 @@ const member = (contactId: number, name: string, subBusiness: string | null) => 
   jobTitle: '대리',
 });
 
-const candidates: OpinionRecipientCandidate[] = [
+const candidates: ContactTargetCandidate[] = [
   {
     organizationId: 1,
     organizationCode: '004',
@@ -39,20 +42,25 @@ const candidates: OpinionRecipientCandidate[] = [
 function Harness({ initial = [] }: { initial?: TargetValue[] }) {
   const [value, setValue] = useState<TargetValue[]>(initial);
   return (
-    <TargetPicker
+    <ContactTargetPicker
       candidates={candidates}
       loading={false}
       error={null}
       value={value}
       onChange={setValue}
       lockedOrganizationIds={new Set()}
+      labels={{
+        person: '회신 담당자',
+        locked: '회신 있음',
+        noMembers: '담당자 연락처가 없습니다.',
+      }}
     />
   );
 }
 
 const summary = () => screen.getByTestId('target-summary').textContent;
 
-describe('TargetPicker', () => {
+describe('ContactTargetPicker', () => {
   it('세부업무 칩은 그 세부업무 담당자만 기관을 넘어 고르고, 다시 누르면 뺀다', () => {
     renderWithProviders(<Harness />);
     fireEvent.click(screen.getByRole('checkbox', { name: '오픈뱅킹 안심차단' }));

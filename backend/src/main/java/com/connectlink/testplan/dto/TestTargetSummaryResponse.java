@@ -3,6 +3,7 @@ package com.connectlink.testplan.dto;
 import com.connectlink.testplan.TestDataStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 대상 기관 한 곳의 현황. 결제원 담당자는 전 기관을, 기관 담당자는 자기 기관만 받는다.
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
  * @param awaitingReview 결제원이 확인할 결과 수(오류, 또는 정상인데 결제원 의견이 없거나 지난 의견)
  * @param completed 모든 요구사항을 완료했는지
  * @param testDataStatus 테스트 전 테스트데이터 생성 여부
+ * @param contacts 테스트 담당자(고른 순서). 비면 그 기관의 업무 담당자 전원이 메일을 받는다
  */
 public record TestTargetSummaryResponse(
     Long targetId,
@@ -31,4 +33,5 @@ public record TestTargetSummaryResponse(
     boolean completed,
     @Schema(nullable = true) LocalDateTime lastReportedAt,
     TestDataStatus testDataStatus,
-    String testDataStatusLabel) {}
+    String testDataStatusLabel,
+    List<TestTargetContactResponse> contacts) {}
