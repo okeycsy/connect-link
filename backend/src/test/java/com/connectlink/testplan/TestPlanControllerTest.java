@@ -61,7 +61,7 @@ class TestPlanControllerTest {
   private static final String BASE = "/api/v1/test-plans";
 
   /** 시드: 계좌통합관리 진행 중(KB국민은행 56%, 신한은행 40%, 삼성증권 미등록, 저축은행중앙회 100%, 전체 49%). */
-  private static final String SEED_IN_PROGRESS = "계좌정보 통합조회 전문 개선 2차";
+  private static final String SEED_IN_PROGRESS = "본인계좌 일괄지급정지 전문 개선 2차";
 
   /** 시드: 계좌통합관리 수행 완료(KB국민은행·신한은행·신협). 삼성증권은 대상이 아니다. */
   private static final String SEED_COMPLETED = "내 계좌 한눈에 연계 개선";
@@ -134,7 +134,7 @@ class TestPlanControllerTest {
   private Map<String, Object> form(String title, List<String> orgCodes, String... items) {
     Map<String, Object> body = new HashMap<>();
     body.put("business", "ACCOUNT_INFO");
-    body.put("subBusiness", "계좌정보 조회·해지");
+    body.put("subBusiness", "본인계좌 일괄지급정지");
     body.put("title", title);
     body.put("description", "테스트 서버에서 확인합니다.");
     body.put("startDate", LocalDate.now().toString());

@@ -46,8 +46,8 @@ function row(manager: boolean) {
     id: 5,
     business: 'ACCOUNT_INFO',
     businessLabel: '계좌통합관리',
-    subBusiness: '계좌정보 조회·해지',
-    title: '계좌정보 통합조회 전문 개선 2차',
+    subBusiness: '본인계좌 일괄지급정지',
+    title: '본인계좌 일괄지급정지 전문 개선 2차',
     startDate: '2026-10-12',
     endDate: '2026-10-16',
     state: 'IN_PROGRESS',
@@ -116,7 +116,9 @@ describe('TestPlanListPage', () => {
     renderPage();
 
     const table = await screen.findByTestId('test-plan-table');
-    expect(await within(table).findByText('계좌정보 통합조회 전문 개선 2차')).toBeInTheDocument();
+    expect(
+      await within(table).findByText('본인계좌 일괄지급정지 전문 개선 2차'),
+    ).toBeInTheDocument();
     expect(within(table).getByText('전체 수행률')).toBeInTheDocument();
     expect(within(table).getByTestId('progress-rate')).toHaveTextContent('49%');
     expect(within(table).getByText('1/4곳')).toBeInTheDocument();

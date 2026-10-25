@@ -46,7 +46,7 @@ export async function applyForGana(request: APIRequestContext, email: string, na
       verificationToken,
       email,
       organizationId: gana.id,
-      businesses: [{ business: 'ACCOUNT_INFO', subBusiness: '계좌정보 통합조회' }],
+      businesses: [{ business: 'ACCOUNT_INFO', subBusiness: '본인계좌 일괄지급정지' }],
       jobRole: 'BUSINESS',
       itRoles: [],
       name,

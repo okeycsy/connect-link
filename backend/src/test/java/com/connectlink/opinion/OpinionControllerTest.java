@@ -197,7 +197,7 @@ class OpinionControllerTest {
   void 기관_담당자는_자기_기관이_대상인_요청만_보고_작성중은_보지_못한다() throws Exception {
     send(get(BASE).param("business", "account-info").param("status", "OPEN"), null, kim())
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.content[*].title").value(hasItem("오픈뱅킹 연계 전문 항목 추가 검토")))
+        .andExpect(jsonPath("$.content[*].title").value(hasItem("내 계좌 한눈에 응답 전문 항목 추가 검토")))
         .andExpect(jsonPath("$.content[0].targetCount").doesNotExist());
     send(get(BASE).param("business", "account-info").param("status", "DRAFT"), null, kim())
         .andExpect(jsonPath("$.totalElements").value(0));

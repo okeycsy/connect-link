@@ -24,16 +24,16 @@ FROM (VALUES
    '내년 1월부터 계좌통합관리 조회 수수료를 건별에서 구간별 정액으로 바꾸려고 합니다. 붙임 개편안을 보시고 기관 의견을 회신해 주세요. 적용 시기, 영향받는 업무, 조회 건수 질문에 답해 주세요.',
    3, 'OPEN', 'hong.sungmin@kftc.example.com', '홍성민', 7, CAST(NULL AS INT), 8, FALSE, CAST(NULL AS VARCHAR(500))),
   ('ACCOUNT_INFO', '4분기 계좌통합관리업무 회비 사전확인',
-   '4분기 회비 총액을 균등분담분과 3분기(7~9월) 계좌정보 통합조회 실적에 따른 실적분담분으로 나눈 기관별 분담 회비를 미리 알려 드립니다. 붙임 엑셀에서 기관 실적과 분담 회비를 확인하고 의견없음 또는 확인 필요로 회신해 주세요. 확인이 필요하면 문의사항을 함께 적어 주세요.',
+   '4분기 회비 총액을 균등분담분과 3분기(7~9월) 계좌통합관리 이용 실적에 따른 실적분담분으로 나눈 기관별 분담 회비를 미리 알려 드립니다. 붙임 엑셀에서 기관 실적과 분담 회비를 확인하고 의견없음 또는 확인 필요로 회신해 주세요. 확인이 필요하면 문의사항을 함께 적어 주세요.',
    7, 'OPEN', 'hong.sungmin@kftc.example.com', '홍성민', 3, NULL, 4, FALSE, NULL),
-  ('ACCOUNT_INFO', '오픈뱅킹 연계 전문 항목 추가 검토',
-   '계좌정보 통합조회 응답 전문에 계좌 별칭 항목(30바이트)을 더하는 안을 검토하고 있습니다. 기관 시스템 반영 가능 여부와 필요한 개발 기간을 알려 주세요.',
+  ('ACCOUNT_INFO', '내 계좌 한눈에 응답 전문 항목 추가 검토',
+   '내 계좌 한눈에 조회 응답 전문에 계좌 별칭 항목(30바이트)을 더하는 안을 검토하고 있습니다. 기관 시스템 반영 가능 여부와 필요한 개발 기간을 알려 주세요.',
    12, 'OPEN', 'hong.sungmin@kftc.example.com', '홍성민', 2, NULL, 3, FALSE, NULL),
   ('ACCOUNT_INFO', '계좌통합관리업무 전문 변경 회의 참석 회신',
    '다음 달 셋째 주 전문 변경 회의 참석 여부와 참석자를 알려 주세요. 회의 안내는 공지·자료실에 있습니다.',
    5, 'OPEN', 'hong.sungmin@kftc.example.com', '홍성민', 1, NULL, 1, FALSE, NULL),
-  ('ACCOUNT_INFO', '계좌정보 일괄해지 화면 문구 개선',
-   '일괄해지 화면의 안내 문구를 고객이 이해하기 쉬운 표현으로 바꾸려고 합니다. 붙임 문구안에 대한 의견을 주세요.',
+  ('ACCOUNT_INFO', '내 계좌 한눈에 계좌해지 화면 문구 개선',
+   '계좌해지 화면의 안내 문구를 고객이 이해하기 쉬운 표현으로 바꾸려고 합니다. 붙임 문구안에 대한 의견을 주세요.',
    -25, 'CLOSED', 'hong.sungmin@kftc.example.com', '홍성민', 40, 20, 41, FALSE, NULL),
   ('ACCOUNT_INFO', '계좌통합관리 수수료 고지 방식 변경',
    '수수료 고지서를 우편에서 전자 고지로 바꾸는 안에 대한 의견을 요청합니다.',
@@ -53,7 +53,7 @@ FROM (VALUES
    -30, 'CLOSED', 'admin@kftc.example.com', '데모 관리자', 45, 28, 46, FALSE, NULL)
 ) AS r (business, title, content, due_days, status, owner_email, owner_name, opened_days, closed_days, created_days, cancelled, cancel_reason);
 
--- 섹션. 오픈뱅킹 전문 검토 요청은 반영 가능 여부(답)에 따라 "반영 계획" 이나 "반영이 어려운 이유" 섹션으로 가고,
+-- 섹션. 내 계좌 한눈에 전문 검토 요청은 반영 가능 여부(답)에 따라 "반영 계획" 이나 "반영이 어려운 이유" 섹션으로 가고,
 -- "반영 계획" 을 마치면 회신이 끝난다(구글폼의 답변에 따른 섹션 이동). 나머지 요청은 제목 없는 섹션 하나다.
 INSERT INTO opinion_section (request_id, sort_order, title, description, jump_type, jump_order, created_at, created_by, updated_at, updated_by)
 SELECT r.id, s.sort_order, s.title, s.description, s.jump_type, s.jump_order, r.created_at, r.created_by, r.created_at, r.created_by
@@ -62,12 +62,12 @@ FROM (VALUES
   (1, '반영 계획', '반영할 수 있는 기관만 답합니다.', 'END', NULL),
   (2, '반영이 어려운 이유', '반영하기 어려운 기관만 답합니다.', NULL, NULL)
 ) AS s (sort_order, title, description, jump_type, jump_order)
-JOIN opinion_request r ON r.title = '오픈뱅킹 연계 전문 항목 추가 검토';
+JOIN opinion_request r ON r.title = '내 계좌 한눈에 응답 전문 항목 추가 검토';
 
 INSERT INTO opinion_section (request_id, sort_order, created_at, created_by, updated_at, updated_by)
 SELECT r.id, 0, r.created_at, r.created_by, r.created_at, r.created_by
 FROM opinion_request r
-WHERE r.title <> '오픈뱅킹 연계 전문 항목 추가 검토';
+WHERE r.title <> '내 계좌 한눈에 응답 전문 항목 추가 검토';
 
 -- 질문. 수수료 개편 요청에 객관식(하나·여러 개)과 주관식을 하나씩 둔다.
 INSERT INTO opinion_question (request_id, section_id, sort_order, question_type, title, required, created_at, created_by, updated_at, updated_by)
@@ -80,7 +80,7 @@ FROM (VALUES
 JOIN opinion_request r ON r.title = q.title_of_request
 JOIN opinion_section s ON s.request_id = r.id AND s.sort_order = 0;
 
--- 오픈뱅킹 전문 검토 요청의 섹션별 질문.
+-- 내 계좌 한눈에 전문 검토 요청의 섹션별 질문.
 INSERT INTO opinion_question (request_id, section_id, sort_order, question_type, title, required, created_at, created_by, updated_at, updated_by)
 SELECT r.id, s.id, q.sort_order, q.question_type, q.title, q.required, r.created_at, r.created_by, r.created_at, r.created_by
 FROM (VALUES
@@ -89,7 +89,7 @@ FROM (VALUES
   (1, 2, 'SINGLE_CHOICE', '반영 방식을 골라 주세요.', FALSE),
   (2, 3, 'TEXT',          '반영하기 어려운 이유와 대안을 적어 주세요.', TRUE)
 ) AS q (section_order, sort_order, question_type, title, required)
-JOIN opinion_request r ON r.title = '오픈뱅킹 연계 전문 항목 추가 검토'
+JOIN opinion_request r ON r.title = '내 계좌 한눈에 응답 전문 항목 추가 검토'
 JOIN opinion_section s ON s.request_id = r.id AND s.sort_order = q.section_order;
 
 -- 나머지 요청은 동의 여부(객관식, 필수)와 의견(주관식)을 묻는다. 결제원 담당자가 흔히 넣는 질문 모양이다.
@@ -101,7 +101,7 @@ FROM (VALUES
 ) AS q (sort_order, question_type, title, required)
 CROSS JOIN opinion_request r
 JOIN opinion_section s ON s.request_id = r.id AND s.sort_order = 0
-WHERE r.title NOT IN ('계좌통합관리 수수료 체계 개편 의견 요청', '오픈뱅킹 연계 전문 항목 추가 검토', '4분기 계좌통합관리업무 회비 사전확인',
+WHERE r.title NOT IN ('계좌통합관리 수수료 체계 개편 의견 요청', '내 계좌 한눈에 응답 전문 항목 추가 검토', '4분기 계좌통합관리업무 회비 사전확인',
                       '계좌통합관리업무 전문 변경 회의 참석 회신');
 
 -- 회의 참석 회신 요청은 참석 여부(객관식, 필수)와 참석자(주관식, 선택)를 묻는다. 공지·자료실의 회의 개최 안내(R__9)가 이 요청을 잇는다.
@@ -138,7 +138,7 @@ FROM (VALUES
 JOIN opinion_request r ON r.title = '계좌통합관리 수수료 체계 개편 의견 요청'
 JOIN opinion_question q ON q.request_id = r.id AND q.sort_order = o.question_order;
 
--- 오픈뱅킹 전문 검토 요청의 선택지. 첫 질문은 답에 따라 섹션 2(반영 계획) 또는 섹션 3(반영이 어려운 이유)으로 간다.
+-- 내 계좌 한눈에 전문 검토 요청의 선택지. 첫 질문은 답에 따라 섹션 2(반영 계획) 또는 섹션 3(반영이 어려운 이유)으로 간다.
 INSERT INTO opinion_question_option (question_id, sort_order, label, jump_type, jump_order, created_at, created_by, updated_at, updated_by)
 SELECT q.id, o.sort_order, o.label, o.jump_type, o.jump_order, q.created_at, q.created_by, q.created_at, q.created_by
 FROM (VALUES
@@ -147,7 +147,7 @@ FROM (VALUES
   (2, 0, '정기 배포', CAST(NULL AS VARCHAR(10)), CAST(NULL AS INT)),
   (2, 1, '별도 긴급 배포', NULL, NULL)
 ) AS o (question_order, sort_order, label, jump_type, jump_order)
-JOIN opinion_request r ON r.title = '오픈뱅킹 연계 전문 항목 추가 검토'
+JOIN opinion_request r ON r.title = '내 계좌 한눈에 응답 전문 항목 추가 검토'
 JOIN opinion_question q ON q.request_id = r.id AND q.sort_order = o.question_order;
 
 INSERT INTO opinion_question_option (question_id, sort_order, label, created_at, created_by, updated_at, updated_by)
@@ -184,18 +184,18 @@ FROM (VALUES
   ('4분기 계좌통합관리업무 회비 사전확인', '240'),
   ('4분기 계좌통합관리업무 회비 사전확인', '050'),
   ('4분기 계좌통합관리업무 회비 사전확인', '048'),
-  ('오픈뱅킹 연계 전문 항목 추가 검토',       '004'),
-  ('오픈뱅킹 연계 전문 항목 추가 검토',       '240'),
-  ('오픈뱅킹 연계 전문 항목 추가 검토',       '088'),
-  ('오픈뱅킹 연계 전문 항목 추가 검토',       '050'),
+  ('내 계좌 한눈에 응답 전문 항목 추가 검토',       '004'),
+  ('내 계좌 한눈에 응답 전문 항목 추가 검토',       '240'),
+  ('내 계좌 한눈에 응답 전문 항목 추가 검토',       '088'),
+  ('내 계좌 한눈에 응답 전문 항목 추가 검토',       '050'),
   ('계좌통합관리업무 전문 변경 회의 참석 회신', '004'),
   ('계좌통합관리업무 전문 변경 회의 참석 회신', '088'),
   ('계좌통합관리업무 전문 변경 회의 참석 회신', '240'),
   ('계좌통합관리업무 전문 변경 회의 참석 회신', '050'),
-  ('계좌정보 일괄해지 화면 문구 개선',        '004'),
-  ('계좌정보 일괄해지 화면 문구 개선',        '240'),
-  ('계좌정보 일괄해지 화면 문구 개선',        '088'),
-  ('계좌정보 일괄해지 화면 문구 개선',        '050'),
+  ('내 계좌 한눈에 계좌해지 화면 문구 개선',        '004'),
+  ('내 계좌 한눈에 계좌해지 화면 문구 개선',        '240'),
+  ('내 계좌 한눈에 계좌해지 화면 문구 개선',        '088'),
+  ('내 계좌 한눈에 계좌해지 화면 문구 개선',        '050'),
   ('계좌통합관리 수수료 고지 방식 변경',      '004'),
   ('계좌통합관리 수수료 고지 방식 변경',      '240'),
   ('야간 배치 시간 조정 의견 요청',           '004'),
@@ -221,12 +221,12 @@ SELECT t.id, u.email, u.name, b.sub_business, t.created_at, t.created_by, t.crea
 FROM (VALUES
   ('계좌통합관리 수수료 체계 개편 의견 요청', 'kim.minjun@kb.example.com'),
   ('계좌통합관리 수수료 체계 개편 의견 요청', 'choi.yujin@samsung.example.com'),
-  ('오픈뱅킹 연계 전문 항목 추가 검토',       'kim.minjun@kb.example.com'),
-  ('오픈뱅킹 연계 전문 항목 추가 검토',       'choi.yujin@samsung.example.com'),
+  ('내 계좌 한눈에 응답 전문 항목 추가 검토',       'kim.minjun@kb.example.com'),
+  ('내 계좌 한눈에 응답 전문 항목 추가 검토',       'choi.yujin@samsung.example.com'),
   ('계좌통합관리업무 전문 변경 회의 참석 회신', 'kim.minjun@kb.example.com'),
   ('계좌통합관리업무 전문 변경 회의 참석 회신', 'choi.yujin@samsung.example.com'),
-  ('계좌정보 일괄해지 화면 문구 개선',        'kim.minjun@kb.example.com'),
-  ('계좌정보 일괄해지 화면 문구 개선',        'choi.yujin@samsung.example.com'),
+  ('내 계좌 한눈에 계좌해지 화면 문구 개선',        'kim.minjun@kb.example.com'),
+  ('내 계좌 한눈에 계좌해지 화면 문구 개선',        'choi.yujin@samsung.example.com'),
   ('계좌통합관리 수수료 고지 방식 변경',      'kim.minjun@kb.example.com'),
   ('야간 배치 시간 조정 의견 요청',           'kim.minjun@kb.example.com'),
   ('자동이체 통합조회 해지 절차 개선',        'lee.junho@shinhan.example.com'),
@@ -271,11 +271,11 @@ FROM (VALUES
   ('4분기 계좌통합관리업무 회비 사전확인', '240', 'SUBMITTED', 'kwon.dohyun@samsung.example.com', '권도현', 2, NULL),
   ('4분기 계좌통합관리업무 회비 사전확인', '050', 'SUBMITTED', 'maeng.soyul@fsb.example.com', '맹소율', 1, NULL),
   ('4분기 계좌통합관리업무 회비 사전확인', '048', 'DRAFT', 'pi.jaehyun@cu.example.com', '피재현', NULL, NULL),
-  ('오픈뱅킹 연계 전문 항목 추가 검토', '088', 'SUBMITTED', 'park.jihoon@shinhan.example.com', '박지훈', 1, NULL),
-  ('계좌정보 일괄해지 화면 문구 개선', '004', 'SUBMITTED', 'kim.minjun@kb.example.com', '김민준', 30, NULL),
-  ('계좌정보 일괄해지 화면 문구 개선', '240', 'SUBMITTED', 'choi.yujin@samsung.example.com', '최유진', 29, NULL),
-  ('계좌정보 일괄해지 화면 문구 개선', '088', 'SUBMITTED', 'park.jihoon@shinhan.example.com', '박지훈', 27, NULL),
-  ('계좌정보 일괄해지 화면 문구 개선', '050', 'SUBMITTED', 'yoon.seoyeon@fsb.example.com', '윤서연', 26, NULL),
+  ('내 계좌 한눈에 응답 전문 항목 추가 검토', '088', 'SUBMITTED', 'park.jihoon@shinhan.example.com', '박지훈', 1, NULL),
+  ('내 계좌 한눈에 계좌해지 화면 문구 개선', '004', 'SUBMITTED', 'kim.minjun@kb.example.com', '김민준', 30, NULL),
+  ('내 계좌 한눈에 계좌해지 화면 문구 개선', '240', 'SUBMITTED', 'choi.yujin@samsung.example.com', '최유진', 29, NULL),
+  ('내 계좌 한눈에 계좌해지 화면 문구 개선', '088', 'SUBMITTED', 'park.jihoon@shinhan.example.com', '박지훈', 27, NULL),
+  ('내 계좌 한눈에 계좌해지 화면 문구 개선', '050', 'SUBMITTED', 'yoon.seoyeon@fsb.example.com', '윤서연', 26, NULL),
   ('자동이체 통합조회 해지 절차 개선', '004', 'SUBMITTED', 'han.gana2@kb.example.com', '한가람', 6, NULL),
   ('자동이체 통합조회 해지 절차 개선', '071', 'SUBMITTED', 'yoon.haeun@epost.example.com', '윤하은', 4, NULL),
   ('CMS 출금이체 전문 개정 의견 요청', '020', 'SUBMITTED', 'jung.jaewon@woori.example.com', '정재원', 1, NULL),
@@ -306,15 +306,15 @@ FROM (VALUES
   ('4분기 계좌통합관리업무 회비 사전확인', '240', 'SUBMITTED', 1, NULL, '8월 실적(398,200건)에 시스템 점검 중 재조회된 건이 포함된 것 같습니다. 중복 건을 빼고 다시 산정해 주실 수 있을까요?'),
   ('4분기 계좌통합관리업무 회비 사전확인', '050', 'SUBMITTED', 0, '의견없음', NULL),
   ('4분기 계좌통합관리업무 회비 사전확인', '048', 'DRAFT', 0, '의견없음', NULL),
-  ('오픈뱅킹 연계 전문 항목 추가 검토', '088', 'SUBMITTED', 0, '반영 가능', NULL),
-  ('오픈뱅킹 연계 전문 항목 추가 검토', '088', 'SUBMITTED', 1, NULL, '약 2개월. 다음 분기 정기 배포에 반영할 수 있습니다.'),
-  ('오픈뱅킹 연계 전문 항목 추가 검토', '088', 'SUBMITTED', 2, '정기 배포', NULL),
-  ('계좌정보 일괄해지 화면 문구 개선', '004', 'SUBMITTED', 0, '동의', NULL),
-  ('계좌정보 일괄해지 화면 문구 개선', '240', 'SUBMITTED', 0, '조건부 동의', NULL),
-  ('계좌정보 일괄해지 화면 문구 개선', '240', 'SUBMITTED', 1, NULL, '"해지" 대신 "연결 끊기" 표현을 함께 써 주세요.'),
-  ('계좌정보 일괄해지 화면 문구 개선', '088', 'SUBMITTED', 0, '동의', NULL),
-  ('계좌정보 일괄해지 화면 문구 개선', '050', 'SUBMITTED', 0, '이견', NULL),
-  ('계좌정보 일괄해지 화면 문구 개선', '050', 'SUBMITTED', 1, NULL, '고객 문의가 늘 수 있어 지금 문구를 유지하기를 바랍니다.'),
+  ('내 계좌 한눈에 응답 전문 항목 추가 검토', '088', 'SUBMITTED', 0, '반영 가능', NULL),
+  ('내 계좌 한눈에 응답 전문 항목 추가 검토', '088', 'SUBMITTED', 1, NULL, '약 2개월. 다음 분기 정기 배포에 반영할 수 있습니다.'),
+  ('내 계좌 한눈에 응답 전문 항목 추가 검토', '088', 'SUBMITTED', 2, '정기 배포', NULL),
+  ('내 계좌 한눈에 계좌해지 화면 문구 개선', '004', 'SUBMITTED', 0, '동의', NULL),
+  ('내 계좌 한눈에 계좌해지 화면 문구 개선', '240', 'SUBMITTED', 0, '조건부 동의', NULL),
+  ('내 계좌 한눈에 계좌해지 화면 문구 개선', '240', 'SUBMITTED', 1, NULL, '"해지" 대신 "연결 끊기" 표현을 함께 써 주세요.'),
+  ('내 계좌 한눈에 계좌해지 화면 문구 개선', '088', 'SUBMITTED', 0, '동의', NULL),
+  ('내 계좌 한눈에 계좌해지 화면 문구 개선', '050', 'SUBMITTED', 0, '이견', NULL),
+  ('내 계좌 한눈에 계좌해지 화면 문구 개선', '050', 'SUBMITTED', 1, NULL, '고객 문의가 늘 수 있어 지금 문구를 유지하기를 바랍니다.'),
   ('자동이체 통합조회 해지 절차 개선', '004', 'SUBMITTED', 0, '동의', NULL),
   ('자동이체 통합조회 해지 절차 개선', '071', 'SUBMITTED', 0, '조건부 동의', NULL),
   ('자동이체 통합조회 해지 절차 개선', '071', 'SUBMITTED', 1, NULL, '처리 결과 통지는 영업일 기준 2일 안으로 해 주세요.'),

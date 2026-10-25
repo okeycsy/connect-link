@@ -319,7 +319,7 @@ class SuspensionControllerTest {
   void 대상_업무_목록은_로그인한_누구나_사용_중인_것을_순서대로_본다() throws Exception {
     JsonNode works =
         json(send(get("/api/v1/target-works"), null, kim()).andExpect(status().isOk()));
-    assertThat(works.size()).isGreaterThanOrEqualTo(40);
+    assertThat(works.size()).isGreaterThanOrEqualTo(38);
     assertThat(works.get(0).get("name").asText()).isEqualTo("계좌통합관리");
     send(get("/api/v1/target-works").param("includeInactive", "true"), null, kim())
         .andExpect(status().isForbidden());

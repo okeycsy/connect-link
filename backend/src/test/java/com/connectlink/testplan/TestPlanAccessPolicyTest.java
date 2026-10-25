@@ -51,7 +51,7 @@ class TestPlanAccessPolicyTest {
         TestPlan.create(
             Business.ACCOUNT_INFO,
             new TestPlan.Content(
-                "계좌정보 조회·해지", "전문 개선", null, LocalDate.now(), LocalDate.now().plusDays(7)),
+                "본인계좌 일괄지급정지", "전문 개선", null, LocalDate.now(), LocalDate.now().plusDays(7)),
             "hong.sungmin@kftc.example.com",
             "홍성민");
     plan.addTarget(org("004", "KB국민은행"));

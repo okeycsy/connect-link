@@ -100,7 +100,7 @@ class TestDataControllerTest {
   private Map<String, Object> planBody(String title, List<Long> organizationIds) {
     Map<String, Object> body = new HashMap<>();
     body.put("business", "ACCOUNT_INFO");
-    body.put("subBusiness", "계좌정보 조회·해지");
+    body.put("subBusiness", "본인계좌 일괄지급정지");
     body.put("title", title);
     body.put("startDate", LocalDate.now().toString());
     body.put("endDate", LocalDate.now().plusDays(7).toString());

@@ -189,7 +189,7 @@ export function ContactFormModal({
             <TextInput label="직급" {...form.getInputProps('jobTitle')} />
             <TextInput
               label="세부업무"
-              placeholder="예: 계좌정보 통합조회"
+              placeholder="예: 내 계좌 한눈에"
               {...form.getInputProps('subBusiness')}
             />
             <TextInput
