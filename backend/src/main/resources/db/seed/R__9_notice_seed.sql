@@ -1,5 +1,5 @@
 -- 공지·자료실 샘플. 전부 가상 데이터다(규약·시행세칙 이름과 내용도 예시다). local, demo 프로필(과 테스트)에서만 읽는다.
--- 전 업무 공통 공지 둘(하나는 고정), 계좌통합관리에 공지·규약·시행세칙, 그 밖 업무에 공지 하나씩이 있다.
+-- 전 업무 공통 공지 둘(하나는 고정), 계좌통합관리에 공지 둘(하나는 회의 개최 안내)·규약·시행세칙, 그 밖 업무에 공지 하나씩이 있다.
 DELETE FROM attachment WHERE owner_type = 'NOTICE';
 DELETE FROM notice;
 
@@ -28,6 +28,11 @@ VALUES
    '다음 달부터 계좌정보 통합조회 전문 일부 항목이 바뀝니다. 기관 테스트 메뉴의 "계좌정보 통합조회 전문 개선" 테스트에 결과를 등록해 주세요.',
    FALSE, NULL, 'hong.sungmin@kftc.example.com', '홍성민',
    CURRENT_TIMESTAMP - 7 * INTERVAL '1' DAY, 'seed', CURRENT_TIMESTAMP - 7 * INTERVAL '1' DAY, 'seed'),
+  ('ACCOUNT_INFO', 'NOTICE', '계좌통합관리업무 전문 변경 회의 개최 안내',
+   '다음 달 셋째 주에 전문 변경 회의를 엽니다. 일시와 장소는 첨부 파일을 참고해 주세요.
+참석 여부는 의견 요청 메뉴의 회신 요청으로 알려 주세요.',
+   FALSE, NULL, 'hong.sungmin@kftc.example.com', '홍성민',
+   CURRENT_TIMESTAMP - 1 * INTERVAL '1' DAY, 'seed', CURRENT_TIMESTAMP - 1 * INTERVAL '1' DAY, 'seed'),
   ('AUTO_TRANSFER', 'NOTICE', '자동이체 출금동의 확인 절차 변경 안내',
    '출금동의 확인 절차가 바뀝니다. 변경 내용은 자료실의 시행세칙을 참고해 주세요.',
    FALSE, NULL, 'hong.sungmin@kftc.example.com', '홍성민',
