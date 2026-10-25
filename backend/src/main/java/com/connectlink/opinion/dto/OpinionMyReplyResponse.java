@@ -18,6 +18,7 @@ import java.util.List;
 public record OpinionMyReplyResponse(
     Long requestId,
     Long targetId,
+    String organizationCode,
     String organizationName,
     @Schema(nullable = true) Long replyId,
     @Schema(nullable = true) OpinionReplyStatus status,

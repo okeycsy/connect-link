@@ -4,6 +4,7 @@ import { IconDownload, IconMailForward } from '@tabler/icons-react';
 import { errorCodeOf } from '../../../api/client';
 import { formatDateTime } from '../../../shared/format';
 import { TableEmpty } from '../../../shared/list/TableEmpty';
+import { OrgMonogram } from '../../../shared/OrgMonogram';
 import { StateView } from '../../../shared/state/StateView';
 import { stateKindOf } from '../../../shared/state/stateKind';
 import {
@@ -77,7 +78,15 @@ export function CollationPanel({ request }: { request: OpinionRequestDetail }) {
             {data.rows.map((r) => (
               <Table.Tr key={r.targetId}>
                 <Table.Td>
-                  <Text fw={600}>{r.organizationName}</Text>
+                  <Group gap={6} wrap="nowrap">
+                    <OrgMonogram
+                      name={r.organizationName}
+                      type="FINANCE_ORGANIZATION"
+                      code={r.organizationCode}
+                      size={24}
+                    />
+                    <Text fw={600}>{r.organizationName}</Text>
+                  </Group>
                 </Table.Td>
                 <Table.Td>
                   {r.replied ? (

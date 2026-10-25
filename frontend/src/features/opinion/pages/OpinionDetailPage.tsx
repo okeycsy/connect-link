@@ -16,6 +16,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { formatDate, formatDateTime } from '../../../shared/format';
 import tableClasses from '../../../shared/list/ResponsiveTable.module.css';
+import { OrgMonogram } from '../../../shared/OrgMonogram';
 import { PageHeader } from '../../../shared/PageHeader';
 import { ErrorState } from '../../../shared/state/StateView';
 import { AttachmentPanel } from '../../attachment/components/AttachmentPanel';
@@ -337,7 +338,15 @@ function RequestContent({ request }: { request: OpinionRequestDetail }) {
               {request.targets.map((t) => (
                 <Table.Tr key={t.id}>
                   <Table.Td>
-                    <Text fw={600}>{t.organizationName}</Text>
+                    <Group gap={6} wrap="nowrap">
+                      <OrgMonogram
+                        name={t.organizationName}
+                        type="FINANCE_ORGANIZATION"
+                        code={t.organizationCode}
+                        size={24}
+                      />
+                      <Text fw={600}>{t.organizationName}</Text>
+                    </Group>
                   </Table.Td>
                   <Table.Td data-label="회신 담당자">
                     <Text size="sm" c={t.recipients.length ? undefined : 'dimmed'}>
