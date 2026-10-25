@@ -229,6 +229,7 @@ export function LoginPage() {
                 scrollbarSize={6}
                 offsetScrollbars
                 className={classes.demoScroll}
+                classNames={{ viewport: classes.demoViewport }}
               >
                 <DemoAccountList
                   accounts={demo.accounts}

@@ -288,12 +288,23 @@
   border: 1px solid var(--cl-line);
 }
 
-/* 데모 계정 목록: 카드 안에서 남는 높이만 쓰고 넘기며, 휴대폰 폭에서는 300 까지만 */
+/*
+ * 데모 계정 목록: 카드 안에서 남는 높이만 쓰고 넘기며, 휴대폰 폭에서는 300 까지만.
+ * 넘김 틀(viewport)은 줄어든 틀 높이를 따라야 안에서 넘어간다(없으면 내용 높이대로 커져 아래 계정이 잘리고 넘어가지 않는다, 2026-10-25).
+ */
 .demoScroll {
+  display: flex;
   flex: 1 1 auto;
+  flex-direction: column;
   min-height: 0;
 
   @media (max-width: $mantine-breakpoint-sm) {
     max-height: 300px;
   }
+}
+
+.demoViewport {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 100%;
 }
