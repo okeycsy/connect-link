@@ -2464,6 +2464,7 @@ export interface components {
       requestId: number;
       /** Format: int64 */
       targetId: number;
+      organizationCode: string;
       organizationName: string;
       /** Format: int64 */
       replyId?: number | null;
@@ -3388,6 +3389,7 @@ export interface components {
       notRepliedOrganizations: string[];
     };
     OpinionCollationTextAnswer: {
+      organizationCode: string;
       organizationName: string;
       text: string;
     };

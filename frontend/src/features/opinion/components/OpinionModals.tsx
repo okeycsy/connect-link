@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { fieldErrorsOf } from '../../../api/client';
 import { MailPreviewEditor, useMailDraft, type MailDraft } from '../../../shared/MailPreviewEditor';
+import { OrgMonogram } from '../../../shared/OrgMonogram';
 import { useOpinionReminderPreview, type OpinionCollationRow } from '../hooks';
 
 interface ReasonProps {
@@ -142,9 +143,19 @@ export function RemindModal({
                   value={String(r.organizationId)}
                   disabled={r.recipientNames.length === 0}
                   label={
-                    r.recipientNames.length === 0
-                      ? `${r.organizationName} (회신 담당자 없음)`
-                      : `${r.organizationName} · ${r.recipientNames.join(', ')}`
+                    <Group gap={6} wrap="nowrap">
+                      <OrgMonogram
+                        name={r.organizationName}
+                        type="FINANCE_ORGANIZATION"
+                        code={r.organizationCode}
+                        size={20}
+                      />
+                      <Text size="sm">
+                        {r.recipientNames.length === 0
+                          ? `${r.organizationName} (회신 담당자 없음)`
+                          : `${r.organizationName} · ${r.recipientNames.join(', ')}`}
+                      </Text>
+                    </Group>
                   }
                 />
               ))}

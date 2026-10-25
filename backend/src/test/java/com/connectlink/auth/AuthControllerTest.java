@@ -101,14 +101,14 @@ class AuthControllerTest {
 
   @Test
   void 승인_대기_계정은_비밀번호가_맞으면_승인_전이라고_알려_준다() throws Exception {
-    login("jung.daeun@sbi.example.com", PASSWORD, null)
+    login("jung.daeun@woori.example.com", PASSWORD, null)
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("ACCOUNT_PENDING_APPROVAL"));
   }
 
   @Test
   void 승인_대기_계정도_비밀번호가_틀리면_상태를_알리지_않는다() throws Exception {
-    login("jung.daeun@sbi.example.com", "wrong-password", null)
+    login("jung.daeun@woori.example.com", "wrong-password", null)
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.code").value("INVALID_CREDENTIALS"));
   }

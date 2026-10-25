@@ -16,6 +16,7 @@ import { type ReactNode, useEffect, useState } from 'react';
 
 import { fieldErrorsOf } from '../../../api/client';
 import { formatDateTime } from '../../../shared/format';
+import { OrgMonogram } from '../../../shared/OrgMonogram';
 import { StateView } from '../../../shared/state/StateView';
 import { stateKindOf } from '../../../shared/state/stateKind';
 import { AttachmentPanel } from '../../attachment/components/AttachmentPanel';
@@ -55,6 +56,12 @@ function MyReplyBody({ request, reply }: { request: OpinionRequestDetail; reply:
       <Stack gap="md">
         <Group justify="space-between">
           <Group gap="xs">
+            <OrgMonogram
+              name={reply.organizationName}
+              type="FINANCE_ORGANIZATION"
+              code={reply.organizationCode}
+              size={28}
+            />
             <Text fw={700} size="xl">
               {reply.organizationName} 회신
             </Text>

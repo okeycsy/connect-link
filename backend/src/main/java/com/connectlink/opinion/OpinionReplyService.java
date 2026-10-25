@@ -314,6 +314,7 @@ public class OpinionReplyService {
       return new OpinionMyReplyResponse(
           request.getId(),
           target.getId(),
+          target.getOrganization().getCode(),
           target.getOrganization().getName(),
           null,
           null,
@@ -331,6 +332,7 @@ public class OpinionReplyService {
     return new OpinionMyReplyResponse(
         request.getId(),
         target.getId(),
+        target.getOrganization().getCode(),
         target.getOrganization().getName(),
         reply.getId(),
         reply.getStatus(),

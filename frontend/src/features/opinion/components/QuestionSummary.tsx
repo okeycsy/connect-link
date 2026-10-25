@@ -1,5 +1,7 @@
 import { Badge, Card, Group, Stack, Text } from '@mantine/core';
 
+import { OrgMonogram } from '../../../shared/OrgMonogram';
+
 import type { OpinionCollation } from '../hooks';
 import classes from './OpinionTable.module.css';
 
@@ -44,9 +46,17 @@ export function QuestionSummary({ collation }: { collation: OpinionCollation }) 
                 <Stack gap={4}>
                   {q.textAnswers.map((a) => (
                     <Group key={a.organizationName} gap="sm" wrap="nowrap" align="flex-start">
-                      <Text size="sm" fw={600} w={120} style={{ flexShrink: 0 }}>
-                        {a.organizationName}
-                      </Text>
+                      <Group gap={6} w={140} wrap="nowrap" style={{ flexShrink: 0 }}>
+                        <OrgMonogram
+                          name={a.organizationName}
+                          type="FINANCE_ORGANIZATION"
+                          code={a.organizationCode}
+                          size={20}
+                        />
+                        <Text size="sm" fw={600}>
+                          {a.organizationName}
+                        </Text>
+                      </Group>
                       <Text size="sm" className={classes.content}>
                         {a.text}
                       </Text>

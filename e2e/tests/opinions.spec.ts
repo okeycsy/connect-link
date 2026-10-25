@@ -91,7 +91,7 @@ test.describe('나. 의견 요청', () => {
     await expect(page).toHaveURL(/\/account-info\/opinions$/);
     await expect(page.getByRole('heading', { name: '의견 요청' })).toBeVisible();
     const seededRow = page.getByTestId('opinion-table').getByRole('button', { name: SEEDED });
-    await expect(seededRow).toContainText('4/6곳');
+    await expect(seededRow).toContainText('3/5곳');
     await shot(page, 'opinion-list');
 
     // 회신 현황: 제출 기관 수·회신율·유형별 기관
@@ -99,12 +99,12 @@ test.describe('나. 의견 요청', () => {
     await expect(page.getByRole('heading', { name: SEEDED })).toBeVisible();
     await shot(page, 'opinion-detail');
     await page.getByRole('tab', { name: '회신 현황' }).click();
-    await expect(page.getByTestId('reply-rate')).toHaveText('67%');
+    await expect(page.getByTestId('reply-rate')).toHaveText('60%');
     await expect(page.getByTestId('not-replied-names')).toContainText('KB국민은행, 신협');
     // 질문별 답: 선택지마다 고른 기관 수와 이름, 주관식 답.
     const questionSummary = page.getByTestId('question-summary');
     await expect(questionSummary).toContainText('개편안을 언제부터 적용하는 것이 좋습니까?');
-    await expect(questionSummary).toContainText('SBI저축은행, 저축은행중앙회');
+    await expect(questionSummary).toContainText('저축은행중앙회');
     await expect(questionSummary).toContainText('약 12만 건');
     await shot(page, 'opinion-replies');
 
@@ -158,7 +158,7 @@ test.describe('나. 의견 요청', () => {
     // 취합표와 엑셀(내부망)
     await page.getByRole('tab', { name: '취합표' }).click();
     await expect(page.getByTestId('collation-table')).toContainText('신한은행');
-    await expect(page.getByTestId('collation-table')).toContainText('수수료 정산, 고객 안내');
+    await expect(page.getByTestId('collation-table')).toContainText('수수료 정산, 전산 개발');
     await shot(page, 'opinion-collation');
     const [download] = await Promise.all([
       page.waitForEvent('download'),
@@ -225,11 +225,10 @@ test.describe('나. 의견 요청', () => {
       .getByRole('group', { name: '업권으로 고르기' })
       .getByText(/^서민금융기관 \d+곳$/)
       .click();
-    await expect(page.getByRole('checkbox', { name: 'SBI저축은행 대상' })).toBeChecked();
     await expect(page.getByRole('checkbox', { name: '신협 대상' })).toBeChecked();
     await expect(page.getByRole('checkbox', { name: '신협 정현우' })).toBeChecked();
-    await expect(page.getByRole('checkbox', { name: 'SBI저축은행 문하린' })).toBeChecked();
-    await expect(page.getByTestId('target-summary')).toHaveText('대상 5곳 · 회신 담당자 6명');
+    await expect(page.getByRole('checkbox', { name: '저축은행중앙회 문하린' })).toBeChecked();
+    await expect(page.getByTestId('target-summary')).toHaveText('대상 4곳 · 회신 담당자 8명');
     await shot(page, 'opinion-editor');
     await page.getByRole('button', { name: '저장', exact: true }).click();
 

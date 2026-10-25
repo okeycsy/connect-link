@@ -265,7 +265,7 @@ public class OpinionCollationService {
         if (a.optionId() != null && byOption.containsKey(a.optionId())) {
           byOption.get(a.optionId()).add(organization);
         } else if (a.text() != null) {
-          texts.add(new TextAnswer(organization, a.text()));
+          texts.add(new TextAnswer(target.getOrganization().getCode(), organization, a.text()));
         }
       }
     }
