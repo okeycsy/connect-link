@@ -1,13 +1,16 @@
 package com.connectlink.opinion;
 
 import com.connectlink.auth.CurrentUserProvider;
+import com.connectlink.notification.dto.MailPreviewResponse;
 import com.connectlink.opinion.dto.OpinionCollationResponse;
 import com.connectlink.opinion.dto.OpinionReminderResponse;
 import com.connectlink.opinion.dto.OpinionReminderSendRequest;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import javax.validation.Valid;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -18,6 +21,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -67,10 +71,22 @@ public class OpinionCollationController {
   @Operation(
       summary = "미회신 기관에 리마인드 메일 보내기",
       description =
-          "고른 미회신 기관(비우면 전부)의 회신 담당자에게 알림과 메일을 보내고 이력을 남긴다. 받을 사람이 없으면 400 OPINION_REMINDER_NO_RECIPIENT.")
+          "고른 미회신 기관(비우면 전부)의 회신 담당자에게 알림과 메일을 보내고 이력을 남긴다. subject·body 를 넘기면 기본 문구 대신 그 문구로 보낸다. 받을 사람이 없으면 400 OPINION_REMINDER_NO_RECIPIENT.")
   public OpinionReminderResponse remind(
-      @PathVariable Long requestId, @RequestBody OpinionReminderSendRequest request) {
-    return collationService.remind(
-        currentUserProvider.require(), requestId, request.organizationIds());
+      @PathVariable Long requestId, @Valid @RequestBody OpinionReminderSendRequest request) {
+    return collationService.remind(currentUserProvider.require(), requestId, request);
+  }
+
+  @GetMapping("/reminder-preview")
+  @Operation(
+      summary = "리마인드 메일 미리보기",
+      description =
+          "보내기 전에 기본 제목·본문과 받을 기관(고른 미회신 기관, 비우면 전부)을 본다. 회신 담당자가 없는 기관은 건너뛸 기관으로 따로 준다. 회신중이 아니면 409 OPINION_REQUEST_STATUS.")
+  public MailPreviewResponse reminderPreview(
+      @PathVariable Long requestId,
+      @Parameter(description = "고른 기관 ID. 비우면 미회신 기관 전부") @RequestParam(required = false)
+          List<Long> organizationIds) {
+    return collationService.reminderPreview(
+        currentUserProvider.require(), requestId, organizationIds);
   }
 }

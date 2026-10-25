@@ -281,6 +281,65 @@ class UpdateCampaignControllerTest {
   }
 
   @Test
+  void 미리보기는_기본_문구와_받을_기관을_보여_준다() throws Exception {
+    Long id = campaignId("하반기 담당자 정기 변경");
+    mockMvc
+        .perform(get(BASE + "/" + id + "/reminder-preview").with(hong()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.subject").value(org.hamcrest.Matchers.containsString("정기 변경 리마인드")))
+        .andExpect(jsonPath("$.body").value(org.hamcrest.Matchers.containsString("현행화 완료")))
+        .andExpect(jsonPath("$.bodyMaxLength").value(1000))
+        .andExpect(jsonPath("$.organizations.length()").value(4))
+        .andExpect(jsonPath("$.organizations[?(@.organizationCode == '088')]").isEmpty());
+    // 미리보기는 보내지 않는다.
+    assertThat(remindersTo("kim.minjun@kb.example.com")).isZero();
+  }
+
+  @Test
+  void 기관_담당자와_다른_업무_담당자는_미리보기를_보지_못한다() throws Exception {
+    Long id = campaignId("하반기 담당자 정기 변경");
+    mockMvc
+        .perform(get(BASE + "/" + id + "/reminder-preview").with(TestUsers.ganaMember()))
+        .andExpect(status().isForbidden());
+    mockMvc
+        .perform(get(BASE + "/" + id + "/reminder-preview").with(park()))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void 고친_제목과_본문으로_리마인드를_보낸다() throws Exception {
+    Long id = campaignId("하반기 담당자 정기 변경");
+    mockMvc
+        .perform(
+            json(
+                    post(BASE + "/" + id + "/reminders"),
+                    Map.of("subject", "  고친 제목  ", "body", "고친 본문입니다."))
+                .with(hong()))
+        .andExpect(status().isOk());
+    assertThat(
+            notificationRepository
+                .findByRecipientEmailAndReadAtIsNull("kim.minjun@kb.example.com")
+                .stream()
+                .filter(n -> n.getType() == NotificationType.CONTACT_CHANGE_REMINDER)
+                .map(n -> n.getTitle() + "|" + n.getBody()))
+        .containsExactly("고친 제목|고친 본문입니다.");
+  }
+
+  @Test
+  void 빈_제목이나_너무_긴_본문은_400이다() throws Exception {
+    Long id = campaignId("하반기 담당자 정기 변경");
+    mockMvc
+        .perform(
+            json(
+                    post(BASE + "/" + id + "/reminders"),
+                    Map.of("subject", "  ", "body", "x".repeat(1001)))
+                .with(hong()))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.fieldErrors.length()").value(2));
+    assertThat(remindersTo("kim.minjun@kb.example.com")).isZero();
+  }
+
+  @Test
   void 진행_중이_아닌_주간에는_리마인드를_보내지_못한다() throws Exception {
     Long id = campaignId("상반기 담당자 정기 변경");
     mockMvc
