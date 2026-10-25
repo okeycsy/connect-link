@@ -17,10 +17,10 @@ SELECT o.id, c.business, c.sub_business, c.name, c.department, c.team, c.job_tit
        CURRENT_TIMESTAMP - (c.days_ago + 30) * INTERVAL '1' DAY, 'seed', CURRENT_TIMESTAMP - c.days_ago * INTERVAL '1' DAY, 'seed'
 FROM (VALUES
   -- 계좌통합관리
-  ('KFTC', 'ACCOUNT_INFO', '계좌정보 조회·해지',      '홍성민', '계좌서비스부', '계좌통합팀', '과장', 'BUSINESS', 'PRIMARY',   '1101', '010-0000-1101', 'hong.sungmin@kftc.example.com', 20,  '홍성민'),
+  ('KFTC', 'ACCOUNT_INFO', '본인계좌 일괄지급정지',      '홍성민', '계좌서비스부', '계좌통합팀', '과장', 'BUSINESS', 'PRIMARY',   '1101', '010-0000-1101', 'hong.sungmin@kftc.example.com', 20,  '홍성민'),
   ('KFTC', 'ACCOUNT_INFO', CAST(NULL AS VARCHAR(200)), '김태호', '정보시스템부', '운영팀',     '대리', 'IT',       'PRIMARY',   '1201', CAST(NULL AS VARCHAR(30)), 'kim.ops@kftc.example.com', 40, '김태호'),
-  ('004',  'ACCOUNT_INFO', '계좌정보 통합조회',       '김민준', '디지털금융부', '오픈뱅킹팀', '대리', 'BUSINESS', 'PRIMARY',   '2101', '010-0000-2101', 'kim.minjun@kb.example.com',       200, '김민준'),
-  ('004',  'ACCOUNT_INFO', '계좌정보 통합조회',       '남궁민', '전산부',       '채널개발팀', '과장', 'IT',       'PRIMARY',   '2201', '010-0000-2201', 'namgung.min@kb.example.com',    30,  '김민준'),
+  ('004',  'ACCOUNT_INFO', '본인계좌 일괄지급정지',       '김민준', '디지털금융부', '오픈뱅킹팀', '대리', 'BUSINESS', 'PRIMARY',   '2101', '010-0000-2101', 'kim.minjun@kb.example.com',       200, '김민준'),
+  ('004',  'ACCOUNT_INFO', '본인계좌 일괄지급정지',       '남궁민', '전산부',       '채널개발팀', '과장', 'IT',       'PRIMARY',   '2201', '010-0000-2201', 'namgung.min@kb.example.com',    30,  '김민준'),
   ('088',  'ACCOUNT_INFO', '내 계좌 한눈에',          '박지훈', '디지털채널부', '계좌서비스팀', '과장', 'BUSINESS', 'PRIMARY', '3103', NULL,            'park.jihoon@shinhan.example.com', 2,   '박지훈'),
   ('088',  'ACCOUNT_INFO', '내 계좌 한눈에',          '신서준', '디지털채널부', '계좌서비스팀', '대리', 'BUSINESS', 'SECONDARY', '3104', '010-0000-3104', 'shin.seojun@shinhan.example.com', 2,   '박지훈'),
   ('050',  'ACCOUNT_INFO', NULL,                      '문하린', '수신업무부',   '전자금융팀', '차장', 'BUSINESS', 'SECONDARY', '6202', '010-0000-6202', 'moon.harin@fsb.example.com',    250, '문하린'),

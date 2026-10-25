@@ -45,7 +45,7 @@ SELECT c.id, u.email, u.name, o.code, o.name, o.type, m.content, FALSE, FALSE,
 FROM (VALUES
   (1, '계좌통합관리 단체방', 'hong.sungmin@kftc.example.com',  4320, '안녕하세요, 계좌통합관리 단체방입니다. 장애·작업 공지는 이 방에서 함께 확인해 주세요.'),
   (2, '계좌통합관리 단체방', 'kim.minjun@kb.example.com',      4300, 'KB국민은행 김민준입니다. 잘 부탁드립니다.'),
-  (3, '계좌통합관리 단체방', 'hong.sungmin@kftc.example.com',  180,  '@KB국민은행 @삼성증권 내일 10시에 계좌정보 조회 전문 응답코드 변경을 반영합니다. 확인 부탁드립니다.'),
+  (3, '계좌통합관리 단체방', 'hong.sungmin@kftc.example.com',  180,  '@KB국민은행 @삼성증권 내일 10시에 내 계좌 한눈에 조회 전문 응답코드 변경을 반영합니다. 확인 부탁드립니다.'),
   (4, '계좌통합관리 단체방', 'kim.ops@kftc.example.com',       120,  '반영 시간 동안 운영팀이 상황을 함께 봅니다. 이상이 있으면 바로 알려 주세요.'),
   (5, '계좌통합관리 단체방', 'choi.yujin@samsung.example.com', 25,   '@결제원 삼성증권은 오늘 18시 이후에 변경 전문 테스트가 가능합니다.'),
   (8, '계좌통합관리 단체방', 'hong.sungmin@kftc.example.com',  10,   '@KB국민은행 변경 전문 테스트도 오늘 18시 이후에 함께 가능하신지 알려 주세요.'),

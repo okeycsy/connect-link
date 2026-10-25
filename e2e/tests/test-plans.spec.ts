@@ -45,7 +45,7 @@ async function createAsHong(
   const created = await request.post('/api/v1/test-plans', {
     data: {
       business: 'ACCOUNT_INFO',
-      subBusiness: '계좌정보 조회·해지',
+      subBusiness: '본인계좌 일괄지급정지',
       title,
       description: '해지 요청 전문의 새 사유코드를 확인합니다.',
       startDate: seoulDate(0),
@@ -81,14 +81,14 @@ test.describe('다. 기관 테스트', () => {
     await expect(page).toHaveURL(/\/account-info\/tests$/);
     await expect(page.getByRole('heading', { name: '기관 테스트' })).toBeVisible();
     const list = page.getByTestId('test-plan-table');
-    await expect(list).toContainText('계좌정보 통합조회 전문 개선 2차');
+    await expect(list).toContainText('본인계좌 일괄지급정지 전문 개선 2차');
     await expect(list).toContainText('기간 지남');
     await shot(page, 'test-plan-list');
 
     await page.getByRole('link', { name: '기관 테스트 만들기' }).click();
     await expect(page.getByRole('heading', { name: '기관 테스트 만들기' })).toBeVisible();
     const title = `E2E 해지 전문 개선 ${Date.now()}`;
-    await page.getByRole('textbox', { name: '단위업무' }).fill('계좌정보 조회·해지');
+    await page.getByRole('textbox', { name: '단위업무' }).fill('본인계좌 일괄지급정지');
     await page.getByRole('textbox', { name: '개발 건 이름' }).fill(title);
     await page
       .getByRole('textbox', { name: '테스트 내용·수행 가이드' })

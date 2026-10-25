@@ -51,7 +51,7 @@ function contact(overrides: Record<string, unknown>) {
     organizationCode: 'KFTC',
     organizationName: '금융결제원',
     organizationType: 'KFTC',
-    subBusiness: '계좌정보 조회·해지',
+    subBusiness: '본인계좌 일괄지급정지',
     name: '홍성민',
     department: '계좌서비스부',
     team: '계좌통합팀',

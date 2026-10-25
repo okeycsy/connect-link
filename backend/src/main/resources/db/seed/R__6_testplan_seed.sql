@@ -18,8 +18,8 @@ SELECT p.business, p.sub_business, p.title, p.description,
        CAST(CURRENT_DATE AS TIMESTAMP) + (p.start_day - 3) * INTERVAL '1' DAY + INTERVAL '10' HOUR, p.owner_email,
        CAST(CURRENT_DATE AS TIMESTAMP) + (p.start_day - 3) * INTERVAL '1' DAY + INTERVAL '10' HOUR, p.owner_email
 FROM (VALUES
-  ('ACCOUNT_INFO', '계좌정보 조회·해지', '계좌정보 통합조회 전문 개선 2차',
-   '잔액·거래내역 조회 전문 개정과 해지 사유코드 추가를 기관별로 확인합니다. 테스트 서버 접속 정보와 전문 규격은 첨부 가이드를 봐 주세요.',
+  ('ACCOUNT_INFO', '본인계좌 일괄지급정지', '본인계좌 일괄지급정지 전문 개선 2차',
+   '지급정지 등록·해제 전문 개정과 해제 사유코드 추가를 기관별로 확인합니다. 테스트 서버 접속 정보와 전문 규격은 첨부 가이드를 봐 주세요.',
    -7, 7, 'hong.sungmin@kftc.example.com', '홍성민', 49, CAST(NULL AS INT)),
   ('ACCOUNT_INFO', '내 계좌 한눈에', '내 계좌 한눈에 연계 개선',
    '보유 계좌 목록 응답에 휴면 여부 항목을 더한 연계 개선 테스트입니다.',
@@ -42,11 +42,11 @@ FROM (VALUES
 INSERT INTO test_item (test_plan_id, sort_order, title, description, created_at, created_by, updated_at, updated_by)
 SELECT p.id, i.sort_order, i.title, i.description, p.created_at, p.created_by, p.created_at, p.created_by
 FROM (VALUES
-  ('계좌정보 통합조회 전문 개선 2차', 0, '잔액 조회 전문 응답 확인', '개정된 잔액 조회 전문(001)에 새 항목(가용잔액)이 채워져 오는지 확인합니다.'),
-  ('계좌정보 통합조회 전문 개선 2차', 1, '거래내역 조회 페이지 넘김 확인', '거래내역 조회 전문(002)에서 100건이 넘을 때 다음 페이지 키로 이어 받는지 확인합니다.'),
-  ('계좌정보 통합조회 전문 개선 2차', 2, '해지 요청 전문 처리 확인', '해지 요청 전문(003)의 새 해지 사유코드(07~09)를 모두 처리하는지 확인합니다.'),
-  ('계좌정보 통합조회 전문 개선 2차', 3, '오류 응답코드 매핑 확인', '기관 오류를 표준 응답코드로 바꿔 보내는지 확인합니다.'),
-  ('계좌정보 통합조회 전문 개선 2차', 4, '대량 조회 응답 시간 확인', CAST('계좌 50개 보유 고객 조회가 3초 안에 끝나는지 확인합니다.' AS VARCHAR(2000))),
+  ('본인계좌 일괄지급정지 전문 개선 2차', 0, '지급정지 등록 전문 응답 확인', '개정된 지급정지 등록 전문(001)에 새 항목(정지 사유)이 채워져 오는지 확인합니다.'),
+  ('본인계좌 일괄지급정지 전문 개선 2차', 1, '대상 계좌 목록 페이지 넘김 확인', '지급정지 대상 계좌 목록 전문(002)에서 100건이 넘을 때 다음 페이지 키로 이어 받는지 확인합니다.'),
+  ('본인계좌 일괄지급정지 전문 개선 2차', 2, '지급정지 해제 전문 처리 확인', '해제 요청 전문(003)의 새 해제 사유코드(07~09)를 모두 처리하는지 확인합니다.'),
+  ('본인계좌 일괄지급정지 전문 개선 2차', 3, '오류 응답코드 매핑 확인', '기관 오류를 표준 응답코드로 바꿔 보내는지 확인합니다.'),
+  ('본인계좌 일괄지급정지 전문 개선 2차', 4, '대량 지급정지 응답 시간 확인', CAST('계좌 50개 보유 고객 일괄지급정지가 3초 안에 끝나는지 확인합니다.' AS VARCHAR(2000))),
   ('내 계좌 한눈에 연계 개선', 0, '보유 계좌 목록 휴면 여부 항목 확인', NULL),
   ('내 계좌 한눈에 연계 개선', 1, '휴면 계좌 상세 조회 차단 확인', NULL),
   ('내 계좌 한눈에 연계 개선', 2, '기존 항목 회귀 확인', '휴면 여부를 더해도 기존 항목 값이 그대로인지 확인합니다.'),
@@ -72,10 +72,10 @@ SELECT p.id, o.id, t.progress_rate, t.completed_count,
        CASE WHEN t.last_hour IS NULL THEN CAST(NULL AS TIMESTAMP) ELSE CAST(CURRENT_DATE AS TIMESTAMP) + t.last_hour * INTERVAL '1' HOUR END,
        p.created_at, p.created_by, p.created_at, p.created_by
 FROM (VALUES
-  ('계좌정보 통합조회 전문 개선 2차', '004',  56,  2, -20),
-  ('계좌정보 통합조회 전문 개선 2차', '088',  40,  1, -44),
-  ('계좌정보 통합조회 전문 개선 2차', '240',   0,   0, CAST(NULL AS INT)),
-  ('계좌정보 통합조회 전문 개선 2차', '050', 100, 4, -70),
+  ('본인계좌 일괄지급정지 전문 개선 2차', '004',  56,  2, -20),
+  ('본인계좌 일괄지급정지 전문 개선 2차', '088',  40,  1, -44),
+  ('본인계좌 일괄지급정지 전문 개선 2차', '240',   0,   0, CAST(NULL AS INT)),
+  ('본인계좌 일괄지급정지 전문 개선 2차', '050', 100, 4, -70),
   ('내 계좌 한눈에 연계 개선',        '004',  100, 3, -620),
   ('내 계좌 한눈에 연계 개선',        '088',  100, 3, -640),
   ('내 계좌 한눈에 연계 개선',        '048',  100, 3, -630),
@@ -106,32 +106,32 @@ SELECT i.id, t.id, r.result, r.note, r.reporter_email, r.reporter_name,
        CAST(CURRENT_DATE AS TIMESTAMP) + r.reported_hour * INTERVAL '1' HOUR, r.reporter_email,
        CAST(CURRENT_DATE AS TIMESTAMP) + COALESCE(r.feedback_hour, r.reported_hour) * INTERVAL '1' HOUR, COALESCE(r.feedback_email, r.reporter_email)
 FROM (VALUES
-  -- 계좌정보 통합조회 전문 개선 2차: KB국민은행 56%(완료 2), 신한은행 40%(완료 1), 삼성증권 미등록, 저축은행중앙회 100%(완료 4)
-  ('계좌정보 통합조회 전문 개선 2차', '004', 0, 'PASSED', CAST(NULL AS VARCHAR(2000)), 'kim.minjun@kb.example.com', '김민준', -50,
+  -- 본인계좌 일괄지급정지 전문 개선 2차: KB국민은행 56%(완료 2), 신한은행 40%(완료 1), 삼성증권 미등록, 저축은행중앙회 100%(완료 4)
+  ('본인계좌 일괄지급정지 전문 개선 2차', '004', 0, 'PASSED', CAST(NULL AS VARCHAR(2000)), 'kim.minjun@kb.example.com', '김민준', -50,
    100, CAST(NULL AS VARCHAR(2000)), 'hong.sungmin@kftc.example.com', '홍성민', -30),
-  ('계좌정보 통합조회 전문 개선 2차', '004', 1, 'PASSED', NULL, 'kim.minjun@kb.example.com', '김민준', -50,
+  ('본인계좌 일괄지급정지 전문 개선 2차', '004', 1, 'PASSED', NULL, 'kim.minjun@kb.example.com', '김민준', -50,
    100, NULL, 'hong.sungmin@kftc.example.com', '홍성민', -30),
-  ('계좌정보 통합조회 전문 개선 2차', '004', 2, 'PASSED', '사유코드 07, 08 은 확인했습니다.', 'kim.minjun@kb.example.com', '김민준', -50,
-   80, '003 전문에 대해 예외사항 발생: 해지 사유코드 09 를 처리하지 못해 재확인이 필요합니다.', 'hong.sungmin@kftc.example.com', '홍성민', -30),
-  ('계좌정보 통합조회 전문 개선 2차', '004', 3, 'FAILED', '기관 오류 E31 을 표준 응답코드 대신 E99 로 내려보냅니다. 수정 배포 예정입니다.', 'kim.minjun@kb.example.com', '김민준', -20,
+  ('본인계좌 일괄지급정지 전문 개선 2차', '004', 2, 'PASSED', '사유코드 07, 08 은 확인했습니다.', 'kim.minjun@kb.example.com', '김민준', -50,
+   80, '003 전문에 대해 예외사항 발생: 해제 사유코드 09 를 처리하지 못해 재확인이 필요합니다.', 'hong.sungmin@kftc.example.com', '홍성민', -30),
+  ('본인계좌 일괄지급정지 전문 개선 2차', '004', 3, 'FAILED', '기관 오류 E31 을 표준 응답코드 대신 E99 로 내려보냅니다. 수정 배포 예정입니다.', 'kim.minjun@kb.example.com', '김민준', -20,
    CAST(NULL AS INT), NULL, CAST(NULL AS VARCHAR(200)), CAST(NULL AS VARCHAR(50)), CAST(NULL AS INT)),
-  ('계좌정보 통합조회 전문 개선 2차', '004', 4, 'IN_PROGRESS', NULL, 'kim.minjun@kb.example.com', '김민준', -20,
+  ('본인계좌 일괄지급정지 전문 개선 2차', '004', 4, 'IN_PROGRESS', NULL, 'kim.minjun@kb.example.com', '김민준', -20,
    NULL, NULL, NULL, NULL, NULL),
-  ('계좌정보 통합조회 전문 개선 2차', '088', 0, 'PASSED', NULL, 'park.jihoon@shinhan.example.com', '박지훈', -60,
+  ('본인계좌 일괄지급정지 전문 개선 2차', '088', 0, 'PASSED', NULL, 'park.jihoon@shinhan.example.com', '박지훈', -60,
    100, NULL, 'kim.ops@kftc.example.com', '김태호', -40),
-  ('계좌정보 통합조회 전문 개선 2차', '088', 1, 'PASSED', NULL, 'park.jihoon@shinhan.example.com', '박지훈', -44,
+  ('본인계좌 일괄지급정지 전문 개선 2차', '088', 1, 'PASSED', NULL, 'park.jihoon@shinhan.example.com', '박지훈', -44,
    NULL, NULL, NULL, NULL, NULL),
-  ('계좌정보 통합조회 전문 개선 2차', '088', 2, 'NOT_STARTED', '테스트 서버 반영 일정 조율 중입니다.', 'park.jihoon@shinhan.example.com', '박지훈', -44,
+  ('본인계좌 일괄지급정지 전문 개선 2차', '088', 2, 'NOT_STARTED', '테스트 서버 반영 일정 조율 중입니다.', 'park.jihoon@shinhan.example.com', '박지훈', -44,
    NULL, NULL, NULL, NULL, NULL),
-  ('계좌정보 통합조회 전문 개선 2차', '050', 0, 'PASSED', NULL, 'yoon.seoyeon@fsb.example.com', '윤서연', -90,
+  ('본인계좌 일괄지급정지 전문 개선 2차', '050', 0, 'PASSED', NULL, 'yoon.seoyeon@fsb.example.com', '윤서연', -90,
    100, NULL, 'hong.sungmin@kftc.example.com', '홍성민', -72),
-  ('계좌정보 통합조회 전문 개선 2차', '050', 1, 'PASSED', NULL, 'yoon.seoyeon@fsb.example.com', '윤서연', -90,
+  ('본인계좌 일괄지급정지 전문 개선 2차', '050', 1, 'PASSED', NULL, 'yoon.seoyeon@fsb.example.com', '윤서연', -90,
    100, NULL, 'hong.sungmin@kftc.example.com', '홍성민', -72),
-  ('계좌정보 통합조회 전문 개선 2차', '050', 2, 'PASSED', NULL, 'yoon.seoyeon@fsb.example.com', '윤서연', -90,
+  ('본인계좌 일괄지급정지 전문 개선 2차', '050', 2, 'PASSED', NULL, 'yoon.seoyeon@fsb.example.com', '윤서연', -90,
    100, NULL, 'hong.sungmin@kftc.example.com', '홍성민', -72),
-  ('계좌정보 통합조회 전문 개선 2차', '050', 3, 'PASSED', NULL, 'yoon.seoyeon@fsb.example.com', '윤서연', -90,
+  ('본인계좌 일괄지급정지 전문 개선 2차', '050', 3, 'PASSED', NULL, 'yoon.seoyeon@fsb.example.com', '윤서연', -90,
    100, NULL, 'hong.sungmin@kftc.example.com', '홍성민', -72),
-  ('계좌정보 통합조회 전문 개선 2차', '050', 4, 'PASSED', '평균 1.8초입니다.', 'yoon.seoyeon@fsb.example.com', '윤서연', -70,
+  ('본인계좌 일괄지급정지 전문 개선 2차', '050', 4, 'PASSED', '평균 1.8초입니다.', 'yoon.seoyeon@fsb.example.com', '윤서연', -70,
    NULL, NULL, NULL, NULL, NULL),
   -- 내 계좌 한눈에 연계 개선: 세 기관 모두 완료(수행 완료)
   ('내 계좌 한눈에 연계 개선', '004', 0, 'PASSED', NULL, 'kim.minjun@kb.example.com', '김민준', -620, 100, NULL, 'hong.sungmin@kftc.example.com', '홍성민', -600),
@@ -167,8 +167,8 @@ JOIN test_plan_target t ON t.test_plan_id = p.id AND t.organization_id = o.id;
 INSERT INTO test_plan_recipient (test_plan_id, account_id, email, name, created_at, created_by, updated_at, updated_by)
 SELECT p.id, u.id, u.email, u.name, p.created_at, p.created_by, p.created_at, p.created_by
 FROM (VALUES
-  ('계좌정보 통합조회 전문 개선 2차', 'hong.sungmin@kftc.example.com'),
-  ('계좌정보 통합조회 전문 개선 2차', 'kim.ops@kftc.example.com'),
+  ('본인계좌 일괄지급정지 전문 개선 2차', 'hong.sungmin@kftc.example.com'),
+  ('본인계좌 일괄지급정지 전문 개선 2차', 'kim.ops@kftc.example.com'),
   ('내 계좌 한눈에 연계 개선',        'hong.sungmin@kftc.example.com'),
   ('오픈뱅킹 안심차단 등록 전문 신설', 'kim.ops@kftc.example.com'),
   ('자동이체 통합조회 응답 항목 추가', 'hong.sungmin@kftc.example.com'),
@@ -183,7 +183,7 @@ UPDATE test_plan
 SET test_data_requested = TRUE, test_data_due_date = CAST(CURRENT_DATE - 9 * INTERVAL '1' DAY AS DATE),
     test_data_instruction = '해지 예정 계좌를 포함해 테스트 계좌를 10개 이상 만들고 첨부 양식에 계좌번호·상태를 적어 올려 주세요.',
     test_data_requested_at = created_at
-WHERE title = '계좌정보 통합조회 전문 개선 2차';
+WHERE title = '본인계좌 일괄지급정지 전문 개선 2차';
 UPDATE test_plan
 SET test_data_requested = TRUE, test_data_due_date = CAST(CURRENT_DATE - 4 * INTERVAL '1' DAY AS DATE),
     test_data_instruction = '자동이체 등록 계좌 3개(수납기관 서로 다르게)를 만들어 주세요.',
@@ -196,19 +196,19 @@ UPDATE test_plan_target
 SET test_data_status = 'CREATED', test_data_note = '테스트 계좌 10개(해지 예정 2개 포함) 생성했습니다.',
     test_data_reported_by_email = 'kim.minjun@kb.example.com', test_data_reported_by_name = '김민준',
     test_data_reported_at = CAST(CURRENT_DATE AS TIMESTAMP) + -80 * INTERVAL '1' HOUR
-WHERE test_plan_id = (SELECT id FROM test_plan WHERE title = '계좌정보 통합조회 전문 개선 2차')
+WHERE test_plan_id = (SELECT id FROM test_plan WHERE title = '본인계좌 일괄지급정지 전문 개선 2차')
   AND organization_id = (SELECT id FROM organization WHERE code = '004');
 UPDATE test_plan_target
 SET test_data_status = 'CREATED', test_data_note = '휴면 계좌 시나리오용 3개 포함.',
     test_data_reported_by_email = 'lee.junho@shinhan.example.com', test_data_reported_by_name = '이준호',
     test_data_reported_at = CAST(CURRENT_DATE AS TIMESTAMP) + -90 * INTERVAL '1' HOUR
-WHERE test_plan_id = (SELECT id FROM test_plan WHERE title = '계좌정보 통합조회 전문 개선 2차')
+WHERE test_plan_id = (SELECT id FROM test_plan WHERE title = '본인계좌 일괄지급정지 전문 개선 2차')
   AND organization_id = (SELECT id FROM organization WHERE code = '088');
 UPDATE test_plan_target
 SET test_data_status = 'CREATED', test_data_note = NULL,
     test_data_reported_by_email = 'yoon.seoyeon@fsb.example.com', test_data_reported_by_name = '윤서연',
     test_data_reported_at = CAST(CURRENT_DATE AS TIMESTAMP) + -100 * INTERVAL '1' HOUR
-WHERE test_plan_id = (SELECT id FROM test_plan WHERE title = '계좌정보 통합조회 전문 개선 2차')
+WHERE test_plan_id = (SELECT id FROM test_plan WHERE title = '본인계좌 일괄지급정지 전문 개선 2차')
   AND organization_id = (SELECT id FROM organization WHERE code = '050');
 UPDATE test_plan_target
 SET test_data_status = 'NOT_CREATED', test_data_note = '출금 계좌 개설 승인 대기 중이라 다음 주에 만들겠습니다.',
@@ -233,9 +233,9 @@ SELECT r.id, c.body, c.author_kftc, a.email, a.name, a.job_title,
        CAST(CURRENT_DATE AS TIMESTAMP) + c.written_hour * INTERVAL '1' HOUR, a.email,
        CAST(CURRENT_DATE AS TIMESTAMP) + c.written_hour * INTERVAL '1' HOUR, a.email
 FROM (VALUES
-  ('계좌정보 통합조회 전문 개선 2차', '004', 2, '사유코드 09 는 당행 코드표에 없어 추가 개발이 필요합니다. 다음 주 화요일 테스트 서버에 반영할 예정입니다.', FALSE, 'kim.minjun@kb.example.com', -26),
-  ('계좌정보 통합조회 전문 개선 2차', '004', 2, '반영되면 09 건으로 다시 테스트하고 결과를 다시 등록해 주세요. 확인 후 미니 수행률을 올리겠습니다.', TRUE, 'hong.sungmin@kftc.example.com', -24),
-  ('계좌정보 통합조회 전문 개선 2차', '004', 2, '네, 반영 후 다시 등록하겠습니다.', FALSE, 'kim.minjun@kb.example.com', -22)
+  ('본인계좌 일괄지급정지 전문 개선 2차', '004', 2, '사유코드 09 는 당행 코드표에 없어 추가 개발이 필요합니다. 다음 주 화요일 테스트 서버에 반영할 예정입니다.', FALSE, 'kim.minjun@kb.example.com', -26),
+  ('본인계좌 일괄지급정지 전문 개선 2차', '004', 2, '반영되면 09 건으로 다시 테스트하고 결과를 다시 등록해 주세요. 확인 후 미니 수행률을 올리겠습니다.', TRUE, 'hong.sungmin@kftc.example.com', -24),
+  ('본인계좌 일괄지급정지 전문 개선 2차', '004', 2, '네, 반영 후 다시 등록하겠습니다.', FALSE, 'kim.minjun@kb.example.com', -22)
 ) AS c (plan_title, org_code, sort_order, body, author_kftc, author_email, written_hour)
 JOIN test_plan p ON p.title = c.plan_title
 JOIN test_item i ON i.test_plan_id = p.id AND i.sort_order = c.sort_order

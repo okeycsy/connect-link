@@ -107,7 +107,7 @@ const MY_CONTACT = {
   organizationCode: '004',
   organizationName: 'KB국민은행',
   organizationType: 'FINANCE_ORGANIZATION',
-  subBusiness: '계좌정보 통합조회',
+  subBusiness: '본인계좌 일괄지급정지',
   name: '김민준',
   department: '디지털금융부',
   team: '오픈뱅킹팀',

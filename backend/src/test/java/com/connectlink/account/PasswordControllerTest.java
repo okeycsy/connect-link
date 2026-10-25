@@ -63,7 +63,7 @@ class PasswordControllerTest {
             organizationService.getByCode("004"),
             JobRole.BUSINESS,
             Set.of(),
-            Map.of(Business.ACCOUNT_INFO, "계좌정보 통합조회"),
+            Map.of(Business.ACCOUNT_INFO, "본인계좌 일괄지급정지"),
             "디지털금융부",
             "계좌서비스팀",
             "대리",

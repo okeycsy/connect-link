@@ -20,7 +20,7 @@ function application(overrides: Record<string, unknown>) {
     organizationTypeLabel: '참가기관',
     organizationEmailDomain: 'kb.example.com',
     emailDomainMatches: true,
-    businesses: [{ ...businesses[0], subBusiness: '계좌정보 통합조회' }],
+    businesses: [{ ...businesses[0], subBusiness: '본인계좌 일괄지급정지' }],
     jobRole: 'BUSINESS',
     jobRoleLabel: '현업',
     department: '디지털금융부',

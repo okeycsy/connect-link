@@ -127,7 +127,7 @@ class ContactControllerTest {
   private static Map<String, Object> namgungForm(Map<String, Object> overrides) {
     Map<String, Object> body = new HashMap<>();
     body.put("business", "ACCOUNT_INFO");
-    body.put("subBusiness", "계좌정보 통합조회");
+    body.put("subBusiness", "본인계좌 일괄지급정지");
     body.put("name", "남궁민");
     body.put("department", "전산부");
     body.put("team", "채널개발팀");

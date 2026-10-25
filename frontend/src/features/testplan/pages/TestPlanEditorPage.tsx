@@ -390,7 +390,7 @@ function TestPlanEditor({
               />
               <TextInput
                 label="단위업무"
-                placeholder="예: 계좌정보 조회·해지"
+                placeholder="예: 본인계좌 일괄지급정지"
                 required
                 maxLength={200}
                 {...form.getInputProps('subBusiness')}
@@ -398,7 +398,7 @@ function TestPlanEditor({
             </SimpleGrid>
             <TextInput
               label="개발 건 이름"
-              placeholder="예: 계좌정보 통합조회 전문 개선 2차"
+              placeholder="예: 본인계좌 일괄지급정지 전문 개선 2차"
               required
               maxLength={200}
               {...form.getInputProps('title')}
@@ -450,7 +450,7 @@ function TestPlanEditor({
                   <Stack gap="xs" flex={1}>
                     <TextInput
                       label="요구사항"
-                      placeholder="예: 잔액 조회 전문 응답 확인"
+                      placeholder="예: 지급정지 등록 전문 응답 확인"
                       required
                       maxLength={500}
                       {...form.getInputProps(`items.${index}.title`)}

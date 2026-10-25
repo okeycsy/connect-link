@@ -147,7 +147,7 @@ class WithdrawalHandoverTest {
 
     withdraw(-1L, "kim.minjun@kb.example.com", "004");
 
-    // 김민준과 같은 세부업무(계좌정보 통합조회)인 남궁민만 들어온다. 회비 담당 배수아는 아니다.
+    // 김민준과 같은 세부업무(본인계좌 일괄지급정지)인 남궁민만 들어온다. 회비 담당 배수아는 아니다.
     assertThat(kbRecipients(id)).containsExactly("namgung.min@kb.example.com");
     assertThat(
             notifications(
@@ -173,7 +173,7 @@ class WithdrawalHandoverTest {
   private Long testPlan(String title) throws Exception {
     Map<String, Object> body = new HashMap<>();
     body.put("business", "ACCOUNT_INFO");
-    body.put("subBusiness", "계좌정보 조회·해지");
+    body.put("subBusiness", "본인계좌 일괄지급정지");
     body.put("title", title);
     body.put("startDate", LocalDate.now().toString());
     body.put("endDate", LocalDate.now().plusDays(7).toString());
