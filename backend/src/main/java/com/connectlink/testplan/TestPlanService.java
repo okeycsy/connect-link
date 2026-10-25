@@ -242,6 +242,60 @@ public class TestPlanService {
     return new TestDataRequestSentResponse(codes.size(), now);
   }
 
+  /**
+   * 기한 하루 전 자동 리마인드(예약 작업). 수행 종료일이 내일인 진행 중 테스트는 결과를 다 등록하지 않은 기관(결과가 없거나 미수행·수행중인 요구사항이 있다)에,
+   * 테스트데이터 회신 기한이 내일인 테스트는 아직 생성 완료하지 않은 기관에 보낸다. 받는 사람은 그 기관의 그 업무 담당자(사용 중 계정)이고, 같은 기한으로는 한 번만
+   * 보낸다.
+   *
+   * @return 리마인드를 받은 기관 수(테스트·종류별로 센다)
+   */
+  @Transactional
+  public int remindDueTomorrow() {
+    LocalDate tomorrow = today().plusDays(1);
+    int organizations = 0;
+    for (TestPlan plan : repository.findByEndDateAndCompletedAtIsNull(tomorrow)) {
+      if (plan.isEndRemindedForEndDate()) {
+        continue;
+      }
+      plan.markEndReminded();
+      Set<String> codes =
+          targetCodes(
+              plan.getTargets().stream().filter(t -> !resultsAllReported(plan, t)).toList());
+      Set<String> emails = organizationEmails(plan.getBusiness(), codes);
+      if (!emails.isEmpty()) {
+        notifier.resultDue(plan, emails);
+        organizations += codes.size();
+      }
+    }
+    for (TestPlan plan : repository.findByTestDataRequestedTrueAndTestDataDueDate(tomorrow)) {
+      if (plan.isTestDataRemindedForDueDate()) {
+        continue;
+      }
+      plan.markTestDataReminded();
+      Set<String> codes =
+          targetCodes(
+              plan.getTargets().stream()
+                  .filter(t -> t.getTestDataStatus() != TestDataStatus.CREATED)
+                  .toList());
+      Set<String> emails = organizationEmails(plan.getBusiness(), codes);
+      if (!emails.isEmpty()) {
+        notifier.testDataDue(plan, emails);
+        organizations += codes.size();
+      }
+    }
+    return organizations;
+  }
+
+  /** 이 기관이 모든 요구사항에 결과를 등록했는지(미수행·수행중이 아닌 결과: 정상 또는 오류). */
+  private static boolean resultsAllReported(TestPlan plan, TestPlanTarget target) {
+    Set<Long> reported =
+        target.getResults().stream()
+            .filter(r -> r.getResult() == TestResult.PASSED || r.getResult() == TestResult.FAILED)
+            .map(r -> r.getItem().getId())
+            .collect(Collectors.toSet());
+    return plan.getItems().stream().allMatch(i -> reported.contains(i.getId()));
+  }
+
   /** 지운다. 기관 결과와 가이드·테스트데이터 양식·기관 테스트데이터 첨부도 함께 지운다. */
   public void delete(CurrentUser user, Long id) {
     TestPlan plan = load(id);

@@ -990,6 +990,46 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/demo/test-plan-due-reminder-runs': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 기관 테스트 기한 하루 전 리마인드 지금 보내기(데모)
+     * @description 매일 9시 예약 작업과 같다. 수행 종료일이 내일이면 결과를 다 등록하지 않은 기관에, 테스트데이터 회신 기한이 내일이면 생성 완료하지 않은 기관에 보낸다. 받은 기관 수를 돌려준다.
+     */
+    post: operations['run_1'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/demo/opinion-due-reminder-runs': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 의견 회신 기한 하루 전 리마인드 지금 보내기(데모)
+     * @description 매일 9시 예약 작업과 같다. 회신 기한이 내일인 회신중 요청의 미회신 기관에만 보내고, 같은 기한으로 이미 보낸 요청은 건너뛴다.
+     */
+    post: operations['run_2'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/demo/contact-reconfirm-runs': {
     parameters: {
       query?: never;
@@ -1003,7 +1043,7 @@ export interface paths {
      * 6개월 미확인 알림 지금 보내기(데모)
      * @description 매일 9시 예약 작업과 같다. 이번 미확인 기간에 이미 알린 담당자는 건너뛴다.
      */
-    post: operations['run_1'];
+    post: operations['run_3'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1023,7 +1063,7 @@ export interface paths {
      * 채팅 첨부 보관 기간 정리 지금 돌리기(데모)
      * @description 매일 3시 30분 예약 작업과 같다. 보관 기간(기본 1년)이 지난 메시지의 첨부를 지우고 메시지에 표시한다.
      */
-    post: operations['run_2'];
+    post: operations['run_4'];
     delete?: never;
     options?: never;
     head?: never;
@@ -2933,6 +2973,7 @@ export interface components {
         | 'TEST_RESULT_REPORTED'
         | 'TEST_RESULT_FEEDBACK'
         | 'TEST_RESULT_COMMENT'
+        | 'TEST_RESULT_DUE'
         | 'TEST_DATA_REQUESTED'
         | 'TEST_DATA_REPORTED'
         | 'SUSPENSION_CHANGED'
@@ -2980,6 +3021,14 @@ export interface components {
       createdCampaignCount: number;
       /** Format: int32 */
       remindedOrganizationCount: number;
+    };
+    TestPlanDueReminderRunResponse: {
+      /** Format: int32 */
+      organizations: number;
+    };
+    DueReminderRunResponse: {
+      /** Format: int32 */
+      sent: number;
     };
     ContactReconfirmRunResponse: {
       /** Format: int32 */
@@ -5316,12 +5365,52 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          '*/*': components['schemas']['ContactReconfirmRunResponse'];
+          '*/*': components['schemas']['TestPlanDueReminderRunResponse'];
         };
       };
     };
   };
   run_2: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['DueReminderRunResponse'];
+        };
+      };
+    };
+  };
+  run_3: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['ContactReconfirmRunResponse'];
+        };
+      };
+    };
+  };
+  run_4: {
     parameters: {
       query?: never;
       header?: never;

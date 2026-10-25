@@ -164,6 +164,38 @@ class TestResultControllerTest {
         .count();
   }
 
+  // ---- 기한 하루 전 자동 리마인드 ----
+
+  @Test
+  void 수행_종료_하루_전에는_결과를_다_등록하지_않은_기관에만_리마인드가_한_번_간다() throws Exception {
+    Plan plan = create("종료 임박 리마인드", "계좌 조회", "계좌 해지");
+    report(
+            plan,
+            "004",
+            kim(),
+            entry(plan.item(0), "PASSED", null),
+            entry(plan.item(1), "FAILED", "오류"))
+        .andExpect(status().isOk());
+    report(plan, "240", choi(), entry(plan.item(0), "PASSED", null)).andExpect(status().isOk());
+
+    clock.advance(Duration.ofDays(6));
+    try {
+      send(post("/api/v1/demo/test-plan-due-reminder-runs"), null, hong())
+          .andExpect(status().isOk());
+      send(post("/api/v1/demo/test-plan-due-reminder-runs"), null, hong())
+          .andExpect(status().isOk());
+    } finally {
+      clock.advance(Duration.ofDays(-6));
+    }
+
+    assertThat(
+            notificationRepository.findAll().stream()
+                .filter(n -> n.getType() == NotificationType.TEST_RESULT_DUE)
+                .filter(n -> n.getTitle().contains("종료 임박 리마인드"))
+                .map(n -> n.getRecipientEmail()))
+        .containsExactly("choi.yujin@samsung.example.com");
+  }
+
   // ---- 결과 등록 ----
 
   @Test

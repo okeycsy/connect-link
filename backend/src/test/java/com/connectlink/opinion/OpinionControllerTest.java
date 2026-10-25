@@ -807,6 +807,33 @@ class OpinionControllerTest {
   }
 
   @Test
+  void 회신_기한_하루_전에는_미회신_기관에만_자동_리마인드가_한_번_간다() throws Exception {
+    Map<String, Object> body = newRequest("내일 마감 자동 리마인드");
+    body.put("dueDate", LocalDate.now().plusDays(1).toString());
+    Long id =
+        json(send(post(BASE), body, hong()).andExpect(status().isCreated())).get("id").asLong();
+    send(post(BASE + "/" + id + "/opening"), null, hong()).andExpect(status().isOk());
+    send(post(BASE + "/" + id + "/my-reply/submission"), answer(id, "1월"), kim())
+        .andExpect(status().isOk());
+    Long later = createOpen("모레 이후 마감");
+
+    send(post("/api/v1/demo/opinion-due-reminder-runs"), null, hong()).andExpect(status().isOk());
+    send(post("/api/v1/demo/opinion-due-reminder-runs"), null, hong()).andExpect(status().isOk());
+
+    assertThat(
+            notificationRepository.findAll().stream()
+                .filter(n -> n.getType() == NotificationType.OPINION_REPLY_DUE)
+                .filter(n -> n.getTitle().contains("내일 마감 자동 리마인드"))
+                .map(n -> n.getRecipientEmail()))
+        .containsExactly("choi.yujin@samsung.example.com");
+    send(get(BASE + "/" + id + "/reminders"), null, hong())
+        .andExpect(jsonPath("$.length()").value(1))
+        .andExpect(jsonPath("$[0].senderName").value("연결이(자동)"));
+    send(get(BASE + "/" + later + "/reminders"), null, hong())
+        .andExpect(jsonPath("$.length()").value(0));
+  }
+
+  @Test
   void 엑셀은_내부망에서_결과_요약과_취합표로_내려받는다() throws Exception {
     Long id = createOpen("엑셀 확인");
     send(post(BASE + "/" + id + "/my-reply/submission"), answer(id, "1월"), kim());

@@ -19,6 +19,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -34,7 +35,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class OpinionCollationService {
 
+  /** 자동 리마인드 이력의 보낸 사람. */
+  static final String AUTO_SENDER = "연결이(자동)";
+
   private final OpinionRequestService requestService;
+  private final OpinionRequestRepository requestRepository;
   private final OpinionReplyRepository replyRepository;
   private final OpinionReminderRepository reminderRepository;
   private final OpinionNotifier notifier;
@@ -42,11 +47,13 @@ public class OpinionCollationService {
 
   public OpinionCollationService(
       OpinionRequestService requestService,
+      OpinionRequestRepository requestRepository,
       OpinionReplyRepository replyRepository,
       OpinionReminderRepository reminderRepository,
       OpinionNotifier notifier,
       NetworkZoneResolver networkZoneResolver) {
     this.requestService = requestService;
+    this.requestRepository = requestRepository;
     this.replyRepository = replyRepository;
     this.reminderRepository = reminderRepository;
     this.notifier = notifier;
@@ -76,18 +83,55 @@ public class OpinionCollationService {
     if (request.getStatus() != OpinionRequestStatus.OPEN) {
       throw BusinessException.conflict("OPINION_REQUEST_STATUS", "회신중 요청에만 리마인드 메일을 보냅니다.");
     }
+    Set<Long> chosen =
+        organizationIds == null || organizationIds.isEmpty() ? null : Set.copyOf(organizationIds);
+    return sendReminder(request, user.name(), chosen)
+        .map(OpinionCollationService::toResponse)
+        .orElseThrow(
+            () ->
+                new BusinessException(
+                    HttpStatus.BAD_REQUEST,
+                    "OPINION_REMINDER_NO_RECIPIENT",
+                    "리마인드 메일을 받을 미회신 기관 담당자가 없습니다. 대상 기관의 회신 담당자를 확인해 주세요."));
+  }
+
+  /**
+   * 회신 기한 하루 전 자동 리마인드(예약 작업). 회신 기한이 내일인 회신중 요청마다 아직 회신을 제출하지 않은 기관의 회신 담당자에게 리마인드 메일을 보내고 이력을
+   * 남긴다(보낸 사람 "{@value #AUTO_SENDER}"). 같은 기한으로는 한 번만 보낸다.
+   *
+   * @return 리마인드를 보낸 요청 수
+   */
+  @Transactional
+  public int remindDueTomorrow() {
+    int sent = 0;
+    for (OpinionRequest request :
+        requestRepository.findByStatusAndDueDate(
+            OpinionRequestStatus.OPEN, requestService.today().plusDays(1))) {
+      if (request.isAutoRemindedForDueDate()) {
+        continue;
+      }
+      request.markAutoReminded();
+      if (sendReminder(request, AUTO_SENDER, null).isPresent()) {
+        sent++;
+      }
+    }
+    return sent;
+  }
+
+  /** 미회신 기관(고른 기관만, null 이면 전부)의 회신 담당자에게 리마인드를 보내고 이력을 남긴다. 받을 사람이 없으면 아무것도 하지 않고 빈 값이다. */
+  private Optional<OpinionReminder> sendReminder(
+      OpinionRequest request, String senderName, Set<Long> chosenOrganizationIds) {
     Set<Long> replied =
         replyRepository.findByTarget_Request_Id(request.getId()).stream()
             .filter(OpinionReply::isReplied)
             .map(r -> r.getTarget().getId())
             .collect(Collectors.toSet());
-    Set<Long> chosen =
-        organizationIds == null || organizationIds.isEmpty() ? null : Set.copyOf(organizationIds);
     List<String> organizations = new ArrayList<>();
     Set<String> emails = new LinkedHashSet<>();
     for (OpinionTarget target : request.getTargets()) {
       if (replied.contains(target.getId())
-          || (chosen != null && !chosen.contains(target.getOrganization().getId()))
+          || (chosenOrganizationIds != null
+              && !chosenOrganizationIds.contains(target.getOrganization().getId()))
           || target.getRecipients().isEmpty()) {
         continue;
       }
@@ -95,22 +139,18 @@ public class OpinionCollationService {
       target.getRecipients().forEach(r -> emails.add(r.getEmail()));
     }
     if (emails.isEmpty()) {
-      throw new BusinessException(
-          HttpStatus.BAD_REQUEST,
-          "OPINION_REMINDER_NO_RECIPIENT",
-          "리마인드 메일을 받을 미회신 기관 담당자가 없습니다. 대상 기관의 회신 담당자를 확인해 주세요.");
+      return Optional.empty();
     }
     notifier.remind(
         request, emails, ChronoUnit.DAYS.between(requestService.today(), request.getDueDate()));
-    OpinionReminder reminder =
+    return Optional.of(
         reminderRepository.saveAndFlush(
             new OpinionReminder(
                 request,
-                user.name(),
+                senderName,
                 organizations.size(),
                 emails.size(),
-                String.join(", ", organizations)));
-    return toResponse(reminder);
+                String.join(", ", organizations))));
   }
 
   /** 리마인드 메일 발송 이력, 최신순. */

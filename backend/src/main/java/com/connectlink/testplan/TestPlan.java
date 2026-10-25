@@ -101,6 +101,14 @@ public class TestPlan extends AuditedEntity {
   @Column(name = "test_data_requested_at")
   private LocalDateTime testDataRequestedAt;
 
+  /** 수행 종료 하루 전 자동 리마인드를 보낸 때의 수행 종료일. 기간을 바꾸면 새 종료일로 다시 보낸다. */
+  @Column(name = "end_reminded_for")
+  private LocalDate endRemindedFor;
+
+  /** 테스트데이터 회신 기한 하루 전 자동 리마인드를 보낸 때의 회신 기한. */
+  @Column(name = "test_data_reminded_for")
+  private LocalDate testDataRemindedFor;
+
   protected TestPlan() {}
 
   /** 테스트데이터 사전 요청. 회신 기한과 요청 사항. */
@@ -266,6 +274,24 @@ public class TestPlan extends AuditedEntity {
 
   public LocalDate getStartDate() {
     return startDate;
+  }
+
+  /** 지금 수행 종료일로 자동 리마인드를 이미 보냈는지. */
+  boolean isEndRemindedForEndDate() {
+    return endDate.equals(endRemindedFor);
+  }
+
+  void markEndReminded() {
+    this.endRemindedFor = endDate;
+  }
+
+  /** 지금 테스트데이터 회신 기한으로 자동 리마인드를 이미 보냈는지. */
+  boolean isTestDataRemindedForDueDate() {
+    return testDataDueDate != null && testDataDueDate.equals(testDataRemindedFor);
+  }
+
+  void markTestDataReminded() {
+    this.testDataRemindedFor = testDataDueDate;
   }
 
   public boolean isTestDataRequested() {
