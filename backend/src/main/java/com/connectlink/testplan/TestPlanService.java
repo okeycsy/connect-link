@@ -370,6 +370,27 @@ public class TestPlanService {
     return recipientsOf(plan);
   }
 
+  /**
+   * 탈퇴로 결과 등록 알림 대상이 아무도 남지 않은 테스트에 후임자를 넣는다. 테스트를 만든 사람이 그 업무를 맡은 사용 중 결제원 담당자면 그 사람을, 아니면(만든 사람이
+   * 탈퇴했으면) 그 업무 결제원 담당자 전부를 넣는다. 탈퇴 이벤트에서 부른다.
+   */
+  void handOverRecipients(TestPlan plan, Long withdrawnAccountId) {
+    if (!plan.getRecipients().isEmpty()) {
+      return;
+    }
+    List<BusinessMember> members =
+        kftcMembers(plan.getBusiness()).values().stream()
+            .filter(m -> !m.accountId().equals(withdrawnAccountId))
+            .toList();
+    List<BusinessMember> owner =
+        members.stream().filter(m -> m.email().equals(plan.getOwnerEmail())).toList();
+    List<BusinessMember> successors = owner.isEmpty() ? members : owner;
+    plan.replaceRecipients(
+        successors.stream()
+            .map(m -> new TestPlanRecipient.Draft(m.accountId(), m.email(), m.name()))
+            .toList());
+  }
+
   private List<TestPlanRecipientResponse> recipientsOf(TestPlan plan) {
     Map<Long, BusinessMember> candidates = kftcMembers(plan.getBusiness());
     List<TestPlanRecipientResponse> rows = new ArrayList<>();

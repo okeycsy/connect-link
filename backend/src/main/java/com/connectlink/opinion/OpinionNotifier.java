@@ -59,6 +59,20 @@ class OpinionNotifier {
         Set.of());
   }
 
+  /** 탈퇴한 회신 담당자 대신 후임자를 넣었다. 요청을 만든 결제원 담당자에게 알린다. */
+  void handedOver(OpinionRequest request, String organizationName, Collection<String> names) {
+    publish(
+        Set.of(request.getOwnerEmail()),
+        NotificationType.OPINION_REQUEST_CHANGED,
+        request,
+        organizationName + " 회신 담당자 인계: " + request.getTitle(),
+        organizationName
+            + " 의 회신 담당자가 모두 탈퇴해 같은 기관 담당자 "
+            + String.join(", ", names)
+            + " 님을 회신 담당자로 넣었습니다. 바꾸려면 요청 수정에서 고르세요.",
+        Set.of());
+  }
+
   /** 회신중 요청을 취소했다. 알림과 메일. */
   void cancelled(OpinionRequest request, Collection<String> recipientEmails) {
     publish(
