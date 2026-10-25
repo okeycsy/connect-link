@@ -116,7 +116,9 @@ describe('TestPlanListPage', () => {
     renderPage();
 
     const table = await screen.findByTestId('test-plan-table');
-    expect(await within(table).findByText('본인계좌 일괄지급정지 전문 개선 2차')).toBeInTheDocument();
+    expect(
+      await within(table).findByText('본인계좌 일괄지급정지 전문 개선 2차'),
+    ).toBeInTheDocument();
     expect(within(table).getByText('전체 수행률')).toBeInTheDocument();
     expect(within(table).getByTestId('progress-rate')).toHaveTextContent('49%');
     expect(within(table).getByText('1/4곳')).toBeInTheDocument();
