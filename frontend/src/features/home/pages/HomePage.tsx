@@ -12,7 +12,8 @@ const MAIN_KEY: HomeCard['key'] = 'SUSPENSIONS';
 const SIDE_CANDIDATES: HomeCard['key'][] = ['SIGNUP_APPROVAL', 'OPINION_REPLIES'];
 
 /**
- * 홈: "지금 할 일". 파스텔 번짐 위에 날짜 태그와 인사말만 두고(설명 문구 없음, SHY 요청 2026-10-24), 그 아래 카드.
+ * 홈: "지금 할 일". 인사말과 날짜 태그를 한 줄에 두고(설명 문구 없음, SHY 요청 2026-10-24), 그 아래 카드.
+ * 1280×800 데스크톱에서 스크롤 없이 한 화면에 들어오게 여백·카드 안 간격을 줄였다. SHY 요청(2026-10-25).
  * 건수 요약(KPI 타일)은 두지 않고, 서버가 이 사람에게 할 일이 있는 카드만 준다. SHY 요청(2026-10-24).
  * 결제원 담당자: 윗줄 왼쪽은 가입 승인 대기(없으면 회신 대기 의견 요청), 오른쪽 큰 칸은 다가오는 일시중단이다.
  * 기관 담당자: 요청받은 일(연락처 변경·확인, 의견 회신, 기관 테스트, 우리 기관을 부른 대화) 카드를 한 줄에 두 장씩 놓는다. 임박·초과 글자 배지는 두지 않는다.
@@ -36,16 +37,15 @@ export function HomePage() {
   const bottom = cards.filter((c) => c !== main && c !== side);
 
   return (
-    <Stack gap="lg" className={classes.home}>
-      <Group justify="space-between" align="flex-end" gap="md">
-        <Stack gap={10} align="flex-start">
-          <Box className={classes.dateTag}>
-            {formatToday()} · {data?.businessLabel ?? '업무 영역'}
-          </Box>
-          <Title order={1} className={classes.greeting}>
-            {data ? `안녕하세요, ${data.userName} 님` : '안녕하세요'}
-          </Title>
-        </Stack>
+    <Stack gap="md" className={classes.home}>
+      {/* 인사말과 날짜 태그를 한 줄에 둔다. 홈이 스크롤 없이 한 화면에 들어오게. SHY 요청(2026-10-25). */}
+      <Group gap="md" align="center" wrap="wrap" className={classes.head}>
+        <Title order={1} className={classes.greeting}>
+          {data ? `안녕하세요, ${data.userName} 님` : '안녕하세요'}
+        </Title>
+        <Box className={classes.dateTag}>
+          {formatToday()} · {data?.businessLabel ?? '업무 영역'}
+        </Box>
       </Group>
 
       {isError && (

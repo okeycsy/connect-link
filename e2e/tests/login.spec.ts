@@ -138,6 +138,17 @@ test.describe('로그인 화면 안내', () => {
       'href',
       'mailto:help@connect-link.example.com',
     );
+    // 데스크톱(1366×768 이상)에서는 세로 스크롤 없이 한 화면에 들어오고, 데모 계정 목록만 안에서 넘긴다. SHY 요청(2026-10-25).
+    for (const size of [
+      { width: 1366, height: 768 },
+      { width: 1280, height: 800 },
+    ]) {
+      await page.setViewportSize(size);
+      const scroll = await page.evaluate(() => document.documentElement.scrollHeight);
+      expect(scroll).toBeLessThanOrEqual(size.height);
+    }
+    await expect(page.getByTestId('demo-accounts')).toBeVisible();
+    await page.setViewportSize({ width: 1440, height: 900 });
 
     await page.getByRole('link', { name: '가이드 보기' }).click();
     await expect(page).toHaveURL(/\/guide$/);

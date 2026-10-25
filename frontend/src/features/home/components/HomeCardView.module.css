@@ -6,13 +6,10 @@
 /* 오른쪽 열처럼 세로로 쌓일 때는 내용 높이만큼만 */
 .card[data-stacked] {
   height: auto;
-  padding: 24px;
 }
 
 /* 왼쪽 큰 칸: 남는 높이를 내용이 채운다 */
 .card[data-tall] {
-  padding: 24px;
-
   & .body {
     flex: 1 1 auto;
   }
@@ -23,12 +20,12 @@
 }
 
 .items {
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 /* 할 일 한 줄: sunken 바탕 radius 14 */
 .item {
-  padding: 11px 14px;
+  padding: 8px 14px;
   border-radius: 14px;
   background: var(--cl-sunken);
   transition: background 160ms var(--cl-ease);

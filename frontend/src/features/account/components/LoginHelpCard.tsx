@@ -8,6 +8,7 @@ import classes from './LoginHelpCard.module.css';
 /**
  * 로그인 카드 아래의 도움말 카드: 왼쪽 이용 가이드(로그인 없이 보는 /guide), 오른쪽 문의하기(문의 메일).
  * 문의 메일 주소가 없으면 문의하기 칸을 빼고 가이드만 둔다.
+ * 제목과 버튼만 두고 설명 문구는 뺐다(로그인 화면이 한 화면에 들어오게, 2026-10-25 SHY 요청). 설명은 버튼의 title 로만 남긴다.
  */
 export function LoginHelpCard({ inquiryEmail }: { inquiryEmail?: string }) {
   return (
@@ -21,7 +22,7 @@ export function LoginHelpCard({ inquiryEmail }: { inquiryEmail?: string }) {
             component={Link}
             to="/guide"
             variant="outline"
-            size="sm"
+            size="xs"
             rightSection={<IconArrowRight size={16} />}
           >
             가이드 보기
@@ -40,7 +41,7 @@ export function LoginHelpCard({ inquiryEmail }: { inquiryEmail?: string }) {
                 component="a"
                 href={`mailto:${inquiryEmail}`}
                 variant="outline"
-                size="sm"
+                size="xs"
                 rightSection={<IconMail size={16} />}
               >
                 문의 메일 보내기
@@ -60,16 +61,13 @@ function HelpItem(props: {
   action: ReactNode;
 }) {
   return (
-    <Stack gap={8} className={classes.item}>
+    <Stack gap={8} className={classes.item} title={props.description}>
       <Group gap={8} c="var(--mantine-color-clay-7)" wrap="nowrap">
         {props.icon}
-        <Text fw={700} c="var(--cl-ink)">
+        <Text fw={700} size="sm" c="var(--cl-ink)">
           {props.title}
         </Text>
       </Group>
-      <Text size="sm" c="var(--cl-ink-muted)" lh={1.6} style={{ flex: 1 }}>
-        {props.description}
-      </Text>
       <div>{props.action}</div>
     </Stack>
   );

@@ -28,7 +28,7 @@ interface Props {
 export function HomeCardView({ card, stacked = false, tall = false }: Props) {
   const header = (
     <Group gap="xs" wrap="wrap" style={{ flexShrink: 0 }}>
-      <Text fw={700} size="xl" style={{ whiteSpace: 'nowrap' }}>
+      <Text fw={700} size="lg" style={{ whiteSpace: 'nowrap' }}>
         {card.title}
       </Text>
       {card.source === 'SAMPLE' && (
@@ -52,17 +52,19 @@ export function HomeCardView({ card, stacked = false, tall = false }: Props) {
   return (
     <Card
       className={classes.card}
+      // 1280×800 에서 한 화면에 들어오게 다른 화면 카드(24)보다 조금 좁힌다(2026-10-25).
+      padding={20}
       data-stacked={stacked || undefined}
       data-tall={tall || undefined}
       data-urgency={card.urgency !== 'NONE' ? card.urgency : undefined}
       data-testid={`home-card-${card.key}`}
     >
-      <Group justify="space-between" align="flex-start" mb="xs" wrap="nowrap">
+      <Group justify="space-between" align="center" mb={2} wrap="nowrap">
         {header}
         {more}
       </Group>
 
-      <Stack gap="sm" className={classes.body}>
+      <Stack gap="xs" className={classes.body}>
         {card.summary && (
           <Text size="sm" c="dimmed">
             {card.summary}
@@ -73,7 +75,7 @@ export function HomeCardView({ card, stacked = false, tall = false }: Props) {
           <SuspensionUpcoming items={card.items.slice(0, MAX_ROWS)} />
         ) : (
           card.items.length > 0 && (
-            <Stack gap={8} className={classes.items}>
+            <Stack gap={6} className={classes.items}>
               {card.items.slice(0, MAX_ROWS).map((item, i) => (
                 <ItemRow key={i} item={item} />
               ))}

@@ -40,6 +40,7 @@ import classes from './LoginPage.module.css';
 /**
  * 로그인. 결제원 직원과 기관 담당자가 같은 입구를 쓴다("결제원 / 기관" 선택 없음).
  * 회사 이메일과 비밀번호로 세션을 만든다. demo 프로필이면 역할별 데모 계정을 골라 같은 로그인 절차로 들어갈 수 있다.
+ * 데스크톱(1366×768 이상)에서는 세로 스크롤 없이 한 화면에 들어온다: 오른쪽 열은 화면 높이에 맞추고 데모 계정 목록만 안에서 넘긴다. SHY 요청(2026-10-25).
  */
 export function LoginPage() {
   const navigate = useNavigate();
@@ -125,10 +126,11 @@ export function LoginPage() {
         <Box className={classes.ring} aria-hidden />
         <Box className={classes.ringDot} aria-hidden />
         <Sparkle className={classes.sparkleC} size={40} />
-        <Stack gap="md" className={classes.column}>
-          <Paper className={classes.card} p={32}>
+        <Stack gap={12} className={classes.column}>
+          {/* 안쪽 여백 32→24: 로그인 화면이 1366×768 에서 스크롤 없이 들어오게(2026-10-25 SHY 요청). */}
+          <Paper className={classes.card} p={24}>
             <form onSubmit={form.onSubmit(submit)} noValidate>
-              <Stack gap="md">
+              <Stack gap="sm">
                 <div>
                   <Title order={2}>로그인</Title>
                   <Text c="dimmed" size="sm">
@@ -220,12 +222,13 @@ export function LoginPage() {
                 </Text>{' '}
                 이고, 고르면 같은 로그인 절차를 거칩니다.
               </Text>
-              <ScrollArea.Autosize
-                mah={300}
+              {/* 목록은 화면에 남는 높이만큼만 차지하고 안에서 넘긴다(데스크톱). 휴대폰 폭에서는 300 까지다. */}
+              <ScrollArea
                 type="auto"
                 scrollbars="y"
                 scrollbarSize={6}
                 offsetScrollbars
+                className={classes.demoScroll}
               >
                 <DemoAccountList
                   accounts={demo.accounts}
@@ -236,7 +239,7 @@ export function LoginPage() {
                     submit({ email: account.email, password: demo.password });
                   }}
                 />
-              </ScrollArea.Autosize>
+              </ScrollArea>
             </Paper>
           )}
         </Stack>
