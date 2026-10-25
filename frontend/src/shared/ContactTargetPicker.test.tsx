@@ -3,7 +3,11 @@ import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 
 import { renderWithProviders } from '../test/render';
-import { type ContactTargetCandidate, ContactTargetPicker, type TargetValue } from './ContactTargetPicker';
+import {
+  type ContactTargetCandidate,
+  ContactTargetPicker,
+  type TargetValue,
+} from './ContactTargetPicker';
 
 const member = (contactId: number, name: string, subBusiness: string | null) => ({
   contactId,
@@ -45,7 +49,11 @@ function Harness({ initial = [] }: { initial?: TargetValue[] }) {
       value={value}
       onChange={setValue}
       lockedOrganizationIds={new Set()}
-      labels={{ person: '회신 담당자', locked: '회신 있음', noMembers: '담당자 연락처가 없습니다.' }}
+      labels={{
+        person: '회신 담당자',
+        locked: '회신 있음',
+        noMembers: '담당자 연락처가 없습니다.',
+      }}
     />
   );
 }

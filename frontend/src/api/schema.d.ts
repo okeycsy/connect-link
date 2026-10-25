@@ -2315,7 +2315,13 @@ export interface components {
       endDate: string;
       items: components['schemas']['TestItemRequest'][];
       organizationIds: number[];
+      targetContacts: components['schemas']['TestTargetContactRequest'][];
       testDataRequest: components['schemas']['TestDataRequestForm'];
+    };
+    TestTargetContactRequest: {
+      /** Format: int64 */
+      organizationId: number;
+      emails: string[];
     };
     TestDataRequestResponse: {
       /** Format: date */
@@ -2376,6 +2382,11 @@ export interface components {
       report: boolean;
       feedback: boolean;
     };
+    TestTargetContactResponse: {
+      name: string;
+      email: string;
+      subBusiness?: string | null;
+    };
     TestTargetSummaryResponse: {
       /** Format: int64 */
       targetId: number;
@@ -2407,6 +2418,7 @@ export interface components {
       /** @enum {string} */
       testDataStatus: 'NOT_CREATED' | 'CREATED';
       testDataStatusLabel: string;
+      contacts: components['schemas']['TestTargetContactResponse'][];
     };
     TestDataSaveRequest: {
       /** @enum {string} */
@@ -3447,6 +3459,17 @@ export interface components {
       ownLastReportedAt?: string | null;
       ownerName: string;
     };
+    TestPlanCandidateMember: {
+      /** Format: int64 */
+      contactId: number;
+      name: string;
+      email: string;
+      subBusiness?: string | null;
+      jobRoleLabel: string;
+      department: string;
+      team: string;
+      jobTitle: string;
+    };
     TestPlanOrganizationResponse: {
       /** Format: int64 */
       id: number;
@@ -3455,6 +3478,7 @@ export interface components {
       /** @enum {string|null} */
       sector?: 'BANK' | 'SECURITIES' | 'MICROFINANCE' | 'INSURANCE' | null;
       sectorLabel?: string | null;
+      members: components['schemas']['TestPlanCandidateMember'][];
     };
     TestPlanCountsResponse: {
       /** Format: int64 */
