@@ -163,6 +163,28 @@ public class ContactService {
         .toList();
   }
 
+  /**
+   * 한 기관의 그 업무 담당자(주담당 먼저, 이름순). 기관 한눈에 보기가 쓴다. 전 기관을 보는 사람(결제원 담당자와 운영·상황실·대외계)만 쓰고, 그 밖이면 null
+   * 이다.
+   */
+  @Transactional(readOnly = true)
+  public List<ContactResponse> ofOrganization(
+      CurrentUser user, Business business, Long organizationId) {
+    if (!accessPolicy.canViewAll(user, business)) {
+      return null;
+    }
+    LocalDateTime now = now();
+    boolean internal = networkZoneResolver.isInternal();
+    return repository
+        .findAll(
+            ContactSpecifications.scope(business, null)
+                .and(ContactSpecifications.filter(null, organizationId, null, null)),
+            ContactSpecifications.DEFAULT_SORT)
+        .stream()
+        .map(c -> toResponse(user, c, now, internal))
+        .toList();
+  }
+
   /** 로그인한 사람 본인의 담당자 행(맡은 업무마다 하나). 내 정보 화면이 쓴다. */
   @Transactional(readOnly = true)
   public List<ContactResponse> mine(CurrentUser user) {

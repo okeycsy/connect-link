@@ -28,6 +28,7 @@ import { TestPlanEditorPage } from '../features/testplan/pages/TestPlanEditorPag
 import { TestPlanListPage } from '../features/testplan/pages/TestPlanListPage';
 import { TestPlanRecipientsPage } from '../features/testplan/pages/TestPlanRecipientsPage';
 import { OrganizationAdminPage } from '../features/organization/pages/OrganizationAdminPage';
+import { OrganizationOverviewPage } from '../features/organization/pages/OrganizationOverviewPage';
 import { AdminGuard } from './layout/AdminGuard';
 import { AdminHubPage } from './layout/AdminHubPage';
 import { DemoAttachmentsPage } from './layout/DemoAttachmentsPage';
@@ -101,6 +102,8 @@ export const router = createBrowserRouter([
             ],
           },
           // 가. 연락처: 목록(기관별 묶음, ?id= 상세 패널).
+          { path: 'organizations', element: <OrganizationOverviewPage /> },
+          { path: 'organizations/:id', element: <OrganizationOverviewPage /> },
           { path: 'contacts', element: <ContactListPage /> },
           // 가. 정기 변경 주간(그 업무의 결제원 담당자와 관리자만, 화면이 권한을 확인한다).
           { path: 'contacts/update-campaigns', element: <UpdateCampaignPage /> },
