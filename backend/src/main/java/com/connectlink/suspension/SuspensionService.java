@@ -365,21 +365,27 @@ public class SuspensionService {
     return toDetail(user, suspension);
   }
 
-  /** 결제원 담당자가 조치 및 인수인계 사항을 쓰고 확정한다. 확정한 건이면 사항만 고친다. 처음 확정하면 등록한 사람과 기관 담당자 연락처에 알린다. */
+  /**
+   * 결제원 담당자가 자기 조치 및 인수인계 사항을 쓰고 확정한다. 사항은 담당자마다 따로 두어 다른 사람 것을 덮지 않는다. 확정한 건이면 사항만 쓰거나 고친다. 처음
+   * 확정하면 등록한 사람과 기관 담당자 연락처에 알린다.
+   */
   public SuspensionDetailResponse confirm(CurrentUser user, Long id, String handover) {
     Suspension suspension = load(id);
     ensureNotCompleted(suspension);
     accessPolicy.ensureCanReview(user, suspension);
     SuspensionStatus before = suspension.getStatus();
-    String handoverBefore = suspension.getHandover();
     String text = handover.trim();
-    suspension.confirm(text, user.email(), user.name(), user.jobTitle(), roleLabelOf(user), now());
+    String handoverBefore =
+        suspension.confirm(
+            text, user.email(), user.name(), user.jobTitle(), roleLabelOf(user), now());
     repository.flush();
     recordStatus(
         user,
         suspension,
         before,
-        before == SuspensionStatus.CONFIRMED ? "조치 사항 수정" : "확정",
+        before == SuspensionStatus.CONFIRMED
+            ? "조치 사항 " + (handoverBefore == null ? "작성" : "수정")
+            : "확정",
         Objects.equals(handoverBefore, text) ? null : new String[] {handoverBefore, text});
     if (before != SuspensionStatus.CONFIRMED) {
       notifier.confirmed(
@@ -461,7 +467,6 @@ public class SuspensionService {
         s.getRegistrantName(),
         s.getRegistrantJobTitle(),
         s.isRegistrantKftc(),
-        s.getHandover(),
         s.getConfirmedAt(),
         s.getConfirmedByName(),
         s.getConfirmedByJobTitle(),
@@ -469,7 +474,13 @@ public class SuspensionService {
         s.getReviewers().stream()
             .map(
                 r ->
-                    new SuspensionReviewerResponse(r.getName(), r.getRoleLabel(), r.getStartedAt()))
+                    new SuspensionReviewerResponse(
+                        r.getName(),
+                        r.getRoleLabel(),
+                        r.getStartedAt(),
+                        r.getHandover(),
+                        r.getHandoverAt(),
+                        r.getEmail().equals(user.email())))
             .toList(),
         s.getCreatedAt(),
         s.getUpdatedAt(),
@@ -638,7 +649,8 @@ public class SuspensionService {
     FieldChanges changes =
         FieldChanges.compare().field("status", "상태", before, suspension.getStatus());
     if (handoverChange != null) {
-      changes.value("handover", "조치 및 인수인계 사항", handoverChange[0], handoverChange[1]);
+      changes.value(
+          "handover", "조치 및 인수인계 사항(" + user.name() + ")", handoverChange[0], handoverChange[1]);
     }
     changeHistoryService.record(
         user,

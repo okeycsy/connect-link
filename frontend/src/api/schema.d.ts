@@ -2599,7 +2599,6 @@ export interface components {
       registrantName: string;
       registrantJobTitle?: string | null;
       registrantKftc: boolean;
-      handover?: string | null;
       /** Format: date-time */
       confirmedAt?: string | null;
       confirmedByName?: string | null;
@@ -2625,6 +2624,10 @@ export interface components {
       roleLabel: string;
       /** Format: date-time */
       startedAt: string;
+      handover?: string | null;
+      /** Format: date-time */
+      handoverAt?: string | null;
+      mine: boolean;
     };
     SuspensionTargetWorkResponse: {
       /** Format: int64 */

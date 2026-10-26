@@ -590,7 +590,8 @@ class SuspensionControllerTest {
             TestUsers.admin())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("CONFIRMED"))
-        .andExpect(jsonPath("$.handover").value("운영팀이 조회를 차단합니다."))
+        .andExpect(jsonPath("$.reviewers[1].handover").value("운영팀이 조회를 차단합니다."))
+        .andExpect(jsonPath("$.reviewers[1].mine").value(true))
         .andExpect(jsonPath("$.confirmedByName").value("데모 관리자"))
         .andExpect(jsonPath("$.reviewers.length()").value(2));
     // 등록한 기관 담당자에게 확정 알림이 간다.
@@ -599,6 +600,34 @@ class SuspensionControllerTest {
                 .filter(n -> n.getRecipientEmail().equals("kim.minjun@kb.example.com"))
                 .filter(n -> n.getTitle().contains("확정")))
         .isNotEmpty();
+  }
+
+  @Test
+  void 조치_사항은_담당자마다_따로_남고_다른_사람이_써도_덮지_않는다() throws Exception {
+    Long id = createAsKim("담당자별 조치 작업");
+    send(post(BASE + "/" + id + "/confirmation"), Map.of("handover", "전산이 차단합니다."), hong())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("CONFIRMED"));
+    send(
+            post(BASE + "/" + id + "/confirmation"),
+            Map.of("handover", "현업이 고객 안내를 확인합니다."),
+            TestUsers.admin())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.reviewers.length()").value(2))
+        .andExpect(jsonPath("$.reviewers[0].name").value("홍성민"))
+        .andExpect(jsonPath("$.reviewers[0].handover").value("전산이 차단합니다."))
+        .andExpect(jsonPath("$.reviewers[0].mine").value(false))
+        .andExpect(jsonPath("$.reviewers[1].name").value("데모 관리자"))
+        .andExpect(jsonPath("$.reviewers[1].handover").value("현업이 고객 안내를 확인합니다."))
+        .andExpect(jsonPath("$.reviewers[1].handoverAt").isNotEmpty())
+        // 확정 기록은 처음 쓴 사람 그대로다.
+        .andExpect(jsonPath("$.confirmedByName").value("홍성민"));
+
+    // 자기 것을 고치면 자기 칸만 바뀐다.
+    send(post(BASE + "/" + id + "/confirmation"), Map.of("handover", "차단을 풉니다."), hong())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.reviewers[0].handover").value("차단을 풉니다."))
+        .andExpect(jsonPath("$.reviewers[1].handover").value("현업이 고객 안내를 확인합니다."));
   }
 
   @Test
@@ -658,8 +687,9 @@ class SuspensionControllerTest {
     send(put(BASE + "/" + id), changed, kim())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("PENDING_REVIEW"))
-        .andExpect(jsonPath("$.reviewers.length()").value(0))
-        .andExpect(jsonPath("$.handover").value("차단"));
+        // 사항을 쓴 확인자는 쓴 사항과 함께 남는다.
+        .andExpect(jsonPath("$.reviewers.length()").value(1))
+        .andExpect(jsonPath("$.reviewers[0].handover").value("차단"));
     List<NotificationOutbox> sent =
         outboxRepository.findAll().stream()
             .filter(o -> o.getSubject().contains("수정되었습니다"))

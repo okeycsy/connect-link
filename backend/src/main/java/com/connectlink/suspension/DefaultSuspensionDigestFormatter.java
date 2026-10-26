@@ -12,8 +12,8 @@ import java.util.Set;
 import org.springframework.stereotype.Component;
 
 /**
- * 임시 기본 양식. 업무별로 묶어 한 건에 한 줄(일시, 기관, 중단 이유)과 결제원 조치·인수인계 사항 한 줄을 적는다. 2000자를 넘으면 뒤를 줄이고 남은 건수를 적는다.
- * 전달 양식이 정해지면 바꾼다({@link SuspensionDigestFormatter}).
+ * 임시 기본 양식. 업무별로 묶어 한 건에 한 줄(일시, 기관, 중단 이유)과 결제원 담당자마다 쓴 조치·인수인계 사항을 한 줄씩 적는다. 2000자를 넘으면 뒤를 줄이고 남은
+ * 건수를 적는다. 전달 양식이 정해지면 바꾼다({@link SuspensionDigestFormatter}).
  */
 @Component
 class DefaultSuspensionDigestFormatter implements SuspensionDigestFormatter {
@@ -81,9 +81,14 @@ class DefaultSuspensionDigestFormatter implements SuspensionDigestFormatter {
             .append(s.targetWorkNames())
             .append("]");
     line.append(" · ").append(s.getReason());
-    if (s.getHandover() != null) {
-      line.append("\n  - 조치·인수인계: ").append(s.getHandover());
-    }
+    s.getReviewers().stream()
+        .filter(r -> r.getHandover() != null)
+        .forEach(
+            r ->
+                line.append("\n  - 조치·인수인계(")
+                    .append(r.getName())
+                    .append("): ")
+                    .append(r.getHandover()));
     return line.toString();
   }
 
