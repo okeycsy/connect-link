@@ -23,6 +23,7 @@ async function shot(page: Page, name: string) {
 }
 
 async function loginAs(page: Page, button: string) {
+  await page.context().clearCookies();
   await page.goto("/login");
   await page.getByRole("button", { name: button }).click();
   await expect(page).toHaveURL(/\/home$/);
