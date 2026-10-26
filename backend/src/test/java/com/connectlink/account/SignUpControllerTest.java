@@ -90,7 +90,7 @@ class SignUpControllerTest {
             .getContentAsString(StandardCharsets.UTF_8);
     JsonNode mails = objectMapper.readTree(json);
     assertThat(mails).isNotEmpty();
-    assertThat(mails.get(0).get("subject").asText()).isEqualTo("[연결이] 회사 이메일 인증 코드");
+    assertThat(mails.get(0).get("subject").asText()).isEqualTo("[금융결제원] (연결이) 회사 이메일 인증 코드");
     Matcher matcher = CODE.matcher(mails.get(0).get("body").asText());
     assertThat(matcher.find()).isTrue();
     return matcher.group(1);

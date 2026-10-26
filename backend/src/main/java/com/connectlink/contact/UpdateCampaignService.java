@@ -395,7 +395,7 @@ public class UpdateCampaignService {
         continue;
       }
       for (String email : emails) {
-        notificationService.publish(
+        notificationService.publishAsWritten(
             new NotificationCommand(
                 email,
                 NotificationType.CONTACT_CHANGE_REMINDER,
@@ -572,7 +572,7 @@ public class UpdateCampaignService {
                 email,
                 NotificationType.CONTACT_CHANGE_REQUESTED,
                 business,
-                "[" + business.getLabel() + "] 정기 변경 주간 " + period,
+                "정기 변경 주간 " + period,
                 campaign.getTitle()
                     + " 기간("
                     + period

@@ -36,8 +36,23 @@ public class NotificationService {
     this.accessPolicy = accessPolicy;
   }
 
-  /** 알림 센터에 남기고, 요청된 채널로는 {@link NotificationSender} 를 통해 보낸다. */
+  /**
+   * 알림 센터에 남기고, 요청된 채널로는 {@link NotificationSender} 를 통해 보낸다. 메일 제목에는 {@link MailSubject}
+   * 머리말("[금융결제원] (업무명)")을 붙인다.
+   */
   public NotificationResponse publish(NotificationCommand command) {
+    return publish(command, MailSubject.of(command.business(), command.title()));
+  }
+
+  /**
+   * {@link #publish} 와 같지만 메일 제목에 머리말을 붙이지 않고 알림 제목 그대로 보낸다. 보내는 사람이 미리보기에서 정한 리마인드 제목처럼 제목을 사람이 정한
+   * 메일에 쓴다.
+   */
+  public NotificationResponse publishAsWritten(NotificationCommand command) {
+    return publish(command, command.title());
+  }
+
+  private NotificationResponse publish(NotificationCommand command, String mailSubject) {
     Notification saved =
         notificationRepository.save(
             new Notification(
@@ -52,7 +67,7 @@ public class NotificationService {
           new OutboundMessage(
               channel,
               recipientFor(channel, command.recipientEmail()),
-              command.title(),
+              channel == NotificationChannel.EMAIL ? mailSubject : command.title(),
               command.body(),
               saved.getId()));
     }

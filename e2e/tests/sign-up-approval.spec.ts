@@ -104,7 +104,7 @@ test.describe('관리 > 가입 승인', () => {
     // 메일: 승인 메일과 사유가 담긴 반려 메일이 발송함에 남는다.
     expect((await mailbox(request, approvee.email))[0].subject).toContain('가입이 승인되었습니다');
     const rejection = (await mailbox(request, rejectee.email))[0];
-    expect(rejection.subject).toBe('[연결이] 가입 신청이 반려되었습니다');
+    expect(rejection.subject).toBe('[금융결제원] (연결이) 가입 신청이 반려되었습니다');
     expect(rejection.body).toContain(`반려 사유: ${reason}`);
 
     // 승인된 사람은 바로 로그인한다.

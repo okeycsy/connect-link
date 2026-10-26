@@ -128,7 +128,7 @@ class PasswordControllerTest {
 
   private String latestCode(String email) throws Exception {
     JsonNode mails = mailbox(email);
-    assertThat(mails.get(0).get("subject").asText()).isEqualTo("[연결이] 비밀번호 찾기 인증 코드");
+    assertThat(mails.get(0).get("subject").asText()).isEqualTo("[금융결제원] (연결이) 비밀번호 찾기 인증 코드");
     Matcher matcher = CODE.matcher(mails.get(0).get("body").asText());
     assertThat(matcher.find()).isTrue();
     return matcher.group(1);
@@ -143,7 +143,8 @@ class PasswordControllerTest {
 
     login(email, PASSWORD).andExpect(status().isUnauthorized());
     login(email, NEW_PASSWORD).andExpect(status().isOk());
-    assertThat(mailbox(email).get(0).get("subject").asText()).isEqualTo("[연결이] 비밀번호가 바뀌었습니다");
+    assertThat(mailbox(email).get(0).get("subject").asText())
+        .isEqualTo("[금융결제원] (연결이) 비밀번호가 바뀌었습니다");
   }
 
   @Test

@@ -39,6 +39,7 @@ class TestPlanNotifier {
     return plan.getStartDate().format(DATE) + "~" + plan.getEndDate().format(DATE);
   }
 
+  /** 메일 없이 알림 센터·매터모스트로만 가는 제목의 앞부분: 업무명과 테스트명. 메일로도 가는 제목은 머리말 "(업무명)" 과 겹치지 않게 테스트명만 쓴다. */
   private static String headline(TestPlan plan) {
     return plan.getBusiness().getLabel() + " " + plan.getTitle();
   }
@@ -49,7 +50,7 @@ class TestPlanNotifier {
         organizationEmails,
         plan,
         NotificationType.TEST_PLAN_OPENED,
-        headline(plan) + " 기관 테스트가 열렸습니다",
+        plan.getTitle() + " 기관 테스트가 열렸습니다",
         plan.getSubBusiness()
             + " · 수행 기간 "
             + periodText(plan)
@@ -68,7 +69,7 @@ class TestPlanNotifier {
         organizationEmails,
         plan,
         NotificationType.TEST_DATA_REQUESTED,
-        headline(plan) + " 테스트데이터를 요청합니다",
+        plan.getTitle() + " 테스트데이터를 요청합니다",
         plan.getSubBusiness() + " · 수행 기간 " + periodText(plan) + ". " + testDataText(plan),
         EnumSet.of(NotificationChannel.EMAIL));
   }
@@ -79,7 +80,7 @@ class TestPlanNotifier {
         organizationEmails,
         plan,
         NotificationType.TEST_RESULT_DUE,
-        headline(plan) + " 수행 종료가 내일입니다",
+        plan.getTitle() + " 수행 종료가 내일입니다",
         plan.getSubBusiness()
             + " · 수행 기간 "
             + periodText(plan)
@@ -93,7 +94,7 @@ class TestPlanNotifier {
         organizationEmails,
         plan,
         NotificationType.TEST_DATA_REQUESTED,
-        headline(plan) + " 테스트데이터 회신 기한이 내일입니다",
+        plan.getTitle() + " 테스트데이터 회신 기한이 내일입니다",
         plan.getSubBusiness()
             + " · 수행 기간 "
             + periodText(plan)

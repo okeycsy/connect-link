@@ -6,6 +6,7 @@ import com.connectlink.account.dto.SignUpApplicationResponse;
 import com.connectlink.auth.CurrentUser;
 import com.connectlink.common.BusinessException;
 import com.connectlink.common.PageResponse;
+import com.connectlink.notification.MailSubject;
 import com.connectlink.notification.NotificationChannel;
 import com.connectlink.notification.NotificationCommand;
 import com.connectlink.notification.NotificationSender;
@@ -126,7 +127,7 @@ public class SignUpReviewService {
             account.getEmail(),
             NotificationType.SIGNUP_APPROVED,
             home,
-            "연결이 가입이 승인되었습니다",
+            MailSubject.service("가입이 승인되었습니다"),
             account.getOrganization().getName()
                 + " "
                 + account.getName()
@@ -147,7 +148,7 @@ public class SignUpReviewService {
         new OutboundMessage(
             NotificationChannel.EMAIL,
             account.getEmail(),
-            "[연결이] 가입 신청이 반려되었습니다",
+            MailSubject.service("가입 신청이 반려되었습니다"),
             account.getOrganization().getName()
                 + " "
                 + account.getName()
