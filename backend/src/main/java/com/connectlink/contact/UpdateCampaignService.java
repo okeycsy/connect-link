@@ -395,7 +395,7 @@ public class UpdateCampaignService {
         continue;
       }
       for (String email : emails) {
-        notificationService.publish(
+        notificationService.publishAsWritten(
             new NotificationCommand(
                 email,
                 NotificationType.CONTACT_CHANGE_REMINDER,

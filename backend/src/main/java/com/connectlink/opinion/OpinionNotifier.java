@@ -113,15 +113,22 @@ class OpinionNotifier {
     return new Message(cut(subject, TITLE_MAX), cut(body, BODY_MAX));
   }
 
-  /** 미회신 기관에 보내는 리마인드. 알림과 메일. 문구는 기본 문구이거나 보내는 사람이 고친 것이다. */
+  /** 미회신 기관에 보내는 리마인드. 알림과 메일. 문구는 기본 문구이거나 보내는 사람이 고친 것이라 메일 제목에 머리말을 붙이지 않고 그대로 보낸다. */
   void remind(OpinionRequest request, Collection<String> recipientEmails, Message message) {
-    publish(
-        recipientEmails,
-        NotificationType.OPINION_REPLY_DUE,
-        request,
-        message.title(),
-        message.body(),
-        Set.of(NotificationChannel.EMAIL));
+    for (String email : new LinkedHashSet<>(recipientEmails)) {
+      if (email == null || email.isBlank()) {
+        continue;
+      }
+      notificationService.publishAsWritten(
+          new NotificationCommand(
+              email,
+              NotificationType.OPINION_REPLY_DUE,
+              request.getBusiness(),
+              cut(message.title(), TITLE_MAX),
+              cut(message.body(), BODY_MAX),
+              linkOf(request),
+              Set.of(NotificationChannel.EMAIL)));
+    }
   }
 
   /** 기관이 제출한 회신을 고치고 싶다고 요청했다. 요청을 만든 결제원 담당자에게 알린다. */
