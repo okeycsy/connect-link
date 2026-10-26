@@ -3,6 +3,7 @@ package com.connectlink.account;
 import com.connectlink.account.dto.EmailVerificationConfirmResponse;
 import com.connectlink.account.dto.EmailVerificationResponse;
 import com.connectlink.common.BusinessException;
+import com.connectlink.notification.MailSubject;
 import com.connectlink.notification.NotificationChannel;
 import com.connectlink.notification.NotificationSender;
 import com.connectlink.notification.OutboundMessage;
@@ -89,7 +90,7 @@ public class EmailVerificationService {
         new OutboundMessage(
             NotificationChannel.EMAIL,
             email,
-            "[연결이] 회사 이메일 인증 코드",
+            MailSubject.service("회사 이메일 인증 코드"),
             mailBody(code, properties.getCodeTtl()),
             null));
     return new EmailVerificationResponse(

@@ -255,7 +255,7 @@ class WithdrawalControllerTest {
             NotificationChannel.EMAIL, email);
     assertThat(sent)
         .extracting(NotificationOutbox::getSubject)
-        .containsExactly("[연결이] 탈퇴가 완료되었습니다", "점검 안내");
+        .containsExactly("[금융결제원] (연결이) 탈퇴가 완료되었습니다", "[금융결제원] (계좌통합관리) 점검 안내");
     assertThat(sent).extracting(NotificationOutbox::getNotificationId).containsOnlyNulls();
     assertThat(sent.get(0).getBody()).contains("KB국민은행 이탈퇴 님의 연결이 탈퇴가 완료되었습니다");
     // 기능 모듈이 자기 데이터를 지우도록 탈퇴 전 이메일과 담당 업무를 알린다.
@@ -329,7 +329,7 @@ class WithdrawalControllerTest {
         outboxRepository
             .findTop5ByChannelAndRecipientOrderByIdDesc(NotificationChannel.EMAIL, email)
             .get(0);
-    assertThat(mail.getSubject()).isEqualTo("[연결이] 계정이 탈퇴 처리되었습니다");
+    assertThat(mail.getSubject()).isEqualTo("[금융결제원] (연결이) 계정이 탈퇴 처리되었습니다");
     assertThat(mail.getBody())
         .contains("결제원 담당자 홍성민 님이 탈퇴 처리했습니다")
         .contains("사유: 인사이동으로 담당이 끝났습니다.");

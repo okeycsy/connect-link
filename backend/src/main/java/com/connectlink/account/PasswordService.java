@@ -3,6 +3,7 @@ package com.connectlink.account;
 import com.connectlink.account.dto.PasswordResetResponse;
 import com.connectlink.auth.CurrentUser;
 import com.connectlink.common.BusinessException;
+import com.connectlink.notification.MailSubject;
 import com.connectlink.notification.NotificationChannel;
 import com.connectlink.notification.NotificationSender;
 import com.connectlink.notification.OutboundMessage;
@@ -112,7 +113,7 @@ public class PasswordService {
           new OutboundMessage(
               NotificationChannel.EMAIL,
               email,
-              "[연결이] 비밀번호 찾기 인증 코드",
+              MailSubject.service("비밀번호 찾기 인증 코드"),
               resetMailBody(code, properties.getCodeTtl()),
               null));
     }
@@ -163,7 +164,7 @@ public class PasswordService {
         new OutboundMessage(
             NotificationChannel.EMAIL,
             account.getEmail(),
-            "[연결이] 비밀번호가 바뀌었습니다",
+            MailSubject.service("비밀번호가 바뀌었습니다"),
             account.getName()
                 + " 님의 연결이 비밀번호를 "
                 + how

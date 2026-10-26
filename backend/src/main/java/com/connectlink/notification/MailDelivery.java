@@ -36,7 +36,8 @@ class MailDelivery implements ChannelDelivery {
     SimpleMailMessage message = new SimpleMailMessage();
     message.setFrom(properties.getMail().getFrom());
     message.setTo(outbox.getRecipient());
-    message.setSubject(outbox.getSubject() == null ? "[연결이] 알림" : outbox.getSubject());
+    message.setSubject(
+        outbox.getSubject() == null ? MailSubject.service("알림") : outbox.getSubject());
     message.setText(outbox.getBody() == null ? "" : outbox.getBody());
     mailSender.getObject().send(message);
   }

@@ -2,6 +2,7 @@ package com.connectlink.account;
 
 import com.connectlink.auth.CurrentUser;
 import com.connectlink.common.BusinessException;
+import com.connectlink.notification.MailSubject;
 import com.connectlink.notification.NotificationChannel;
 import com.connectlink.notification.NotificationSender;
 import com.connectlink.notification.NotificationService;
@@ -100,7 +101,7 @@ public class WithdrawalService {
     complete(
         account,
         null,
-        "[연결이] 탈퇴가 완료되었습니다",
+        MailSubject.service("탈퇴가 완료되었습니다"),
         organizationName
             + " "
             + name
@@ -120,7 +121,7 @@ public class WithdrawalService {
     complete(
         account,
         actor,
-        "[연결이] 계정이 탈퇴 처리되었습니다",
+        MailSubject.service("계정이 탈퇴 처리되었습니다"),
         account.getOrganization().getName()
             + " "
             + account.getName()

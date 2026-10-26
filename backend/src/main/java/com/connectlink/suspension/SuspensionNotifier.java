@@ -1,5 +1,6 @@
 package com.connectlink.suspension;
 
+import com.connectlink.notification.MailSubject;
 import com.connectlink.notification.NotificationChannel;
 import com.connectlink.notification.NotificationCommand;
 import com.connectlink.notification.NotificationService;
@@ -132,7 +133,10 @@ class SuspensionNotifier {
         continue;
       }
       notificationService.sendToChannel(
-          NotificationChannel.EMAIL, email, cut(title, TITLE_MAX), cut(body, BODY_MAX));
+          NotificationChannel.EMAIL,
+          email,
+          cut(MailSubject.of(suspension.getBusinesses(), title), TITLE_MAX),
+          cut(body, BODY_MAX));
     }
   }
 

@@ -572,7 +572,7 @@ public class UpdateCampaignService {
                 email,
                 NotificationType.CONTACT_CHANGE_REQUESTED,
                 business,
-                "[" + business.getLabel() + "] 정기 변경 주간 " + period,
+                "정기 변경 주간 " + period,
                 campaign.getTitle()
                     + " 기간("
                     + period

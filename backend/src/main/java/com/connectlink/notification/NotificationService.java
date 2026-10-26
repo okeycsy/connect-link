@@ -36,7 +36,10 @@ public class NotificationService {
     this.accessPolicy = accessPolicy;
   }
 
-  /** 알림 센터에 남기고, 요청된 채널로는 {@link NotificationSender} 를 통해 보낸다. */
+  /**
+   * 알림 센터에 남기고, 요청된 채널로는 {@link NotificationSender} 를 통해 보낸다. 메일 제목에는 {@link MailSubject}
+   * 머리말("[금융결제원] (업무명)")을 붙인다.
+   */
   public NotificationResponse publish(NotificationCommand command) {
     Notification saved =
         notificationRepository.save(
@@ -52,7 +55,9 @@ public class NotificationService {
           new OutboundMessage(
               channel,
               recipientFor(channel, command.recipientEmail()),
-              command.title(),
+              channel == NotificationChannel.EMAIL
+                  ? MailSubject.of(command.business(), command.title())
+                  : command.title(),
               command.body(),
               saved.getId()));
     }

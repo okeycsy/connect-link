@@ -40,7 +40,7 @@ class TestPlanNotifier {
   }
 
   private static String headline(TestPlan plan) {
-    return plan.getBusiness().getLabel() + " " + plan.getTitle();
+    return plan.getTitle();
   }
 
   /** 테스트가 열렸다(만들었거나 대상 기관으로 더해졌다). 대상 기관 담당자에게 알림과 메일. 테스트데이터를 요청했으면 함께 알린다. */

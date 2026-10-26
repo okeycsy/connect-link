@@ -468,7 +468,7 @@ public class ContactService {
               contact.getEmail(),
               NotificationType.CONTACT_RECONFIRM_DUE,
               business,
-              "[" + business.getLabel() + "] 담당자 정보를 확인해 주세요",
+              "담당자 정보를 확인해 주세요",
               contact.getOrganization().getName()
                   + " "
                   + contact.getName()
