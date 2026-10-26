@@ -341,3 +341,22 @@ FROM (VALUES
   ('자동이체 통합조회 해지 절차 개선',        '문서준', 1, 1, '신한은행', 1)
 ) AS m (title, sender_name, organization_count, recipient_count, organization_names, sent_days)
 JOIN opinion_request r ON r.title = m.title;
+
+-- 위 리마인드 이력이 보낸 메일(발송함). 문구는 OpinionNotifier.reminderMessage 의 기본 문구와 같다. days_left 는 보낸 날 기준 남은 날이다.
+INSERT INTO notification_outbox (notification_id, channel, recipient, subject, body, status, sent_at, created_at, created_by, updated_at, updated_by)
+SELECT CAST(NULL AS BIGINT), 'EMAIL', m.email,
+       '[금융결제원] ' || r.title || CASE WHEN r.title LIKE '%의견 요청' THEN '' ELSE ' 의견 요청' END
+         || ' 회신 리마인드 (~' || CAST(r.due_date AS VARCHAR(10)) || '까지)',
+       CASE WHEN m.days_left > 0 THEN '회신 기한(' || CAST(r.due_date AS VARCHAR(10)) || ')까지 ' || CAST(m.days_left AS VARCHAR(10)) || '일 남았습니다.'
+            WHEN m.days_left = 0 THEN '오늘이 회신 기한(' || CAST(r.due_date AS VARCHAR(10)) || ')입니다.'
+            ELSE '회신 기한(' || CAST(r.due_date AS VARCHAR(10)) || ')이 지났습니다.' END
+         || ' 연결이에서 회신해 주세요.' || CHAR(10) || '${site_url}/' || m.slug || '/opinions/' || CAST(r.id AS VARCHAR(20)),
+       'PENDING', CAST(NULL AS TIMESTAMP),
+       CURRENT_TIMESTAMP - m.sent_days * INTERVAL '1' DAY, r.owner_email, CURRENT_TIMESTAMP - m.sent_days * INTERVAL '1' DAY, r.owner_email
+FROM (VALUES
+  ('계좌통합관리 수수료 체계 개편 의견 요청', 'account-info',  'kim.minjun@kb.example.com',     2, 5),
+  ('4분기 계좌통합관리업무 회비 사전확인',     'account-info',  'bae.sua@kb.example.com',        1, 8),
+  ('4분기 계좌통합관리업무 회비 사전확인',     'account-info',  'pi.jaehyun@cu.example.com',     1, 8),
+  ('자동이체 통합조회 해지 절차 개선',        'auto-transfer', 'lee.junho@shinhan.example.com', 1, 0)
+) AS m (title, slug, email, sent_days, days_left)
+JOIN opinion_request r ON r.title = m.title;

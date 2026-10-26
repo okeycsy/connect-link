@@ -127,3 +127,18 @@ SELECT u.id, o.id, CURRENT_TIMESTAMP - INTERVAL '1' DAY, TRUE, '홍성민', 2,
 FROM update_campaign u
 JOIN organization o ON o.code = '004'
 WHERE u.title = '하반기 담당자 정기 변경';
+
+-- 위 리마인드가 보낸 메일(발송함). 문구는 UpdateCampaignService 의 기본 리마인드 문구와 같다.
+INSERT INTO notification_outbox (notification_id, channel, recipient, subject, body, status, sent_at, created_at, created_by, updated_at, updated_by)
+SELECT CAST(NULL AS BIGINT), 'EMAIL', m.email,
+       '[금융결제원] (계좌통합관리) 정기 변경 리마인드: ' || u.title || ' (~' || CAST(u.end_date AS VARCHAR(10)) || ')',
+       u.title || ' 기간(' || CAST(u.start_date AS VARCHAR(10)) || ' ~ ' || CAST(u.end_date AS VARCHAR(10))
+         || ')에 우리 기관의 계좌통합관리 담당자 현행화 완료가 아직 확인되지 않았습니다. 담당자 정보를 확인해 바뀐 것은 고치고, 모두 맞으면 연락처 화면에서 "현행화 완료" 를 눌러 주세요.'
+         || ' 완료하면 리마인드 메일은 더 가지 않습니다.' || CHAR(10) || '${site_url}/account-info/contacts',
+       'PENDING', CAST(NULL AS TIMESTAMP),
+       CURRENT_TIMESTAMP - INTERVAL '1' DAY, 'hong.sungmin@kftc.example.com', CURRENT_TIMESTAMP - INTERVAL '1' DAY, 'hong.sungmin@kftc.example.com'
+FROM (VALUES
+  ('kim.minjun@kb.example.com'),
+  ('namgung.min@kb.example.com')
+) AS m (email)
+JOIN update_campaign u ON u.title = '하반기 담당자 정기 변경';
