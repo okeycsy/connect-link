@@ -25,6 +25,6 @@ class DemoOutboxOpenToAllTest {
     mockMvc
         .perform(get("/api/v1/notification-outbox").with(TestUsers.ganaMember()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.totalElements").value(7));
+        .andExpect(jsonPath("$.totalElements").value(12));
   }
 }
