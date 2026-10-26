@@ -13,10 +13,11 @@ import java.util.List;
  * @param targetWorks 고른 대상 업무. 기준정보 순서
  * @param businesses 관련 레일 업무. 업무 순서이고, 비면 결제원 운영·상황실·대외계가 맡는다
  * @param contacts 기관 작업 담당자 연락처. 적은 순서
- * @param handover 결제원의 조치 및 인수인계 사항. 확정하면 생긴다
  * @param registrantJobTitle 등록한 사람의 그때 직급
+ * @param confirmedAt 처음 확정한 일시
+ * @param confirmedByName 처음 확정한(사항을 처음 쓴) 결제원 담당자
  * @param confirmedByJobTitle 확정한 결제원 담당자의 그때 직급
- * @param reviewers 확인을 시작한 결제원 담당자. 시작한 순서
+ * @param reviewers 확인을 시작한 결제원 담당자와 각자 쓴 조치 및 인수인계 사항. 시작한 순서
  */
 public record SuspensionDetailResponse(
     Long id,
@@ -40,7 +41,6 @@ public record SuspensionDetailResponse(
     String registrantName,
     @Schema(nullable = true) String registrantJobTitle,
     boolean registrantKftc,
-    @Schema(nullable = true) String handover,
     @Schema(nullable = true) LocalDateTime confirmedAt,
     @Schema(nullable = true) String confirmedByName,
     @Schema(nullable = true) String confirmedByJobTitle,

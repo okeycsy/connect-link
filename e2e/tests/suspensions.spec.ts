@@ -383,8 +383,29 @@ test.describe("라. 일시중단", () => {
       page.getByText(/결제원\(홍성민 과장\) · .* 확정/),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "조치 사항 고치기" }),
+      page.getByRole("button", { name: "내 조치 사항 고치기" }),
     ).toBeVisible();
+
+    // 다른 결제원 담당자(전산)가 이어 쓰면 앞 사람 것을 덮지 않고 이름 아래에 따로 나열된다.
+    await loginAs(page, "김태호");
+    await page.goto(`/account-info/suspensions/${id}`);
+    await page.getByRole("button", { name: "내 조치 사항 쓰기" }).click();
+    await page
+      .getByRole("dialog", { name: "내 조치 사항 쓰기" })
+      .getByRole("textbox", { name: "조치 및 인수인계 사항" })
+      .fill("전산 운영팀이 차단 설정을 반영했습니다.");
+    await page
+      .getByRole("dialog", { name: "내 조치 사항 쓰기" })
+      .getByRole("button", { name: "저장" })
+      .click();
+    const reviewers = page.getByTestId("suspension-reviewer");
+    await expect(reviewers).toHaveCount(2);
+    await expect(reviewers.nth(0)).toContainText("홍성민");
+    await expect(reviewers.nth(0)).toContainText("운영팀이 01:00 에");
+    await expect(reviewers.nth(1)).toContainText("김태호");
+    await expect(reviewers.nth(1)).toContainText(
+      "전산 운영팀이 차단 설정을 반영했습니다.",
+    );
     await shot(page, "suspension-detail");
 
     // 변경 이력
