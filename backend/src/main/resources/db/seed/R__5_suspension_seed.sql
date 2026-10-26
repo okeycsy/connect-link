@@ -126,13 +126,13 @@ SET contact2_name = '한예린', contact2_phone = '010-0000-2102', contact2_emai
 WHERE org_code = '004' AND end_min = 1800;
 
 INSERT INTO suspension (organization_id, start_at, end_at, reason, kftc_action, extra_note,
-                        status, registrant_email, registrant_name, registrant_kftc, handover, confirmed_at, confirmed_by_email, confirmed_by_name, completed_at,
+                        status, registrant_email, registrant_name, registrant_kftc, confirmed_at, confirmed_by_email, confirmed_by_name, completed_at,
                         created_at, created_by, updated_at, updated_by)
 SELECT o.id,
        CAST(CURRENT_DATE AS TIMESTAMP) + s.start_min * INTERVAL '1' MINUTE,
        CAST(CURRENT_DATE AS TIMESTAMP) + s.end_min * INTERVAL '1' MINUTE,
        s.reason, s.kftc_action, s.extra_note,
-       s.status, s.registrant_email, s.registrant_name, s.registrant_kftc, s.handover,
+       s.status, s.registrant_email, s.registrant_name, s.registrant_kftc,
        CASE WHEN s.confirmed_by_email IS NULL THEN CAST(NULL AS TIMESTAMP) ELSE CAST(CURRENT_DATE AS TIMESTAMP) + (s.start_min - 1440) * INTERVAL '1' MINUTE END,
        s.confirmed_by_email, s.confirmed_by_name,
        CASE WHEN s.status = 'COMPLETED' THEN CAST(CURRENT_DATE AS TIMESTAMP) + (s.end_min + 1) * INTERVAL '1' MINUTE ELSE CAST(NULL AS TIMESTAMP) END,
@@ -167,8 +167,6 @@ JOIN organization o ON o.code = c.org_code
 JOIN suspension su ON su.organization_id = o.id
                   AND su.end_at = CAST(CURRENT_DATE AS TIMESTAMP) + c.end_min * INTERVAL '1' MINUTE;
 
-DROP TABLE suspension_seed;
-
 -- 확인을 시작한 결제원 담당자. 확정한 사람은 확인자에도 들어 있다.
 INSERT INTO suspension_reviewer (suspension_id, email, name, role_label, started_at, created_at, created_by, updated_at, updated_by)
 SELECT su.id, r.email, r.name, r.role_label, su.created_at + INTERVAL '1' HOUR, su.created_at + INTERVAL '1' HOUR, r.email, su.created_at + INTERVAL '1' HOUR, r.email
@@ -189,6 +187,27 @@ FROM (VALUES
 JOIN organization o ON o.code = r.org_code
 JOIN suspension su ON su.organization_id = o.id
                   AND su.end_at = CAST(CURRENT_DATE AS TIMESTAMP) + r.end_min * INTERVAL '1' MINUTE;
+
+-- 조치 및 인수인계 사항은 확인한 담당자마다 따로다. 샘플의 사항은 확정한 사람(확인자에 들어 있다)의 것이다.
+UPDATE suspension_reviewer
+SET handover = (SELECT s.handover FROM suspension_seed s
+                JOIN organization o ON o.code = s.org_code
+                JOIN suspension su ON su.organization_id = o.id
+                                  AND su.end_at = CAST(CURRENT_DATE AS TIMESTAMP) + s.end_min * INTERVAL '1' MINUTE
+                WHERE su.id = suspension_reviewer.suspension_id AND s.confirmed_by_email = suspension_reviewer.email);
+UPDATE suspension_reviewer
+SET handover_at = (SELECT su.confirmed_at FROM suspension su WHERE su.id = suspension_reviewer.suspension_id)
+WHERE handover IS NOT NULL;
+
+-- 계정계 증설 건은 두 담당자가 각자 사항을 썼다. 전산(운영)이 먼저 확정하고 현업이 이어 썼다.
+UPDATE suspension_reviewer
+SET handover = '고객 안내 문구를 확인했습니다. 재개 뒤 조회 건수를 다음 날 아침에 점검합니다.',
+    handover_at = (SELECT su.confirmed_at FROM suspension su WHERE su.id = suspension_reviewer.suspension_id) + INTERVAL '30' MINUTE
+WHERE email = 'hong.sungmin@kftc.example.com'
+  AND suspension_id = (SELECT su.id FROM suspension su JOIN organization o ON o.id = su.organization_id
+                       WHERE o.code = '004' AND su.end_at = CAST(CURRENT_DATE AS TIMESTAMP) + 1800 * INTERVAL '1' MINUTE);
+
+DROP TABLE suspension_seed;
 
 -- 글쓴이 직급은 샘플 계정의 직급을 그대로 쓴다.
 UPDATE suspension

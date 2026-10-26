@@ -26,7 +26,7 @@ import org.hibernate.annotations.BatchSize;
 
 /**
  * 참가기관 일시중단 한 건. 기관 담당자나 결제원 담당자가 정해진 양식({@link Content})으로 등록하고, 결제원 담당자가 확인을 시작하고({@link
- * SuspensionReviewer}) 조치·인수인계 사항을 쓰면 확정된다. 확정 건은 종료 시각이 지나면 완료다.
+ * SuspensionReviewer}) 조치·인수인계 사항을 쓰면 확정된다. 사항은 확인한 담당자마다 따로 쓴다. 확정 건은 종료 시각이 지나면 완료다.
  */
 @Entity
 @Table(name = "suspension")
@@ -83,9 +83,6 @@ public class Suspension extends AuditedEntity {
   private boolean registrantKftc;
 
   /** 결제원 운영·개발·업무 담당자가 쓴 조치 및 인수인계 사항. 쓰면 확정된다. */
-  @Column(name = "handover", length = 2000)
-  private String handover;
-
   @Column(name = "confirmed_at")
   private LocalDateTime confirmedAt;
 
@@ -251,10 +248,13 @@ public class Suspension extends AuditedEntity {
     }
   }
 
-  /** 다시 검토 대기로 돌린다. 기관이 내용을 고쳤을 때 결제원이 다시 확인하도록 확인 기록을 지운다. 쓴 조치·인수인계 사항은 남긴다. */
+  /**
+   * 다시 검토 대기로 돌린다. 기관이 내용을 고쳤을 때 결제원이 다시 확인하도록 확정 기록과 사항을 쓰지 않은 확인자를 지운다. 이미 쓴 조치·인수인계 사항은 쓴 사람의
+   * 것으로 남긴다.
+   */
   public void reopenReview() {
     ensureNotCompleted();
-    reviewers.clear();
+    reviewers.removeIf(r -> r.getHandover() == null);
     this.status = SuspensionStatus.PENDING_REVIEW;
     this.confirmedAt = null;
     this.confirmedByEmail = null;
@@ -279,8 +279,13 @@ public class Suspension extends AuditedEntity {
     return true;
   }
 
-  /** 조치·인수인계 사항을 쓰고 확정한다. 확정한 뒤 다시 부르면 사항만 바꾼다. 확인을 시작하지 않은 사람이면 확인자로도 남긴다. */
-  public void confirm(
+  /**
+   * 이 담당자의 조치·인수인계 사항을 쓴다. 담당자마다 따로 두어 다른 사람이 쓴 것을 덮지 않는다. 확인을 시작하지 않은 사람이면 확인자로도 남긴다. 확정 전이면 이 사람이
+   * 확정한 것으로 남기고, 이미 확정한 건이면 확정 기록은 그대로 둔다.
+   *
+   * @return 이 사람이 전에 쓴 사항. 처음 쓰면 null
+   */
+  public String confirm(
       String handover,
       String email,
       String name,
@@ -289,12 +294,17 @@ public class Suspension extends AuditedEntity {
       LocalDateTime now) {
     ensureNotCompleted();
     startReview(email, name, roleLabel, now);
-    this.handover = handover;
-    this.status = SuspensionStatus.CONFIRMED;
-    this.confirmedAt = now;
-    this.confirmedByEmail = email;
-    this.confirmedByName = name;
-    this.confirmedByJobTitle = jobTitle;
+    SuspensionReviewer reviewer = reviewerOf(email);
+    String before = reviewer.getHandover();
+    reviewer.writeHandover(handover, now);
+    if (status != SuspensionStatus.CONFIRMED) {
+      this.status = SuspensionStatus.CONFIRMED;
+      this.confirmedAt = now;
+      this.confirmedByEmail = email;
+      this.confirmedByName = name;
+      this.confirmedByJobTitle = jobTitle;
+    }
+    return before;
   }
 
   /** 종료 시각이 지난 확정 건을 완료한다. */
@@ -308,6 +318,13 @@ public class Suspension extends AuditedEntity {
 
   public boolean isReviewer(String email) {
     return reviewers.stream().anyMatch(r -> r.getEmail().equals(email));
+  }
+
+  private SuspensionReviewer reviewerOf(String email) {
+    return reviewers.stream()
+        .filter(r -> r.getEmail().equals(email))
+        .findFirst()
+        .orElseThrow(() -> new IllegalStateException("확인자가 아닙니다: " + email));
   }
 
   /** 지금 기준 시간 구분. */
@@ -420,10 +437,6 @@ public class Suspension extends AuditedEntity {
 
   public boolean isRegistrantKftc() {
     return registrantKftc;
-  }
-
-  public String getHandover() {
-    return handover;
   }
 
   public LocalDateTime getConfirmedAt() {

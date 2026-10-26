@@ -88,7 +88,6 @@ function SuspensionView({ slug, suspension }: { slug: string; suspension: Suspen
     remove.reset();
     setDialog(null);
   };
-  const confirmed = suspension.status === 'CONFIRMED';
   const kftcWork = suspension.kind === 'KFTC_WORK';
 
   return (
@@ -148,7 +147,7 @@ function SuspensionView({ slug, suspension }: { slug: string; suspension: Suspen
                 leftSection={<IconCheck size={16} stroke={1.8} />}
                 onClick={() => setDialog('confirm')}
               >
-                {confirmed ? '조치 사항 고치기' : '조치 쓰고 확정'}
+                {handoverActionLabel(suspension)}
               </Button>
             )}
           </>
@@ -303,59 +302,77 @@ function SuspensionContent({ suspension: s }: { suspension: SuspensionDetail }) 
   );
 }
 
-/** 검토·확정 기록: 확인을 시작한 결제원 담당자와 조치 및 인수인계 사항. */
+/**
+ * 검토·확정 기록. 확인한 결제원 담당자를 시작한 순서대로 나열하고, 담당자마다 그 사람이 쓴 조치 및 인수인계 사항을 이름 아래에 붙인다. 사항은 담당자마다
+ * 따로 저장해 뒤에 쓴 사람이 앞 사람 것을 덮지 않는다.
+ */
 function ReviewCard({ suspension: s }: { suspension: SuspensionDetail }) {
+  const reopened =
+    (s.status === 'PENDING_REVIEW' || s.status === 'IN_REVIEW') &&
+    s.reviewers.some((r) => r.handover);
   return (
     <Card>
       <Stack gap="md">
         <Text fw={700} size="xl">
           검토와 확정
         </Text>
-        <Field label="확인한 결제원 담당자">
+        <Field label="확인한 결제원 담당자 · 조치 및 인수인계 사항">
           {s.reviewers.length === 0 ? (
             <Text size="md" c="dimmed">
-              아직 확인을 시작한 결제원 담당자가 없습니다.
+              아직 확인을 시작한 결제원 담당자가 없습니다. 업무·개발·운영 담당자가 조치 및 인수인계
+              사항을 쓰면 확정됩니다.
             </Text>
           ) : (
-            <Stack gap={6} data-testid="suspension-reviewers">
+            <Stack gap="md" data-testid="suspension-reviewers">
               {s.reviewers.map((r) => (
-                <Group key={`${r.name}-${r.startedAt}`} gap="sm" wrap="nowrap">
-                  <ThemeIcon variant="light" color="sky" radius="sm" size={28}>
-                    <Text size="xs" fw={700}>
-                      {r.name.slice(0, 1)}
+                <Stack key={`${r.name}-${r.startedAt}`} gap={6} data-testid="suspension-reviewer">
+                  <Group gap="sm" wrap="nowrap">
+                    <ThemeIcon variant="light" color="sky" radius="sm" size={28}>
+                      <Text size="xs" fw={700}>
+                        {r.name.slice(0, 1)}
+                      </Text>
+                    </ThemeIcon>
+                    <Text size="md">
+                      {r.name}{' '}
+                      <Text span size="sm" c="dimmed">
+                        {r.roleLabel} · {formatDateTime(r.startedAt)} 확인 시작
+                      </Text>
                     </Text>
-                  </ThemeIcon>
-                  <Text size="md">
-                    {r.name}{' '}
-                    <Text span size="sm" c="dimmed">
-                      {r.roleLabel} · {formatDateTime(r.startedAt)}
-                    </Text>
-                  </Text>
-                </Group>
+                  </Group>
+                  <Stack gap={2} pl={40}>
+                    {r.handover ? (
+                      <>
+                        <Text
+                          size="md"
+                          className={classes.content}
+                          data-testid="suspension-handover"
+                        >
+                          {r.handover}
+                        </Text>
+                        {r.handoverAt && (
+                          <Text size="xs" c="dimmed">
+                            {formatDateTime(r.handoverAt)} 작성
+                          </Text>
+                        )}
+                      </>
+                    ) : (
+                      <Text size="sm" c="dimmed">
+                        아직 조치 및 인수인계 사항을 쓰지 않았습니다.
+                      </Text>
+                    )}
+                  </Stack>
+                </Stack>
               ))}
             </Stack>
           )}
         </Field>
-        <Field label="조치 및 인수인계 사항">
-          {s.handover ? (
-            <Stack gap={4}>
-              <Text size="md" className={classes.content} data-testid="suspension-handover">
-                {s.handover}
-              </Text>
-              {s.confirmedAt && (
-                <Text size="xs" c="dimmed">
-                  {formatAuthor('결제원', s.confirmedByName, s.confirmedByJobTitle)} ·{' '}
-                  {formatDateTime(s.confirmedAt)} 확정
-                </Text>
-              )}
-            </Stack>
-          ) : (
-            <Text size="md" c="dimmed">
-              업무·개발·운영 담당자가 쓰면 확정됩니다.
-            </Text>
-          )}
-        </Field>
-        {s.handover && s.status === 'PENDING_REVIEW' && (
+        {s.confirmedAt && (
+          <Text size="sm" c="dimmed">
+            {formatAuthor('결제원', s.confirmedByName, s.confirmedByJobTitle)} ·{' '}
+            {formatDateTime(s.confirmedAt)} 확정
+          </Text>
+        )}
+        {reopened && (
           <Alert variant="light" color="amber">
             기관이 내용을 고쳐 다시 확인이 필요합니다. 위 사항은 고치기 전에 쓴 것입니다.
           </Alert>
@@ -370,7 +387,9 @@ function ReviewCard({ suspension: s }: { suspension: SuspensionDetail }) {
   );
 }
 
-/** 조치 및 인수인계 사항을 쓰고 확정한다. 확정한 건이면 쓴 사항을 고친다. 검증 메시지는 서버 것을 그대로 보인다. */
+/**
+ * 내 조치 및 인수인계 사항을 쓰고 확정한다. 이미 확정한 건이면 내 사항만 쓰거나 고치고, 다른 담당자가 쓴 사항은 그대로다. 검증 메시지는 서버 것을 그대로 보인다.
+ */
 function HandoverModal({
   opened,
   onClose,
@@ -381,10 +400,11 @@ function HandoverModal({
   suspension: SuspensionDetail;
 }) {
   const confirm = useConfirmSuspension(suspension.id);
-  const form = useForm({ initialValues: { handover: suspension.handover ?? '' } });
+  const mine = myHandover(suspension);
+  const form = useForm({ initialValues: { handover: mine ?? '' } });
   const [generalError, setGeneralError] = useState<string>();
   const close = () => {
-    form.setValues({ handover: suspension.handover ?? '' });
+    form.setValues({ handover: mine ?? '' });
     form.clearErrors();
     setGeneralError(undefined);
     onClose();
@@ -394,7 +414,7 @@ function HandoverModal({
     <Modal
       opened={opened}
       onClose={close}
-      title={confirmed ? '조치 및 인수인계 사항 고치기' : '조치 쓰고 확정'}
+      title={handoverActionLabel(suspension)}
       centered
       size="lg"
     >
@@ -416,7 +436,7 @@ function HandoverModal({
         <Stack gap="md">
           <Text size="md">
             {confirmed
-              ? '확정한 일시중단의 조치 및 인수인계 사항을 고칩니다.'
+              ? '내 조치 및 인수인계 사항을 씁니다. 다른 담당자가 쓴 사항은 그대로 두고 내 이름 아래에 따로 남습니다.'
               : '중단 동안 결제원이 할 조치와 다음 담당자에게 넘길 내용을 적습니다. 저장하면 확정되고 등록한 사람에게 알림이 갑니다.'}
           </Text>
           <Textarea
@@ -446,4 +466,17 @@ function HandoverModal({
       </form>
     </Modal>
   );
+}
+
+/** 로그인한 담당자가 쓴 조치 및 인수인계 사항. 아직 쓰지 않았으면 undefined. */
+function myHandover(suspension: SuspensionDetail): string | undefined {
+  return suspension.reviewers.find((r) => r.mine)?.handover ?? undefined;
+}
+
+/** 확정 버튼과 창 제목. 확정 전이면 확정, 확정 뒤면 내 사항 쓰기·고치기다. */
+function handoverActionLabel(suspension: SuspensionDetail): string {
+  if (suspension.status !== 'CONFIRMED') {
+    return '조치 쓰고 확정';
+  }
+  return myHandover(suspension) ? '내 조치 사항 고치기' : '내 조치 사항 쓰기';
 }
