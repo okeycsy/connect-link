@@ -14,3 +14,5 @@ app:
   demo:
     # 데모 계정 공통 비밀번호. db/seed/R__2_account_seed.sql 의 해시와 README 의 데모 계정 표와 같아야 한다.
     account-password: demo1234!
+    # 발송함(데모 도구 메뉴)을 관리자가 아닌 계정도 본다. 데모 메뉴는 모든 계정에 보이고 메일은 전부 가상 데이터다. 운영은 꺼져 있어 관리자만 본다.
+    outbox-open-to-all: true

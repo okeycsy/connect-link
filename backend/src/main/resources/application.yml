@@ -19,6 +19,9 @@ spring:
           time_zone: Asia/Seoul
   flyway:
     locations: classpath:db/migration
+    placeholders:
+      # 샘플 데이터(db/seed)의 메일 본문 링크가 실제 발송 메일과 같은 주소를 쓰게 한다.
+      site_url: ${app.notification.site-url}
   jackson:
     time-zone: Asia/Seoul
   mvc:

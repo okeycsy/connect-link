@@ -40,7 +40,7 @@ class NotificationControllerTest {
         .perform(get("/api/v1/notifications").with(TestUsers.ganaMember()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.totalElements").value(1))
-        .andExpect(jsonPath("$.content[0].title").value("의견 요청 \"계좌통합관리 수수료 체계 개편\" 에 회신해 주세요"));
+        .andExpect(jsonPath("$.content[0].title").value("의견 요청: 계좌통합관리 수수료 체계 개편 의견 요청"));
   }
 
   @Test
