@@ -17,8 +17,8 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.test.context.ActiveProfiles;
 
 /**
- * 발송함의 실제 발송: 발송 대기 메일을 보내고 상태를 바꾼다. 매터모스트는 보내지 않고 기록만 남는다. 메일 서버는 가짜 {@link JavaMailSenderImpl} 다.
- * 발송함을 실제로 바꾸므로 따로 쓰는 DB 다.
+ * 발송함의 실제 발송: 발송 대기 메일을 보내고 상태를 바꾼다. 웹훅 주소가 없으면 매터모스트는 보내지 않고 기록만 남는다. 메일 서버는 가짜 {@link
+ * JavaMailSenderImpl} 다. 발송함을 실제로 바꾸므로 따로 쓰는 DB 다.
  */
 @SpringBootTest(
     properties = {
@@ -102,7 +102,7 @@ class OutboxDispatcherTest {
   }
 
   @Test
-  void 매터모스트는_보내지_않고_발송함에_기록만_남긴다() {
+  void 웹훅_주소가_없으면_매터모스트는_보내지_않고_발송함에_기록만_남긴다() {
     sender.send(new OutboundMessage(NotificationChannel.MATTERMOST, "@kim", "제목", "본문", null));
 
     assertThat(dispatcher.dispatch()).isZero();

@@ -18,4 +18,10 @@ public interface SuspensionDigestFormatter {
    * @param suspensions 모은 확정 건. 업무, 시작 시각, 기관 이름순
    */
   String body(LocalDate fromDate, LocalDate toDate, List<Suspension> suspensions);
+
+  /** 확정 즉시 알림의 매터모스트 메시지 제목. */
+  String confirmedSubject(Suspension suspension);
+
+  /** 확정 즉시 알림의 매터모스트 메시지 본문. 관련 업무와 확인자별 조치 및 인수인계 사항을 담고 2000자를 넘지 않는다. */
+  String confirmedBody(Suspension suspension);
 }

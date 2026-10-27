@@ -9,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 /**
@@ -69,6 +70,43 @@ class DefaultSuspensionDigestFormatter implements SuspensionDigestFormatter {
       body.append("\n\n외 ").append(rest).append("건은 연결이에서 확인해 주세요.");
     }
     return body.toString();
+  }
+
+  @Override
+  public String confirmedSubject(Suspension suspension) {
+    return "[연결이] 일시중단 확정: "
+        + suspension.getOrganization().getName()
+        + " ("
+        + SuspensionNotifier.periodText(suspension.getStartAt(), suspension.getEndAt())
+        + ")";
+  }
+
+  @Override
+  public String confirmedBody(Suspension suspension) {
+    String businesses =
+        suspension.getBusinesses().isEmpty()
+            ? "그 밖의 업무"
+            : suspension.getBusinesses().stream()
+                .sorted()
+                .map(Business::getLabel)
+                .collect(Collectors.joining(", "));
+    StringBuilder body =
+        new StringBuilder("- 기관: ")
+            .append(suspension.getOrganization().getName())
+            .append("\n- 일시: ")
+            .append(SuspensionNotifier.periodText(suspension.getStartAt(), suspension.getEndAt()))
+            .append("\n- 대상 업무: ")
+            .append(suspension.targetWorkNames())
+            .append("\n- 관련 업무: ")
+            .append(businesses)
+            .append("\n- 중단 이유: ")
+            .append(suspension.getReason())
+            .append("\n\n#### 조치 및 인수인계 사항");
+    suspension.getReviewers().stream()
+        .filter(r -> r.getHandover() != null)
+        .forEach(r -> body.append("\n- ").append(r.getName()).append(": ").append(r.getHandover()));
+    String text = body.toString();
+    return text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH - 1) + "…";
   }
 
   private static String line(Suspension s) {

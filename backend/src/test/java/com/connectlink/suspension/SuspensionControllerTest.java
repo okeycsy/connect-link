@@ -665,6 +665,35 @@ class SuspensionControllerTest {
   }
 
   @Test
+  void 처음_확정하면_관련_업무와_조치_사항을_취합_매터모스트_채널로_바로_보낸다() throws Exception {
+    Long id = createAsKim("확정 즉시 매터모스트 작업");
+    long before = outboxRepository.count();
+
+    send(post(BASE + "/" + id + "/confirmation"), Map.of("handover", "전산 차단을 확인했습니다."), hong())
+        .andExpect(status().isOk());
+
+    List<NotificationOutbox> posts =
+        outboxRepository.findAll().stream()
+            .skip(before)
+            .filter(o -> o.getChannel() == NotificationChannel.MATTERMOST)
+            .filter(o -> o.getSubject().startsWith("[연결이] 일시중단 확정:"))
+            .toList();
+    assertThat(posts)
+        .extracting(NotificationOutbox::getRecipient)
+        .containsExactly("~kftc-ops", "~kftc-control-room");
+    assertThat(posts.get(0).getBody())
+        .contains("- 관련 업무: ")
+        .contains("- 중단 이유: 확정 즉시 매터모스트 작업")
+        .contains("홍성민: 전산 차단을 확인했습니다.");
+
+    // 사항만 고치면 다시 보내지 않는다.
+    long afterFirst = outboxRepository.count();
+    send(post(BASE + "/" + id + "/confirmation"), Map.of("handover", "차단을 풉니다."), hong())
+        .andExpect(status().isOk());
+    assertThat(outboxRepository.count()).isEqualTo(afterFirst);
+  }
+
+  @Test
   void 기관_담당자는_확인하거나_확정하지_못한다() throws Exception {
     Long id = createAsKim("기관 확정 거부");
     send(post(BASE + "/" + id + "/review"), null, kim()).andExpect(status().isForbidden());

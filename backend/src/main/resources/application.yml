@@ -71,9 +71,8 @@ app:
     # 메일 본문에 넣는 연결이 주소. 공개 저장소라 실제 주소는 배포 설정(환경 변수 APP_NOTIFICATION_SITE_URL)으로 넣는다.
     site-url: http://localhost:8080
     delivery:
-      # 발송함의 실제 발송(메일만). 꺼 두면(기본, demo) 발송함에 기록만 한다. 운영은 켜고 spring.mail.host 등 메일 서버 설정과
-      # 아래 주소를 배포 설정(환경 변수)으로 넣는다. 공개 저장소라 실제 값은 여기에 적지 않는다.
-      # 매터모스트는 내부망 서비스라 보내지 않고 발송함에 기록만 남는다.
+      # 발송함의 실제 발송(메일, 매터모스트 팀 채널). 꺼 두면(기본, demo) 발송함에 기록만 한다. 켜려면 spring.mail.host 등 메일 서버 설정과
+      # 아래 주소들을 배포 설정(환경 변수)으로 넣는다. 공개 저장소라 실제 값은 여기에 적지 않는다.
       enabled: false
       # 밀리초다(@Scheduled 가 Spring 5 에서 30s 같은 표기를 읽지 못한다).
       interval: 30000
@@ -82,6 +81,11 @@ app:
       mail:
         # 보내는 사람 주소. 비우면 메일은 보내지 않고 발송 대기로 둔다.
         from: ""
+      mattermost:
+        # Incoming Webhook 주소(환경 변수 APP_NOTIFICATION_DELIVERY_MATTERMOST_WEBHOOK_URL). 비우면 보내지 않고 발송 대기로 둔다.
+        # 팀 채널(~채널) 글만 보내고 채널 이름을 글에 실어 보내므로 웹훅을 한 채널에 고정하지 않는다. 개인 앞(@) 글은 기록만 남는다.
+        webhook-url: ""
+        username: 연결이
   attachment:
     # 프로토타입 저장소(임시 디렉터리). 운영은 공유 스토리지 경로나 다른 FileStorage 구현으로 바꾼다.
     dir: ${java.io.tmpdir}/connect-link-files
@@ -112,6 +116,8 @@ app:
       channels: ["~kftc-ops", "~kftc-control-room"]
       # 주말 말고 쉬는 날(예: 2026-12-25). 영업일 계산에 쓴다.
       holidays: []
+      # 처음 확정되면 그 건(관련 업무, 조치 및 인수인계 사항)을 위 채널로 바로 보낸다(시연용).
+      send-on-confirm: true
 
 logging:
   level:
