@@ -2,26 +2,20 @@
  * 녹화한 장면(out/segments/*.webm)을 ffmpeg 로 이어 붙여 out/demo.mp4 를 만든다.
  * 장면 사이는 0.4초 크로스페이드, 첫 장면은 페이드인, 마지막은 페이드아웃.
  *
- *   node e2e/demo-video/compose.ts                 # 무음
- *   node e2e/demo-video/compose.ts --music=bgm.m4a  # 배경음악을 깔고 끝에서 서서히 줄인다
- *   node e2e/demo-video/compose.ts --voice=narration.m4a  # 내레이션 음성을 입힌다
+ *   node e2e/demo-video/compose.ts                      # 무음
+ *   node e2e/demo-video/compose.ts --music=bgm.m4a       # 배경음악을 깔고 끝에서 서서히 줄인다
+ *   node e2e/demo-video/compose.ts --voice=narration.m4a # 내레이션 음성을 입힌다
+ *   node e2e/demo-video/compose.ts --chapter=suspensions # 그 장만 따로 out/demo-suspensions.mp4 로(기능별 짧은 영상)
  *
  * ffmpeg 가 PATH 에 있어야 한다.
  */
-import { spawn } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { spawn } from 'node:child_process';
 
-const here = path.dirname(fileURLToPath(import.meta.url));
-const OUT = path.join(here, 'out');
-const SEGMENTS = path.join(OUT, 'segments');
-const FADE = 0.4;
+import { CHAPTERS } from './scenes/index.ts';
+import { FADE, HEAD_TRIM, OUT, SEGMENTS, readTimeline, timedEntries } from './timeline.ts';
+
 const FPS = 30;
-/** 장면마다 녹화 머리에 남는 빈 화면(브라우저 문맥을 여는 시간, 초). 잘라 낸다. */
-const HEAD_TRIM = 0.35;
-
-type Entry = { id: string; file: string; kind: string; seconds: number };
 
 function arg(name: string): string | undefined {
   const found = process.argv.find((a) => a.startsWith(`--${name}=`));
@@ -35,33 +29,23 @@ function run(cmd: string, args: string[]) {
   });
 }
 
-async function probeDuration(file: string): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const child = spawn('ffprobe', [
-      '-v', 'error', '-select_streams', 'v:0', '-count_packets',
-      '-show_entries', 'stream=nb_read_packets,r_frame_rate', '-of', 'json', file,
-    ]);
-    let out = '';
-    child.stdout.on('data', (d) => (out += d));
-    child.on('exit', (code) => {
-      if (code !== 0) return reject(new Error('ffprobe 실패: ' + file));
-      const s = JSON.parse(out).streams[0];
-      const [n, d] = String(s.r_frame_rate).split('/').map(Number);
-      resolve(Number(s.nb_read_packets) / (n / d));
-    });
-  });
-}
-
 async function main() {
-  const timeline: Entry[] = JSON.parse(await readFile(path.join(OUT, 'timeline.json'), 'utf8'));
+  let timeline = await readTimeline();
+  const chapter = arg('chapter');
+  if (chapter) {
+    const found = CHAPTERS.find((c) => c.id === chapter);
+    if (!found) throw new Error(`모르는 장 id: ${chapter} (${CHAPTERS.map((c) => c.id).join(', ')})`);
+    const ids = new Set(found.scenes.map((s) => s.id));
+    timeline = timeline.filter((t) => ids.has(t.id));
+  }
   if (timeline.length === 0) throw new Error('녹화된 장면이 없습니다. record.ts 를 먼저 실행하세요.');
   const music = arg('music');
   const voice = arg('voice');
-  const output = arg('out') ?? path.join(OUT, 'demo.mp4');
+  const output = arg('out') ?? path.join(OUT, chapter ? `demo-${chapter}.mp4` : 'demo.mp4');
 
   // 실제 webm 길이(녹화 시간과 조금 다르다)를 재서 크로스페이드 위치를 정한다.
-  const durations: number[] = [];
-  for (const entry of timeline) durations.push(Math.max(0.5, (await probeDuration(path.join(SEGMENTS, entry.file))) - HEAD_TRIM));
+  const timed = await timedEntries(timeline);
+  const durations = timed.map((t) => t.duration);
 
   const inputs: string[] = [];
   for (const entry of timeline) inputs.push('-i', path.join(SEGMENTS, entry.file));

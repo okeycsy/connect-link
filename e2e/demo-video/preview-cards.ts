@@ -7,7 +7,7 @@ import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { SCENES } from './scenes.ts';
+import { SCENES } from './scenes/index.ts';
 import { startCardServer } from './server.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));

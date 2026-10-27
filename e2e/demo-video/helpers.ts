@@ -6,6 +6,8 @@ import type { Locator, Page } from '@playwright/test';
  */
 export class Director {
   readonly page: Page;
+  /** 지금 강조(스포트라이트·확대) 중인지. 강조 중에 다른 곳을 강조하면 먼저 되돌린다. */
+  private focused = false;
 
   constructor(page: Page) {
     this.page = page;
@@ -78,6 +80,71 @@ export class Director {
     await this.click(target);
     await this.pause(200);
     await this.page.keyboard.type(text, { delay: opts.delay ?? 55 });
+  }
+
+  /**
+   * 강조: 자막이 가리키는 요소만 스포트라이트로 비추고, 잘리지 않는 배율까지 확대하고, 설명(note)을 그 옆에 붙인다.
+   * 요소 여러 개를 주면 그 묶음을 한 번에 비춘다. 요소가 자라거나 움직여도 따라간다(섹션이 나타나는 회신 화면 등).
+   * - scale: 확대 상한(기본 1.3). 요소가 화면에 다 들어오도록 줄어든다. 1 이면 확대 없이 비추기만 한다.
+   * - hold: 주면 그만큼 보여 준 뒤 스스로 되돌린다(unfocus). 안 주면 강조한 채로 다음 조작(클릭·타자)을 이어 간다.
+   * - center: 강조 전에 요소가 화면 높이의 어느 지점에 오게 스크롤할지(기본 0.5).
+   */
+  async focus(
+    targets: Locator | Locator[],
+    opts: { note?: string; scale?: number; hold?: number; pad?: number; center?: number } = {},
+  ) {
+    const list = Array.isArray(targets) ? targets : [targets];
+    if (this.focused) await this.unfocus();
+    for (const t of list) await t.first().waitFor({ state: 'visible' });
+    await this.page.evaluate(() => document.querySelectorAll('[data-demo-focus]').forEach((el) => el.removeAttribute('data-demo-focus')));
+    for (const t of list) await t.first().evaluate((el) => el.setAttribute('data-demo-focus', ''));
+    await this.centerOnFocused(opts.center ?? 0.5);
+    for (const t of list) await this.stableBox(t);
+    await this.page.evaluate(
+      ({ note, scale, pad }) => window.__demo?.focus({ note, scale, pad }),
+      { note: opts.note ?? '', scale: opts.scale ?? 1.3, pad: opts.pad ?? 12 },
+    );
+    this.focused = true;
+    await this.pause(600);
+    if (opts.hold != null) {
+      await this.pause(opts.hold);
+      await this.unfocus();
+    }
+  }
+
+  /** 강조 중에 설명 문구만 바꾼다. */
+  async note(html: string | null) {
+    await this.page.evaluate((h) => window.__demo?.note(h), html);
+    await this.pause(350);
+  }
+
+  /** 강조를 끝낸다(스포트라이트·설명을 지우고 확대를 되돌린다). */
+  async unfocus() {
+    await this.page.evaluate(() => window.__demo?.unfocus());
+    this.focused = false;
+    await this.pause(550);
+  }
+
+  /** 강조 표시된 요소 묶음의 가운데가 화면 높이의 ratio 지점에 오도록 스크롤한다. */
+  private async centerOnFocused(ratio: number) {
+    const moved = await this.page.evaluate((r) => {
+      const els = Array.from(document.querySelectorAll('[data-demo-focus]'));
+      if (!els.length) return false;
+      let top = Infinity;
+      let bottom = -Infinity;
+      for (const el of els) {
+        const q = el.getBoundingClientRect();
+        top = Math.min(top, q.top);
+        bottom = Math.max(bottom, q.bottom);
+      }
+      const want = window.scrollY + (top + bottom) / 2 - window.innerHeight * r;
+      const max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      const target = Math.min(Math.max(0, want), max);
+      if (Math.abs(target - window.scrollY) < 4) return false;
+      window.scrollTo({ top: target, behavior: 'smooth' });
+      return true;
+    }, ratio);
+    if (moved) await this.pause(450);
   }
 
   /** 요소가 화면 높이의 ratio 지점에 오도록 부드럽게 스크롤한다(확대 전에 자리를 잡을 때). */
@@ -205,6 +272,9 @@ declare global {
   interface Window {
     __demo?: {
       caption(html: string | null): void;
+      focus(opts: { note?: string; scale?: number; pad?: number }): boolean;
+      note(html: string | null): void;
+      unfocus(): void;
       zoom(x: number, y: number, scale: number): void;
       unzoom(): void;
       hideCursor(): void;

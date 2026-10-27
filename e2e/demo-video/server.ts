@@ -9,7 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { cardHtml } from './cards.ts';
-import { SCENES } from './scenes.ts';
+import { SCENES } from './scenes/index.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 

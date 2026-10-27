@@ -1,9 +1,11 @@
 /**
- * 시연영상 녹화기. 장면(scenes.ts)마다 새 브라우저 문맥을 열어 1920×1080 으로 녹화하고
+ * 시연영상 녹화기. 장면(scenes/ 의 장별 파일)마다 새 브라우저 문맥을 열어 1920×1080 으로 녹화하고
  * out/segments/{번호}-{id}.webm 과 out/timeline.json 을 남긴다. 합치기는 compose.ts.
  *
- *   node e2e/demo-video/record.ts            # 전체
- *   node e2e/demo-video/record.ts --only=home,tests   # 일부만 다시 찍기
+ *   node e2e/demo-video/record.ts                       # 전체
+ *   node e2e/demo-video/record.ts --only=suspensions    # 장(chapter) 하나만 다시 찍기
+ *   node e2e/demo-video/record.ts --only=flow-branch,chat   # 장면 id 로도 된다
+ * 일부만 다시 찍으면 나머지 조각과 timeline.json 은 그대로 두고 그 장면만 바꿔 끼운다.
  *
  * 앱은 app.jar 를 demo 프로필로 미리 띄워 둔다(기본 http://localhost:8080, DEMO_BASE_URL 로 바꾼다).
  * Chromium 경로는 PLAYWRIGHT_CHROMIUM_PATH 로 줄 수 있다.
@@ -15,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 
 import { Director } from './helpers.ts';
 import { OVERLAY_SCRIPT } from './overlay.ts';
-import { SCENES, type Scene } from './scenes.ts';
+import { SCENES, resolveSceneIds, type Scene } from './scenes/index.ts';
 import { startCardServer } from './server.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -72,7 +74,7 @@ async function recordScene(
 
 async function main() {
   const onlyArg = process.argv.find((a) => a.startsWith('--only='));
-  const only = onlyArg ? new Set(onlyArg.slice('--only='.length).split(',')) : null;
+  const only = onlyArg ? resolveSceneIds(onlyArg.slice('--only='.length).split(',').filter(Boolean)) : null;
 
   await mkdir(SEGMENTS, { recursive: true });
   if (!only) {
@@ -96,7 +98,7 @@ async function main() {
     }
   }
 
-  console.log(`장면 ${SCENES.length}개 녹화 시작 (${WIDTH}×${HEIGHT})`);
+  console.log(`장면 ${only ? only.size : SCENES.length}개 녹화 시작 (${WIDTH}×${HEIGHT})`);
   try {
     for (const [index, scene] of SCENES.entries()) {
       if (only && !only.has(scene.id)) continue;
