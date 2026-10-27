@@ -23,3 +23,6 @@ Thumbs.db
 # 로컬 실행 중 생기는 것
 backend/uploads/
 *.log
+
+# 시연영상 녹화 결과
+e2e/demo-video/out/
