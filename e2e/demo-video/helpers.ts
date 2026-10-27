@@ -25,22 +25,52 @@ export class Director {
   async moveTo(target: Locator, opts: { dx?: number; dy?: number; steps?: number } = {}) {
     await target.first().waitFor({ state: 'visible' });
     await target.first().scrollIntoViewIfNeeded();
-    const box = await target.first().boundingBox();
-    if (!box) throw new Error('요소 위치를 알 수 없습니다: ' + target);
+    const box = await this.stableBox(target);
     const x = box.x + box.width / 2 + (opts.dx ?? 0);
     const y = box.y + box.height / 2 + (opts.dy ?? 0);
-    await this.page.mouse.move(x, y, { steps: opts.steps ?? 22 });
+    await this.page.mouse.move(x, y, { steps: opts.steps ?? 16 });
     return { x, y };
+  }
+
+  /** 요소가 움직임(모달 열림, 스크롤 애니메이션)을 멈출 때까지 기다린 뒤 위치를 돌려준다. */
+  private async stableBox(target: Locator) {
+    let last = await target.first().boundingBox();
+    for (let i = 0; i < 12; i++) {
+      await this.pause(90);
+      const next = await target.first().boundingBox();
+      if (last && next && Math.abs(last.x - next.x) < 0.5 && Math.abs(last.y - next.y) < 0.5 && Math.abs(last.width - next.width) < 0.5) {
+        return next;
+      }
+      last = next;
+    }
+    if (!last) throw new Error('요소 위치를 알 수 없습니다: ' + target);
+    return last;
   }
 
   /** 마우스를 옮긴 뒤 잠깐 멈추고 누른다. 사람이 누르는 리듬이다. */
   async click(target: Locator, opts: { dx?: number; dy?: number; settle?: number } = {}) {
     const { x, y } = await this.moveTo(target, opts);
-    await this.pause(opts.settle ?? 300);
+    await this.pause(opts.settle ?? 230);
     await this.page.mouse.down();
     await this.pause(70);
     await this.page.mouse.up();
     return { x, y };
+  }
+
+  /**
+   * 누른 뒤 기대한 결과(expected 가 보임)가 나올 때까지 기다린다. 애니메이션 중에 눌려 빠진 클릭은 한 번 더 누른다.
+   * 상태가 바뀌어야 하는 버튼(확정, 제출, 보내기)에 쓴다.
+   */
+  async clickUntil(target: Locator, expected: Locator, opts: { dx?: number; dy?: number; settle?: number } = {}) {
+    await this.click(target, opts);
+    try {
+      await expected.first().waitFor({ state: 'visible', timeout: 4000 });
+    } catch {
+      if (await target.first().isVisible()) {
+        await this.click(target, opts);
+      }
+      await expected.first().waitFor({ state: 'visible' });
+    }
   }
 
   /** 입력 칸을 누르고 한 글자씩 친다. */
@@ -98,6 +128,31 @@ export class Director {
     await this.page.evaluate(() => window.__demo?.hideCursor());
   }
 
+  /**
+   * 지금 누구로 로그인했는지 오른쪽 위 알약으로 보인다(결제원 담당자인지 기관 담당자인지 한눈에).
+   * 이 장면의 다음 화면 이동에도 이어진다(sessionStorage).
+   */
+  async who(kind: 'kftc' | 'org', tag: string, text: string) {
+    const payload = { kind, tag, text };
+    await this.page.addInitScript((p) => {
+      try {
+        window.sessionStorage.setItem('__demo.who', JSON.stringify(p));
+      } catch {
+        // 저장소를 못 쓰면 다음 화면에서는 안 보인다.
+      }
+    }, payload);
+    if (!/^about:blank/.test(this.page.url())) {
+      await this.page.evaluate((p) => {
+        try {
+          window.sessionStorage.setItem('__demo.who', JSON.stringify(p));
+        } catch {
+          // 위와 같다.
+        }
+        window.__demo?.who(p.kind, p.tag, p.text);
+      }, payload);
+    }
+  }
+
   /** 커서를 화면 밖 느낌이 나는 한쪽으로 치운다. */
   async parkCursor() {
     await this.page.mouse.move(1880, 1040, { steps: 20 });
@@ -153,6 +208,7 @@ declare global {
       zoom(x: number, y: number, scale: number): void;
       unzoom(): void;
       hideCursor(): void;
+      who(kind: 'kftc' | 'org', tag: string, text: string): void;
     };
   }
 }

@@ -11,7 +11,7 @@ export const OVERLAY_SCRIPT = String.raw`
   const CURSOR_SVG = '<svg width="28" height="36" viewBox="0 0 28 36" xmlns="http://www.w3.org/2000/svg">'
     + '<path d="M3 2 L3 27 L9.5 21.5 L13.5 31 L18 29 L14 19.5 L23 19.5 Z" fill="#111" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg>';
 
-  const state = { cursor: null, caption: null, captionTimer: null, ready: false };
+  const state = { cursor: null, caption: null, who: null, captionTimer: null, ready: false };
 
   function ensure() {
     if (state.ready || !document.body) return;
@@ -33,6 +33,13 @@ export const OVERLAY_SCRIPT = String.raw`
       '#__demo-caption.show{opacity:1;transform:translate(-50%,0)}',
       '#__demo-caption b{color:#F6D6CC;font-weight:600}',
       'html.__demo-zoom #root{transition:transform .9s cubic-bezier(.2,.8,.2,1);will-change:transform}',
+      '#__demo-who{position:fixed;top:7px;right:300px;z-index:2147483645;display:flex;align-items:center;gap:12px;',
+      'padding:7px 20px 7px 10px;border-radius:999px;color:#fff;font-family:"Pretendard Variable",Pretendard,-apple-system,sans-serif;',
+      'font-size:22px;font-weight:600;letter-spacing:-.01em;line-height:1.2;box-shadow:0 10px 28px rgba(0,0,0,.24);pointer-events:none;',
+      'opacity:0;transform:translateY(-16px) scale(1.08);transition:opacity .4s ease,transform .55s cubic-bezier(.2,.8,.2,1)}',
+      '#__demo-who.show{opacity:1;transform:none}',
+      '#__demo-who.kftc{background:#6B3F35}#__demo-who.org{background:#2B5797}',
+      '#__demo-who .tag{font-size:16px;font-weight:700;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.24);letter-spacing:.03em}',
     ].join('');
     document.head.appendChild(style);
 
@@ -47,6 +54,15 @@ export const OVERLAY_SCRIPT = String.raw`
     caption.id = '__demo-caption';
     document.body.appendChild(caption);
     state.caption = caption;
+
+    const who = document.createElement('div');
+    who.id = '__demo-who';
+    document.body.appendChild(who);
+    state.who = who;
+    try {
+      const saved = JSON.parse(window.sessionStorage.getItem('__demo.who') || 'null');
+      if (saved) api.who(saved.kind, saved.tag, saved.text);
+    } catch (e) { /* 저장소를 못 읽으면 표시만 생략 */ }
 
     window.addEventListener('mousemove', (e) => {
       cursor.style.transform = 'translate(' + (e.clientX - 3) + 'px,' + (e.clientY - 2) + 'px)';
@@ -100,6 +116,17 @@ export const OVERLAY_SCRIPT = String.raw`
       setTimeout(() => { document.documentElement.classList.remove('__demo-zoom'); }, 950);
     },
     hideCursor() { ensure(); state.cursor.classList.add('hidden'); },
+    /** 지금 로그인한 사람을 오른쪽 위 알약으로 보인다. kind 는 'kftc'(결제원) 또는 'org'(참가기관). */
+    who(kind, tag, text) {
+      ensure();
+      const el = state.who;
+      const html = '<span class="tag"></span><span class="text"></span>';
+      el.className = kind;
+      el.innerHTML = html;
+      el.querySelector('.tag').textContent = tag;
+      el.querySelector('.text').textContent = text;
+      requestAnimationFrame(() => el.classList.add('show'));
+    },
   };
   window.__demo = api;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ensure);
