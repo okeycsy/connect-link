@@ -73,6 +73,21 @@ class DefaultSuspensionDigestFormatter implements SuspensionDigestFormatter {
   }
 
   @Override
+  public String registeredSubject(Suspension suspension) {
+    return "[" + suspension.getOrganization().getName() + "] 일시중단이 등록되었어요!";
+  }
+
+  @Override
+  public String registeredBody(Suspension suspension) {
+    String body =
+        "중단 기간: "
+            + SuspensionNotifier.periodText(suspension.getStartAt(), suspension.getEndAt())
+            + "\n대상 업무: "
+            + suspension.targetWorkNames();
+    return body.length() <= MAX_LENGTH ? body : body.substring(0, MAX_LENGTH - 1) + "…";
+  }
+
+  @Override
   public String confirmedSubject(Suspension suspension) {
     return "[연결이] 일시중단 확정: "
         + suspension.getOrganization().getName()

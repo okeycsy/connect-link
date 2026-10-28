@@ -19,6 +19,12 @@ public interface SuspensionDigestFormatter {
    */
   String body(LocalDate fromDate, LocalDate toDate, List<Suspension> suspensions);
 
+  /** 등록 즉시 알림의 매터모스트 메시지 제목. */
+  String registeredSubject(Suspension suspension);
+
+  /** 등록 즉시 알림의 매터모스트 메시지 본문(중단 기간, 대상 업무). */
+  String registeredBody(Suspension suspension);
+
   /** 확정 즉시 알림의 매터모스트 메시지 제목. */
   String confirmedSubject(Suspension suspension);
 

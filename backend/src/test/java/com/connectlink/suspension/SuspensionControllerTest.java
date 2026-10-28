@@ -665,6 +665,23 @@ class SuspensionControllerTest {
   }
 
   @Test
+  void 기관이_등록하면_취합_매터모스트_채널로_등록_알림이_바로_간다() throws Exception {
+    long before = outboxRepository.count();
+    createAsKim("등록 즉시 매터모스트 작업");
+
+    List<NotificationOutbox> posts =
+        outboxRepository.findAll().stream()
+            .skip(before)
+            .filter(o -> o.getRecipient().startsWith("~"))
+            .toList();
+    assertThat(posts)
+        .extracting(NotificationOutbox::getRecipient)
+        .containsExactly("~kftc-ops", "~kftc-control-room");
+    assertThat(posts.get(0).getSubject()).isEqualTo("[KB국민은행] 일시중단이 등록되었어요!");
+    assertThat(posts.get(0).getBody()).startsWith("중단 기간: ").contains("\n대상 업무: 계좌통합관리");
+  }
+
+  @Test
   void 처음_확정하면_관련_업무와_조치_사항을_취합_매터모스트_채널로_바로_보낸다() throws Exception {
     Long id = createAsKim("확정 즉시 매터모스트 작업");
     long before = outboxRepository.count();

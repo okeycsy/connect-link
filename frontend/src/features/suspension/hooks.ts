@@ -237,13 +237,6 @@ export function useConfirmSuspension(id: number) {
   });
 }
 
-/** 전 영업일 취합을 수동으로 운영·관제 매터모스트 채널에 보낸다. 결제원 담당자만 부른다. */
-export function useSendSuspensionDigest() {
-  return useMutation({
-    mutationFn: async () => unwrap(await api.POST('/api/v1/suspension-digests')),
-  });
-}
-
 /** 이번 주 확정된 이 업무 관련 일시중단(기관, 중단 기간, 조치사항)을 운영·관제 매터모스트 채널에 바로 보낸다. 결제원 담당자만 부른다. */
 export function useSendWeeklySuspensionDigest(business: string) {
   return useMutation({
