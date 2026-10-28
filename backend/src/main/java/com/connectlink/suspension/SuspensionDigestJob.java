@@ -38,7 +38,7 @@ class SuspensionDigestJob {
   void runWeekly() {
     digestService
         .sendWeeklyScheduled()
-        .ifPresent(
+        .forEach(
             d ->
                 log.info(
                     "이번 주 확정 일시중단 {}건을 {} 에 보냈습니다({}~{}).",

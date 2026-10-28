@@ -1,13 +1,16 @@
 package com.connectlink.suspension;
 
+import com.connectlink.auth.BusinessAccessPolicy;
 import com.connectlink.auth.CurrentUser;
 import com.connectlink.notification.NotificationChannel;
 import com.connectlink.notification.NotificationService;
+import com.connectlink.organization.Business;
 import com.connectlink.suspension.dto.SuspensionDigestResponse;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
@@ -29,6 +32,7 @@ public class SuspensionDigestService {
   private final BusinessDayCalendar calendar;
   private final NotificationService notificationService;
   private final SuspensionAccessPolicy accessPolicy;
+  private final BusinessAccessPolicy businessAccessPolicy;
   private final Clock clock;
 
   public SuspensionDigestService(
@@ -39,6 +43,7 @@ public class SuspensionDigestService {
       BusinessDayCalendar calendar,
       NotificationService notificationService,
       SuspensionAccessPolicy accessPolicy,
+      BusinessAccessPolicy businessAccessPolicy,
       Clock clock) {
     this.suspensionRepository = suspensionRepository;
     this.digestRepository = digestRepository;
@@ -47,6 +52,7 @@ public class SuspensionDigestService {
     this.calendar = calendar;
     this.notificationService = notificationService;
     this.accessPolicy = accessPolicy;
+    this.businessAccessPolicy = businessAccessPolicy;
     this.clock = clock;
   }
 
@@ -91,39 +97,66 @@ public class SuspensionDigestService {
     }
   }
 
-  /** 예약 작업: 오늘이 주간 취합을 보내는 날(그 주 마지막 영업일과 그 두 영업일 앞)이면 보낸다. */
-  public Optional<SuspensionDigestResponse> sendWeeklyScheduled() {
-    LocalDate today = LocalDate.now(clock);
-    if (!calendar.isWeeklyDigestDay(today)) {
-      return Optional.empty();
+  /**
+   * 예약 작업: 오늘이 주간 취합을 보내는 날(그 주 마지막 영업일과 그 두 영업일 앞)이면 업무마다 그 업무 관련 건만 따로 보낸다. 확정된 건이 없는 업무는 보내지 않고,
+   * 관련 업무가 없는 건은 "그 밖의 업무" 로 한 번 더 보낸다.
+   */
+  public List<SuspensionDigestResponse> sendWeeklyScheduled() {
+    if (!calendar.isWeeklyDigestDay(LocalDate.now(clock))) {
+      return List.of();
     }
-    return Optional.of(sendWeekly());
-  }
-
-  /** 주간 취합 수동으로 보내기: 요일과 상관없이 이번 주(월요일부터 지금까지) 확정된 건을 바로 보낸다. 결제원 담당자와 관리자만 부른다. */
-  public SuspensionDigestResponse sendWeeklyNow(CurrentUser user) {
-    accessPolicy.ensureCanSendDigest(user);
-    return sendWeekly();
-  }
-
-  /** 이번 주 월요일 0시부터 지금까지 확정된(확정·완료) 일시중단을 모아 취합 채널로 보낸다. 전 영업일 취합 기록에는 남기지 않는다. */
-  private SuspensionDigestResponse sendWeekly() {
     LocalDateTime now = LocalDateTime.now(clock).truncatedTo(ChronoUnit.MILLIS);
+    List<Suspension> confirmed = confirmedThisWeek(now);
+    List<SuspensionDigestResponse> sent = new ArrayList<>();
+    for (Business business : Business.values()) {
+      List<Suspension> related =
+          confirmed.stream().filter(s -> s.getBusinesses().contains(business)).toList();
+      if (!related.isEmpty()) {
+        sent.add(sendWeekly(business.getLabel(), related, now));
+      }
+    }
+    List<Suspension> unlinked =
+        confirmed.stream().filter(s -> s.getBusinesses().isEmpty()).toList();
+    if (!unlinked.isEmpty()) {
+      sent.add(sendWeekly("그 밖의 업무", unlinked, now));
+    }
+    return sent;
+  }
+
+  /**
+   * 주간 취합 수동으로 보내기: 요일과 상관없이 이번 주(월요일부터 지금까지) 확정된 건 중 이 업무 관련 건만 바로 보낸다. 그 업무 영역을 볼 수 있는 결제원 담당자와
+   * 관리자만 부른다.
+   */
+  public SuspensionDigestResponse sendWeeklyNow(CurrentUser user, Business business) {
+    accessPolicy.ensureCanSendDigest(user);
+    businessAccessPolicy.ensureCanView(user, business);
+    LocalDateTime now = LocalDateTime.now(clock).truncatedTo(ChronoUnit.MILLIS);
+    List<Suspension> related =
+        confirmedThisWeek(now).stream().filter(s -> s.getBusinesses().contains(business)).toList();
+    return sendWeekly(business.getLabel(), related, now);
+  }
+
+  /** 이번 주 월요일 0시부터 지금까지 확정된(확정·완료) 일시중단. 전 업무. */
+  private List<Suspension> confirmedThisWeek(LocalDateTime now) {
+    return suspensionRepository.findConfirmedBetween(
+        List.of(SuspensionStatus.CONFIRMED, SuspensionStatus.COMPLETED),
+        BusinessDayCalendar.weekStart(now.toLocalDate()).atStartOfDay(),
+        now.plusNanos(1));
+  }
+
+  /** 모은 건을 취합 채널로 보낸다. 전 영업일 취합 기록에는 남기지 않는다. */
+  private SuspensionDigestResponse sendWeekly(
+      String scope, List<Suspension> suspensions, LocalDateTime now) {
     LocalDate today = now.toLocalDate();
     LocalDate fromDate = BusinessDayCalendar.weekStart(today);
-    List<Suspension> confirmed =
-        suspensionRepository.findConfirmedBetween(
-            List.of(SuspensionStatus.CONFIRMED, SuspensionStatus.COMPLETED),
-            fromDate.atStartOfDay(),
-            now.plusNanos(1));
-    String subject = formatter.weeklySubject(fromDate, today, confirmed.size());
-    String body = formatter.weeklyBody(fromDate, today, confirmed);
+    String subject = formatter.weeklySubject(scope, fromDate, today, suspensions.size());
+    String body = formatter.weeklyBody(scope, fromDate, today, suspensions);
     List<String> channels = List.copyOf(properties.getChannels());
     for (String channel : channels) {
       notificationService.sendToChannel(NotificationChannel.MATTERMOST, channel, subject, body);
     }
     return new SuspensionDigestResponse(
-        today, fromDate, today, confirmed.size(), channels, body, now);
+        today, fromDate, today, suspensions.size(), channels, body, now);
   }
 
   private SuspensionDigestResponse send(LocalDate sentOn) {

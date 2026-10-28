@@ -110,24 +110,26 @@ class DefaultSuspensionDigestFormatter implements SuspensionDigestFormatter {
   }
 
   @Override
-  public String weeklySubject(LocalDate fromDate, LocalDate toDate, int count) {
-    return "[연결이] 이번 주 확정 일시중단 " + count + "건 (" + range(fromDate, toDate) + ")";
+  public String weeklySubject(String scope, LocalDate fromDate, LocalDate toDate, int count) {
+    return "[연결이] " + scope + " 이번 주 확정 일시중단 " + count + "건 (" + range(fromDate, toDate) + ")";
   }
 
   @Override
-  public String weeklyBody(LocalDate fromDate, LocalDate toDate, List<Suspension> suspensions) {
-    String head = range(fromDate, toDate) + " 에 확정된 일시중단 " + suspensions.size() + "건입니다.";
+  public String weeklyBody(
+      String scope, LocalDate fromDate, LocalDate toDate, List<Suspension> suspensions) {
+    String head =
+        scope + " " + range(fromDate, toDate) + " 에 확정된 일시중단 " + suspensions.size() + "건입니다.";
     if (suspensions.isEmpty()) {
       return head;
     }
-    StringBuilder body = new StringBuilder(head).append("\n");
+    StringBuilder body = new StringBuilder(head);
     int written = 0;
     for (Suspension s : suspensions) {
-      String line = weeklyLine(s);
-      if (body.length() + line.length() > MAX_LENGTH - 40) {
+      String block = weeklyBlock(s);
+      if (body.length() + block.length() > MAX_LENGTH - 40) {
         break;
       }
-      body.append(line);
+      body.append(block);
       written++;
     }
     int rest = suspensions.size() - written;
@@ -137,12 +139,15 @@ class DefaultSuspensionDigestFormatter implements SuspensionDigestFormatter {
     return body.toString();
   }
 
-  /** 기관 이름 · 중단 기간, 그 아래 조치사항. 조치사항은 확인자별 조치 및 인수인계 사항이고, 없으면(결제원 작업 안내) 결제원 조치사항 칸이다. */
-  private static String weeklyLine(Suspension s) {
-    StringBuilder line =
-        new StringBuilder("\n- **")
+  /**
+   * 한 건을 빈 줄로 띄운 블록으로: 굵은 기관 이름, 중단 기간, 조치사항 한 줄씩. 조치사항은 확인자별 조치 및 인수인계 사항이고, 없으면(결제원 작업 안내) 결제원
+   * 조치사항 칸이다.
+   */
+  private static String weeklyBlock(Suspension s) {
+    StringBuilder block =
+        new StringBuilder("\n\n**")
             .append(s.getOrganization().getName())
-            .append("** · ")
+            .append("**\n중단 기간: ")
             .append(SuspensionNotifier.periodText(s.getStartAt(), s.getEndAt()));
     List<String> actions =
         s.getReviewers().stream()
@@ -153,9 +158,9 @@ class DefaultSuspensionDigestFormatter implements SuspensionDigestFormatter {
       actions = List.of(s.getKftcAction());
     }
     for (String action : actions) {
-      line.append("\n  - 조치: ").append(action);
+      block.append("\n조치: ").append(action);
     }
-    return line.toString();
+    return block.toString();
   }
 
   private static String line(Suspension s) {

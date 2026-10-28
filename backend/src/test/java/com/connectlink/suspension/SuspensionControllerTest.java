@@ -879,7 +879,7 @@ class SuspensionControllerTest {
   }
 
   @Test
-  void 주간_취합은_이번_주_확정된_건의_기관_기간_조치사항을_보낸다() throws Exception {
+  void 주간_취합은_이번_주_확정된_그_업무_관련_건만_기관_기간_조치사항으로_보낸다() throws Exception {
     Long id = createAsKim("주간 취합 작업");
     send(post(BASE + "/" + id + "/confirmation"), Map.of("handover", "주간 취합 조치 확인"), hong())
         .andExpect(status().isOk());
@@ -887,7 +887,10 @@ class SuspensionControllerTest {
 
     JsonNode digest =
         json(
-            send(post("/api/v1/suspension-digests/weekly"), null, hong())
+            send(
+                    post("/api/v1/suspension-digests/weekly").param("business", "account-info"),
+                    null,
+                    hong())
                 .andExpect(status().isOk()));
     String body = digest.get("body").asText();
     assertThat(digest.get("recipients").get(0).asText()).isEqualTo("~kftc-ops");
@@ -897,16 +900,26 @@ class SuspensionControllerTest {
                 .with(
                     java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY))
                 .toString());
-    assertThat(body).contains("**KB국민은행**").contains("- 조치: 홍성민: 주간 취합 조치 확인");
-    // 중단 이유는 넣지 않고, 확정되지 않은 건은 빠진다.
-    assertThat(body).doesNotContain("주간 취합 작업").doesNotContain("주간 취합 미확정 작업");
+    // 기관 이름(굵게), 중단 기간, 조치가 한 줄씩이다.
+    assertThat(body)
+        .startsWith("계좌통합관리 ")
+        .containsPattern("\\*\\*KB국민은행\\*\\*\\n중단 기간: [^\\n]+\\n조치: 홍성민: 주간 취합 조치 확인");
+    // 중단 이유는 넣지 않고, 확정되지 않은 건과 다른 업무(자동이체·CMS 의 우체국 확정 건)는 빠진다.
+    assertThat(body)
+        .doesNotContain("주간 취합 작업")
+        .doesNotContain("주간 취합 미확정 작업")
+        .doesNotContain("우체국");
     assertThat(
             outboxRepository.findAll().stream()
                 .filter(o -> o.getRecipient().equals("~kftc-control-room"))
-                .filter(o -> o.getSubject().startsWith("[연결이] 이번 주 확정 일시중단")))
+                .filter(o -> o.getSubject().startsWith("[연결이] 계좌통합관리 이번 주 확정 일시중단")))
         .isNotEmpty();
 
-    send(post("/api/v1/suspension-digests/weekly"), null, kim()).andExpect(status().isForbidden());
+    send(post("/api/v1/suspension-digests/weekly").param("business", "account-info"), null, kim())
+        .andExpect(status().isForbidden());
+    // 맡지 않은 업무 영역으로는 보내지 못한다.
+    send(post("/api/v1/suspension-digests/weekly").param("business", "account-info"), null, park())
+        .andExpect(status().isForbidden());
   }
 
   @Test
