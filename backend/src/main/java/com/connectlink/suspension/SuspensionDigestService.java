@@ -91,6 +91,41 @@ public class SuspensionDigestService {
     }
   }
 
+  /** 예약 작업: 오늘이 주간 취합을 보내는 날(그 주 마지막 영업일과 그 두 영업일 앞)이면 보낸다. */
+  public Optional<SuspensionDigestResponse> sendWeeklyScheduled() {
+    LocalDate today = LocalDate.now(clock);
+    if (!calendar.isWeeklyDigestDay(today)) {
+      return Optional.empty();
+    }
+    return Optional.of(sendWeekly());
+  }
+
+  /** 주간 취합 수동으로 보내기: 요일과 상관없이 이번 주(월요일부터 지금까지) 확정된 건을 바로 보낸다. 결제원 담당자와 관리자만 부른다. */
+  public SuspensionDigestResponse sendWeeklyNow(CurrentUser user) {
+    accessPolicy.ensureCanSendDigest(user);
+    return sendWeekly();
+  }
+
+  /** 이번 주 월요일 0시부터 지금까지 확정된(확정·완료) 일시중단을 모아 취합 채널로 보낸다. 전 영업일 취합 기록에는 남기지 않는다. */
+  private SuspensionDigestResponse sendWeekly() {
+    LocalDateTime now = LocalDateTime.now(clock).truncatedTo(ChronoUnit.MILLIS);
+    LocalDate today = now.toLocalDate();
+    LocalDate fromDate = BusinessDayCalendar.weekStart(today);
+    List<Suspension> confirmed =
+        suspensionRepository.findConfirmedBetween(
+            List.of(SuspensionStatus.CONFIRMED, SuspensionStatus.COMPLETED),
+            fromDate.atStartOfDay(),
+            now.plusNanos(1));
+    String subject = formatter.weeklySubject(fromDate, today, confirmed.size());
+    String body = formatter.weeklyBody(fromDate, today, confirmed);
+    List<String> channels = List.copyOf(properties.getChannels());
+    for (String channel : channels) {
+      notificationService.sendToChannel(NotificationChannel.MATTERMOST, channel, subject, body);
+    }
+    return new SuspensionDigestResponse(
+        today, fromDate, today, confirmed.size(), channels, body, now);
+  }
+
   private SuspensionDigestResponse send(LocalDate sentOn) {
     LocalDate fromDate = sentOn.plusDays(1);
     LocalDate toDate = calendar.nextBusinessDay(sentOn);

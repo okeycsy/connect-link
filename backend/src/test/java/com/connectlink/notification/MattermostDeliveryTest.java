@@ -12,7 +12,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.test.web.client.MockRestServiceServer;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 /** 매터모스트 Incoming Webhook 발송. 웹훅 서버는 가짜({@link MockRestServiceServer})다. */
@@ -68,6 +67,20 @@ class MattermostDeliveryTest {
     server.expect(requestTo(WEBHOOK)).andRespond(withServerError());
 
     assertThatThrownBy(() -> delivery.deliver(outbox("~kftc-ops", "제목", "본문")))
-        .isInstanceOf(RestClientException.class);
+        .hasMessageContaining("매터모스트가 거절했습니다(500)");
+  }
+
+  @Test
+  void 연결하지_못하면_웹훅_주소를_빼고_까닭을_남긴다() {
+    server
+        .expect(requestTo(WEBHOOK))
+        .andRespond(
+            request -> {
+              throw new java.net.UnknownHostException("mattermost.example.com");
+            });
+
+    assertThatThrownBy(() -> delivery.deliver(outbox("~kftc-ops", "제목", "본문")))
+        .hasMessageContaining("연결하지 못했습니다: UnknownHostException mattermost.example.com")
+        .hasMessageNotContaining("/hooks/");
   }
 }

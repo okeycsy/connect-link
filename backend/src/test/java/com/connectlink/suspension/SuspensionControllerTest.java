@@ -879,6 +879,37 @@ class SuspensionControllerTest {
   }
 
   @Test
+  void 주간_취합은_이번_주_확정된_건의_기관_기간_조치사항을_보낸다() throws Exception {
+    Long id = createAsKim("주간 취합 작업");
+    send(post(BASE + "/" + id + "/confirmation"), Map.of("handover", "주간 취합 조치 확인"), hong())
+        .andExpect(status().isOk());
+    createAsKim("주간 취합 미확정 작업");
+
+    JsonNode digest =
+        json(
+            send(post("/api/v1/suspension-digests/weekly"), null, hong())
+                .andExpect(status().isOk()));
+    String body = digest.get("body").asText();
+    assertThat(digest.get("recipients").get(0).asText()).isEqualTo("~kftc-ops");
+    assertThat(digest.get("fromDate").asText())
+        .isEqualTo(
+            LocalDate.now()
+                .with(
+                    java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY))
+                .toString());
+    assertThat(body).contains("**KB국민은행**").contains("- 조치: 홍성민: 주간 취합 조치 확인");
+    // 중단 이유는 넣지 않고, 확정되지 않은 건은 빠진다.
+    assertThat(body).doesNotContain("주간 취합 작업").doesNotContain("주간 취합 미확정 작업");
+    assertThat(
+            outboxRepository.findAll().stream()
+                .filter(o -> o.getRecipient().equals("~kftc-control-room"))
+                .filter(o -> o.getSubject().startsWith("[연결이] 이번 주 확정 일시중단")))
+        .isNotEmpty();
+
+    send(post("/api/v1/suspension-digests/weekly"), null, kim()).andExpect(status().isForbidden());
+  }
+
+  @Test
   void 기관_담당자는_같은_업무_다른_기관의_확정된_일정만_내용_없이_본다() throws Exception {
     Long confirmed = createAsKim("다른 기관 일정 확정");
     send(post(BASE + "/" + confirmed + "/review"), null, hong()).andExpect(status().isOk());

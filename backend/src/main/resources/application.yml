@@ -113,6 +113,8 @@ app:
     digest:
       # 전 영업일 취합. 전달 양식은 명세 미결이라 임시 양식이다(SuspensionDigestFormatter 빈을 바꿔 끼운다).
       cron: "0 0 16 * * MON-FRI"
+      # 주간 취합(그 주 확정 건의 기관·중단 기간·조치사항)을 볼 때. 그 주 마지막 영업일과 그 두 영업일 앞(보통 수·금)에만 보낸다.
+      weekly-cron: "0 0 15 * * MON-FRI"
       channels: ["~kftc-ops", "~kftc-control-room"]
       # 주말 말고 쉬는 날(예: 2026-12-25). 영업일 계산에 쓴다.
       holidays: []
