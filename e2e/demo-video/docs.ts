@@ -54,7 +54,8 @@ function describeCard(scene: Extract<Scene, { kind: 'card' }>): string {
   const parts: string[] = [];
   if (c.image) parts.push('로고');
   if (c.kicker) parts.push(`머리글 "${c.kicker}"`);
-  if (c.stat) parts.push(`숫자 **${c.stat.value.toLocaleString('ko-KR')}${c.stat.unit}**이 0에서 올라옴 · "${c.stat.label}"`);
+  if (c.chapter) parts.push(`장 제목 **${c.chapter}**(크게)`);
+  if (c.stat) parts.push(`숫자 **${c.stat.prefix ?? ''}${c.stat.value.toLocaleString('ko-KR')}${c.stat.unit ?? ''}**이 0에서 올라옴 · "${c.stat.label}"`);
   if (c.title) parts.push(`"${c.title.replace(/\n/g, ' ')}"`);
   if (c.subtitle) parts.push(`작은 글자 "${c.subtitle}"`);
   return `카드 · ${parts.join(' · ')}`;

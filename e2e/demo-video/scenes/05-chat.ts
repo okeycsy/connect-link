@@ -8,15 +8,15 @@ export const chat: Chapter = {
     {
       id: 'c-chat',
       kind: 'card',
-      duration: 2600,
-      card: { tone: 'light', kicker: '04  소통 채널', title: '장애가 나면 @기관을 부르고,\n기관이 확인합니다.' },
+      duration: 3000,
+      card: { tone: 'light', chapter: '04 소통 채널', title: '장애가 나면 @기관을 부르고,\n기관이 확인합니다.' },
       narration: '넷째, 소통 채널.',
     },
     {
       id: 'chat',
       kind: 'app',
       summary:
-        '결제원(홍성민) 소통 채널 → "계좌통합관리 단체방" → 입력창에 "@KB" → "@KB국민은행" 선택 → 긴급 확인 요청 입력 → 보내기 → 보낸 메시지 강조 → KB국민은행(김민준)으로 전환 → 같은 방의 그 메시지를 비춘 채 "확인" 클릭 → 메시지 아래 "KB국민은행 1" 설명',
+        '결제원(홍성민) 소통 채널 → "계좌통합관리 단체방" → 입력창을 비춘 채 "@KB" → "@KB국민은행" 선택 → 긴급 확인 요청 입력 → 보내기 → 보낸 메시지 강조 → KB국민은행(김민준)으로 전환 → 같은 방의 그 메시지를 비춘 채 "확인" 클릭 → 메시지 아래 "KB국민은행 1" 설명',
       narration:
         '장애가 나면 업무 단체방에서 기관을 불러 긴급 확인을 요청합니다. 기관 담당자가 확인을 누르면 메시지 아래에 기관 이름으로 남습니다. 전화로 하나씩 확인하던 일입니다.',
       run: async (d, page) => {
@@ -30,8 +30,8 @@ export const chat: Chapter = {
         const messages = page.getByTestId('chat-messages');
         await messages.getByText('@결제원', { exact: true }).waitFor();
         await d.pause(300);
-        await d.caption('장애가 나면 단체방에서 <b>@기관</b>을 불러 긴급 확인을 요청합니다.');
         const input = page.getByRole('textbox', { name: '메시지 입력' });
+        await d.focus(input, { note: '장애가 나면 단체방에서 <b>@기관</b>을 불러 긴급 확인을 요청합니다.', scale: 1.15, pad: 16 });
         await d.click(input);
         await page.keyboard.type('@KB', { delay: 50 });
         await d.click(page.getByRole('option', { name: '@KB국민은행' }));

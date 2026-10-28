@@ -8,8 +8,8 @@ export const tests: Chapter = {
     {
       id: 'c-tests',
       kind: 'card',
-      duration: 2600,
-      card: { tone: 'light', kicker: '02  기관 테스트', title: '결과는 기관이, 의견은 결제원이,\n수행률은 저절로.' },
+      duration: 3000,
+      card: { tone: 'light', chapter: '02 기관 테스트', title: '결과는 기관이, 의견은 결제원이,\n수행률은 저절로.' },
       narration: '둘째, 기관 테스트.',
     },
     {

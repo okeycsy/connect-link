@@ -8,8 +8,8 @@ export const flow: Chapter = {
     {
       id: 'c-flow',
       kind: 'card',
-      duration: 2800,
-      card: { tone: 'light', kicker: '01  연락처에서 회신까지', title: '현행화한 연락처로 묻고,\n회신은 저절로 모입니다.' },
+      duration: 3200,
+      card: { tone: 'light', chapter: '01 연락처에서 회신까지', title: '현행화한 연락처로 묻고,\n회신은 저절로 모입니다.' },
       narration: '첫째, 연락처에서 회신까지 한 흐름입니다.',
     },
     {
@@ -45,8 +45,7 @@ export const flow: Chapter = {
         await d.click(banner.getByRole('button', { name: '현행화 완료' }));
         await banner.getByText(/KB국민은행 현행화 완료/).waitFor();
         await d.pause(700);
-        await d.unfocus();
-        await d.caption('자기 기관만 보고 고칩니다.');
+        await d.focus(table, { note: '<b>자기 기관만</b> 보고 고칩니다.', scale: 1.05, hold: 900 });
         await d.click(table.getByRole('button', { name: 'KB국민은행 남궁민' }));
         const history = page.getByTestId('contact-detail').getByTestId('change-history');
         await history.waitFor();
@@ -68,14 +67,14 @@ export const flow: Chapter = {
         const chips = page.getByRole('group', { name: '세부업무로 고르기' });
         await chips.waitFor();
         await d.pause(400);
-        await d.caption('다시 결제원 담당자. 의견 요청의 대상은 <b>방금 현행화한 연락처</b>에서 고릅니다.');
-        await d.pause(900);
         const shinhan = page.getByTestId('target-088');
         await d.focus([chips, shinhan], {
-          note: '세부 업무 하나를 누르면 해당 업무 담당자가 <b>바로 수신자로</b> 지정됩니다.',
+          note: '다시 결제원 담당자. 의견 요청의 대상은 <b>방금 현행화한 연락처</b>에서 고릅니다.',
           scale: 1.2,
           center: 0.5,
         });
+        await d.pause(1100);
+        await d.note('세부 업무 하나를 누르면 해당 업무 담당자가 <b>바로 수신자로</b> 지정됩니다.');
         await d.click(chips.getByText('내 계좌 한눈에', { exact: true }));
         await page.getByRole('checkbox', { name: '신한은행 박지훈' }).waitFor();
         await d.pause(1500);
@@ -136,14 +135,14 @@ export const flow: Chapter = {
       summary:
         '같은 기관 담당자(김민준) → 공지·자료실 → "계좌통합관리업무 전문 변경 회의 개최 안내" 글 → 글에 이어 둔 의견 요청 칸 강조 → "회신하기" → "내 회신"을 비춘 채 "참석" 선택 → 참석자 이름·직위 입력 → 최종제출',
       narration:
-        '공지·자료실도 같은 흐름입니다. 회의 개최 안내를 보다가 회신하기를 누르면, 참석 여부와 참석자를 바로 답합니다. 메일로 회신서를 보내지 않습니다.',
+        '공지·자료실도 같은 흐름입니다. 회의 개최 안내를 보다가 회신하기를 누르면, 회의 참석 여부와 참석자를 바로 답합니다. 별도로 회신 메일을 작성하지 않아도 됩니다.',
       run: async (d, page) => {
         await asOrg(d);
         await page.goto('/account-info/notices');
         const list = page.getByTestId('notice-list');
         await list.getByText(MEETING_NOTICE).waitFor();
-        await d.pause(500);
-        await d.caption('공지·자료실에서 <b>회의 개최 안내</b>를 보다가,');
+        await d.pause(400);
+        await d.focus(list.getByText(MEETING_NOTICE), { note: '공지·자료실에서 <b>회의 개최 안내</b>를 보다가,', scale: 1.15, hold: 700 });
         await d.click(list.getByText(MEETING_NOTICE));
         const linked = page.getByTestId('notice-opinion');
         await linked.waitFor();
@@ -152,7 +151,11 @@ export const flow: Chapter = {
         await d.clickUntil(page.getByRole('link', { name: '회신하기' }), page.getByText('회의에 참석하십니까?'));
         const reply = page.getByTestId('my-reply');
         await reply.waitFor();
-        await d.focus(reply, { note: '참석 여부와 참석자를 <b>바로</b> 답합니다. 회신 메일은 없습니다.', scale: 1.1, center: 0.42 });
+        await d.focus(reply, {
+          note: '회의 참석 여부와 참석자를 공지를 보다가 <b>바로 답합니다</b>. 별도로 회신 메일을 작성하지 않아도 됩니다.',
+          scale: 1.1,
+          center: 0.42,
+        });
         await d.click(reply.getByRole('radio', { name: '참석', exact: true }));
         await d.pause(300);
         await d.type(reply.getByRole('textbox', { name: /참석자 이름과 직위/ }), '김민준 대리, 남궁민 과장', { delay: 16 });
@@ -167,7 +170,7 @@ export const flow: Chapter = {
       id: 'flow-collation',
       kind: 'app',
       summary:
-        '결제원(홍성민)으로 전환 → 같은 요청의 "회신 현황" 탭 → 질문별 답 집계(건너뜀 포함) 강조 → "미회신 기관 리마인드" → 다음: 메일 확인 → 메일 미리보기 → "N곳에 보내기" → 머리 막대 "데모" → "발송함" → 방금 나간 리마인드와 자동 발송 메일이 쌓인 맨 위 줄들을 강조',
+        '결제원(홍성민)으로 전환 → 같은 요청의 "회신 현황" 탭 → 질문별 답 집계(건너뜀 포함) 강조 → "미회신 기관 리마인드" 창 강조 → 다음: 메일 확인 → 메일 미리보기 → "N곳에 보내기" → 머리 막대 "데모 도구" 강조 → "발송함" → 방금 나간 리마인드와 자동 발송 메일이 쌓인 맨 위 줄들을 강조',
       narration:
         '결제원 담당자에게는 질문별 답이 자동으로 모입니다. 건너뛴 질문도 보입니다. 미회신 기관에는 메일을 미리 보고 리마인드를 보냅니다. 보낸 메일은 발송함에 쌓이고, 리마인드와 알림 메일이 자동으로 나갑니다. 메일을 하나하나 열어 취합하던 일이 사라집니다.',
       run: async (d, page) => {
@@ -178,18 +181,18 @@ export const flow: Chapter = {
         const summary = page.getByTestId('question-summary');
         await summary.waitFor();
         await d.focus(summary, { note: '<b>질문별 답</b>이 자동으로 모입니다. 건너뛴 질문도 보입니다.', scale: 1.25, hold: 1700 });
-        await d.caption('미회신 기관에는 메일을 <b>미리 보고</b> 리마인드.');
         const remind = page.getByRole('dialog', { name: '리마인드 메일 보내기' });
         await d.clickUntil(page.getByRole('button', { name: '미회신 기관 리마인드' }), remind);
-        await d.pause(500);
+        await d.focus(remind, { note: '미회신 기관에는 메일을 <b>미리 보고</b> 리마인드.', scale: 1.1, hold: 1000 });
         const check = page.getByRole('dialog', { name: '리마인드 메일 확인' });
         await d.clickUntil(remind.getByRole('button', { name: '다음: 메일 확인' }), check.getByTestId('mail-preview'));
         await d.pause(900);
         await d.clickUntil(check.getByRole('button', { name: /곳에 보내기$/ }), page.getByTestId('remind-sent'));
-        await d.pause(500);
+        await d.pause(300);
         // 데모 발송함: 리마인드·알림 메일이 자동으로 나간 기록을 보여 준다.
-        await d.caption('보낸 메일은 <b>발송함</b>에 쌓입니다.');
-        await d.click(page.getByRole('button', { name: '데모 도구' }));
+        const demoTools = page.getByRole('button', { name: '데모 도구' });
+        await d.focus(demoTools, { note: '보낸 메일은 <b>발송함</b>에 쌓입니다.', scale: 1.2, hold: 600 });
+        await d.click(demoTools);
         await d.clickUntil(page.getByRole('menuitem', { name: '발송함' }), page.getByTestId('outbox-table'));
         const rows = page.getByTestId('outbox-table').locator('tbody tr');
         await rows.nth(3).waitFor();
