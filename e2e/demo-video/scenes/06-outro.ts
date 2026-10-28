@@ -8,7 +8,7 @@ export const outro: Chapter = {
     {
       id: 'effect',
       kind: 'card',
-      duration: 5000,
+      duration: 4300,
       card: {
         tone: 'light',
         kicker: '업무 하나에 해마다 198시간 · 사업 계층별 분류체계 소분류 94개 업무로 넓히면',
@@ -19,7 +19,7 @@ export const outro: Chapter = {
     {
       id: 'platform',
       kind: 'card',
-      duration: 4200,
+      duration: 3200,
       card: {
         tone: 'light',
         kicker: '수기에서 플랫폼으로',
@@ -31,7 +31,7 @@ export const outro: Chapter = {
     {
       id: 'quality',
       kind: 'card',
-      duration: 4200,
+      duration: 3200,
       card: {
         tone: 'light',
         kicker: '코드 품질',
@@ -43,7 +43,7 @@ export const outro: Chapter = {
     {
       id: 'outro',
       kind: 'card',
-      duration: 4000,
+      duration: 3000,
       card: {
         tone: 'light',
         image: { src: '/brand/logo.png', width: 520 },

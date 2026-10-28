@@ -33,6 +33,7 @@ e2e/demo-video/run.sh --music=e2e/demo-video/out/bgm.wav   # 배경음 포함
 
 - Node 22 이상(`.ts` 를 바로 실행한다), ffmpeg 6 이상, `e2e/` 의 `npm install`(Playwright) 이 필요하다.
 - 장면이 데이터를 바꾸므로(회신 제출, 일시중단 확정 등) **녹화할 때마다 서버를 새로 띄운다**. `run.sh` 가 그렇게 한다.
+- 03 일시중단 장은 중단 일시를 서울 기준 "내일"로 골라 전 영업일 취합에 들어가게 한다. 자정(KST) 전후에 걸쳐 찍으면 취합에 빠질 수 있으니 피한다.
 - Chromium 경로가 기본과 다르면 `PLAYWRIGHT_CHROMIUM_PATH`, 서버 주소가 다르면 `DEMO_BASE_URL` 로 준다.
 - 내레이션 음성 파일이 있으면 `node e2e/demo-video/compose.ts --voice=narration.m4a --music=out/bgm.wav` 로 입힌다. 대본은 `out/narration.md`.
 
@@ -45,7 +46,7 @@ node e2e/demo-video/compose.ts --chapter=flow      # 01 장만 짧은 영상으�
 node e2e/demo-video/preview-cards.ts               # 카드 문구만 고쳤을 때 먼저 보기
 ```
 
-장 id: `intro`(문제·소개·로그인), `flow`(01 연락처→회신), `tests`(02 기관 테스트), `suspensions`(03 일시중단), `chat`(04 소통 채널), `outro`(기대효과·마무리).
+장 id: `intro`(198시간 장표·소개·로그인), `flow`(01 연락처→회신), `tests`(02 기관 테스트), `suspensions`(03 일시중단), `chat`(04 소통 채널), `outro`(기대효과·마무리).
 장 안의 장면들은 서로 이어지지만(기관 회신 뒤 집계) 장끼리는 독립이라 어느 장이든 따로 찍을 수 있다. 서버를 새로 띄우고 찍으므로 다른 장의 데이터와 섞이지 않는다.
 
 ## 장면을 고칠 때

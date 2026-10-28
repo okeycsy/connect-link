@@ -205,7 +205,7 @@ export const OVERLAY_SCRIPT = String.raw`
       state.spot.classList.add('show');
       applyZoom(rect.x + rect.w / 2, rect.y + rect.h / 2, scale);
       track(pad);
-      if (opts.note) setTimeout(() => note.classList.add('show'), 380);
+      if (opts.note) setTimeout(() => note.classList.add('show'), 300);
       return true;
     },
     /** 강조 중에 설명 문구만 바꾼다. */

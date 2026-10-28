@@ -30,7 +30,7 @@ export class Director {
     const box = await this.stableBox(target);
     const x = box.x + box.width / 2 + (opts.dx ?? 0);
     const y = box.y + box.height / 2 + (opts.dy ?? 0);
-    await this.page.mouse.move(x, y, { steps: opts.steps ?? 16 });
+    await this.page.mouse.move(x, y, { steps: opts.steps ?? 12 });
     return { x, y };
   }
 
@@ -52,9 +52,9 @@ export class Director {
   /** 마우스를 옮긴 뒤 잠깐 멈추고 누른다. 사람이 누르는 리듬이다. */
   async click(target: Locator, opts: { dx?: number; dy?: number; settle?: number } = {}) {
     const { x, y } = await this.moveTo(target, opts);
-    await this.pause(opts.settle ?? 230);
+    await this.pause(opts.settle ?? 170);
     await this.page.mouse.down();
-    await this.pause(70);
+    await this.pause(60);
     await this.page.mouse.up();
     return { x, y };
   }
@@ -78,7 +78,7 @@ export class Director {
   /** 입력 칸을 누르고 한 글자씩 친다. */
   async type(target: Locator, text: string, opts: { delay?: number } = {}) {
     await this.click(target);
-    await this.pause(200);
+    await this.pause(150);
     await this.page.keyboard.type(text, { delay: opts.delay ?? 55 });
   }
 
@@ -105,7 +105,7 @@ export class Director {
       { note: opts.note ?? '', scale: opts.scale ?? 1.3, pad: opts.pad ?? 12 },
     );
     this.focused = true;
-    await this.pause(600);
+    await this.pause(420);
     if (opts.hold != null) {
       await this.pause(opts.hold);
       await this.unfocus();
@@ -122,7 +122,7 @@ export class Director {
   async unfocus() {
     await this.page.evaluate(() => window.__demo?.unfocus());
     this.focused = false;
-    await this.pause(550);
+    await this.pause(380);
   }
 
   /** 강조 표시된 요소 묶음의 가운데가 화면 높이의 ratio 지점에 오도록 스크롤한다. */

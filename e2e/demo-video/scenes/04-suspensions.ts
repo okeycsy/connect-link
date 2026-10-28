@@ -1,9 +1,52 @@
+import type { Page } from '@playwright/test';
+
+import type { Director } from '../helpers.ts';
 import { asKftc, asOrg, type Chapter } from './types.ts';
 
 /** 기관 담당자가 등록할 때 고르는 업무. 정보서비스·지급결제 묶음을 넘나들며 여러 개를 고른다. */
 const WORKS_TO_PICK = ['계좌통합관리', '자동이체통합관리', 'CMS', '오픈뱅킹'];
 
-/** 03 일시중단: 기관이 여러 업무를 골라 등록하고, 결제원이 확인·확정하며 인수인계가 남는다. */
+/** 장면에서 새로 등록하는 일시중단의 중단 이유. 결제원 목록에서 이 줄을 찾는 데도 쓴다. */
+const REASON = '계정계 시스템 증설 작업으로 4개 업무 전문 응답이 중단됩니다.';
+
+/** 서울 기준 오늘에서 days 만큼 뒤의 날짜. 서버 시간대(Asia/Seoul)와 같은 날짜를 고르기 위해 쓴다. */
+function seoulDate(days: number) {
+  const d = new Date(Date.now() + 9 * 3_600_000 + days * 86_400_000);
+  return { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1, day: d.getUTCDate() };
+}
+
+/**
+ * 일시 칸을 눌러 달력에서 날짜를 고르고 시·분을 넣는다(e2e/tests/suspensions.spec.ts 와 같은 방식).
+ * 다음 달이면 달을 넘긴다. 커서가 보이게 Director 로 누른다.
+ */
+async function pickDateTime(
+  d: Director,
+  page: Page,
+  label: string,
+  date: { year: number; month: number; day: number },
+  hour: string,
+  minute: string,
+) {
+  await d.click(page.getByRole('button', { name: label, exact: true }));
+  const dropdown = page.getByRole('dialog').filter({ has: page.getByRole('spinbutton') });
+  await dropdown.waitFor({ state: 'visible' });
+  const dayButton = dropdown.getByRole('button', { name: `${date.day} ${date.month}월 ${date.year}`, exact: true });
+  if (!(await dayButton.isVisible())) {
+    // 머리의 세 버튼은 이전 달, 달 이름, 다음 달 순서다.
+    await d.click(dropdown.getByRole('button').nth(2));
+  }
+  await d.click(dayButton);
+  await dropdown.getByRole('spinbutton').first().click();
+  await page.keyboard.type(hour + minute, { delay: 25 });
+  await d.pause(100);
+  await d.click(dropdown.getByRole('button').last());
+  await dropdown.waitFor({ state: 'hidden' });
+}
+
+/**
+ * 03 일시중단: 기관이 여러 업무를 골라 직접 등록하면 결제원 담당자에게 매터모스트 알림이 바로 가고,
+ * 결제원이 확인·확정하면 전 영업일 취합이 운영·관제 매터모스트 채널로 모아 나간다.
+ */
 export const suspensions: Chapter = {
   id: 'suspensions',
   title: '03 일시중단',
@@ -11,7 +54,7 @@ export const suspensions: Chapter = {
     {
       id: 'c-suspensions',
       kind: 'card',
-      duration: 5200,
+      duration: 4200,
       card: {
         tone: 'light',
         chapter: '03 일시중단',
@@ -26,24 +69,35 @@ export const suspensions: Chapter = {
       id: 'suspensions',
       kind: 'app',
       summary:
-        `KB국민은행(김민준)으로 전환 → 일시중단 목록의 "다른 기관 일정" 강조(취급기관이면 다른 기관 일시중단도 함께) → "일시중단 등록" → "대상 업무" 칸을 비춘 채 ${WORKS_TO_PICK.join('·')} 네 업무를 묶음을 넘나들며 체크 → "고른 업무 4개" 설명 → 결제원(홍성민)으로 전환 → "예정" 목록의 신한은행(검토 대기) 줄 강조 → 클릭 → "확인 시작" → 검토 중 → "조치 쓰고 확정" 창을 비춘 채 조치·인수인계 사항 입력 → 확정하기 → 확정 상태 강조`,
+        `KB국민은행(김민준)으로 전환 → 일시중단 목록의 "다른 기관 일정" 강조(취급기관이면 다른 기관 일시중단도 함께) → "일시중단 등록" → 중단 시작(내일 23:00)·종료(다음 날 02:00)를 달력에서 고르고 중단 이유·담당자 연락처 입력 → "대상 업무" 칸을 비춘 채 ${WORKS_TO_PICK.join('·')} 네 업무를 묶음을 넘나들며 체크 → "고른 업무 4개" 설명 → 저장 → 상세의 "검토 대기" 강조(관련 업무 결제원 담당자에게 메일·매터모스트 알림) → 결제원(홍성민)으로 전환 → 발송함에서 방금 기록된 "매터모스트 · … 일시중단이 등록되었습니다" 줄 강조 → 방금 등록된 건의 상세를 열어 "확인 시작" → 검토 중 → "조치 쓰고 확정" 창을 비춘 채 조치·인수인계 사항 입력 → 확정하기 → 확정 상태 강조 → 목록의 "수동으로 보내기" → "전 영업일 취합 수동으로 보내기" 창 강조(평소에는 정해진 때 자동) → 보내기 → "전 영업일 취합을 보냈습니다" 창(운영·관제 매터모스트 채널, 확정 N건의 본문) 강조`,
       narration:
-        '기관 담당자는 다른 기관의 확정 일정도 함께 보고, 전문 응답이 없을 때 참고합니다. 등록할 때는 중단되는 업무를 묶음을 넘나들며 하나하나 골라, 누락 없이 정확하게 결제원에 알립니다. 결제원 담당자는 검토 대기 건을 확인하고, 조치와 인수인계 사항을 써서 확정합니다.',
+        '기관 담당자는 다른 기관의 확정 일정도 함께 보고, 전문 응답이 없을 때 참고합니다. 등록할 때는 일시와 이유를 적고, 중단되는 업무를 묶음을 넘나들며 하나하나 골라 누락 없이 결제원에 알립니다. 저장하면 바로 검토 대기가 되고, 관련 업무의 결제원 담당자에게 매터모스트 알림이 갑니다. 결제원 담당자는 검토 대기 건을 확인하고 조치와 인수인계 사항을 써서 확정합니다. 그 주에 확정된 일시중단은 정해진 때마다 한데 모여 운영·관제 매터모스트 채널로 자동 전달됩니다.',
       run: async (d, page) => {
+        // ① 기관 담당자: 다른 기관 일정을 보고, 일시중단을 직접 등록한다.
         await asOrg(d);
         await page.goto('/account-info/suspensions');
         const others = page.getByTestId('other-schedules');
         await others.waitFor();
-        await d.pause(400);
+        await d.pause(250);
         await d.focus(others, {
           note: '취급기관인 경우, <b>다른 기관의 일시중단</b>도 함께 볼 수 있습니다.',
           scale: 1.25,
-          hold: 1500,
+          hold: 850,
         });
         await d.click(page.getByRole('link', { name: '일시중단 등록' }));
         await page.getByRole('heading', { name: '일시중단 등록' }).waitFor();
+        const startButton = page.getByRole('button', { name: '중단 시작', exact: true });
+        const reasonBox = page.getByRole('textbox', { name: '중단 이유(작업 내용)' });
+        await d.focus([startButton, reasonBox], {
+          note: '정해진 양식으로. <b>일시와 이유</b>를 적고,',
+          scale: 1.1,
+          hold: 450,
+        });
+        await pickDateTime(d, page, '중단 시작', seoulDate(1), '23', '00');
+        await pickDateTime(d, page, '중단 종료', seoulDate(2), '02', '00');
+        await d.type(reasonBox, REASON, { delay: 7 });
+        await d.type(page.getByRole('textbox', { name: '연락처' }).first(), '010-0000-2101', { delay: 5 });
         const works = page.getByTestId('suspension-businesses');
-        await works.waitFor();
         await d.focus(works, {
           note: '중단되는 업무를 <b>하나하나 골라</b> 등록합니다. 묶음을 넘나들며 여러 개.',
           scale: 1.12,
@@ -51,40 +105,75 @@ export const suspensions: Chapter = {
         });
         for (const name of WORKS_TO_PICK) {
           await d.click(works.getByRole('checkbox', { name, exact: true }));
-          await d.pause(220);
+          await d.pause(120);
         }
         await page.getByTestId('suspension-businesses-count').getByText(`고른 업무 ${WORKS_TO_PICK.length}개`).waitFor();
-        await d.pause(300);
-        await d.note(`<b>고른 업무 ${WORKS_TO_PICK.length}개</b> — 누락 없이, 정확하게. 관련 업무 레일마다 결제원 담당자에게 알립니다.`);
-        await d.pause(1600);
+        await d.pause(200);
+        await d.note(`<b>고른 업무 ${WORKS_TO_PICK.length}개</b> — 누락 없이, 정확하게.`);
+        await d.pause(900);
         await d.unfocus();
+        await d.click(page.getByRole('button', { name: '저장', exact: true }));
+        await page.waitForURL(/\/account-info\/suspensions\/\d+$/);
+        await page.getByRole('heading', { name: 'KB국민은행 일시중단' }).waitFor();
+        const status = page.getByTestId('suspension-status');
+        await status.getByText('검토 대기').waitFor();
+        const detailUrl = page.url();
+        await d.pause(250);
+        await d.focus(status, {
+          note: '저장하면 바로 <b>검토 대기</b>. 관련 업무 결제원 담당자에게 메일과 <b>매터모스트 알림</b>이 갑니다.',
+          scale: 1.3,
+          hold: 900,
+        });
 
+        // ② 결제원 담당자: 등록 알림(매터모스트)을 발송함에서 확인하고, 검토 대기 건을 확정한다.
         await asKftc(d);
-        await page.goto('/account-info/suspensions?period=UPCOMING');
-        const table = page.getByTestId('suspension-table');
-        await table.waitFor();
-        await d.pause(400);
-        // 좁은 폭 대응으로 표가 block 으로 그려져 행(row) 역할이 없을 수 있어 CSS 로 찾는다.
-        const pendingRow = table.locator('tbody tr').filter({ hasText: '신한은행' }).first();
-        await d.focus(pendingRow, { note: '결제원 담당자 화면. 기관이 등록하면 <b>검토 대기</b>.', scale: 1.15, hold: 900 });
-        await d.click(table.getByRole('button').filter({ hasText: '신한은행' }).first());
-        await page.getByRole('heading', { name: '신한은행 일시중단' }).waitFor();
-        await d.pause(300);
+        await page.goto('/account-info/demo/outbox');
+        const outbox = page.getByTestId('outbox-table').locator('tbody tr');
+        const alertRow = outbox.filter({ hasText: '매터모스트' }).filter({ hasText: '일시중단이 등록되었습니다' }).first();
+        await alertRow.waitFor();
+        await d.pause(250);
+        await d.focus(alertRow, {
+          note: '기관이 등록하면 결제원 담당자에게 <b>매터모스트 알림</b>. 시연 환경은 발송함에 기록하고, 실제 배포에서는 채널로 바로 갑니다.',
+          scale: 1.15,
+          hold: 1500,
+        });
+        // 알림을 받은 결제원 담당자가 그 건을 연다.
+        await page.goto(detailUrl);
+        await page.getByRole('heading', { name: 'KB국민은행 일시중단' }).waitFor();
+        await status.getByText('검토 대기').waitFor();
+        await d.pause(250);
         const startDialog = page.getByRole('dialog', { name: '확인 시작' });
         await d.clickUntil(page.getByRole('button', { name: '확인 시작' }), startDialog);
-        const status = page.getByTestId('suspension-status');
         await d.clickUntil(startDialog.getByRole('button', { name: '확인 시작' }), status.getByText('검토 중'));
         const handover = page.getByRole('dialog', { name: '조치 쓰고 확정' });
         await d.clickUntil(page.getByRole('button', { name: '조치 쓰고 확정' }), handover);
         await d.focus(handover, { note: '<b>확인 시작</b>, 조치 쓰고 <b>확정</b>. 인수인계 사항이 담당자마다 남습니다.', scale: 1.1 });
-        await d.type(handover.getByRole('textbox', { name: '조치 및 인수인계 사항' }), '23:00 신한은행 연계 차단, 재개 연락 받으면 해제 후 상황실 공유.', {
-          delay: 10,
+        await d.type(handover.getByRole('textbox', { name: '조치 및 인수인계 사항' }), '23:00 KB국민은행 연계 차단, 재개 연락 오면 해제 후 상황실 공유.', {
+          delay: 7,
         });
-        await d.pause(250);
+        await d.pause(150);
         await d.clickUntil(handover.getByRole('button', { name: '확정하기' }), status.getByText('확정', { exact: true }));
         await d.unfocus();
-        await d.focus(status, { note: '<b>확정</b>. 확인자와 인수인계 사항이 상세에 남습니다.', scale: 1.3, hold: 900 });
-        await d.pause(200);
+        await d.focus(status, { note: '<b>확정</b>. 확인자와 인수인계 사항이 상세에 남습니다.', scale: 1.3, hold: 650 });
+
+        // ③ 확정 취합: 정해진 때마다 운영·관제 매터모스트 채널로 모아 보내는 것을 수동으로 지금 보낸다.
+        await page.goto('/account-info/suspensions');
+        const confirmSend = page.getByRole('dialog', { name: '전 영업일 취합 수동으로 보내기' });
+        await d.clickUntil(page.getByRole('button', { name: '수동으로 보내기' }), confirmSend);
+        await d.focus(confirmSend, {
+          note: '그 주에 <b>확정</b>된 일시중단은 정해진 때마다 모아 운영·관제 <b>매터모스트 채널</b>로 자동 전달. 지금은 수동으로 보냅니다.',
+          scale: 1.1,
+          hold: 1100,
+        });
+        const digest = page.getByRole('dialog', { name: '전 영업일 취합을 보냈습니다' });
+        await d.clickUntil(confirmSend.getByRole('button', { name: '보내기' }), digest.getByTestId('digest-body'));
+        await d.pause(250);
+        await d.focus(digest, {
+          note: '방금 확정한 KB국민은행 건까지 <b>한 번에</b>. 운영·관제 채널에서 업무별로 봅니다.',
+          scale: 1.05,
+          hold: 1900,
+        });
+        await d.pause(150);
       },
     },
   ],

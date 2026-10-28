@@ -8,7 +8,7 @@ export const flow: Chapter = {
     {
       id: 'c-flow',
       kind: 'card',
-      duration: 3200,
+      duration: 2800,
       card: { tone: 'light', chapter: '01 연락처에서 회신까지', title: '현행화한 연락처로 묻고,\n회신은 저절로 모입니다.' },
       narration: '첫째, 연락처에서 회신까지 한 흐름입니다.',
     },
@@ -16,24 +16,24 @@ export const flow: Chapter = {
       id: 'flow-contacts',
       kind: 'app',
       summary:
-        'KB국민은행 담당자(김민준)로 전환 → 홈에 뜬 6개월 경과 확인 창 강조 → "변동 없음" → 확인 완료 → 닫기 → 연락처 → 정기 변경 배너 강조 → "현행화 완료" → 남궁민 상세의 변경 이력 강조',
+        'KB국민은행 담당자(김민준)로 전환 → 홈에 뜬 6개월 경과 확인 창 강조 → "변동 없음" → 확인 완료 → 닫기 → 연락처 → 정기 변경 배너 강조 → "현행화 완료"',
       narration:
-        '이번에는 KB국민은행 담당자 김민준입니다. 로그인하면 6개월이 지난 연락처를 바로 묻습니다. 변동 없음 한 번이면 끝. 정기 변경 주간에는 현행화 완료를 누르면 되고, 바뀐 내역은 이력으로 남습니다.',
+        '이번에는 KB국민은행 담당자 김민준입니다. 로그인하면 6개월이 지난 연락처를 바로 묻습니다. 변동 없음 한 번이면 끝. 정기 변경 주간에는 현행화 완료를 누르면 됩니다.',
       run: async (d, page) => {
         await asOrg(d, { reconfirm: true });
         await page.goto('/account-info/home');
         const reconfirm = page.getByTestId('contact-reconfirm');
         await reconfirm.waitFor();
-        await d.pause(400);
+        await d.pause(300);
         await d.focus(reconfirm, {
           note: '<b>KB국민은행 담당자 김민준</b>으로 로그인하면, 6개월 지난 담당자를 바로 묻습니다.',
           scale: 1.15,
         });
-        await d.pause(700);
+        await d.pause(550);
         await d.note('<b>변동 없음</b> 한 번이면 끝.');
         await d.click(reconfirm.getByRole('button', { name: '변동 없음' }));
         await reconfirm.getByText('확인 완료').waitFor();
-        await d.pause(500);
+        await d.pause(400);
         await d.unfocus();
         await d.click(reconfirm.getByRole('button', { name: '닫기' }));
         await d.pause(300);
@@ -44,14 +44,11 @@ export const flow: Chapter = {
         await d.focus(banner, { note: '정기 변경 주간에는 <b>현행화 완료</b>를 누르면 됩니다.', scale: 1.2 });
         await d.click(banner.getByRole('button', { name: '현행화 완료' }));
         await banner.getByText(/KB국민은행 현행화 완료/).waitFor();
-        await d.pause(700);
-        await d.focus(table, { note: '<b>자기 기관만</b> 보고 고칩니다.', scale: 1.05, hold: 900 });
-        await d.click(table.getByRole('button', { name: 'KB국민은행 남궁민' }));
-        const history = page.getByTestId('contact-detail').getByTestId('change-history');
-        await history.waitFor();
-        await d.pause(300);
-        await d.focus(history, { note: '바뀐 내역은 <b>이력으로</b> 남습니다.', scale: 1.4, hold: 1100 });
-        await d.pause(200);
+        await d.pause(350);
+        await d.note('<b>자기 기관만</b> 보고 고칩니다. 바뀐 내역은 이력으로 남습니다.');
+        await d.pause(850);
+        await d.unfocus();
+        await d.pause(150);
       },
     },
     {
@@ -73,58 +70,46 @@ export const flow: Chapter = {
           scale: 1.2,
           center: 0.5,
         });
-        await d.pause(1100);
+        await d.pause(750);
         await d.note('세부 업무 하나를 누르면 해당 업무 담당자가 <b>바로 수신자로</b> 지정됩니다.');
         await d.click(chips.getByText('내 계좌 한눈에', { exact: true }));
         await page.getByRole('checkbox', { name: '신한은행 박지훈' }).waitFor();
-        await d.pause(1500);
+        await d.pause(1100);
         await d.unfocus();
-        await d.moveTo(page.getByTestId('target-summary'));
-        await d.pause(500);
+        await d.pause(200);
       },
     },
     {
       id: 'flow-branch',
       kind: 'app',
       summary:
-        '의견 요청 "내 계좌 한눈에 응답 전문 항목 추가 검토"의 섹션 1 질문과 이동 규칙(반영 가능 → 섹션 2, 반영 어려움 → 섹션 3)을 강조 → KB국민은행(김민준)으로 전환 → "내 회신"을 비춘 채 "반영 가능" 선택 → 섹션 2가 나타남 → "반영 어려움"으로 바꿈 → 섹션 3으로 바뀜 → 이유 입력 → 최종제출',
+        'KB국민은행(김민준)으로 전환 → 의견 요청 "내 계좌 한눈에 응답 전문 항목 추가 검토"의 "내 회신"을 비춘 채 "반영 가능" 선택 → 섹션 2(반영 계획)가 나타남 → "반영 어려움"으로 바꿈 → 섹션 3(이유)으로 바뀜 → 이유 입력 → 최종제출',
       narration:
         '질문은 구글폼처럼 답에 따라 다음 질문이 달라집니다. 반영 가능이면 계획을, 어려우면 이유를 묻습니다. 기관 담당자가 답을 고르면 그에 맞는 질문만 이어져, 정확한 답을 받습니다.',
       run: async (d, page) => {
-        await asKftc(d);
-        await page.goto(`/account-info/opinions/${BRANCHED_OPINION_ID}`);
-        const questions = page.getByTestId('question-list');
-        await questions.waitFor();
-        await page.getByRole('heading', { name: BRANCHED_OPINION }).waitFor();
-        await d.pause(400);
-        await d.focus([questions.getByText('섹션 1. 반영 가능 여부'), questions.getByText(/반영 가능 → 섹션 2/)], {
-          note: '구글폼처럼, 답에 따라 <b>다음 질문이 달라집니다</b>. 반영 가능이면 계획을, 어려우면 이유를.',
-          scale: 1.45,
-          hold: 1900,
-        });
-
         await asOrg(d);
         await page.goto(`/account-info/opinions/${BRANCHED_OPINION_ID}`);
+        await page.getByRole('heading', { name: BRANCHED_OPINION }).waitFor();
         const reply = page.getByTestId('my-reply');
         await reply.waitFor();
         await d.focus(reply, {
-          note: 'KB국민은행 담당자가 답을 고르면, <b>그 답에 맞는 질문만</b> 이어집니다.',
+          note: '구글폼처럼, 답에 따라 <b>다음 질문이 달라집니다</b>. 반영 가능이면 계획을, 어려우면 이유를.',
           scale: 1.08,
           center: 0.42,
         });
         await d.click(reply.getByRole('radio', { name: '반영 가능' }));
         await reply.getByText('섹션 2. 반영 계획').waitFor();
-        await d.pause(850);
+        await d.pause(650);
         await d.click(reply.getByRole('radio', { name: '반영 어려움' }));
         await reply.getByText('섹션 3. 반영이 어려운 이유').waitFor();
-        await d.pause(500);
+        await d.pause(300);
         await d.note('해당 없는 질문은 보이지 않아 <b>정확한 답</b>을 받습니다. 웹에서 바로 제출.');
         await d.type(reply.getByRole('textbox', { name: /반영하기 어려운 이유/ }), '내년 상반기 전산 개편 중이라 하반기 반영을 제안합니다.', {
-          delay: 14,
+          delay: 10,
         });
-        await d.pause(300);
+        await d.pause(250);
         await d.clickUntil(reply.getByRole('button', { name: '최종제출' }), page.getByTestId('submitted-answers'));
-        await d.pause(600);
+        await d.pause(400);
         await d.unfocus();
         await d.pause(200);
       },
@@ -142,12 +127,12 @@ export const flow: Chapter = {
         const list = page.getByTestId('notice-list');
         await list.getByText(MEETING_NOTICE).waitFor();
         await d.pause(400);
-        await d.focus(list.getByText(MEETING_NOTICE), { note: '공지·자료실에서 <b>회의 개최 안내</b>를 보다가,', scale: 1.15, hold: 700 });
+        await d.focus(list.getByText(MEETING_NOTICE), { note: '공지·자료실에서 <b>회의 개최 안내</b>를 보다가,', scale: 1.15, hold: 500 });
         await d.click(list.getByText(MEETING_NOTICE));
         const linked = page.getByTestId('notice-opinion');
         await linked.waitFor();
         await d.pause(500);
-        await d.focus(linked, { note: '글에 이어 둔 <b>회신하기</b>로 참석 여부를 바로 답합니다.', scale: 1.3, hold: 1000 });
+        await d.focus(linked, { note: '글에 이어 둔 <b>회신하기</b>로 참석 여부를 바로 답합니다.', scale: 1.3, hold: 850 });
         await d.clickUntil(page.getByRole('link', { name: '회신하기' }), page.getByText('회의에 참석하십니까?'));
         const reply = page.getByTestId('my-reply');
         await reply.waitFor();
@@ -157,11 +142,11 @@ export const flow: Chapter = {
           center: 0.42,
         });
         await d.click(reply.getByRole('radio', { name: '참석', exact: true }));
-        await d.pause(300);
-        await d.type(reply.getByRole('textbox', { name: /참석자 이름과 직위/ }), '김민준 대리, 남궁민 과장', { delay: 16 });
-        await d.pause(250);
+        await d.pause(200);
+        await d.type(reply.getByRole('textbox', { name: /참석자 이름과 직위/ }), '김민준 대리, 남궁민 과장', { delay: 10 });
+        await d.pause(200);
         await d.clickUntil(reply.getByRole('button', { name: '최종제출' }), page.getByTestId('submitted-answers'));
-        await d.pause(600);
+        await d.pause(400);
         await d.unfocus();
         await d.pause(200);
       },
@@ -170,9 +155,9 @@ export const flow: Chapter = {
       id: 'flow-collation',
       kind: 'app',
       summary:
-        '결제원(홍성민)으로 전환 → 같은 요청의 "회신 현황" 탭 → 질문별 답 집계(건너뜀 포함) 강조 → "미회신 기관 리마인드" 창 강조 → 다음: 메일 확인 → 메일 미리보기 → "N곳에 보내기" → 머리 막대 "데모 도구" 강조 → "발송함" → 방금 나간 리마인드와 자동 발송 메일이 쌓인 맨 위 줄들을 강조',
+        '결제원(홍성민)으로 전환 → 같은 요청의 "회신 현황" 탭 → 질문별 답 집계(건너뜀 포함) 강조 → "미회신 기관 리마인드" 창 강조 → 다음: 메일 확인 → 메일 미리보기 → "N곳에 보내기" → "N곳에 보냈습니다" 강조',
       narration:
-        '결제원 담당자에게는 질문별 답이 자동으로 모입니다. 건너뛴 질문도 보입니다. 미회신 기관에는 메일을 미리 보고 리마인드를 보냅니다. 보낸 메일은 발송함에 쌓이고, 리마인드와 알림 메일이 자동으로 나갑니다. 메일을 하나하나 열어 취합하던 일이 사라집니다.',
+        '결제원 담당자에게는 질문별 답이 자동으로 모입니다. 건너뛴 질문도 보입니다. 미회신 기관에는 메일을 미리 보고 리마인드를 보냅니다. 리마인드와 알림 메일이 자동으로 나가니, 메일을 하나하나 열어 취합하던 일이 사라집니다.',
       run: async (d, page) => {
         await asKftc(d);
         await page.goto(`/account-info/opinions/${BRANCHED_OPINION_ID}`);
@@ -180,29 +165,23 @@ export const flow: Chapter = {
         await d.click(page.getByRole('tab', { name: '회신 현황' }));
         const summary = page.getByTestId('question-summary');
         await summary.waitFor();
-        await d.focus(summary, { note: '<b>질문별 답</b>이 자동으로 모입니다. 건너뛴 질문도 보입니다.', scale: 1.25, hold: 1700 });
+        await d.focus(summary, { note: '<b>질문별 답</b>이 자동으로 모입니다. 건너뛴 질문도 보입니다.', scale: 1.25, hold: 1000 });
         const remind = page.getByRole('dialog', { name: '리마인드 메일 보내기' });
         await d.clickUntil(page.getByRole('button', { name: '미회신 기관 리마인드' }), remind);
-        await d.focus(remind, { note: '미회신 기관에는 메일을 <b>미리 보고</b> 리마인드.', scale: 1.1, hold: 1000 });
+        await d.focus(remind, { note: '미회신 기관에는 메일을 <b>미리 보고</b> 리마인드.', scale: 1.1, hold: 650 });
         const check = page.getByRole('dialog', { name: '리마인드 메일 확인' });
         await d.clickUntil(remind.getByRole('button', { name: '다음: 메일 확인' }), check.getByTestId('mail-preview'));
-        await d.pause(900);
-        await d.clickUntil(check.getByRole('button', { name: /곳에 보내기$/ }), page.getByTestId('remind-sent'));
+        await d.pause(450);
+        const sentNotice = page.getByTestId('remind-sent');
+        await d.clickUntil(check.getByRole('button', { name: /곳에 보내기$/ }), sentNotice);
         await d.pause(300);
-        // 데모 발송함: 리마인드·알림 메일이 자동으로 나간 기록을 보여 준다.
-        const demoTools = page.getByRole('button', { name: '데모 도구' });
-        await d.focus(demoTools, { note: '보낸 메일은 <b>발송함</b>에 쌓입니다.', scale: 1.2, hold: 600 });
-        await d.click(demoTools);
-        await d.clickUntil(page.getByRole('menuitem', { name: '발송함' }), page.getByTestId('outbox-table'));
-        const rows = page.getByTestId('outbox-table').locator('tbody tr');
-        await rows.nth(3).waitFor();
-        await d.pause(400);
-        await d.focus([rows.nth(0), rows.nth(3)], {
-          note: '리마인드·알림 메일이 <b>자동으로</b> 나갑니다. 실제 배포에서는 메일·매터모스트로.',
+        // 발송함은 03 일시중단 장에서 매터모스트 알림과 함께 보여 준다.
+        await d.focus(sentNotice, {
+          note: '리마인드·알림 메일이 <b>자동으로</b> 나갑니다. 메일을 하나하나 열어 취합하던 일이 사라집니다.',
           scale: 1.2,
-          hold: 1700,
+          hold: 1050,
         });
-        await d.pause(200);
+        await d.pause(150);
       },
     },
   ],
