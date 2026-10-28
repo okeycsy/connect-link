@@ -66,7 +66,7 @@ export function SuspensionListPage() {
   const [confirmDigest, setConfirmDigest] = useState<DigestKind | null>(null);
   const [digest, setDigest] = useState<{ kind: DigestKind; result: SuspensionDigest } | null>(null);
   const sendDaily = useSendSuspensionDigest();
-  const sendWeekly = useSendWeeklySuspensionDigest();
+  const sendWeekly = useSendWeeklySuspensionDigest(slug);
   const sendDigest = confirmDigest === 'WEEKLY' ? sendWeekly : sendDaily;
 
   const { data, isPending, isError, error, isFetching } = useSuspensions({
@@ -283,7 +283,7 @@ const DIGEST_TEXT: Record<
   WEEKLY: {
     confirmTitle: '주간 취합 보내기',
     message:
-      '이번 주 월요일부터 지금까지 확정된 일시중단의 기관, 중단 기간, 조치사항을 운영·관제 매터모스트 채널로 지금 보냅니다. 자동 발송은 그 주 마지막 영업일과 그 두 영업일 앞(보통 수·금) 오후 3시입니다.',
+      '이번 주 월요일부터 지금까지 확정된 일시중단 중 이 업무 관련 건의 기관, 중단 기간, 조치사항을 운영·관제 매터모스트 채널로 지금 보냅니다. 자동 발송은 그 주 마지막 영업일과 그 두 영업일 앞(보통 수·금) 오후 3시에 업무마다 따로 갑니다.',
     doneTitle: '주간 취합을 보냈습니다',
   },
 };

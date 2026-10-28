@@ -589,7 +589,7 @@ export interface paths {
     put?: never;
     /**
      * 주간 취합 수동으로 보내기
-     * @description 이번 주(월요일부터 지금까지) 확정된 일시중단의 기관 이름, 중단 기간, 조치사항을 운영·관제 매터모스트 채널로 바로 보낸다. 자동 발송은 그 주 마지막 영업일과 그 두 영업일 앞(보통 수·금) 15시다. 결제원 담당자와 관리자만 부른다.
+     * @description 이번 주(월요일부터 지금까지) 확정된 일시중단 중 이 업무 관련 건의 기관 이름, 중단 기간, 조치사항을 운영·관제 매터모스트 채널로 바로 보낸다. 자동 발송은 그 주 마지막 영업일과 그 두 영업일 앞(보통 수·금) 15시에 업무마다 따로 간다. 그 업무 영역의 결제원 담당자와 관리자만 부른다.
      */
     post: operations['sendWeekly'];
     delete?: never;
@@ -5133,7 +5133,10 @@ export interface operations {
   };
   sendWeekly: {
     parameters: {
-      query?: never;
+      query: {
+        /** @description 업무 영역 slug (예: account-info) */
+        business: string;
+      };
       header?: never;
       path?: never;
       cookie?: never;

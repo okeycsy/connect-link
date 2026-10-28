@@ -25,13 +25,19 @@ public interface SuspensionDigestFormatter {
   /** 확정 즉시 알림의 매터모스트 메시지 본문. 관련 업무와 확인자별 조치 및 인수인계 사항을 담고 2000자를 넘지 않는다. */
   String confirmedBody(Suspension suspension);
 
-  /** 주간 취합의 매터모스트 메시지 제목. */
-  String weeklySubject(LocalDate fromDate, LocalDate toDate, int count);
+  /**
+   * 주간 취합의 매터모스트 메시지 제목.
+   *
+   * @param scope 모은 업무 이름(예: 계좌통합관리, 관련 업무가 없는 건은 "그 밖의 업무")
+   */
+  String weeklySubject(String scope, LocalDate fromDate, LocalDate toDate, int count);
 
   /**
    * 주간 취합의 매터모스트 메시지 본문. 기관 이름, 중단 기간, 조치사항만 담고 2000자를 넘지 않는다.
    *
-   * @param suspensions 그 주에 확정된 건. 시작 시각, 기관 이름순
+   * @param scope 모은 업무 이름
+   * @param suspensions 그 주에 확정된 그 업무 건. 시작 시각, 기관 이름순
    */
-  String weeklyBody(LocalDate fromDate, LocalDate toDate, List<Suspension> suspensions);
+  String weeklyBody(
+      String scope, LocalDate fromDate, LocalDate toDate, List<Suspension> suspensions);
 }
