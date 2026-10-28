@@ -5,7 +5,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.core.NestedExceptionUtils;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 /**
@@ -56,7 +59,20 @@ class MattermostDelivery implements ChannelDelivery {
     payload.put("channel", outbox.getRecipient().substring(1));
     payload.put("username", properties.getMattermost().getUsername());
     payload.put("text", text(outbox));
-    restTemplate.postForEntity(properties.getMattermost().getWebhookUrl(), payload, String.class);
+    try {
+      restTemplate.postForEntity(properties.getMattermost().getWebhookUrl(), payload, String.class);
+    } catch (HttpStatusCodeException e) {
+      throw new IllegalStateException(
+          "매터모스트가 거절했습니다(" + e.getRawStatusCode() + "): " + e.getResponseBodyAsString(), e);
+    } catch (ResourceAccessException e) {
+      // 웹훅 주소는 비밀값이라 까닭에 남기지 않는다(발송함 화면에 보인다).
+      Throwable cause = NestedExceptionUtils.getMostSpecificCause(e);
+      throw new IllegalStateException(
+          "매터모스트 서버에 연결하지 못했습니다: "
+              + cause.getClass().getSimpleName()
+              + (cause.getMessage() == null ? "" : " " + cause.getMessage()),
+          e);
+    }
   }
 
   private static String text(NotificationOutbox outbox) {
