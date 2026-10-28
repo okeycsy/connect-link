@@ -34,7 +34,6 @@ import {
   type SuspensionSummary,
   canManageSuspensions,
   canRegisterSuspensions,
-  useSendSuspensionDigest,
   useSendWeeklySuspensionDigest,
   useSuspensionCounts,
   useOtherOrganizationSchedules,
@@ -63,11 +62,9 @@ export function SuspensionListPage() {
   const orgParam = Number(searchParams.get('org'));
   const organizationId = manager && orgParam > 0 ? orgParam : undefined;
   const [page, setPage] = useState(0);
-  const [confirmDigest, setConfirmDigest] = useState<DigestKind | null>(null);
-  const [digest, setDigest] = useState<{ kind: DigestKind; result: SuspensionDigest } | null>(null);
-  const sendDaily = useSendSuspensionDigest();
+  const [confirmDigest, setConfirmDigest] = useState(false);
+  const [digest, setDigest] = useState<SuspensionDigest | null>(null);
   const sendWeekly = useSendWeeklySuspensionDigest(slug);
-  const sendDigest = confirmDigest === 'WEEKLY' ? sendWeekly : sendDaily;
 
   const { data, isPending, isError, error, isFetching } = useSuspensions({
     business: slug,
@@ -108,28 +105,16 @@ export function SuspensionListPage() {
         actions={
           <>
             {manager && (
-              <>
-                <Button
-                  variant="light"
-                  leftSection={<IconSend size={16} stroke={1.8} />}
-                  onClick={() => {
-                    sendWeekly.reset();
-                    setConfirmDigest('WEEKLY');
-                  }}
-                >
-                  주간 취합 보내기
-                </Button>
-                <Button
-                  variant="light"
-                  leftSection={<IconSend size={16} stroke={1.8} />}
-                  onClick={() => {
-                    sendDaily.reset();
-                    setConfirmDigest('DAILY');
-                  }}
-                >
-                  수동으로 보내기
-                </Button>
-              </>
+              <Button
+                variant="light"
+                leftSection={<IconSend size={16} stroke={1.8} />}
+                onClick={() => {
+                  sendWeekly.reset();
+                  setConfirmDigest(true);
+                }}
+              >
+                주간 취합 보내기
+              </Button>
             )}
             {register && (
               <Button
@@ -225,40 +210,38 @@ export function SuspensionListPage() {
       )}
 
       <ConfirmModal
-        opened={confirmDigest != null}
-        onClose={() => setConfirmDigest(null)}
-        title={confirmDigest ? DIGEST_TEXT[confirmDigest].confirmTitle : ''}
-        message={confirmDigest ? DIGEST_TEXT[confirmDigest].message : ''}
+        opened={confirmDigest}
+        onClose={() => setConfirmDigest(false)}
+        title="주간 취합 보내기"
+        message="이번 주 월요일부터 지금까지 확정된 일시중단 중 이 업무 관련 건의 기관, 중단 기간, 조치사항을 운영·관제 매터모스트 채널로 지금 보냅니다. 자동 발송은 그 주 마지막 영업일과 그 두 영업일 앞(보통 수·금) 오후 3시에 업무마다 따로 갑니다."
         confirmLabel="보내기"
-        pending={sendDigest.isPending}
-        error={sendDigest.error}
-        onConfirm={() => {
-          const kind = confirmDigest;
-          if (!kind) return;
-          sendDigest.mutate(undefined, {
+        pending={sendWeekly.isPending}
+        error={sendWeekly.error}
+        onConfirm={() =>
+          sendWeekly.mutate(undefined, {
             onSuccess: (result) => {
-              setConfirmDigest(null);
-              setDigest({ kind, result });
+              setConfirmDigest(false);
+              setDigest(result);
             },
-          });
-        }}
+          })
+        }
       />
       <Modal
         opened={digest != null}
         onClose={() => setDigest(null)}
-        title={digest ? DIGEST_TEXT[digest.kind].doneTitle : ''}
+        title="주간 취합을 보냈습니다"
         centered
         size="lg"
       >
         {digest && (
           <Stack gap="sm">
             <Text size="sm" c="dimmed">
-              {digest.result.recipients.join(', ')} · {formatDateTime(digest.result.sentAt)} · 확정{' '}
-              {digest.result.itemCount}건
+              {digest.recipients.join(', ')} · {formatDateTime(digest.sentAt)} · 확정{' '}
+              {digest.itemCount}건
             </Text>
             <Card bg="var(--cl-sunken)" data-testid="digest-body">
               <Text size="sm" className={classes.content}>
-                {digest.result.body}
+                {digest.body}
               </Text>
             </Card>
           </Stack>
@@ -267,26 +250,6 @@ export function SuspensionListPage() {
     </Stack>
   );
 }
-
-type DigestKind = 'DAILY' | 'WEEKLY';
-
-const DIGEST_TEXT: Record<
-  DigestKind,
-  { confirmTitle: string; message: string; doneTitle: string }
-> = {
-  DAILY: {
-    confirmTitle: '전 영업일 취합 수동으로 보내기',
-    message:
-      '오늘까지 확정된 일시중단 중 다음 날부터 다음 영업일까지 시작하는 건을 운영·관제 매터모스트 채널로 지금 보냅니다. 오늘 오후 4시 자동 발송은 건너뜁니다.',
-    doneTitle: '전 영업일 취합을 보냈습니다',
-  },
-  WEEKLY: {
-    confirmTitle: '주간 취합 보내기',
-    message:
-      '이번 주 월요일부터 지금까지 확정된 일시중단 중 이 업무 관련 건의 기관, 중단 기간, 조치사항을 운영·관제 매터모스트 채널로 지금 보냅니다. 자동 발송은 그 주 마지막 영업일과 그 두 영업일 앞(보통 수·금) 오후 3시에 업무마다 따로 갑니다.',
-    doneTitle: '주간 취합을 보냈습니다',
-  },
-};
 
 const EMPTY_MESSAGE: Record<SuspensionPeriod, string> = {
   CURRENT: '지금 중단 중인 기관이 없습니다.',
