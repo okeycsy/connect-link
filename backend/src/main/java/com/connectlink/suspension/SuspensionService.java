@@ -250,6 +250,7 @@ public class SuspensionService {
             organization.getName() + " 일시중단 등록",
             Snapshot.of(suspension).diff(Snapshot.EMPTY, true)));
     notifier.registered(suspension, kftcRecipients(suspension.getBusinesses(), user));
+    digestService.sendRegistered(suspension);
     return toDetail(user, suspension);
   }
 
