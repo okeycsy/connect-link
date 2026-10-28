@@ -578,6 +578,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/suspension-digests/weekly': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 주간 취합 수동으로 보내기
+     * @description 이번 주(월요일부터 지금까지) 확정된 일시중단의 기관 이름, 중단 기간, 조치사항을 운영·관제 매터모스트 채널로 바로 보낸다. 자동 발송은 그 주 마지막 영업일과 그 두 영업일 앞(보통 수·금) 15시다. 결제원 담당자와 관리자만 부른다.
+     */
+    post: operations['sendWeekly'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/sign-ups': {
     parameters: {
       query?: never;
@@ -5092,6 +5112,26 @@ export interface operations {
     };
   };
   send: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['SuspensionDigestResponse'];
+        };
+      };
+    };
+  };
+  sendWeekly: {
     parameters: {
       query?: never;
       header?: never;

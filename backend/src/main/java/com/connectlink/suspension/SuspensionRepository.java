@@ -1,6 +1,7 @@
 package com.connectlink.suspension;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -19,6 +20,15 @@ public interface SuspensionRepository
           + " s.startAt >= :from and s.startAt < :to order by s.startAt, o.name, s.id")
   List<Suspension> findStartingBetween(
       @Param("status") SuspensionStatus status,
+      @Param("from") LocalDateTime from,
+      @Param("to") LocalDateTime to);
+
+  /** 주간 취합: 이 구간에 확정된 건(확정·완료, 전 업무). 시작 시각, 기관 이름순. */
+  @Query(
+      "select s from Suspension s join fetch s.organization o where s.status in :statuses and"
+          + " s.confirmedAt >= :from and s.confirmedAt < :to order by s.startAt, o.name, s.id")
+  List<Suspension> findConfirmedBetween(
+      @Param("statuses") Collection<SuspensionStatus> statuses,
       @Param("from") LocalDateTime from,
       @Param("to") LocalDateTime to);
 }
