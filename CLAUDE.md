@@ -104,7 +104,7 @@
 | 메일 미리보기 | `MailPreviewResponse` | 사람이 직접 보내는 메일(지금은 의견 요청·정기 변경 리마인드)을 보내기 전에 보여 주는 기본 제목·본문과 받을 기관. 보내는 사람이 제목·본문을 고칠 수 있고 고친 문구가 받는 사람 모두에게 같게 간다(보내기 요청의 `subject`·`body`, 비우면 기본 문구). 예약 작업의 자동 리마인드는 기본 문구다. API `.../reminder-preview`, 화면 `shared/MailPreviewEditor` |
 | 메일 제목 머리말 | `MailSubject` | 모든 메일 제목은 "[금융결제원] (업무명) …", 업무와 무관한 계정 메일(인증 코드·가입·탈퇴·비밀번호)은 "[금융결제원] (연결이) …". 여러 업무에 걸친 메일(일시중단)은 업무를 "·" 로 잇는다. `NotificationService.publish` 가 메일 채널에 붙이고, 이미 "[금융결제원]" 으로 시작하면 그대로 둔다. 보내는 사람이 미리보기에서 제목을 정하는 리마인드는 `publishAsWritten` 으로 고친 제목 그대로 보낸다. 알림 센터 제목과 매터모스트에는 붙이지 않는다 |
 | 알림 채널 | `NotificationChannel` | `EMAIL`, `MATTERMOST` |
-| 발송함 | `NotificationOutbox` | 프로토타입에서 실제 발송 대신 기록. 상태 `OutboxStatus` = `PENDING`(발송 대기), `SENT`, `FAILED` |
+| 발송함 | `NotificationOutbox` | 프로토타입에서 실제 발송 대신 기록. 상태 `OutboxStatus` = `PENDING`(발송 대기), `SENT`, `FAILED`. `app.notification.delivery.enabled` 를 켜면 `OutboxDispatcher` 가 채널별 `ChannelDelivery`(메일 `MailDelivery`, 매터모스트 팀 채널 `MattermostDelivery`: Incoming Webhook)로 실제로 보낸다 |
 | 로그인 사용자 | `CurrentUser` | Service 권한 판단에 넘기는 값. 로그인할 때 계정에서 만들어 세션에 둔다. 업무 영역(레일) 조회 범위는 `BusinessAccessPolicy`(관리자는 전 업무, 그 밖에는 담당 업무). 테스트는 `TestUsers` |
 | 내부망/인터넷망 | `NetworkZone` | `INTERNAL`, `EXTERNAL`. 판단은 `NetworkZoneResolver`(헤더 `X-Network-Zone` 은 local·demo 만, 운영은 `app.network.internal-cidrs`). 내부망 전용 위반은 403 `INTERNAL_ONLY` |
 | 첨부파일 | `Attachment` | 대상은 `AttachmentOwnerType`(`OPINION_REQUEST`, `OPINION_REPLY`, `TEST_PLAN`, `TEST_DATA_FORM`(테스트데이터 회신 양식, 테스트 ID), `TEST_DATA`(기관 테스트데이터, 대상 기관 행 ID), `SUSPENSION`, `CHAT_MESSAGE`, `NOTICE`(공지·자료실 글), `DEMO`) + `ownerId`. 파일 저장소 `FileStorage` |

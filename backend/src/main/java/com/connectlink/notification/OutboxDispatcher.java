@@ -64,7 +64,7 @@ public class OutboxDispatcher {
                     .findByStatusOrderByIdAsc(
                         OutboxStatus.PENDING, PageRequest.of(0, properties.getBatchSize()))
                     .stream()
-                    .filter(o -> deliverable(o.getChannel()))
+                    .filter(this::deliverable)
                     .map(NotificationOutbox::getId)
                     .toList());
     int sent = 0;
@@ -77,9 +77,9 @@ public class OutboxDispatcher {
     return sent;
   }
 
-  private boolean deliverable(NotificationChannel channel) {
-    ChannelDelivery delivery = deliveries.get(channel);
-    return delivery != null && delivery.available();
+  private boolean deliverable(NotificationOutbox outbox) {
+    ChannelDelivery delivery = deliveries.get(outbox.getChannel());
+    return delivery != null && delivery.available() && delivery.accepts(outbox);
   }
 
   private boolean dispatchOne(Long id) {

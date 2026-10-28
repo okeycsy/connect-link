@@ -76,6 +76,21 @@ public class SuspensionDigestService {
     return send(today);
   }
 
+  /**
+   * 확정 즉시 알림: 처음 확정된 건 하나를 관련 업무와 조치 및 인수인계 사항과 함께 취합 채널로 바로 보낸다({@code send-on-confirm}). 전 영업일 취합
+   * 기록에는 남기지 않는다.
+   */
+  public void sendConfirmed(Suspension suspension) {
+    if (!properties.isSendOnConfirm()) {
+      return;
+    }
+    String subject = formatter.confirmedSubject(suspension);
+    String body = formatter.confirmedBody(suspension);
+    for (String channel : properties.getChannels()) {
+      notificationService.sendToChannel(NotificationChannel.MATTERMOST, channel, subject, body);
+    }
+  }
+
   private SuspensionDigestResponse send(LocalDate sentOn) {
     LocalDate fromDate = sentOn.plusDays(1);
     LocalDate toDate = calendar.nextBusinessDay(sentOn);
