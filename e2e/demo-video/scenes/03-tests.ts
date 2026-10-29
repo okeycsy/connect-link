@@ -8,7 +8,7 @@ export const tests: Chapter = {
     {
       id: 'c-tests',
       kind: 'card',
-      duration: 2600,
+      duration: 2300,
       card: { tone: 'light', chapter: '02 기관 테스트', title: '결과는 기관이, 의견은 결제원이,\n수행률은 저절로.' },
       narration: '둘째, 기관 테스트.',
     },
@@ -26,7 +26,7 @@ export const tests: Chapter = {
         d.say('기관 담당자가 요구사항마다 결과를 저장하면,');
         await d.focus(item, { note: '요구사항마다 <b>정상·오류</b>를 고르고', scale: 1.2 });
         await d.click(item.getByText('정상', { exact: true }));
-        await d.pause(800);
+        await d.pause(500);
         await d.unfocus();
         await d.click(page.getByRole('button', { name: /결과 저장/ }));
         await d.pause(300);
@@ -54,24 +54,24 @@ export const tests: Chapter = {
         await d.focus(targets, { note: '결제원은 <b>기관별 현황</b>을 한눈에.', scale: 1.2, hold: 1400 });
         const item = page.getByTestId('item-004');
         await item.scrollIntoViewIfNeeded();
-        await d.pause(150);
+        await d.pause(100);
         const dialog = page.getByRole('dialog');
         await d.clickUntil(item.getByRole('button', { name: '004 의견' }), dialog.getByRole('textbox', { name: '미니 수행률' }));
         d.say('요구사항마다 의견과 미니 수행률을 남깁니다.');
         await d.focus(dialog, { note: '요구사항마다 <b>의견과 미니 수행률</b>을 남깁니다.', scale: 1.1 });
         await d.type(dialog.getByRole('textbox', { name: '미니 수행률' }), '80');
         await d.type(dialog.getByRole('textbox', { name: '특이사항' }), '9999 건만 다시 봐 주세요.', {
-          delay: 6,
+          delay: 2,
         });
-        await d.pause(150);
+        await d.pause(50);
         await d.clickUntil(dialog.getByRole('button', { name: '저장' }), item.getByTestId('item-feedback'));
         await d.unfocus();
         await d.focus(item.getByTestId('item-feedback'), {
           note: '결제원 의견이 기관 결과 옆에 남습니다. 기관이 고치면 <b>다시 확인</b>.',
           scale: 1.3,
-          hold: 350,
+          hold: 200,
         });
-        await d.pause(100);
+        await d.pause(50);
       },
     },
   ],

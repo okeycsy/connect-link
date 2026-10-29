@@ -6,6 +6,7 @@
  *   node e2e/demo-video/compose.ts --music=bgm.m4a       # 배경음악을 깔고 끝에서 서서히 줄인다
  *   node e2e/demo-video/compose.ts --voice=narration.m4a # 내레이션 음성을 입힌다
  *   node e2e/demo-video/compose.ts --chapter=suspensions # 그 장만 따로 out/demo-suspensions.mp4 로(기능별 짧은 영상)
+ *   node e2e/demo-video/compose.ts --target=175          # 이 길이(초)보다 길면 재생 속도를 조금 올려 맞춘다(기본 TARGET_SECONDS, 상한 MAX_SPEED)
  *
  * ffmpeg 가 PATH 에 있어야 한다.
  */
@@ -13,7 +14,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 
 import { CHAPTERS } from './scenes/index.ts';
-import { FADE, HEAD_TRIM, OUT, SEGMENTS, readTimeline, timedEntries } from './timeline.ts';
+import { FADE, HEAD_TRIM, MAX_SPEED, OUT, SEGMENTS, TARGET_SECONDS, fittedEntries, readTimeline } from './timeline.ts';
 
 const FPS = 30;
 
@@ -43,8 +44,13 @@ async function main() {
   const voice = arg('voice');
   const output = arg('out') ?? path.join(OUT, chapter ? `demo-${chapter}.mp4` : 'demo.mp4');
 
-  // 실제 webm 길이(녹화 시간과 조금 다르다)를 재서 크로스페이드 위치를 정한다.
-  const timed = await timedEntries(timeline);
+  // 실제 webm 길이(녹화 시간과 조금 다르다)를 재서 크로스페이드 위치를 정한다. 장 하나만 뽑을 때는 길이를 맞추지 않는다.
+  const target = chapter ? Infinity : Number(arg('target') ?? TARGET_SECONDS);
+  const { timed, speed, rawTotal } = await fittedEntries(timeline, target);
+  if (speed > 1) {
+    console.log(`길이 맞춤: 녹화 ${rawTotal.toFixed(1)}초 → 목표 ${target}초, 재생 ${speed.toFixed(3)}배`);
+    if (rawTotal / target > MAX_SPEED) console.warn(`경고: 상한 ${MAX_SPEED}배로도 목표에 못 미칩니다. 장면을 줄이세요.`);
+  }
   const durations = timed.map((t) => t.duration);
 
   const inputs: string[] = [];
@@ -53,7 +59,7 @@ async function main() {
   // 각 입력을 같은 fps·크기·포맷으로 맞추고, xfade 로 차례로 잇는다.
   const filters: string[] = [];
   timeline.forEach((_, i) => {
-    filters.push(`[${i}:v]trim=start=${HEAD_TRIM},fps=${FPS},scale=1920:1080:flags=lanczos,format=yuv420p,setpts=PTS-STARTPTS[v${i}]`);
+    filters.push(`[${i}:v]trim=start=${HEAD_TRIM},setpts=(PTS-STARTPTS)/${speed.toFixed(4)},fps=${FPS},scale=1920:1080:flags=lanczos,format=yuv420p[v${i}]`);
   });
   let last = 'v0';
   let offset = durations[0];

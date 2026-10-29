@@ -1,6 +1,6 @@
 /**
  * 타이틀 카드와 글꼴·로고를 내려 주는 작은 정적 서버. 녹화(record.ts)와 카드 미리보기(preview-cards.ts)가 같이 쓴다.
- *   /cards/{장면 id}  카드 HTML      /fonts/*  Pretendard OTF(프론트 npm 패키지)      /brand/*  앱 로고 자산
+ *   /cards/{장면 id}  카드 HTML      /fonts/*  Pretendard OTF(프론트 npm 패키지)      /brand/*  앱 로고 자산      /assets/*  영상 전용 그림(assets/)
  */
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -38,6 +38,16 @@ export async function startCardServer(): Promise<{ url: string; close: () => voi
     if (url.pathname.startsWith('/brand/')) {
       try {
         const file = await readFile(path.join(here, '..', '..', 'frontend', 'src', 'assets', 'brand', path.basename(url.pathname)));
+        res.writeHead(200, { 'content-type': 'image/png' });
+        res.end(file);
+      } catch {
+        res.writeHead(404).end();
+      }
+      return;
+    }
+    if (url.pathname.startsWith('/assets/')) {
+      try {
+        const file = await readFile(path.join(here, 'assets', path.basename(url.pathname)));
         res.writeHead(200, { 'content-type': 'image/png' });
         res.end(file);
       } catch {

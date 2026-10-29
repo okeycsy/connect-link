@@ -100,15 +100,15 @@ export const flow: Chapter = {
         await d.pause(1200);
         await d.click(reply.getByRole('radio', { name: '반영 어려움' }));
         await reply.getByText('섹션 3. 반영이 어려운 이유').waitFor();
-        await d.pause(300);
+        await d.pause(150);
         d.say('해당 없는 질문은 보이지 않습니다.');
         await d.note('해당 없는 질문은 보이지 않아 <b>정확한 답</b>을 받습니다. 웹에서 바로 제출.');
         await d.type(reply.getByRole('textbox', { name: /반영하기 어려운 이유/ }), '내년 상반기 전산 개편 중이라 하반기 반영을 제안합니다.', {
-          delay: 10,
+          delay: 2,
         });
         await d.pause(250);
         await d.clickUntil(reply.getByRole('button', { name: '최종제출' }), page.getByTestId('submitted-answers'));
-        await d.pause(500);
+        await d.pause(100);
         await d.unfocus();
         await d.pause(100);
       },
@@ -125,12 +125,12 @@ export const flow: Chapter = {
         await list.getByText(MEETING_NOTICE).waitFor();
         await d.pause(400);
         d.say('공지의 회의 개최 안내에서 바로 회신합니다.');
-        await d.focus(list.getByText(MEETING_NOTICE), { note: '공지·자료실에서 <b>회의 개최 안내</b>를 보다가,', scale: 1.15, hold: 400 });
+        await d.focus(list.getByText(MEETING_NOTICE), { note: '공지·자료실에서 <b>회의 개최 안내</b>를 보다가,', scale: 1.15, hold: 200 });
         await d.click(list.getByText(MEETING_NOTICE));
         const linked = page.getByTestId('notice-opinion');
         await linked.waitFor();
-        await d.pause(300);
-        await d.focus(linked, { note: '글에 이어 둔 <b>회신하기</b>로 참석 여부를 바로 답합니다.', scale: 1.3, hold: 600 });
+        await d.pause(100);
+        await d.focus(linked, { note: '글에 이어 둔 <b>회신하기</b>로 참석 여부를 바로 답합니다.', scale: 1.3, hold: 350 });
         await d.clickUntil(page.getByRole('link', { name: '회신하기' }), page.getByText('회의에 참석하십니까?'));
         const reply = page.getByTestId('my-reply');
         await reply.waitFor();
@@ -141,9 +141,9 @@ export const flow: Chapter = {
           center: 0.42,
         });
         await d.click(reply.getByRole('radio', { name: '참석', exact: true }));
-        await d.pause(200);
-        await d.type(reply.getByRole('textbox', { name: /참석자 이름과 직위/ }), '김민준 대리, 남궁민 과장', { delay: 10 });
-        await d.pause(200);
+        await d.pause(100);
+        await d.type(reply.getByRole('textbox', { name: /참석자 이름과 직위/ }), '김민준 대리, 남궁민 과장', { delay: 4 });
+        await d.pause(100);
         await d.clickUntil(reply.getByRole('button', { name: '최종제출' }), page.getByTestId('submitted-answers'));
         await d.pause(600);
         d.say('회신 메일 없이, 결제원 집계에 바로 들어갑니다.');

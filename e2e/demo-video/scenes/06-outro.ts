@@ -14,12 +14,12 @@ export const outro: Chapter = {
         kicker: '업무 하나에 해마다 198시간 · 사업 계층별 분류체계 소분류 94개 업무로 넓히면',
         stat: { value: 18612, unit: '시간 절감', label: '해마다, 우리 원 전체에서' },
       },
-      narration: '94개 업무로 넓히면, 해마다 1만 8천 612시간.',
+      narration: '94개 업무로 넓히면 1만 8천 612시간.',
     },
     {
       id: 'platform',
       kind: 'card',
-      duration: 4600,
+      duration: 4000,
       card: {
         tone: 'light',
         kicker: '수기에서 플랫폼으로',
@@ -43,7 +43,7 @@ export const outro: Chapter = {
     {
       id: 'outro',
       kind: 'card',
-      duration: 3000,
+      duration: 2400,
       card: {
         tone: 'light',
         image: { src: '/brand/logo.png', width: 520 },

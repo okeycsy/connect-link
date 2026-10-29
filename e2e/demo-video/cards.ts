@@ -21,8 +21,8 @@ export type CardSpec = {
   subtitle?: string;
   /** 제목 대신 커다란 숫자 하나를 보일 때. value 가 숫자면 0 에서 올라오고 천 단위 쉼표를 붙인다. prefix 는 숫자 앞 작은 글자(예: "약"). */
   stat?: { value: number | string; prefix?: string; unit?: string; label: string };
-  /** 제목 위에 보일 그림(앱 로고). 경로는 /brand/… */
-  image?: { src: string; width: number };
+  /** 제목 위에 보일 그림. 경로는 /brand/…(앱 로고) 또는 /assets/…(영상 전용 그림). frame 이면 화면 캡처처럼 모서리를 둥글리고 그림자를 준다. */
+  image?: { src: string; width: number; frame?: boolean };
   /** 글자가 나타나는 시차(ms). */
   stagger?: number;
 };
@@ -43,7 +43,7 @@ export function cardHtml(spec: CardSpec): string {
   const parts: string[] = [];
   if (spec.image) {
     parts.push(
-      `<img class="rise" src="${esc(spec.image.src)}" width="${spec.image.width}" style="animation-delay:${next()}ms" alt="">`,
+      `<img class="rise${spec.image.frame ? ' shot' : ''}" src="${esc(spec.image.src)}" width="${spec.image.width}" style="animation-delay:${next()}ms" alt="">`,
     );
   }
   if (spec.kicker) {
@@ -82,6 +82,7 @@ body{display:flex;align-items:center;justify-content:center;font-family:"Pretend
 .b3{width:420px;height:420px;right:18%;top:-200px;background:#F7EFB8}
 .wrap{position:relative;text-align:center;max-width:1500px;padding:0 60px;display:flex;flex-direction:column;align-items:center}
 img{display:block;margin:0 auto 44px}
+img.shot{border-radius:16px;box-shadow:0 24px 60px rgba(29,23,21,.18),0 0 0 1px rgba(29,23,21,.08)}
 .kicker{font-size:28px;font-weight:600;color:${dark ? '#F6D6CC' : '#8A5A50'};margin-bottom:30px;letter-spacing:.04em}
 .chapter{font-size:80px;font-weight:800;line-height:1.15;color:${dark ? '#F6D6CC' : '#6B3F35'};margin-bottom:34px;letter-spacing:-.03em}
 .chapter + .title{font-size:62px;font-weight:600;color:${dark ? 'rgba(255,255,255,.86)' : '#3E4048'}}

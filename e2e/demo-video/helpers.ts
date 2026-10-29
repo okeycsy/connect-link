@@ -61,7 +61,7 @@ export class Director {
   }
 
   /** 마우스를 옮긴 뒤 잠깐 멈추고 누른다. 사람이 누르는 리듬이다. */
-  async click(target: Locator, opts: { dx?: number; dy?: number; settle?: number } = {}) {
+  async click(target: Locator, opts: { dx?: number; dy?: number; settle?: number; steps?: number } = {}) {
     const { x, y } = await this.moveTo(target, opts);
     await this.pause(opts.settle ?? 170);
     await this.page.mouse.down();
@@ -74,7 +74,7 @@ export class Director {
    * 누른 뒤 기대한 결과(expected 가 보임)가 나올 때까지 기다린다. 애니메이션 중에 눌려 빠진 클릭은 한 번 더 누른다.
    * 상태가 바뀌어야 하는 버튼(확정, 제출, 보내기)에 쓴다.
    */
-  async clickUntil(target: Locator, expected: Locator, opts: { dx?: number; dy?: number; settle?: number } = {}) {
+  async clickUntil(target: Locator, expected: Locator, opts: { dx?: number; dy?: number; settle?: number; steps?: number } = {}) {
     await this.click(target, opts);
     try {
       await expected.first().waitFor({ state: 'visible', timeout: 4000 });

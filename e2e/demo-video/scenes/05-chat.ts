@@ -8,7 +8,7 @@ export const chat: Chapter = {
     {
       id: 'c-chat',
       kind: 'card',
-      duration: 2600,
+      duration: 2300,
       card: { tone: 'light', chapter: '04 소통 채널', title: '장애가 나면 @기관을 부르고,\n기관이 확인합니다.' },
       narration: '넷째, 소통 채널.',
     },
@@ -52,9 +52,9 @@ export const chat: Chapter = {
         await d.pause(200);
         await d.focus(urgent, { note: 'KB국민은행 담당자가 <b>확인</b>을 누르면,', scale: 1.35 });
         await d.clickUntil(urgent.getByRole('button', { name: '확인', exact: true }), urgent.getByTestId('chat-ack'));
-        await d.pause(400);
+        await d.pause(250);
         await d.note('메시지 아래 <b>기관 이름</b>으로 남습니다. 전화로 하나씩 확인하던 일.');
-        await d.pause(700);
+        await d.pause(550);
         await d.unfocus();
         await d.pause(150);
       },

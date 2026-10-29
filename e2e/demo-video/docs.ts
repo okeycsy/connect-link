@@ -11,7 +11,7 @@ import { readFile, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { CHAPTERS, chapterOf, type Scene } from './scenes/index.ts';
-import { HERE, OUT, readTimeline, timedEntries, type Timed } from './timeline.ts';
+import { HERE, OUT, fittedEntries, readTimeline, type Timed } from './timeline.ts';
 
 /** 내레이션 읽는 속도(한글 음절/초). 차분한 TTS 기본 속도 근처다. 숫자·영문은 음절로 환산한다. */
 const SYLLABLES_PER_SECOND = 4.8;
@@ -95,7 +95,8 @@ function describeCard(scene: Extract<Scene, { kind: 'card' }>): string {
 
 async function main() {
   const timeline = await readTimeline();
-  const timed = await timedEntries(timeline);
+  // compose.ts 와 같은 길이 맞춤(재생 속도)을 적용해 시각을 합성본과 맞춘다.
+  const { timed, speed, rawTotal } = await fittedEntries(timeline);
   const byId = new Map(timed.map((t) => [t.id, t]));
   const scenes = CHAPTERS.flatMap((c) => c.scenes).filter((s) => byId.has(s.id));
   const total = timed.length ? timed[timed.length - 1].end : 0;
@@ -112,7 +113,7 @@ async function main() {
 
   const lines: string[] = [];
   lines.push('# 연결이 시연영상 — 시나리오 (녹화본 기준)', '');
-  lines.push(`작성 ${today} · 영상 길이 **${tc(total)}** · 1920×1080 · 장 ${CHAPTERS.length}개 · 장면 ${scenes.length}개`, '');
+  lines.push(`작성 ${today} · 영상 길이 **${tc(total)}** · 1920×1080 · 장 ${CHAPTERS.length}개 · 장면 ${scenes.length}개${speed > 1 ? ` · 녹화 ${tc(rawTotal)} 를 재생 ${speed.toFixed(3)}배로 맞춤` : ''}`, '');
   if (introText.trim()) lines.push(introText.trim(), '', '---', '');
 
   lines.push('## 장 배분', '');
@@ -176,7 +177,7 @@ async function main() {
   const n: string[] = [
     '# 연결이 시연영상 내레이션 대본 (녹화본 기준)',
     '',
-    `영상 길이 ${tc(total)} · 큐 ${rows.length}개${tightCount ? ` · 빠듯한 큐 ${tightCount}개(⚠)` : ''}.`,
+    `영상 길이 ${tc(total)} · 큐 ${rows.length}개${tightCount ? ` · 빠듯한 큐 ${tightCount}개(⚠)` : ''}${speed > 1 ? ` · 녹화 ${tc(rawTotal)} 를 재생 ${speed.toFixed(3)}배로 맞춤(시각은 맞춘 뒤 기준)` : ''}.`,
     '',
     `- **시작**은 합성본에서 그 문구를 읽기 시작할 시각이다. TTS 조각을 큐마다 만들어 그 시각에 놓거나, 같은 내용의 \`narration.srt\` 를 TTS·편집 도구에 넣는다.`,
     `- **여유**는 다음 큐까지 남은 시간, **예상**은 한글 ${SYLLABLES_PER_SECOND}음절/초 + 문장마다 ${SENTENCE_PAUSE}초로 어림한 읽기 시간이다. ⚠ 는 예상이 여유보다 긴 큐라 TTS 속도를 조금 올리거나 문구를 줄인다.`,
