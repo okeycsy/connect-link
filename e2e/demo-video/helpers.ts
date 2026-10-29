@@ -8,9 +8,20 @@ export class Director {
   readonly page: Page;
   /** 지금 강조(스포트라이트·확대) 중인지. 강조 중에 다른 곳을 강조하면 먼저 되돌린다. */
   private focused = false;
+  /** 내레이션 큐: 장면 시작 뒤 몇 초에 어떤 문구를 읽기 시작하는지. record.ts 가 timeline.json 에 남기고 docs.ts 가 대본·SRT 를 만든다. */
+  readonly cues: { at: number; text: string }[] = [];
+  private readonly startedAt = Date.now();
 
   constructor(page: Page) {
     this.page = page;
+  }
+
+  /**
+   * 내레이션 큐를 남긴다. 화면은 멈추지 않는다. 이 시점에 읽기 시작할 문구를 그 동작 바로 앞에 둔다.
+   * 다음 큐가 오기 전에 다 읽히도록 짧게 쓴다(예상 읽기 시간은 docs.ts 가 narration.md 에 적는다).
+   */
+  say(text: string) {
+    this.cues.push({ at: Math.round((Date.now() - this.startedAt) / 100) / 10, text });
   }
 
   /** 밀리초만큼 기다린다. 장면의 호흡(숨 고르기)에 쓴다. */
@@ -105,7 +116,7 @@ export class Director {
       { note: opts.note ?? '', scale: opts.scale ?? 1.3, pad: opts.pad ?? 12 },
     );
     this.focused = true;
-    await this.pause(420);
+    await this.pause(380);
     if (opts.hold != null) {
       await this.pause(opts.hold);
       await this.unfocus();
@@ -122,7 +133,7 @@ export class Director {
   async unfocus() {
     await this.page.evaluate(() => window.__demo?.unfocus());
     this.focused = false;
-    await this.pause(380);
+    await this.pause(340);
   }
 
   /** 강조 표시된 요소 묶음의 가운데가 화면 높이의 ratio 지점에 오도록 스크롤한다. */

@@ -15,7 +15,9 @@ export const FADE = 0.4;
 /** 장면마다 녹화 머리에 남는 빈 화면(브라우저 문맥을 여는 시간, 초). 잘라 낸다. */
 export const HEAD_TRIM = 0.35;
 
-export type Entry = { id: string; file: string; kind: string; seconds: number };
+/** 내레이션 큐: 장면 머리(녹화 시작)에서 몇 초 뒤에 읽기 시작하는 문구. */
+export type Cue = { at: number; text: string };
+export type Entry = { id: string; file: string; kind: string; seconds: number; cues?: Cue[] };
 export type Timed = Entry & { duration: number; start: number; end: number };
 
 export async function readTimeline(): Promise<Entry[]> {

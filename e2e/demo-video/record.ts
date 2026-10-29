@@ -19,6 +19,7 @@ import { Director } from './helpers.ts';
 import { OVERLAY_SCRIPT } from './overlay.ts';
 import { SCENES, resolveSceneIds, type Scene } from './scenes/index.ts';
 import { startCardServer } from './server.ts';
+import type { Entry } from './timeline.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(here, 'out');
@@ -69,7 +70,9 @@ async function recordScene(
     throw failure;
   }
   console.log(`  ${scene.id.padEnd(16)} ${seconds.toFixed(1)}s`);
-  return { id: scene.id, file: path.basename(file), kind: scene.kind, seconds };
+  // 내레이션 큐: 카드는 장면 머리에서 narration 한 줄, 앱 장면은 d.say() 가 남긴 시각과 문구.
+  const cues = scene.kind === 'card' ? (scene.narration ? [{ at: 0, text: scene.narration }] : []) : director.cues;
+  return { id: scene.id, file: path.basename(file), kind: scene.kind, seconds, cues };
 }
 
 async function main() {
@@ -89,7 +92,7 @@ async function main() {
   });
 
   const timelinePath = path.join(OUT, 'timeline.json');
-  let timeline: { id: string; file: string; kind: string; seconds: number }[] = [];
+  let timeline: Entry[] = [];
   if (only) {
     try {
       timeline = JSON.parse(await readFile(timelinePath, 'utf8'));

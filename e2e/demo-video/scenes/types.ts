@@ -6,8 +6,8 @@ import type { Director } from '../helpers.ts';
 /**
  * 시연영상 장면. 장(chapter)마다 파일 하나(01-intro.ts …)에 모아 두고 index.ts 가 순서대로 잇는다.
  *
- * - card: 큰 글자 화면. duration(ms) 동안 보인다.
- * - app: 실제 화면을 조작하며 녹화한다. 강조는 d.focus(), 장면 설명 자막은 d.caption().
+ * - card: 큰 글자 화면. duration(ms) 동안 보인다. narration 은 카드가 뜰 때 읽는 한 줄.
+ * - app: 실제 화면을 조작하며 녹화한다. 강조는 d.focus(), 내레이션은 읽기 시작할 동작 바로 앞에 d.say().
  * - summary: 시나리오 문서의 "화면·동선" 칸. 녹화 뒤 docs.ts 가 장면표를 만들 때 쓴다.
  */
 export type Scene =

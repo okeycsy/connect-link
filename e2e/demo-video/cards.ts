@@ -87,7 +87,7 @@ img{display:block;margin:0 auto 44px}
 .chapter + .title{font-size:62px;font-weight:600;color:${dark ? 'rgba(255,255,255,.86)' : '#3E4048'}}
 .title{font-size:84px;font-weight:700;line-height:1.24;margin:0;letter-spacing:-.03em}
 .title .line{display:block}
-.subtitle{font-size:34px;font-weight:400;color:${dark ? 'rgba(255,255,255,.72)' : '#62656D'};margin-top:34px;line-height:1.45;letter-spacing:-.01em}
+.subtitle{font-size:34px;font-weight:400;color:${dark ? 'rgba(255,255,255,.72)' : '#62656D'};margin-top:34px;line-height:1.45;letter-spacing:-.01em;word-break:keep-all;text-wrap:balance}
 .stat{display:flex;align-items:baseline;justify-content:center;gap:10px}
 .stat .value{font-size:210px;font-weight:800;line-height:1;letter-spacing:-.05em;font-variant-numeric:tabular-nums;color:${dark ? '#fff' : '#8A5A50'}}
 .stat .unit{font-size:88px;font-weight:700}

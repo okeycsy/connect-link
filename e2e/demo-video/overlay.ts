@@ -46,8 +46,8 @@ export const OVERLAY_SCRIPT = String.raw`
       'box-shadow:0 0 0 3px #D27A62,0 0 0 9999px rgba(22,16,14,.52);opacity:0;transition:opacity .3s ease}',
       '#__demo-spot.show{opacity:1}',
       // 요소 옆에 붙는 설명
-      '#__demo-note{position:fixed;left:0;top:0;max-width:1100px;padding:14px 26px;border-radius:18px;background:rgba(29,23,21,.94);color:#fff;',
-      'font-family:' + FONT + ';font-size:29px;font-weight:500;letter-spacing:-.01em;line-height:1.35;text-align:center;word-break:keep-all;',
+      '#__demo-note{position:fixed;left:0;top:0;max-width:1180px;padding:14px 26px;border-radius:18px;background:rgba(29,23,21,.94);color:#fff;',
+      'font-family:' + FONT + ';font-size:29px;font-weight:500;letter-spacing:-.01em;line-height:1.38;text-align:center;word-break:keep-all;text-wrap:balance;',
       'pointer-events:none;z-index:2147483645;box-shadow:0 12px 32px rgba(0,0,0,.22);opacity:0;transform:translateY(10px);',
       'transition:opacity .35s ease,transform .35s cubic-bezier(.2,.8,.2,1)}',
       '#__demo-note.show{opacity:1;transform:none}',
@@ -55,7 +55,7 @@ export const OVERLAY_SCRIPT = String.raw`
       '#__demo-note::before{content:"";position:absolute;width:18px;height:18px;background:rgba(29,23,21,.94);transform:rotate(45deg);',
       'left:calc(var(--ax,50%) - 9px);top:-8px;border-radius:3px}',
       '#__demo-note.above::before{top:auto;bottom:-8px}',
-      '#__demo-note.side{max-width:520px;text-align:left}',
+      '#__demo-note.side{max-width:640px;text-align:left}',
       '#__demo-note.side::before{left:-8px;top:calc(var(--ay,50%) - 9px)}',
       '#__demo-note.side.left-of::before{left:auto;right:-8px}',
       // 로그인 주체 알약
@@ -108,6 +108,11 @@ export const OVERLAY_SCRIPT = String.raw`
     });
     if (l === Infinity) return null;
     return { x: l - pad, y: t - pad, w: r - l + pad * 2, h: b - t + pad * 2 };
+  }
+
+  /** 설명 문구는 문장마다 한 줄. 마침표 뒤의 띄어쓰기를 줄바꿈으로 바꾼다(긴 문장만 단어 단위로 두 줄에 고르게 나뉜다). */
+  function lines(html) {
+    return (html || '').replace(/([.!?])\s+(?=\S)/g, '$1<br>');
   }
 
   function placeNote(rect) {
@@ -199,7 +204,7 @@ export const OVERLAY_SCRIPT = String.raw`
       const scale = Math.max(1, Math.min(opts.scale || 1, (W - 140) / rect.w, (H - 300) / rect.h));
       api.caption(null);
       const note = state.note;
-      note.innerHTML = opts.note || '';
+      note.innerHTML = lines(opts.note);
       note.classList.remove('show');
       drawSpot(rect);
       state.spot.classList.add('show');
@@ -214,7 +219,7 @@ export const OVERLAY_SCRIPT = String.raw`
       const note = state.note;
       if (!html) { note.classList.remove('show'); return; }
       note.classList.remove('show');
-      setTimeout(() => { note.innerHTML = html; note.classList.add('show'); }, 200);
+      setTimeout(() => { note.innerHTML = lines(html); note.classList.add('show'); }, 200);
     },
     /** 강조를 끝낸다: 스포트라이트·설명을 지우고 확대를 되돌린다. */
     unfocus() {

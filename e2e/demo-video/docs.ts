@@ -1,7 +1,7 @@
 /**
  * 녹화본(out/timeline.json + 조각 길이)과 장면 정의(scenes/)로 시나리오 문서와 내레이션 대본을 만든다.
  *
- *   node e2e/demo-video/docs.ts                 # out/scenario.md, out/narration.md
+ *   node e2e/demo-video/docs.ts                 # out/scenario.md, out/narration.md, out/narration.srt
  *   node e2e/demo-video/docs.ts --intro=설명.md  # 장면표 앞에 붙일 글(기본: scenario-intro.md)
  *
  * 장면표의 "화면·동선"은 장면의 summary, "자막·설명"은 장면 코드의 d.caption()/note 문구, 시각은 합성본 기준이다.
@@ -12,6 +12,38 @@ import path from 'node:path';
 
 import { CHAPTERS, chapterOf, type Scene } from './scenes/index.ts';
 import { HERE, OUT, readTimeline, timedEntries, type Timed } from './timeline.ts';
+
+/** 내레이션 읽는 속도(한글 음절/초). 차분한 TTS 기본 속도 근처다. 숫자·영문은 음절로 환산한다. */
+const SYLLABLES_PER_SECOND = 4.8;
+/** 문장 끝마다 쉬는 시간(초). */
+const SENTENCE_PAUSE = 0.35;
+
+/** 문구를 읽는 데 걸리는 시간 추정(초). */
+export function speechSeconds(text: string): number {
+  let syllables = 0;
+  for (const ch of text) {
+    const code = ch.codePointAt(0) ?? 0;
+    if (code >= 0xac00 && code <= 0xd7a3) syllables += 1;
+    else if (/[0-9]/.test(ch)) syllables += 1.4;
+    else if (/[A-Za-z]/.test(ch)) syllables += 1.2;
+  }
+  const sentences = Math.max(1, (text.match(/[.!?]/g) ?? []).length);
+  return syllables / SYLLABLES_PER_SECOND + sentences * SENTENCE_PAUSE;
+}
+
+function srtTime(seconds: number): string {
+  const ms = Math.max(0, Math.round(seconds * 1000));
+  const h = Math.floor(ms / 3_600_000);
+  const m = Math.floor((ms % 3_600_000) / 60_000);
+  const sec = Math.floor((ms % 60_000) / 1000);
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')},${String(ms % 1000).padStart(3, '0')}`;
+}
+
+function tc1(seconds: number): string {
+  const whole = Math.floor(seconds);
+  const tenth = Math.round((seconds - whole) * 10) % 10;
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}.${tenth}`;
+}
 
 function arg(name: string): string | undefined {
   const found = process.argv.find((a) => a.startsWith(`--${name}=`));
@@ -105,7 +137,8 @@ async function main() {
     const chapter = chapterOf(scene.id)?.title ?? '';
     const screen = scene.kind === 'card' ? describeCard(scene) : `앱 · ${scene.summary}`;
     const caps = scene.kind === 'card' ? '—' : (captions.get(scene.id) ?? []).map(plain).join(' / ') || '—';
-    lines.push(`| ${i + 1} | ${tc(t.start)}–${tc(t.end)} | ${chapter} | ${scene.id} | ${screen} | ${caps} | ${scene.narration ?? '—'} |`);
+    const spoken = (t.cues ?? []).map((c) => c.text).join(' ') || scene.narration || '—';
+    lines.push(`| ${i + 1} | ${tc(t.start)}–${tc(t.end)} | ${chapter} | ${scene.id} | ${screen} | ${caps} | ${spoken} |`);
   });
   lines.push('');
 
@@ -123,25 +156,50 @@ async function main() {
   lines.push('');
   await writeFile(path.join(OUT, 'scenario.md'), lines.join('\n'));
 
+  // 내레이션 큐: 합성본 기준 시작 시각, 다음 큐까지의 여유, 예상 읽기 시간. TTS 조각을 이 시각에 맞춰 붙인다.
+  type Line = { at: number; text: string; sceneId: string };
+  const cueLines: Line[] = [];
+  for (const scene of scenes) {
+    const t = byId.get(scene.id)!;
+    const cues = t.cues?.length ? t.cues : scene.narration ? [{ at: 0, text: scene.narration }] : [];
+    for (const c of cues) cueLines.push({ at: Math.max(t.start, t.start + c.at - 0.1), text: c.text, sceneId: scene.id });
+  }
+  cueLines.sort((a, b) => a.at - b.at);
+  const rows = cueLines.map((line, i) => {
+    const next = i + 1 < cueLines.length ? cueLines[i + 1].at : total;
+    const room = next - line.at;
+    const need = speechSeconds(line.text);
+    return { ...line, room, need, tight: need > room + 0.2 };
+  });
+  const tightCount = rows.filter((r) => r.tight).length;
+
   const n: string[] = [
     '# 연결이 시연영상 내레이션 대본 (녹화본 기준)',
     '',
-    `영상 길이 ${tc(total)}. 장면 시각은 합성본 기준. 한 장면의 말이 그 장면 안에 끝나면 된다(분당 300자 안팎, 차분하게). 녹음·TTS 파일을 주면 \`compose.ts --voice=\` 로 입힌다.`,
+    `영상 길이 ${tc(total)} · 큐 ${rows.length}개${tightCount ? ` · 빠듯한 큐 ${tightCount}개(⚠)` : ''}.`,
     '',
-    '| # | 시각 | 장면 | 내레이션 |',
-    '| --- | --- | --- | --- |',
+    `- **시작**은 합성본에서 그 문구를 읽기 시작할 시각이다. TTS 조각을 큐마다 만들어 그 시각에 놓거나, 같은 내용의 \`narration.srt\` 를 TTS·편집 도구에 넣는다.`,
+    `- **여유**는 다음 큐까지 남은 시간, **예상**은 한글 ${SYLLABLES_PER_SECOND}음절/초 + 문장마다 ${SENTENCE_PAUSE}초로 어림한 읽기 시간이다. ⚠ 는 예상이 여유보다 긴 큐라 TTS 속도를 조금 올리거나 문구를 줄인다.`,
+    `- 음성 파일 하나로 만들었으면 \`compose.ts --voice=<파일>\` 로 입힌다.`,
+    '',
+    '| # | 시작 | 여유 | 예상 | 장면 | 내레이션 |',
+    '| --- | --- | --- | --- | --- | --- |',
   ];
-  scenes.forEach((scene, i) => {
-    const t = byId.get(scene.id)!;
-    n.push(`| ${i + 1} | ${tc(t.start)}–${tc(t.end)} (${Math.round(t.duration)}초) | ${scene.id} | ${scene.narration ?? '(없음)'} |`);
+  rows.forEach((r, i) => {
+    n.push(`| ${i + 1} | ${tc1(r.at)} | ${r.room.toFixed(1)}초 | ${r.need.toFixed(1)}초${r.tight ? ' ⚠' : ''} | ${r.sceneId} | ${r.text} |`);
   });
   n.push('', '## 이어서 읽는 전체 대본', '');
-  for (const scene of scenes) {
-    if (!scene.narration) continue;
-    n.push(`[${tc(byId.get(scene.id)!.start)}] ${scene.narration}`, '');
-  }
+  for (const r of rows) n.push(`[${tc1(r.at)}] ${r.text}`, '');
   await writeFile(path.join(OUT, 'narration.md'), n.join('\n'));
-  console.log(`문서 작성: ${path.join(OUT, 'scenario.md')}, ${path.join(OUT, 'narration.md')} (${tc(total)})`);
+
+  const srt: string[] = [];
+  rows.forEach((r, i) => {
+    const end = Math.min(r.at + r.need, i + 1 < rows.length ? rows[i + 1].at - 0.05 : total);
+    srt.push(String(i + 1), `${srtTime(r.at)} --> ${srtTime(Math.max(end, r.at + 0.5))}`, r.text, '');
+  });
+  await writeFile(path.join(OUT, 'narration.srt'), srt.join('\n'));
+  await writeFile(path.join(OUT, 'narration-cues.json'), JSON.stringify(rows.map((r) => ({ at: r.at, scene: r.sceneId, text: r.text, room: Number(r.room.toFixed(2)), need: Number(r.need.toFixed(2)) })), null, 2));
+  console.log(`문서 작성: ${path.join(OUT, 'scenario.md')}, ${path.join(OUT, 'narration.md')}, narration.srt (${tc(total)}${tightCount ? `, 빠듯한 큐 ${tightCount}개` : ''})`);
 }
 
 main().catch((e) => {
