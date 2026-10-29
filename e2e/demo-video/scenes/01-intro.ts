@@ -9,7 +9,7 @@ export const intro: Chapter = {
       id: 'p3',
       kind: 'card',
       // 첫 장면. 숫자 하나로 시작해 내레이션이 읽힐 만큼 머문다(첫 녹화에 붙는 1~2초 지연을 뺀 값).
-      duration: 8800,
+      duration: 9300,
       card: {
         tone: 'light',
         kicker: '업무 하나에서만, 해마다',
@@ -21,7 +21,7 @@ export const intro: Chapter = {
           label: '메일을 하나하나 열고 이를 내부망에서 취합하는 데 걸리는 시간',
         },
       },
-      narration: '업무 하나에서만, 해마다 약 198시간. 메일을 하나하나 열어 내부망에서 취합하는 데 걸리는 시간입니다.',
+      narration: '업무 하나에서만, 해마다 약 198시간. 메일을 하나하나 열어 취합하는 데 걸리는 시간입니다.',
     },
     {
       id: 'intro',
@@ -47,18 +47,18 @@ export const intro: Chapter = {
         await d.pause(300);
         d.say('결제원 담당자가 로그인하면 지금 할 일만 보입니다.');
         const hong = page.getByRole('button', { name: /^홍성민 .*로 로그인/ });
-        await d.focus(hong, { note: '결제원도, 참가기관도 같은 입구. <b>결제원 담당자 홍성민</b>으로 로그인합니다.', scale: 1.3, hold: 500 });
+        await d.focus(hong, { note: '결제원도, 참가기관도 같은 입구. <b>결제원 담당자 홍성민</b>으로 로그인합니다.', scale: 1.3, hold: 400 });
         await d.click(hong);
         await page.waitForURL(/\/home$/);
         await page.getByRole('heading', { name: /안녕하세요/ }).waitFor();
         await d.who('kftc', '결제원', '홍성민 과장 · 결제원 담당자');
-        await d.pause(400);
+        await d.pause(200);
         const cards = page.locator('[data-testid^="home-card-"]');
         const cardCount = await cards.count();
         await d.focus(Array.from({ length: cardCount }, (_, i) => cards.nth(i)), {
           note: '로그인하면 <b>지금 할 일</b>만 보입니다.',
           scale: 1.08,
-          hold: 850,
+          hold: 650,
         });
         const nav = page.getByRole('navigation');
         await d.moveTo(nav.getByRole('link', { name: '일시중단', exact: true }), { steps: 10 });
