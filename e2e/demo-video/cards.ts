@@ -50,7 +50,7 @@ export function cardHtml(spec: CardSpec): string {
     const size = spec.kickerSize ? `;font-size:${spec.kickerSize}px` : '';
     parts.push(`<div class="kicker rise" style="animation-delay:${next()}ms${size}">${esc(spec.kicker)}</div>`);
   }
-  if (spec.chapter) parts.push(`<div class="chapter rise" style="animation-delay:${next()}ms">${esc(spec.chapter)}</div>`);
+  if (spec.chapter) parts.push(`<div class="chapter rise" style="animation-delay:${next()}ms">${esc(spec.chapter).replace(/\n/g, "<br>")}</div>`);
   if (spec.stat) {
     const numeric = typeof spec.stat.value === 'number';
     const shown = numeric ? (spec.stat.value as number).toLocaleString('ko-KR') : String(spec.stat.value);

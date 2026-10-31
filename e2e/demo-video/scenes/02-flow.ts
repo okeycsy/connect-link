@@ -3,14 +3,14 @@ import { BRANCHED_OPINION, BRANCHED_OPINION_ID, MEETING_NOTICE, asKftc, asOrg, t
 /** 01 연락처 → 의견 요청 → 분기 질문·기관 회신 → 공지에서 회의 참석 → 자동 집계·리마인드·발송함. 기능이 서로 이어지는 흐름. */
 export const flow: Chapter = {
   id: 'flow',
-  title: '01 연락처에서 의견 회신까지',
+  title: '01 현행화된 연락처, 참가기관 의견조사까지 바로 연계',
   scenes: [
     {
       id: 'c-flow',
       kind: 'card',
       duration: 6000,
-      card: { tone: 'light', chapter: '01 연락처에서 의견 회신까지', title: '현행화한 연락처로 묻고,\n회신은 저절로 모입니다.' },
-      narration: '첫째, 현행화된 기관 담당자 연락처가 의견조사 대상에 바로 반영.',
+      card: { tone: 'light', chapter: '01 현행화된 연락처,\n참가기관 의견조사까지 바로 연계', title: '현행화한 연락처로 묻고,\n회신은 저절로 모입니다.' },
+      narration: '첫째, 현행화된 기관 담당자 연락처가 참가기관 의견조사 대상에 바로 반영.',
     },
     {
       id: 'flow-contacts',
@@ -23,7 +23,7 @@ export const flow: Chapter = {
         const reconfirm = page.getByTestId('contact-reconfirm');
         await reconfirm.waitFor();
         await d.pause(300);
-        d.say('6개월 지난 연락처는 로그인할 때 묻고, 변동 없음 한 번이면 끝.');
+        d.say('연락처는 로그인할 때 묻고, 변동 없음 한 번이면 끝.');
         await d.focus(reconfirm, {
           note: '<b>KB국민은행 담당자 김민준</b>으로 로그인하면, 6개월 지난 담당자를 바로 묻습니다.',
           scale: 1.15,
@@ -85,7 +85,7 @@ export const flow: Chapter = {
         'KB국민은행(김민준)으로 전환 → 의견 요청 "내 계좌 한눈에 응답 전문 항목 추가 검토"의 "내 회신"을 비춘 채 "반영 가능" 선택 → 섹션 2(반영 계획)가 나타남 → "반영 어려움"으로 바꿈 → 섹션 3(이유)으로 바뀜 → 이유 입력 → 최종제출',
       run: async (d, page) => {
         await asOrg(d);
-        d.say('구글폼처럼, 답에 따라 다음 질문이 바뀝니다.');
+        d.say('참가기관 의견조사 화면입니다. 구글폼처럼 답에 따라 다음 질문이 바뀝니다.');
         await page.goto(`/account-info/opinions/${BRANCHED_OPINION_ID}`);
         await page.getByRole('heading', { name: BRANCHED_OPINION }).waitFor();
         const reply = page.getByTestId('my-reply');
@@ -124,7 +124,7 @@ export const flow: Chapter = {
         const list = page.getByTestId('notice-list');
         await list.getByText(MEETING_NOTICE).waitFor();
         await d.pause(150);
-        d.say('공지를 보다가, 회의 개최 안내에서 바로 참석 여부를 회신합니다.');
+        d.say('회의도, 공지 메뉴를 보다가, 개최 안내에서 바로 참석 여부를 회신합니다.');
         await d.focus(list.getByText(MEETING_NOTICE), { note: '공지·자료실에서 <b>회의 개최 안내</b>를 보다가,', scale: 1.15, hold: 500 });
         await d.click(list.getByText(MEETING_NOTICE));
         const linked = page.getByTestId('notice-opinion');

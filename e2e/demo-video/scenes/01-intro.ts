@@ -33,7 +33,7 @@ export const intro: Chapter = {
         title: '우리 원과 참가기관을 잇는 하나의 포털',
         titleSize: 46,
       },
-      narration: '우리 원과 참가기관을 잇는 하나의 포털, (쉼) 연결이입니다.',
+      narration: '반복되는 수작업은 줄이고, 협업은 더 간편하게. 우리 원과 참가기관을 잇는, 연결이입니다.',
     },
     {
       id: 'login-home',
