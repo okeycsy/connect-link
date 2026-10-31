@@ -17,6 +17,9 @@ import { HERE, OUT, fittedEntries, readTimeline, type Timed } from './timeline.t
 const SYLLABLES_PER_SECOND = 4.8;
 /** 문장 끝마다 쉬는 시간(초). */
 const SENTENCE_PAUSE = 0.35;
+/** 대본의 "(쉼)" 표시. 읽지 않고 잠깐 쉬는 자리라 그만큼(초) 더 잡는다. */
+const REST_MARK = '(쉼)';
+const REST_PAUSE = 0.8;
 
 /** 문구를 읽는 데 걸리는 시간 추정(초). */
 export function speechSeconds(text: string): number {
@@ -28,7 +31,13 @@ export function speechSeconds(text: string): number {
     else if (/[A-Za-z]/.test(ch)) syllables += 1.2;
   }
   const sentences = Math.max(1, (text.match(/[.!?]/g) ?? []).length);
-  return syllables / SYLLABLES_PER_SECOND + sentences * SENTENCE_PAUSE;
+  const rests = text.split(REST_MARK).length - 1;
+  return syllables / SYLLABLES_PER_SECOND + sentences * SENTENCE_PAUSE + rests * REST_PAUSE;
+}
+
+/** 소리 내어 읽는 문구("(쉼)" 표시를 뺀다). 자막 파일에 쓴다. */
+function spokenText(text: string): string {
+  return text.split(REST_MARK).join(' ').replace(/\s+/g, ' ').trim();
 }
 
 function srtTime(seconds: number): string {
@@ -40,9 +49,10 @@ function srtTime(seconds: number): string {
 }
 
 function tc1(seconds: number): string {
-  const whole = Math.floor(seconds);
-  const tenth = Math.round((seconds - whole) * 10) % 10;
-  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}.${tenth}`;
+  // 0.1초 단위로 먼저 반올림한다(9.98초가 0:09.0 이 아니라 0:10.0 이 되게).
+  const tenths = Math.round(seconds * 10);
+  const whole = Math.floor(tenths / 10);
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}.${tenths % 10}`;
 }
 
 function arg(name: string): string | undefined {
@@ -180,7 +190,7 @@ async function main() {
     `영상 길이 ${tc(total)} · 큐 ${rows.length}개${tightCount ? ` · 빠듯한 큐 ${tightCount}개(⚠)` : ''}${speed > 1 ? ` · 녹화 ${tc(rawTotal)} 를 재생 ${speed.toFixed(3)}배로 맞춤(시각은 맞춘 뒤 기준)` : ''}.`,
     '',
     `- **시작**은 합성본에서 그 문구를 읽기 시작할 시각이다. TTS 조각을 큐마다 만들어 그 시각에 놓거나, 같은 내용의 \`narration.srt\` 를 TTS·편집 도구에 넣는다.`,
-    `- **여유**는 다음 큐까지 남은 시간, **예상**은 한글 ${SYLLABLES_PER_SECOND}음절/초 + 문장마다 ${SENTENCE_PAUSE}초로 어림한 읽기 시간이다. ⚠ 는 예상이 여유보다 긴 큐라 TTS 속도를 조금 올리거나 문구를 줄인다.`,
+    `- **여유**는 다음 큐까지 남은 시간, **예상**은 한글 ${SYLLABLES_PER_SECOND}음절/초 + 문장마다 ${SENTENCE_PAUSE}초(${REST_MARK} 표시는 ${REST_PAUSE}초 더)로 어림한 읽기 시간이다. ${REST_MARK}은 읽지 않고 잠깐 쉬는 자리다. ⚠ 는 예상이 여유보다 긴 큐라 TTS 속도를 조금 올리거나 문구를 줄인다.`,
     `- 음성 파일 하나로 만들었으면 \`compose.ts --voice=<파일>\` 로 입힌다.`,
     '',
     '| # | 시작 | 여유 | 예상 | 장면 | 내레이션 |',
@@ -196,7 +206,7 @@ async function main() {
   const srt: string[] = [];
   rows.forEach((r, i) => {
     const end = Math.min(r.at + r.need, i + 1 < rows.length ? rows[i + 1].at - 0.05 : total);
-    srt.push(String(i + 1), `${srtTime(r.at)} --> ${srtTime(Math.max(end, r.at + 0.5))}`, r.text, '');
+    srt.push(String(i + 1), `${srtTime(r.at)} --> ${srtTime(Math.max(end, r.at + 0.5))}`, spokenText(r.text), '');
   });
   await writeFile(path.join(OUT, 'narration.srt'), srt.join('\n'));
   await writeFile(path.join(OUT, 'narration-cues.json'), JSON.stringify(rows.map((r) => ({ at: r.at, scene: r.sceneId, text: r.text, room: Number(r.room.toFixed(2)), need: Number(r.need.toFixed(2)) })), null, 2));

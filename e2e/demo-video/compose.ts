@@ -6,7 +6,7 @@
  *   node e2e/demo-video/compose.ts --music=bgm.m4a       # 배경음악을 깔고 끝에서 서서히 줄인다
  *   node e2e/demo-video/compose.ts --voice=narration.m4a # 내레이션 음성을 입힌다
  *   node e2e/demo-video/compose.ts --chapter=suspensions # 그 장만 따로 out/demo-suspensions.mp4 로(기능별 짧은 영상)
- *   node e2e/demo-video/compose.ts --target=175          # 이 길이(초)보다 길면 재생 속도를 조금 올려 맞춘다(기본 TARGET_SECONDS, 상한 MAX_SPEED)
+ *   node e2e/demo-video/compose.ts --target=178          # 이 길이(초)보다 길면 재생 속도를 조금 올려 맞춘다(기본 TARGET_SECONDS, 상한 MAX_SPEED)
  *
  * ffmpeg 가 PATH 에 있어야 한다.
  */

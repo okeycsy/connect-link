@@ -8,7 +8,7 @@ export const chat: Chapter = {
     {
       id: 'c-chat',
       kind: 'card',
-      duration: 2300,
+      duration: 1800,
       card: { tone: 'light', chapter: '04 소통 채널', title: '장애가 나면 @기관을 부르고,\n기관이 확인합니다.' },
       narration: '넷째, 소통 채널.',
     },
@@ -39,7 +39,7 @@ export const chat: Chapter = {
         await d.click(page.getByRole('button', { name: '보내기' }));
         const sent = messages.getByTestId('chat-message').last();
         await sent.getByText('@KB국민은행', { exact: true }).waitFor();
-        await d.pause(200);
+        await d.pause(100);
         await d.focus(sent, { note: '<b>@KB국민은행</b>을 불러 긴급 확인 요청.', scale: 1.3, hold: 250 });
 
         await asOrg(d);
@@ -49,14 +49,14 @@ export const chat: Chapter = {
         // 샘플 메시지에도 "내 계좌 한눈에 조회" 가 있어, 방금 보낸 긴급 메시지에만 있는 문구로 찾는다.
         const urgent = messages.getByTestId('chat-message').filter({ hasText: '응답 지연 장애' }).last();
         await urgent.waitFor();
-        await d.pause(200);
+        await d.pause(100);
         await d.focus(urgent, { note: 'KB국민은행 담당자가 <b>확인</b>을 누르면,', scale: 1.35 });
         await d.clickUntil(urgent.getByRole('button', { name: '확인', exact: true }), urgent.getByTestId('chat-ack'));
         await d.pause(250);
         await d.note('메시지 아래 <b>기관 이름</b>으로 남습니다. 전화로 하나씩 확인하던 일.');
-        await d.pause(550);
+        await d.pause(600);
         await d.unfocus();
-        await d.pause(150);
+        await d.pause(100);
       },
     },
   ],

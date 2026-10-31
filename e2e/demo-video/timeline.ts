@@ -16,9 +16,9 @@ export const FADE = 0.4;
 export const HEAD_TRIM = 0.35;
 /**
  * 합성본 목표 길이(초). 녹화 길이는 기계 속도에 따라 한 번에 몇 초씩 달라지므로, 이보다 길면 재생 속도를 조금 올려 맞춘다.
- * 심사 제한 3분, SHY 요청 2분 55초.
+ * 심사 제한 3분(넘기면 안 된다), SHY 요청 2분 58초 이내.
  */
-export const TARGET_SECONDS = 175;
+export const TARGET_SECONDS = 178;
 /** 길이를 맞출 때 올릴 수 있는 재생 속도 상한. 이 안에서는 커서·타자 속도 차이가 눈에 띄지 않는다. 넘으면 장면을 줄여야 한다. */
 export const MAX_SPEED = 1.08;
 

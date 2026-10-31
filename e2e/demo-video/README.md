@@ -14,7 +14,7 @@
 | `record.ts` | 장면마다 새 브라우저 문맥을 열어 `out/segments/*.webm` 으로 녹화하고 `out/timeline.json` 을 남긴다. `--only=<장 id 나 장면 id>` 로 일부만 다시 찍으면 나머지 조각은 그대로 둔다 |
 | `compose.ts` | 녹화 조각을 0.4초 크로스페이드로 이어 `out/demo.mp4` 를 만든다. `--music=`(배경음), `--voice=`(내레이션 음성), `--out=`, `--chapter=<장 id>`(그 장만 `out/demo-<장>.mp4` 로, 기능별 짧은 영상) |
 | `docs.ts` | 녹화본 기준 시나리오 문서(`out/scenario.md`), 시간별 내레이션 표·대본(`out/narration.md`), TTS·편집용 자막(`out/narration.srt`, `out/narration-cues.json`)을 만든다. 장면표 앞글은 `scenario-intro.md` |
-| `timeline.ts` | 조각 길이를 재서 합성본 기준 장면 시각을 계산한다(compose·docs 공용). **길이 맞춤**: 녹화 길이는 기계 속도에 따라 한 번에 몇 초씩 달라지므로, 합성본이 `TARGET_SECONDS`(175초)보다 길면 재생 속도를 `MAX_SPEED`(1.08배)까지 올려 맞춘다(`compose.ts --target=`). 상한으로도 모자라면 경고가 나오니 장면을 줄인다 |
+| `timeline.ts` | 조각 길이를 재서 합성본 기준 장면 시각을 계산한다(compose·docs 공용). **길이 맞춤**: 녹화 길이는 기계 속도에 따라 한 번에 몇 초씩 달라지므로, 합성본이 `TARGET_SECONDS`(178초)보다 길면 재생 속도를 `MAX_SPEED`(1.08배)까지 올려 맞춘다(`compose.ts --target=`). 상한으로도 모자라면 경고가 나오니 장면을 줄인다 |
 | `music.ts` | 임시 배경음(합성 패드) `out/bgm.wav` 를 만든다. 정식 음원이 있으면 쓰지 않는다 |
 | `overlay.ts` | 녹화 화면에 덧그리는 가짜 커서·클릭 물결·자막 띠·로그인 주체 알약·스포트라이트 강조. 앱 코드는 건드리지 않는다 |
 | `helpers.ts` | 장면 스크립트가 쓰는 연출 도우미(`Director`): 천천히 움직이는 마우스, 타자, 자막, 강조(`focus`), 내레이션 큐(`say`), 데모 로그인·세션 전환 |
@@ -34,7 +34,7 @@ e2e/demo-video/run.sh --music=e2e/demo-video/out/bgm.wav   # 배경음 포함
 
 - Node 22 이상(`.ts` 를 바로 실행한다), ffmpeg 6 이상, `e2e/` 의 `npm install`(Playwright) 이 필요하다.
 - 장면이 데이터를 바꾸므로(회신 제출, 일시중단 확정 등) **녹화할 때마다 서버를 새로 띄운다**. `run.sh` 가 그렇게 한다.
-- 03 일시중단 장은 중단 일시를 서울 기준 "내일"로 골라 전 영업일 취합에 들어가게 한다. 자정(KST) 전후에 걸쳐 찍으면 취합에 빠질 수 있으니 피한다.
+- 03 일시중단 장의 주간 취합은 그 주(월요일부터) 확정된 건을 모으므로, 장면에서 방금 확정한 건은 언제 찍어도 들어간다. 중단 일시는 서울 기준 "내일"로 고른다.
 - Chromium 경로가 기본과 다르면 `PLAYWRIGHT_CHROMIUM_PATH`, 서버 주소가 다르면 `DEMO_BASE_URL` 로 준다.
 - 내레이션은 외부 TTS 로 만든다. `out/narration.md` 의 표가 문장마다 **시작 시각·읽을 여유·예상 길이**를 보여 주고(한국어 1초 4.8음절 기준, 여유보다 길면 ⚠), `out/narration.srt` 를 TTS·편집 도구에 그대로 넣을 수 있다. 음성 파일이 있으면 `node e2e/demo-video/compose.ts --voice=narration.m4a --music=out/bgm.wav` 로 입힌다.
 
