@@ -146,7 +146,7 @@ export const flow: Chapter = {
         await d.pause(100);
         await d.clickUntil(reply.getByRole('button', { name: '최종제출' }), page.getByTestId('submitted-answers'));
         await d.pause(300);
-        d.say('회신 메일 없이, 우리 원 집계에 바로 들어갑니다.');
+        d.say('이런 의견조사 결과는 우리 원 집계에 바로 들어갑니다.');
         await d.note('제출한 답은 <b>결제원 집계</b>에 바로 들어갑니다.');
         await d.pause(1800);
         await d.unfocus();
