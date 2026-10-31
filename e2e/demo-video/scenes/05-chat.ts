@@ -8,7 +8,7 @@ export const chat: Chapter = {
     {
       id: 'c-chat',
       kind: 'card',
-      duration: 1800,
+      duration: 1400,
       card: { tone: 'light', chapter: '04 소통 채널', title: '장애가 나면 @기관을 부르고,\n기관이 확인합니다.' },
       narration: '넷째, 소통 채널.',
     },

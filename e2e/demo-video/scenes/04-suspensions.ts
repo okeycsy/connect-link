@@ -129,7 +129,7 @@ export const suspensions: Chapter = {
         await d.focus(alertRow, {
           note: '기관이 등록하면 결제원 담당자에게 <b>매터모스트 알림</b>. 시연 환경은 발송함에 기록합니다.',
           scale: 1.15,
-          hold: 950,
+          hold: 1550,
         });
         // 알림을 받은 결제원 담당자가 그 건을 연다.
         await page.goto(detailUrl);
@@ -149,7 +149,7 @@ export const suspensions: Chapter = {
         await d.pause(150);
         await d.clickUntil(handover.getByRole('button', { name: '확정하기' }), status.getByText('확정', { exact: true }));
         await d.unfocus();
-        await d.focus(status, { note: '<b>확정</b>. 확인자와 인수인계 사항이 상세에 남습니다.', scale: 1.3, hold: 1400 });
+        await d.focus(status, { note: '<b>확정</b>. 확인자와 인수인계 사항이 상세에 남습니다.', scale: 1.3, hold: 1750 });
 
         // ③ 주간 취합: 그 주 확정 건을 수·금마다 운영·관제 매터모스트 채널로 모아 보낸다. 시연에서는 "주간 취합 보내기"로 지금 보낸다.
         d.say('확정된 건은 정해진 때마다 모아 운영·관제 채널로 보냅니다.');
@@ -159,11 +159,11 @@ export const suspensions: Chapter = {
         await d.focus(confirmSend, {
           note: '그 주에 <b>확정</b>된 일시중단은 <b>수·금</b>마다 모아 운영·관제 <b>매터모스트 채널</b>로 자동 전달. 지금은 바로 보냅니다.',
           scale: 1.1,
-          hold: 400,
+          hold: 250,
         });
         const digest = page.getByRole('dialog', { name: '주간 취합을 보냈습니다' });
         await d.clickUntil(confirmSend.getByRole('button', { name: '보내기' }), digest.getByTestId('digest-body'));
-        await d.pause(250);
+        await d.pause(100);
         await d.focus(digest, {
           note: '방금 확정한 KB국민은행 건까지 <b>한 번에</b>. 기관, 중단 기간, 조치만 간추려 보냅니다.',
           scale: 1.05,

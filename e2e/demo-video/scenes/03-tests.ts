@@ -26,7 +26,7 @@ export const tests: Chapter = {
         d.say('기관 담당자가 요구사항마다 결과를 저장하면,');
         await d.focus(item, { note: '요구사항마다 <b>정상·오류</b>를 고르고', scale: 1.2 });
         await d.click(item.getByText('정상', { exact: true }));
-        await d.pause(700);
+        await d.pause(800);
         await d.unfocus();
         await d.click(page.getByRole('button', { name: /결과 저장/ }));
         await d.pause(300);
