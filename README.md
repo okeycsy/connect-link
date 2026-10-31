@@ -80,7 +80,7 @@ java -jar app.jar
 
 - 미리보기 주소: **https://connect-link-xmwv.onrender.com** (`demo` 프로필)
 - `main` 에 머지될 때마다 자동으로 다시 배포된다(빌드 5~10분).
-- 무료 등급은 15분 동안 요청이 없으면 잠들고, 다음 접속에 1분 정도 걸린다.
+- 무료 등급은 15분 동안 요청이 없으면 잠들고, 다음 접속에 1분 정도 걸린다. 그래서 GitHub Actions "Render 깨우기"(`.github/workflows/keep-warm.yml`)가 10분마다 `/api/v1/health` 를 불러 깨어 있게 한다. Render 설정은 그대로이고, 무료 등급 월 750시간 안에 든다(서비스 하나 기준). GitHub 예약 실행은 몇 분씩 늦어질 수 있어 드물게 잠들 수 있다.
 
 #### 매터모스트 실제 발송 (선택)
 
