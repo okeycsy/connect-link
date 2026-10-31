@@ -129,7 +129,8 @@ describe('SuspensionListPage', () => {
     expect(await screen.findByTestId('pending-review-count')).toHaveTextContent('확정 전 2건');
     expect(screen.getByText('예정 3')).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: '기관' })).toBeInTheDocument();
-    expect(await screen.findByRole('button', { name: '수동으로 보내기' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: '주간 취합 보내기' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '수동으로 보내기' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: '일시중단 등록' })).toHaveAttribute(
       'href',
       '/cms/suspensions/new',
@@ -145,7 +146,7 @@ describe('SuspensionListPage', () => {
     expect(await screen.findByRole('link', { name: '일시중단 등록' })).toBeInTheDocument();
     expect(screen.queryByRole('textbox', { name: '기관' })).not.toBeInTheDocument();
     expect(screen.queryByTestId('pending-review-count')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '수동으로 보내기' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '주간 취합 보내기' })).not.toBeInTheDocument();
   });
 
   it('기관 담당자는 다른 기관의 확정 일정(기관·일시·대상 업무)을 보고 결제원 담당자에게는 이 칸이 없다', async () => {

@@ -6,8 +6,8 @@ import org.springframework.stereotype.Component;
 
 /**
  * 발송함의 실제 발송 설정 ({@code app.notification.delivery.*}). 기본은 꺼져 있어(demo·local) 발송함에 기록만 한다. 운영은 켜고 메일
- * 서버({@code spring.mail.*})와 보내는 사람 주소를 넣는다. 공개 저장소라 실제 값은 배포 설정에만 둔다. 실제로 보내는 채널은 메일뿐이다. 매터모스트는
- * 내부망 서비스라 연결이에서 보내지 않고 발송함에 기록만 남는다(SHY, 2026-10-25).
+ * 서버({@code spring.mail.*})와 보내는 사람 주소를 넣는다. 공개 저장소라 실제 값은 배포 설정에만 둔다. 매터모스트는 Incoming Webhook 주소를
+ * 넣으면 팀 채널(받는 곳이 {@code ~채널})로 가는 글만 실제로 보내고, 개인 앞 글은 발송함에 기록만 남는다(SHY, 2026-10-27).
  *
  * <ul>
  *   <li>{@code enabled}: 실제 발송을 할지. 기본 false.
@@ -26,6 +26,7 @@ public class NotificationDeliveryProperties {
   private int batchSize = 50;
   private int maxAttempts = 3;
   private final Mail mail = new Mail();
+  private final Mattermost mattermost = new Mattermost();
 
   public boolean isEnabled() {
     return enabled;
@@ -63,6 +64,10 @@ public class NotificationDeliveryProperties {
     return mail;
   }
 
+  public Mattermost getMattermost() {
+    return mattermost;
+  }
+
   public static class Mail {
     private String from = "";
 
@@ -72,6 +77,27 @@ public class NotificationDeliveryProperties {
 
     public void setFrom(String from) {
       this.from = from;
+    }
+  }
+
+  public static class Mattermost {
+    private String webhookUrl = "";
+    private String username = "연결이";
+
+    public String getWebhookUrl() {
+      return webhookUrl;
+    }
+
+    public void setWebhookUrl(String webhookUrl) {
+      this.webhookUrl = webhookUrl;
+    }
+
+    public String getUsername() {
+      return username;
+    }
+
+    public void setUsername(String username) {
+      this.username = username;
     }
   }
 }

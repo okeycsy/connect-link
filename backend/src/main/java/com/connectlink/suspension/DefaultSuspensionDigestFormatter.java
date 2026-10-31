@@ -9,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 /**
@@ -69,6 +70,112 @@ class DefaultSuspensionDigestFormatter implements SuspensionDigestFormatter {
       body.append("\n\n외 ").append(rest).append("건은 연결이에서 확인해 주세요.");
     }
     return body.toString();
+  }
+
+  @Override
+  public String registeredSubject(Suspension suspension) {
+    return "[" + suspension.getOrganization().getName() + "] 일시중단이 등록되었어요!";
+  }
+
+  @Override
+  public String registeredBody(Suspension suspension) {
+    String body =
+        "중단 기간: "
+            + SuspensionNotifier.periodText(suspension.getStartAt(), suspension.getEndAt())
+            + "\n대상 업무: "
+            + suspension.targetWorkNames();
+    return body.length() <= MAX_LENGTH ? body : body.substring(0, MAX_LENGTH - 1) + "…";
+  }
+
+  @Override
+  public String confirmedSubject(Suspension suspension) {
+    return "[연결이] 일시중단 확정: "
+        + suspension.getOrganization().getName()
+        + " ("
+        + SuspensionNotifier.periodText(suspension.getStartAt(), suspension.getEndAt())
+        + ")";
+  }
+
+  @Override
+  public String confirmedBody(Suspension suspension) {
+    String businesses =
+        suspension.getBusinesses().isEmpty()
+            ? "그 밖의 업무"
+            : suspension.getBusinesses().stream()
+                .sorted()
+                .map(Business::getLabel)
+                .collect(Collectors.joining(", "));
+    StringBuilder body =
+        new StringBuilder("- 기관: ")
+            .append(suspension.getOrganization().getName())
+            .append("\n- 일시: ")
+            .append(SuspensionNotifier.periodText(suspension.getStartAt(), suspension.getEndAt()))
+            .append("\n- 대상 업무: ")
+            .append(suspension.targetWorkNames())
+            .append("\n- 관련 업무: ")
+            .append(businesses)
+            .append("\n- 중단 이유: ")
+            .append(suspension.getReason())
+            .append("\n\n#### 조치 및 인수인계 사항");
+    suspension.getReviewers().stream()
+        .filter(r -> r.getHandover() != null)
+        .forEach(r -> body.append("\n- ").append(r.getName()).append(": ").append(r.getHandover()));
+    String text = body.toString();
+    return text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH - 1) + "…";
+  }
+
+  @Override
+  public String weeklySubject(String scope, LocalDate fromDate, LocalDate toDate, int count) {
+    return "[연결이] " + scope + " 이번 주 확정 일시중단 " + count + "건 (" + range(fromDate, toDate) + ")";
+  }
+
+  @Override
+  public String weeklyBody(
+      String scope, LocalDate fromDate, LocalDate toDate, List<Suspension> suspensions) {
+    String head =
+        scope + " " + range(fromDate, toDate) + " 에 확정된 일시중단 " + suspensions.size() + "건입니다.";
+    if (suspensions.isEmpty()) {
+      return head;
+    }
+    StringBuilder body = new StringBuilder(head);
+    int written = 0;
+    for (Suspension s : suspensions) {
+      String block = weeklyBlock(s);
+      if (body.length() + block.length() > MAX_LENGTH - 40) {
+        break;
+      }
+      body.append(block);
+      written++;
+    }
+    int rest = suspensions.size() - written;
+    if (rest > 0) {
+      body.append("\n\n외 ").append(rest).append("건은 연결이에서 확인해 주세요.");
+    }
+    return body.toString();
+  }
+
+  /**
+   * 한 건을 빈 줄로 띄운 블록으로: 굵은 기관 이름, 중단 기간, 조치사항 한 줄씩. 조치사항은 확인자별 조치 및 인수인계 사항이고, 없으면(결제원 작업 안내) 결제원
+   * 조치사항 칸이다.
+   */
+  private static String weeklyBlock(Suspension s) {
+    StringBuilder block =
+        new StringBuilder("\n\n**")
+            .append(s.getOrganization().getName())
+            .append("**\n중단 기간: ")
+            .append(SuspensionNotifier.periodText(s.getStartAt(), s.getEndAt()));
+    List<String> actions =
+        s.getReviewers().stream()
+            .filter(r -> r.getHandover() != null)
+            .map(r -> r.getName() + ": " + r.getHandover())
+            .toList();
+    if (actions.isEmpty() && s.getKftcAction() != null && !s.getKftcAction().isBlank()) {
+      actions = List.of(s.getKftcAction());
+    }
+    for (String action : actions) {
+      block.append("\n조치: ").append(action);
+    }
+    return block.toString();
   }
 
   private static String line(Suspension s) {

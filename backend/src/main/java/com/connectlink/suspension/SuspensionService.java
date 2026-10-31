@@ -68,6 +68,7 @@ public class SuspensionService {
   private final ChangeHistoryService changeHistoryService;
   private final SuspensionNotifier notifier;
   private final TargetWorkService targetWorkService;
+  private final SuspensionDigestService digestService;
   private final Clock clock;
 
   public SuspensionService(
@@ -79,6 +80,7 @@ public class SuspensionService {
       ChangeHistoryService changeHistoryService,
       SuspensionNotifier notifier,
       TargetWorkService targetWorkService,
+      SuspensionDigestService digestService,
       Clock clock) {
     this.repository = repository;
     this.accessPolicy = accessPolicy;
@@ -88,6 +90,7 @@ public class SuspensionService {
     this.changeHistoryService = changeHistoryService;
     this.notifier = notifier;
     this.targetWorkService = targetWorkService;
+    this.digestService = digestService;
     this.clock = clock;
   }
 
@@ -247,6 +250,7 @@ public class SuspensionService {
             organization.getName() + " 일시중단 등록",
             Snapshot.of(suspension).diff(Snapshot.EMPTY, true)));
     notifier.registered(suspension, kftcRecipients(suspension.getBusinesses(), user));
+    digestService.sendRegistered(suspension);
     return toDetail(user, suspension);
   }
 
@@ -367,7 +371,7 @@ public class SuspensionService {
 
   /**
    * 결제원 담당자가 자기 조치 및 인수인계 사항을 쓰고 확정한다. 사항은 담당자마다 따로 두어 다른 사람 것을 덮지 않는다. 확정한 건이면 사항만 쓰거나 고친다. 처음
-   * 확정하면 등록한 사람과 기관 담당자 연락처에 알린다.
+   * 확정하면 등록한 사람과 기관 담당자 연락처에 알리고, 취합 매터모스트 채널에 그 건을 바로 보낸다.
    */
   public SuspensionDetailResponse confirm(CurrentUser user, Long id, String handover) {
     Suspension suspension = load(id);
@@ -394,6 +398,7 @@ public class SuspensionService {
               ? Map.of()
               : toRegistrant(suspension),
           user.email());
+      digestService.sendConfirmed(suspension);
     }
     return toDetail(user, suspension);
   }

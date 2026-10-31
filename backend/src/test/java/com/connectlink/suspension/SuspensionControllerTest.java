@@ -665,6 +665,52 @@ class SuspensionControllerTest {
   }
 
   @Test
+  void 기관이_등록하면_취합_매터모스트_채널로_등록_알림이_바로_간다() throws Exception {
+    long before = outboxRepository.count();
+    createAsKim("등록 즉시 매터모스트 작업");
+
+    List<NotificationOutbox> posts =
+        outboxRepository.findAll().stream()
+            .skip(before)
+            .filter(o -> o.getRecipient().startsWith("~"))
+            .toList();
+    assertThat(posts)
+        .extracting(NotificationOutbox::getRecipient)
+        .containsExactly("~kftc-ops", "~kftc-control-room");
+    assertThat(posts.get(0).getSubject()).isEqualTo("[KB국민은행] 일시중단이 등록되었어요!");
+    assertThat(posts.get(0).getBody()).startsWith("중단 기간: ").contains("\n대상 업무: 계좌통합관리");
+  }
+
+  @Test
+  void 처음_확정하면_관련_업무와_조치_사항을_취합_매터모스트_채널로_바로_보낸다() throws Exception {
+    Long id = createAsKim("확정 즉시 매터모스트 작업");
+    long before = outboxRepository.count();
+
+    send(post(BASE + "/" + id + "/confirmation"), Map.of("handover", "전산 차단을 확인했습니다."), hong())
+        .andExpect(status().isOk());
+
+    List<NotificationOutbox> posts =
+        outboxRepository.findAll().stream()
+            .skip(before)
+            .filter(o -> o.getChannel() == NotificationChannel.MATTERMOST)
+            .filter(o -> o.getSubject().startsWith("[연결이] 일시중단 확정:"))
+            .toList();
+    assertThat(posts)
+        .extracting(NotificationOutbox::getRecipient)
+        .containsExactly("~kftc-ops", "~kftc-control-room");
+    assertThat(posts.get(0).getBody())
+        .contains("- 관련 업무: ")
+        .contains("- 중단 이유: 확정 즉시 매터모스트 작업")
+        .contains("홍성민: 전산 차단을 확인했습니다.");
+
+    // 사항만 고치면 다시 보내지 않는다.
+    long afterFirst = outboxRepository.count();
+    send(post(BASE + "/" + id + "/confirmation"), Map.of("handover", "차단을 풉니다."), hong())
+        .andExpect(status().isOk());
+    assertThat(outboxRepository.count()).isEqualTo(afterFirst);
+  }
+
+  @Test
   void 기관_담당자는_확인하거나_확정하지_못한다() throws Exception {
     Long id = createAsKim("기관 확정 거부");
     send(post(BASE + "/" + id + "/review"), null, kim()).andExpect(status().isForbidden());
@@ -847,6 +893,50 @@ class SuspensionControllerTest {
                 .map(NotificationOutbox::getChannel))
         .contains(NotificationChannel.MATTERMOST);
     send(post("/api/v1/suspension-digests"), null, kim()).andExpect(status().isForbidden());
+  }
+
+  @Test
+  void 주간_취합은_이번_주_확정된_그_업무_관련_건만_기관_기간_조치사항으로_보낸다() throws Exception {
+    Long id = createAsKim("주간 취합 작업");
+    send(post(BASE + "/" + id + "/confirmation"), Map.of("handover", "주간 취합 조치 확인"), hong())
+        .andExpect(status().isOk());
+    createAsKim("주간 취합 미확정 작업");
+
+    JsonNode digest =
+        json(
+            send(
+                    post("/api/v1/suspension-digests/weekly").param("business", "account-info"),
+                    null,
+                    hong())
+                .andExpect(status().isOk()));
+    String body = digest.get("body").asText();
+    assertThat(digest.get("recipients").get(0).asText()).isEqualTo("~kftc-ops");
+    assertThat(digest.get("fromDate").asText())
+        .isEqualTo(
+            LocalDate.now()
+                .with(
+                    java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY))
+                .toString());
+    // 기관 이름(굵게), 중단 기간, 조치가 한 줄씩이다.
+    assertThat(body)
+        .startsWith("계좌통합관리 ")
+        .containsPattern("\\*\\*KB국민은행\\*\\*\\n중단 기간: [^\\n]+\\n조치: 홍성민: 주간 취합 조치 확인");
+    // 중단 이유는 넣지 않고, 확정되지 않은 건과 다른 업무(자동이체·CMS 의 우체국 확정 건)는 빠진다.
+    assertThat(body)
+        .doesNotContain("주간 취합 작업")
+        .doesNotContain("주간 취합 미확정 작업")
+        .doesNotContain("우체국");
+    assertThat(
+            outboxRepository.findAll().stream()
+                .filter(o -> o.getRecipient().equals("~kftc-control-room"))
+                .filter(o -> o.getSubject().startsWith("[연결이] 계좌통합관리 이번 주 확정 일시중단")))
+        .isNotEmpty();
+
+    send(post("/api/v1/suspension-digests/weekly").param("business", "account-info"), null, kim())
+        .andExpect(status().isForbidden());
+    // 맡지 않은 업무 영역으로는 보내지 못한다.
+    send(post("/api/v1/suspension-digests/weekly").param("business", "account-info"), null, park())
+        .andExpect(status().isForbidden());
   }
 
   @Test

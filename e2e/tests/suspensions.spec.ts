@@ -432,20 +432,18 @@ test.describe("라. 일시중단", () => {
     await expect(history).not.toContainText("신협");
     await shot(page, "suspension-organization-history");
 
-    // 전 영업일 취합을 확인 뒤 운영·관제 채널로 수동으로 보낸다.
-    await page.getByRole("button", { name: "수동으로 보내기" }).click();
-    const confirmSend = page.getByRole("dialog", {
-      name: "전 영업일 취합 수동으로 보내기",
-    });
-    await expect(confirmSend).toContainText("오후 4시 자동 발송");
-    await confirmSend.getByRole("button", { name: "보내기" }).click();
-    const digest = page.getByRole("dialog", {
-      name: "전 영업일 취합을 보냈습니다",
-    });
-    await expect(digest.getByTestId("digest-body")).toContainText("일시중단");
-    await expect(digest).toContainText("~kftc-ops");
+    // 주간 취합(이번 주 확정 건의 기관·중단 기간·조치사항)을 확인 뒤 바로 보낸다.
+    await page.getByRole("button", { name: "주간 취합 보내기" }).click();
+    const confirmWeekly = page.getByRole("dialog", { name: "주간 취합 보내기" });
+    await expect(confirmWeekly).toContainText("보통 수·금");
+    await confirmWeekly.getByRole("button", { name: "보내기" }).click();
+    const weekly = page.getByRole("dialog", { name: "주간 취합을 보냈습니다" });
+    await expect(weekly.getByTestId("digest-body")).toContainText(
+      "확정된 일시중단",
+    );
+    await expect(weekly).toContainText("~kftc-ops");
     await page.waitForTimeout(300);
-    await shot(page, "suspension-digest");
+    await shot(page, "suspension-weekly-digest");
   });
 });
 

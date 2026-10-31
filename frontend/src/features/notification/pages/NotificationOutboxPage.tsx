@@ -65,9 +65,14 @@ export function NotificationOutboxPage() {
                     )}
                   </Table.Td>
                   <Table.Td data-label="상태">
-                    <Badge variant="outline" color="gray">
+                    <Badge variant="outline" color={o.status === 'FAILED' ? 'red' : 'gray'}>
                       {o.statusLabel}
                     </Badge>
+                    {o.lastError && (
+                      <Text size="xs" c="red.6" mt={4} title={o.lastError} lineClamp={3}>
+                        {o.attempts}회 시도 · {o.lastError}
+                      </Text>
+                    )}
                   </Table.Td>
                   <Table.Td data-label="기록 일시">
                     <Text size="sm" c="dimmed">
