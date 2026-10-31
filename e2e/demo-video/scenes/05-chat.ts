@@ -23,11 +23,9 @@ export const chat: Chapter = {
         const rooms = page.getByRole('complementary', { name: '채팅방 목록' });
         const groupRoom = rooms.getByRole('link', { name: /계좌통합관리 단체방/ });
         await groupRoom.waitFor();
-        await d.pause(100);
         await d.click(groupRoom);
         const messages = page.getByTestId('chat-messages');
         await messages.getByText('@결제원', { exact: true }).waitFor();
-        await d.pause(100);
         const input = page.getByRole('textbox', { name: '메시지 입력' });
         d.say('장애가 나면 단체방에서 기관을 불러 긴급 확인을 요청합니다.');
         await d.focus(input, { note: '장애가 나면 단체방에서 <b>@기관</b>을 불러 긴급 확인을 요청합니다.', scale: 1.15, pad: 16 });
@@ -54,7 +52,7 @@ export const chat: Chapter = {
         await d.clickUntil(urgent.getByRole('button', { name: '확인', exact: true }), urgent.getByTestId('chat-ack'));
         await d.pause(250);
         await d.note('메시지 아래 <b>기관 이름</b>으로 남습니다. 전화로 하나씩 확인하던 일.');
-        await d.pause(600);
+        await d.pause(750);
         await d.unfocus();
         await d.pause(100);
       },

@@ -32,7 +32,7 @@ export const flow: Chapter = {
         await d.note('<b>변동 없음</b> 한 번이면 끝.');
         await d.click(reconfirm.getByRole('button', { name: '변동 없음' }));
         await reconfirm.getByText('확인 완료').waitFor();
-        await d.pause(500);
+        await d.pause(600);
         await d.unfocus();
         await d.click(reconfirm.getByRole('button', { name: '닫기' }));
         await d.pause(300);
@@ -98,7 +98,7 @@ export const flow: Chapter = {
         await d.pause(600);
         await d.click(reply.getByRole('radio', { name: '반영 가능' }));
         await reply.getByText('섹션 2. 반영 계획').waitFor();
-        await d.pause(3450);
+        await d.pause(3600);
         await d.click(reply.getByRole('radio', { name: '반영 어려움' }));
         await reply.getByText('섹션 3. 반영이 어려운 이유').waitFor();
         await d.pause(650);
@@ -108,9 +108,7 @@ export const flow: Chapter = {
           delay: 2,
         });
         await d.clickUntil(reply.getByRole('button', { name: '최종제출' }), page.getByTestId('submitted-answers'));
-        await d.pause(100);
         await d.unfocus();
-        await d.pause(100);
       },
     },
     {
@@ -147,7 +145,7 @@ export const flow: Chapter = {
         await d.pause(100);
         d.say('이런 의견조사 결과는 우리 원 집계에 바로 들어갑니다.');
         await d.note('제출한 답은 <b>결제원 집계</b>에 바로 들어갑니다.');
-        await d.pause(1800);
+        await d.pause(2500);
         await d.unfocus();
         await d.pause(200);
       },
@@ -169,7 +167,7 @@ export const flow: Chapter = {
         const remind = page.getByRole('dialog', { name: '리마인드 메일 보내기' });
         await d.clickUntil(page.getByRole('button', { name: '미회신 기관 리마인드' }), remind);
         d.say('미회신 기관엔 메일을 보내 리마인드합니다.');
-        await d.focus(remind, { note: '미회신 기관에는 메일을 <b>미리 보고</b> 리마인드.', scale: 1.1, hold: 1100 });
+        await d.focus(remind, { note: '미회신 기관에는 메일을 <b>미리 보고</b> 리마인드.', scale: 1.1, hold: 1200 });
         const check = page.getByRole('dialog', { name: '리마인드 메일 확인' });
         await d.clickUntil(remind.getByRole('button', { name: '다음: 메일 확인' }), check.getByTestId('mail-preview'));
         await d.pause(300);

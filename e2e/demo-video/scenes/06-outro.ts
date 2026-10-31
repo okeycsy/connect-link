@@ -44,7 +44,7 @@ export const outro: Chapter = {
     {
       id: 'outro',
       kind: 'card',
-      duration: 2900,
+      duration: 2700,
       card: {
         tone: 'light',
         image: { src: '/brand/logo.png', width: 520 },

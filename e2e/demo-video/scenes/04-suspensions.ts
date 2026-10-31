@@ -83,13 +83,14 @@ export const suspensions: Chapter = {
         });
         await d.click(page.getByRole('link', { name: '일시중단 등록' }));
         await page.getByRole('heading', { name: '일시중단 등록' }).waitFor();
+        await d.pause(300);
         d.say('일시중단 등록은 정해진 양식으로. 일시와 이유를 적고,');
         await pickDateTime(d, page, '중단 시작', seoulDate(1), '23', '00');
         await pickDateTime(d, page, '중단 종료', seoulDate(2), '02', '00');
         await d.type(page.getByRole('textbox', { name: '중단 이유(작업 내용)' }), REASON, { delay: 2 });
+        d.say('중단되는 업무를 하나하나 골라 누락 없이 등록합니다.');
         await d.type(page.getByRole('textbox', { name: '연락처' }).first(), '010-0000-2101', { delay: 2 });
         const works = page.getByTestId('suspension-businesses');
-        d.say('중단되는 업무를 하나하나 골라 누락 없이 등록합니다.');
         await d.focus(works, {
           note: '중단되는 업무를 <b>하나하나 골라</b> 등록합니다. 묶음을 넘나들며 여러 개.',
           scale: 1.12,
@@ -129,7 +130,7 @@ export const suspensions: Chapter = {
         await d.focus(alertRow, {
           note: '기관이 등록하면 결제원 담당자에게 <b>매터모스트 알림</b>. 시연 환경은 발송함에 기록합니다.',
           scale: 1.15,
-          hold: 1550,
+          hold: 1400,
         });
         // 알림을 받은 결제원 담당자가 그 건을 연다.
         await page.goto(detailUrl);
@@ -149,7 +150,7 @@ export const suspensions: Chapter = {
         await d.pause(150);
         await d.clickUntil(handover.getByRole('button', { name: '확정하기' }), status.getByText('확정', { exact: true }));
         await d.unfocus();
-        await d.focus(status, { note: '<b>확정</b>. 확인자와 인수인계 사항이 상세에 남습니다.', scale: 1.3, hold: 1750 });
+        await d.focus(status, { note: '<b>확정</b>. 확인자와 인수인계 사항이 상세에 남습니다.', scale: 1.3, hold: 1650 });
 
         // ③ 주간 취합: 그 주 확정 건을 수·금마다 운영·관제 매터모스트 채널로 모아 보낸다. 시연에서는 "주간 취합 보내기"로 지금 보낸다.
         d.say('확정된 건은 정해진 때마다 모아 운영·관제 채널로 보냅니다.');
@@ -167,7 +168,7 @@ export const suspensions: Chapter = {
         await d.focus(digest, {
           note: '방금 확정한 KB국민은행 건까지 <b>한 번에</b>. 기관, 중단 기간, 조치만 간추려 보냅니다.',
           scale: 1.05,
-          hold: 900,
+          hold: 750,
         });
         await d.pause(150);
       },

@@ -8,7 +8,7 @@ export const tests: Chapter = {
     {
       id: 'c-tests',
       kind: 'card',
-      duration: 2000,
+      duration: 1800,
       card: { tone: 'light', chapter: '02 기관 테스트', title: '결과는 기관이, 의견은 결제원이,\n수행률은 저절로.' },
       narration: '둘째, 기관 테스트.',
     },
@@ -69,9 +69,8 @@ export const tests: Chapter = {
         await d.focus(item.getByTestId('item-feedback'), {
           note: '결제원 의견이 기관 결과 옆에 남습니다. 기관이 고치면 <b>다시 확인</b>.',
           scale: 1.3,
-          hold: 200,
+          hold: 50,
         });
-        await d.pause(50);
       },
     },
   ],

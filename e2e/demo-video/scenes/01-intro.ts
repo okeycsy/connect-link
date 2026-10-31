@@ -9,7 +9,7 @@ export const intro: Chapter = {
       id: 'p3',
       kind: 'card',
       // 첫 장면. 숫자 하나로 시작해 내레이션이 읽힐 만큼 머문다(첫 녹화에 붙는 1~2초 지연을 뺀 값).
-      duration: 10200,
+      duration: 10400,
       card: {
         tone: 'light',
         kicker: '업무 하나에서만, 해마다',
@@ -58,12 +58,12 @@ export const intro: Chapter = {
         await d.focus(Array.from({ length: cardCount }, (_, i) => cards.nth(i)), {
           note: '로그인하면 <b>지금 할 일</b>만 보입니다.',
           scale: 1.08,
-          hold: 400,
+          hold: 550,
         });
         const nav = page.getByRole('navigation');
         await d.moveTo(nav.getByRole('link', { name: '일시중단', exact: true }), { steps: 10 });
         d.say('어느 업무든 같은 구조.');
-        await d.focus(nav, { note: '어느 업무든 <b>같은 구조</b>. 94개 업무까지 그대로.', scale: 1, hold: 1100 });
+        await d.focus(nav, { note: '어느 업무든 <b>같은 구조</b>. 94개 업무까지 그대로.', scale: 1, hold: 1200 });
         await d.pause(150);
       },
     },
