@@ -237,7 +237,7 @@ export function LoginPage() {
       </Box>
 
       {/*
-       * 화면 맨 아래 왼쪽 바닥글. 개인정보 처리방침은 다른 안내와 구분되게 굵게 둔다(개인정보 보호법 시행령 제31조 제3항).
+       * 화면 맨 아래 왼쪽 바닥글(프로토타입 안내 문구는 2026-11-14 SHY 요청으로 뺐다). 개인정보 처리방침은 다른 안내와 구분되게 굵게 둔다(개인정보 보호법 시행령 제31조 제3항).
        * 보통 사이트 바닥글 자리라 찾기 쉽고 로그인 카드 흐름을 끊지 않는다(2026-11-14 SHY 요청).
        */}
       <Group component="footer" gap={12} wrap="wrap" className={classes.footer}>
@@ -250,9 +250,6 @@ export function LoginPage() {
         >
           개인정보처리방침
         </Anchor>
-        <Text c="dimmed" size="sm">
-          샘플 데이터로 동작하는 프로토타입입니다.
-        </Text>
       </Group>
     </Box>
   );
