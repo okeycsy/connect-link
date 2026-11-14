@@ -4,6 +4,9 @@ spring:
     locations: classpath:db/migration,classpath:db/seed
 
 app:
+  organization:
+    # 결제원 대표 국번(가상). 참가기관 담당자에게 결제원 내선 1101 이 02-000-1101 로 보인다.
+    kftc-office-phone-prefix: "02-000-"
   scheduling:
     # 정기 작업은 테스트에서 끈다. 작업 자체는 서비스를 직접 불러 확인한다.
     enabled: false
