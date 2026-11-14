@@ -71,7 +71,7 @@ test.describe('회원가입', () => {
     // 개인정보 수집·이용 안내(필수 확인)와 휴대폰번호 선택 동의. 전문은 새 탭으로 연다.
     const privacy = step4.getByTestId('sign-up-privacy');
     await expect(privacy).toContainText('회원 탈퇴 시까지');
-    await expect(privacy.getByRole('link', { name: /개인정보 처리방침 전문/ })).toHaveAttribute(
+    await expect(privacy.getByRole('link', { name: /개인정보처리방침 전문/ })).toHaveAttribute(
       'target',
       '_blank',
     );

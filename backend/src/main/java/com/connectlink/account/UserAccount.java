@@ -5,6 +5,7 @@ import com.connectlink.organization.Business;
 import com.connectlink.organization.ItRole;
 import com.connectlink.organization.JobRole;
 import com.connectlink.organization.Organization;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -107,6 +108,14 @@ public class UserAccount extends AuditedEntity {
   /** 휴대폰번호 수집·이용(선택)에 동의한 일시. 휴대폰번호를 적지 않았거나 동의하지 않았으면 없다. */
   @Column(name = "mobile_phone_agreed_at")
   private LocalDateTime mobilePhoneAgreedAt;
+
+  /** 연달아 틀린 로그인 횟수. 맞게 로그인하거나 잠그면 0 으로 돌아간다. */
+  @Column(name = "failed_login_count", nullable = false)
+  private int failedLoginCount;
+
+  /** 로그인 잠금이 풀리는 일시. 잠기지 않았으면 없다. */
+  @Column(name = "locked_until")
+  private LocalDateTime lockedUntil;
 
   /** 가입 신청 일시. 반려 뒤 다시 신청하면 그때로 바뀐다. */
   @Column(name = "applied_at", nullable = false)
@@ -379,6 +388,43 @@ public class UserAccount extends AuditedEntity {
     }
     this.passwordHash = passwordHash;
     this.passwordChangedAt = now;
+    // 새 비밀번호를 정하면 로그인 잠금도 푼다(비밀번호 찾기가 잠금을 푸는 길이다).
+    this.failedLoginCount = 0;
+    this.lockedUntil = null;
+  }
+
+  /** 이 시각에 로그인이 잠겨 있는지. */
+  public boolean isLoginLocked(LocalDateTime now) {
+    return lockedUntil != null && now.isBefore(lockedUntil);
+  }
+
+  public LocalDateTime getLockedUntil() {
+    return lockedUntil;
+  }
+
+  public int getFailedLoginCount() {
+    return failedLoginCount;
+  }
+
+  /**
+   * 틀린 비밀번호 한 번. {@code maxFailures} 번째면 {@code lockDuration} 동안 잠그고 횟수를 0 으로 돌린다.
+   *
+   * @return 이번에 잠갔는지
+   */
+  public boolean recordLoginFailure(int maxFailures, Duration lockDuration, LocalDateTime now) {
+    failedLoginCount++;
+    if (failedLoginCount >= maxFailures) {
+      failedLoginCount = 0;
+      lockedUntil = now.plus(lockDuration);
+      return true;
+    }
+    return false;
+  }
+
+  /** 맞게 로그인했다. 틀린 횟수와 지난 잠금을 지운다. */
+  public void recordLoginSuccess() {
+    failedLoginCount = 0;
+    lockedUntil = null;
   }
 
   public LocalDateTime getPasswordChangedAt() {

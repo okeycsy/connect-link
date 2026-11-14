@@ -1,147 +1,164 @@
-import { Box, Card, Divider, List, NavLink, SimpleGrid, Stack, Table, Text, ThemeIcon } from '@mantine/core';
+import { Box, Card, List, SimpleGrid, Stack, Table, Text, ThemeIcon, Title } from '@mantine/core';
 import {
-  IconClockHour4,
+  IconCheck,
+  IconFingerprintOff,
   IconHeadset,
-  IconListDetails,
   IconShareOff,
+  IconUserCircle,
 } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
 
 import tableClasses from '../../../shared/list/ResponsiveTable.module.css';
-import { PageHeader } from '../../../shared/PageHeader';
 import { EntryLayout } from '../components/EntryLayout';
 import {
-  OPTIONAL_ITEMS,
   PRIVACY_ARTICLES,
   PRIVACY_POLICY_EFFECTIVE,
   type PrivacyBlock,
-  SIGN_UP_RETENTION,
 } from '../components/privacyPolicy';
 import { useSupportInfo } from '../hooks';
 import classes from './PrivacyPolicyPage.module.css';
 
 /**
- * 개인정보 처리방침(로그인 없이, `/privacy`). 개인정보 보호법 제30조에 따라 누구나 볼 수 있게 공개한다. 위에 요약 네 칸(수집 항목,
- * 제3자 제공, 보유 기간, 고충처리부서), 아래 조문이다. 왼쪽 목차는 휴대폰 폭에서 숨긴다. 본문은 `privacyPolicy.ts`, 관리부서
- * 연락처는 서버 설정(`/api/v1/support-info`)이다.
+ * 개인정보 처리방침(로그인 없이, `/privacy`). 개인정보 보호법 제30조에 따라 누구나 볼 수 있게 공개한다. 모양은 금융결제원 처리방침
+ * 화면(SHY 제공, 2026-11-14)을 따른다: 가운데 큰 제목, 머리말, 요약 네 칸(아이콘 + 체크 목록), 조문. 그래서 다른 화면과 달리
+ * `PageHeader` 대신 가운데 제목을 쓴다. 본문은 `privacyPolicy.ts`, 관리부서 연락처는 서버 설정(`/api/v1/support-info`)이다.
  */
 export function PrivacyPolicyPage() {
   const { data: support } = useSupportInfo();
   const department = support?.privacyDepartment ?? '연결이 운영 담당 부서';
+  const phone = support?.privacyPhone ?? undefined;
+  const email = support?.inquiryEmail ?? undefined;
 
   return (
     <EntryLayout>
-      <Stack gap="md">
-        <PageHeader
-          title="개인정보 처리방침"
-          description={`시행일 ${PRIVACY_POLICY_EFFECTIVE}`}
-        />
-        <Box className={classes.body} data-testid="privacy-policy">
-          <Box className={classes.layout}>
-            <Box component="nav" aria-label="개인정보 처리방침 목차" className={classes.nav}>
-              {PRIVACY_ARTICLES.map((article) => (
-                <NavLink
-                  key={article.id}
-                  href={`#${article.id}`}
-                  label={article.title}
-                  className={classes.navLink}
-                  onClick={(event) => {
-                    // 라우터 주소는 그대로 두고 그 조문으로만 옮긴다.
-                    event.preventDefault();
-                    document.getElementById(article.id)?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                />
-              ))}
-            </Box>
-
-            <Stack gap="md" className={classes.content}>
-              <Card>
-                <Text size="lg" fw={700} mb="xs">
-                  금융결제원 연결이는 「개인정보 보호법」을 준수하며, 개인정보 처리방침은 아래와 같습니다.
-                </Text>
-                <Text c="var(--cl-ink-soft)">
-                  금융결제원은 정보주체의 자유와 권리 보호를 위해 「개인정보 보호법」 및 관계 법령이 정한 바를 준수하여
-                  적법하게 개인정보를 처리하고 안전하게 관리하고 있습니다. 이에 「개인정보 보호법」 제30조에 따라
-                  정보주체에게 개인정보의 처리와 보호에 관한 절차 및 기준을 안내하고, 이와 관련한 고충을 신속하고
-                  원활하게 처리할 수 있도록 하기 위하여 다음과 같이 개인정보 처리방침을 수립·공개합니다.
-                </Text>
-              </Card>
-
-              <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
-                <SummaryTile icon={<IconListDetails size={22} stroke={1.7} />} title="개인정보 수집">
-                  성명, 회사 이메일, 사무실 전화번호, 소속·부서·직급, 담당 업무, {OPTIONAL_ITEMS}(선택)
-                </SummaryTile>
-                <SummaryTile icon={<IconShareOff size={22} stroke={1.7} />} title="제3자 제공">
-                  제공하지 않음
-                </SummaryTile>
-                <SummaryTile icon={<IconClockHour4 size={22} stroke={1.7} />} title="보유 기간">
-                  회원 정보: {SIGN_UP_RETENTION}
-                </SummaryTile>
-                <SummaryTile icon={<IconHeadset size={22} stroke={1.7} />} title="고충처리부서">
-                  {department}
-                </SummaryTile>
-              </SimpleGrid>
-
-              <Card>
-                <Stack gap="lg">
-                  {PRIVACY_ARTICLES.map((article, index) => (
-                    <Box key={article.id} id={article.id} className={classes.article}>
-                      {index > 0 && <Divider mb="lg" color="var(--cl-line-soft)" />}
-                      <Text component="h2" fw={700} size="xl" m={0} mb="sm">
-                        {article.title}
-                      </Text>
-                      <Stack gap="sm">
-                        {article.blocks.map((block, i) => (
-                          <Block key={i} block={block} />
-                        ))}
-                        {article.id === 'officer' && (
-                          <OfficerBox
-                            department={department}
-                            phone={support?.privacyPhone ?? undefined}
-                            email={support?.inquiryEmail ?? undefined}
-                          />
-                        )}
-                      </Stack>
-                    </Box>
-                  ))}
-                </Stack>
-              </Card>
+      <Box className={classes.body} data-testid="privacy-policy">
+        <Card className={classes.sheet}>
+          <Stack gap={40}>
+            <Stack gap={6} align="center">
+              <Title order={1} className={classes.title}>
+                개인정보처리방침
+              </Title>
+              <Text size="sm" c="dimmed">
+                시행일 {PRIVACY_POLICY_EFFECTIVE}
+              </Text>
             </Stack>
-          </Box>
-        </Box>
-      </Stack>
+
+            <Stack gap="sm">
+              <Text fw={700} fz={18}>
+                금융결제원은 「개인정보 보호법」의 규정을 준수하며, 연결이의 개인정보처리방침은
+                아래와 같습니다.
+              </Text>
+              <Text c="var(--cl-ink-soft)" lh={1.7}>
+                금융결제원은 정보주체의 자유와 권리 보호를 위해 「개인정보 보호법」 및 관계 법령이
+                정한 바를 준수하여 적법하게 개인정보를 처리하고 안전하게 관리하고 있습니다. 이에
+                「개인정보 보호법」 제30조에 따라 정보주체에게 개인정보의 처리와 보호에 관한 절차 및
+                기준을 안내하고, 이와 관련한 고충을 신속하고 원활하게 처리할 수 있도록 하기 위하여
+                다음과 같이 개인정보처리방침을 수립·공개합니다.
+              </Text>
+            </Stack>
+
+            <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} spacing="md">
+              <SummaryBox
+                title="개인정보 수집"
+                icon={<IconUserCircle size={30} stroke={1.5} />}
+                items={[
+                  '성명',
+                  '회사 이메일',
+                  '사무실 전화번호',
+                  '휴대전화번호(선택)',
+                  '소속·부서·직급 등',
+                ]}
+              />
+              <SummaryBox
+                title="고유식별정보 수집"
+                icon={<IconFingerprintOff size={30} stroke={1.5} />}
+                items={['수집하지 않음']}
+              />
+              <SummaryBox
+                title="제3자 제공"
+                icon={<IconShareOff size={30} stroke={1.5} />}
+                items={['제공하지 않음']}
+              />
+              <SummaryBox
+                title="고충처리부서"
+                icon={<IconHeadset size={30} stroke={1.5} />}
+                items={[department]}
+                lines={[phone && `Tel. ${phone}`, email && `Mail. ${email}`].filter(
+                  (v): v is string => Boolean(v),
+                )}
+              />
+            </SimpleGrid>
+
+            <Stack gap={36}>
+              {PRIVACY_ARTICLES.map((article) => (
+                <Box key={article.id} id={article.id} component="section">
+                  <Text component="h2" className={classes.articleTitle}>
+                    {article.title}
+                  </Text>
+                  <Stack gap="sm" className={classes.articleBody}>
+                    {article.blocks.map((block, i) => (
+                      <Block key={i} block={block} />
+                    ))}
+                    {article.id === 'officer' && (
+                      <OfficerBox department={department} phone={phone} email={email} />
+                    )}
+                  </Stack>
+                </Box>
+              ))}
+            </Stack>
+          </Stack>
+        </Card>
+      </Box>
     </EntryLayout>
   );
 }
 
-function SummaryTile({
-  icon,
+/** 요약 한 칸: 가운데 제목과 둥근 아이콘, 아래 체크 목록. */
+function SummaryBox({
   title,
-  children,
+  icon,
+  items,
+  lines = [],
 }: {
-  icon: ReactNode;
   title: string;
-  children: ReactNode;
+  icon: ReactNode;
+  items: string[];
+  /** 체크 없이 덧붙이는 줄(전화, 메일). */
+  lines?: string[];
 }) {
   return (
-    <Card className={classes.tile} padding="md">
-      <ThemeIcon variant="light" color="clay" size={40} radius="md" mb="xs">
-        {icon}
-      </ThemeIcon>
-      <Text fw={700} size="md">
+    <Box className={classes.summary}>
+      <Text fw={700} size="lg" ta="center">
         {title}
       </Text>
-      <Text size="sm" c="dimmed" mt={4}>
-        {children}
-      </Text>
-    </Card>
+      <ThemeIcon variant="light" color="clay" size={64} radius={32} className={classes.summaryIcon}>
+        {icon}
+      </ThemeIcon>
+      <Stack gap={6} className={classes.summaryItems}>
+        {items.map((item) => (
+          <Box key={item} className={classes.check}>
+            <IconCheck size={16} stroke={2.2} className={classes.checkIcon} />
+            <Text size="md">{item}</Text>
+          </Box>
+        ))}
+        {lines.map((line) => (
+          <Text key={line} size="sm" c="var(--cl-ink-soft)" pl={24}>
+            · {line}
+          </Text>
+        ))}
+      </Stack>
+    </Box>
   );
 }
 
 function Block({ block }: { block: PrivacyBlock }) {
   switch (block.kind) {
     case 'p':
-      return <Text c="var(--cl-ink-soft)">{block.text}</Text>;
+      return (
+        <Text c="var(--cl-ink-soft)" lh={1.7}>
+          {block.text}
+        </Text>
+      );
     case 'note':
       return (
         <Text size="sm" c="dimmed">
@@ -155,6 +172,7 @@ function Block({ block }: { block: PrivacyBlock }) {
           spacing={6}
           className={classes.list}
           c="var(--cl-ink-soft)"
+          lh={1.7}
         >
           {block.items.map((item) => (
             <List.Item key={item}>{item}</List.Item>
@@ -163,7 +181,7 @@ function Block({ block }: { block: PrivacyBlock }) {
       );
     case 'table':
       return (
-        <Table withTableBorder className={tableClasses.stack}>
+        <Table withTableBorder withColumnBorders className={tableClasses.stack}>
           <Table.Thead>
             <Table.Tr>
               {block.head.map((h) => (

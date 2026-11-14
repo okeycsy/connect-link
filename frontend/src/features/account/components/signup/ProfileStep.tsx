@@ -87,16 +87,9 @@ function PrivacyNotice({ form }: { form: SignUpForm }) {
     <Box className={classes.privacy} data-testid="sign-up-privacy">
       <Group justify="space-between" gap="xs" mb="xs">
         <Text fw={700}>개인정보 수집·이용 안내</Text>
-        <Anchor
-          component={Link}
-          to="/privacy"
-          target="_blank"
-          rel="noopener"
-          size="sm"
-          fw={700}
-        >
+        <Anchor component={Link} to="/privacy" target="_blank" rel="noopener" size="sm" fw={700}>
           <Group gap={4} wrap="nowrap">
-            개인정보 처리방침 전문
+            개인정보처리방침 전문
             <IconExternalLink size={14} stroke={1.8} />
           </Group>
         </Anchor>
@@ -126,8 +119,9 @@ function PrivacyNotice({ form }: { form: SignUpForm }) {
         </Table.Tbody>
       </Table>
       <Text size="xs" c="dimmed" mt="xs">
-        필수 항목은 회원 계약 이행을 위해 처리합니다(개인정보 보호법 제15조 제1항 제4호). 휴대폰번호 수집·이용에는 동의하지 않을
-        권리가 있으며, 동의하지 않아도 가입과 서비스 이용에 제한이 없습니다. 다만 이 경우 휴대폰번호는 적을 수 없습니다.
+        필수 항목은 회원 계약 이행을 위해 처리합니다(개인정보 보호법 제15조 제1항 제4호). 휴대폰번호
+        수집·이용에는 동의하지 않을 권리가 있으며, 동의하지 않아도 가입과 서비스 이용에 제한이
+        없습니다. 다만 이 경우 휴대폰번호는 적을 수 없습니다.
       </Text>
       <Stack gap="xs" mt="sm">
         <Checkbox

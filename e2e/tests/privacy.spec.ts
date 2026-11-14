@@ -12,7 +12,7 @@ test.describe("개인정보 처리방침", () => {
 
     await expect(page).toHaveURL(/\/privacy$/);
     await expect(
-      page.getByRole("heading", { name: "개인정보 처리방침", level: 1 }),
+      page.getByRole("heading", { name: "개인정보처리방침", level: 1 }),
     ).toBeVisible();
     const policy = page.getByTestId("privacy-policy");
     await expect(policy).toContainText("제1조(개인정보의 처리 목적)");

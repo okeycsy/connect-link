@@ -12,6 +12,7 @@ import com.connectlink.organization.ItRole;
 import com.connectlink.organization.JobRole;
 import com.connectlink.organization.Organization;
 import com.connectlink.organization.OrganizationType;
+import java.time.Clock;
 import java.util.EnumSet;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -27,7 +28,8 @@ class AccountServiceTest {
 
   private final PasswordEncoder encoder = new BCryptPasswordEncoder(4);
   private final UserAccountRepository repository = mock(UserAccountRepository.class);
-  private final AccountService service = new AccountService(repository, encoder);
+  private final AccountService service =
+      new AccountService(repository, encoder, new LoginLockProperties(), Clock.systemUTC());
 
   private void givenAccount(AccountStatus status) {
     Organization organization = mock(Organization.class);

@@ -22,6 +22,7 @@ import {
   type ChatSendInput,
 } from '../hooks';
 import classes from './Chat.module.css';
+import { useFileTransferBlocked } from '../../attachment/hooks';
 
 interface Props {
   mentionables: ChatMention[];
@@ -38,6 +39,8 @@ export function ChatComposer({ mentionables, onSend, sending, error }: Props) {
   const [content, setContent] = useState('');
   const [caret, setCaret] = useState(0);
   const [files, setFiles] = useState<File[]>([]);
+  // 결제원 담당자는 인터넷망에서 파일을 올리지 못한다(서버도 막는다). 첨부 버튼을 감춘다.
+  const fileBlocked = useFileTransferBlocked();
   const [fileError, setFileError] = useState<string>();
   const [highlight, setHighlight] = useState(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -135,15 +138,17 @@ export function ChatComposer({ mentionables, onSend, sending, error }: Props) {
         </Group>
       )}
       <Group gap="xs" align="flex-end" wrap="nowrap">
-        <FileButton onChange={addFiles} multiple>
-          {(props) => (
-            <Tooltip label="파일 첨부 (20MB까지, 1년 보관)">
-              <ActionIcon {...props} variant="light" size={40} radius="xl" aria-label="파일 첨부">
-                <IconPaperclip size={20} stroke={1.8} />
-              </ActionIcon>
-            </Tooltip>
-          )}
-        </FileButton>
+        {!fileBlocked && (
+          <FileButton onChange={addFiles} multiple>
+            {(props) => (
+              <Tooltip label="파일 첨부 (20MB까지, 1년 보관)">
+                <ActionIcon {...props} variant="light" size={40} radius="xl" aria-label="파일 첨부">
+                  <IconPaperclip size={20} stroke={1.8} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+          </FileButton>
+        )}
         <Popover opened={menuOpen} position="top-start" width={260} shadow="card" radius="lg">
           <Popover.Target>
             <Textarea

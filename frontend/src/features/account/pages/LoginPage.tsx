@@ -245,7 +245,7 @@ export function LoginPage() {
             className={classes.privacyLink}
             data-testid="login-privacy-link"
           >
-            개인정보 처리방침
+            개인정보처리방침
           </Anchor>
         </Stack>
       </Box>
