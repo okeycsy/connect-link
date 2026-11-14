@@ -153,7 +153,8 @@ test.describe("라. 일시중단", () => {
     await expect(calendar.locator("thead th").first()).toHaveText("일");
     await expect(calendar.locator("thead th").last()).toHaveText("토");
     await shot(page, "suspension-editor-calendar");
-    await page.keyboard.press("Escape");
+    // 전체 화면 캡처 뒤에는 초점이 body 로 갈 때가 있어 달력 안에서 Esc 를 누른다.
+    await calendar.press("Escape");
     await expect(calendar).toBeHidden();
 
     const reason = `E2E 계정계 패치 작업 ${Date.now()}`;
