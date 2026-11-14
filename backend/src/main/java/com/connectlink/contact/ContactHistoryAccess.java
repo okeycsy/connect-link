@@ -17,10 +17,15 @@ class ContactHistoryAccess implements HistoryTargetAccess {
 
   private final ContactRepository repository;
   private final ContactAccessPolicy accessPolicy;
+  private final ContactOfficePhone officePhone;
 
-  ContactHistoryAccess(ContactRepository repository, ContactAccessPolicy accessPolicy) {
+  ContactHistoryAccess(
+      ContactRepository repository,
+      ContactAccessPolicy accessPolicy,
+      ContactOfficePhone officePhone) {
     this.repository = repository;
     this.accessPolicy = accessPolicy;
+    this.officePhone = officePhone;
   }
 
   @Override
@@ -33,7 +38,10 @@ class ContactHistoryAccess implements HistoryTargetAccess {
     return repository.findById(targetId).map(c -> accessPolicy.canView(user, c)).orElse(false);
   }
 
-  /** 변경 전 값(이전 담당자)의 휴대폰번호와 회사 이메일을 가린다. 변경 후 값은 지금 담당자라 그대로다. */
+  /**
+   * 변경 전 값(이전 담당자)의 휴대폰번호와 회사 이메일을 가린다. 변경 후 값은 지금 담당자라 그대로다. 내선번호는 목록처럼 기관 담당자에게 결제원 내선을 전체 번호로
+   * 보인다.
+   */
   @Override
   public FieldChange redact(CurrentUser user, FieldChange change) {
     return switch (change.field()) {
@@ -49,6 +57,12 @@ class ContactHistoryAccess implements HistoryTargetAccess {
               change.label(),
               ContactMasking.email(change.before()),
               change.after());
+      case "extensionPhone" ->
+          new FieldChange(
+              change.field(),
+              change.label(),
+              officePhone.historyValueForViewer(user, change.before()),
+              officePhone.historyValueForViewer(user, change.after()));
       default -> change;
     };
   }

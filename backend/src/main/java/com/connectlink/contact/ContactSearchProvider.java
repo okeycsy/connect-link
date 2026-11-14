@@ -22,14 +22,17 @@ public class ContactSearchProvider implements SearchProvider {
   private final ContactRepository repository;
   private final ContactAccessPolicy accessPolicy;
   private final NetworkZoneResolver networkZoneResolver;
+  private final ContactOfficePhone officePhone;
 
   public ContactSearchProvider(
       ContactRepository repository,
       ContactAccessPolicy accessPolicy,
-      NetworkZoneResolver networkZoneResolver) {
+      NetworkZoneResolver networkZoneResolver,
+      ContactOfficePhone officePhone) {
     this.repository = repository;
     this.accessPolicy = accessPolicy;
     this.networkZoneResolver = networkZoneResolver;
+    this.officePhone = officePhone;
   }
 
   @Override
@@ -64,7 +67,7 @@ public class ContactSearchProvider implements SearchProvider {
                         + " · "
                         + c.getRank().getLabel()
                         + " · 내선 "
-                        + c.getExtensionPhone(),
+                        + officePhone.forViewer(user, c),
                     "/" + business.getSlug() + "/contacts?id=" + c.getId()))
         .toList();
   }
