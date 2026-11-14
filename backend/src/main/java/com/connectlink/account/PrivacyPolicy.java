@@ -7,7 +7,7 @@ package com.connectlink.account;
 public final class PrivacyPolicy {
 
   /** 지금 처리방침의 시행일. */
-  public static final String VERSION = "2026-11-26";
+  public static final String VERSION = "2026-10-01";
 
   private PrivacyPolicy() {}
 }
