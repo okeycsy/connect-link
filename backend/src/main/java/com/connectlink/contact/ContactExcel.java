@@ -7,6 +7,7 @@ import java.io.UncheckedIOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.function.Function;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.FillPatternType;
@@ -34,8 +35,13 @@ public record ContactExcel(String fileName, byte[] content) {
     "최근 확인일", "확인 필요"
   };
 
+  /** {@code officePhone} 은 보는 사람에 맞춘 내선번호({@link ContactOfficePhone})다. */
   static ContactExcel of(
-      Business business, List<Contact> contacts, LocalDateTime now, LocalDateTime threshold) {
+      Business business,
+      List<Contact> contacts,
+      Function<Contact, String> officePhone,
+      LocalDateTime now,
+      LocalDateTime threshold) {
     try (XSSFWorkbook workbook = new XSSFWorkbook();
         ByteArrayOutputStream out = new ByteArrayOutputStream()) {
       Sheet sheet = workbook.createSheet(business.getLabel() + " 담당자");
@@ -65,7 +71,7 @@ public record ContactExcel(String fileName, byte[] content) {
           c.getDepartment(),
           orEmpty(c.getTeam()),
           orEmpty(c.getJobTitle()),
-          c.getExtensionPhone(),
+          officePhone.apply(c),
           orEmpty(c.getMobilePhone()),
           c.getEmail(),
           c.getLastConfirmedAt().format(DATE),

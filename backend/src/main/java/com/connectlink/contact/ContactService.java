@@ -73,6 +73,7 @@ public class ContactService {
   private final NotificationService notificationService;
   private final UpdateCampaignService campaignService;
   private final NetworkZoneResolver networkZoneResolver;
+  private final ContactOfficePhone officePhone;
   private final Clock clock;
 
   public ContactService(
@@ -84,6 +85,7 @@ public class ContactService {
       NotificationService notificationService,
       UpdateCampaignService campaignService,
       NetworkZoneResolver networkZoneResolver,
+      ContactOfficePhone officePhone,
       Clock clock) {
     this.repository = repository;
     this.accessPolicy = accessPolicy;
@@ -93,6 +95,7 @@ public class ContactService {
     this.notificationService = notificationService;
     this.campaignService = campaignService;
     this.networkZoneResolver = networkZoneResolver;
+    this.officePhone = officePhone;
     this.clock = clock;
   }
 
@@ -214,7 +217,8 @@ public class ContactService {
         repository
             .findAll(spec, PageRequest.of(0, EXCEL_LIMIT, ContactSpecifications.DEFAULT_SORT))
             .getContent();
-    return ContactExcel.of(business, rows, now(), reconfirmThreshold());
+    return ContactExcel.of(
+        business, rows, c -> officePhone.forViewer(user, c), now(), reconfirmThreshold());
   }
 
   // ---- 등록·수정·삭제·확인 ----
@@ -513,7 +517,7 @@ public class ContactService {
         List.copyOf(c.getItRoles()),
         c.getRank(),
         c.getRank().getLabel(),
-        c.getExtensionPhone(),
+        officePhone.forViewer(user, c),
         c.getMobilePhone(),
         c.getEmail(),
         c.getLastConfirmedAt(),

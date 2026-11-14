@@ -118,6 +118,25 @@ test.describe('가. 담당자 연락처', () => {
     await expect(banner).toContainText('KB국민은행 현행화 완료');
   });
 
+  test('기관 담당자에게는 결제원 담당자 내선이 대표 국번 붙은 전체 번호로 보인다', async ({ page }) => {
+    await loginAs(page, '최유진 (참가기관 · 현업)로 로그인');
+    const reconfirm = page.getByTestId('contact-reconfirm');
+    if (await reconfirm.isVisible()) {
+      await reconfirm.getByRole('button', { name: '닫기' }).click();
+    }
+    await page.goto('/account-info/contacts');
+    await expect(page.getByText('02-000-1101', { exact: true })).toBeVisible();
+    await shot(page, 'contacts-kftc-full-number-organization');
+  });
+
+  test('결제원 담당자에게는 결제원 내선이 4자리 그대로 보인다', async ({ page }) => {
+    await loginAs(page, '홍성민 (결제원 · 현업)로 로그인');
+    await page.goto('/account-info/contacts');
+    await expect(page.getByText('1101', { exact: true })).toBeVisible();
+    await expect(page.getByText('02-000-1101', { exact: true })).toHaveCount(0);
+    await shot(page, 'contacts-kftc-extension-kftc');
+  });
+
   test('결제원 담당자는 내부망에서 걸러 보고 엑셀을 받으며, 인터넷망에서는 고치지 못한다', async ({
     page,
   }) => {
