@@ -3,12 +3,14 @@ package com.connectlink.attachment.sample;
 import com.connectlink.attachment.Attachment;
 import com.connectlink.attachment.AttachmentRepository;
 import com.connectlink.attachment.FileStorage;
+import com.connectlink.common.demo.SampleDataRefreshedEvent;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.context.event.EventListener;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * 샘플 시드의 첨부 내용을 저장소에 넣는다. 시드 SQL 은 첨부 행만 넣고 저장소 키 자리에 {@code seed:파일이름} 을 적는다. 서버가 뜰 때 {@code
  * db/seed/files/파일이름} 을 {@link FileStorage} 에 저장하고 행의 키와 크기를 실제 값으로 바꾼다. 메모리 DB 라 시드는 뜰 때마다 새로
- * 들어간다.
+ * 들어가고, 샘플 데이터를 다시 넣을 때({@link SampleDataRefreshedEvent})도 다시 한다.
  */
 @Component
 @Profile({"local", "demo", "test"})
@@ -36,6 +38,16 @@ public class SampleAttachmentLoader implements ApplicationRunner {
   @Override
   @Transactional
   public void run(ApplicationArguments args) {
+    load();
+  }
+
+  @EventListener(SampleDataRefreshedEvent.class)
+  @Transactional
+  public void onRefreshed() {
+    load();
+  }
+
+  private void load() {
     for (Attachment attachment : repository.findByStorageKeyStartingWith(KEY_PREFIX)) {
       String fileName = attachment.getStorageKey().substring(KEY_PREFIX.length());
       ClassPathResource file = new ClassPathResource(FILES + fileName);

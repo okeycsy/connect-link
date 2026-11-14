@@ -1079,6 +1079,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/demo/sample-data-refreshes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 샘플 데이터 오늘 기준으로 다시 넣기(데모)
+     * @description 매일 4시 예약 작업과 같다. 시연 중 만든 데이터와 모든 로그인이 사라진다. 관리자만 부른다.
+     */
+    post: operations['refresh'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/demo/opinion-due-reminder-runs': {
     parameters: {
       query?: never;
@@ -5829,6 +5849,24 @@ export interface operations {
         content: {
           '*/*': components['schemas']['TestPlanDueReminderRunResponse'];
         };
+      };
+    };
+  };
+  refresh: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
     };
   };
