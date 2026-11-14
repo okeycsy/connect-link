@@ -58,7 +58,7 @@
 | `--cl-line` / `--cl-line-soft`                                 | #E3E4E8 / #EDEEF1                               | 경계선 / 표 행 구분                                                        |
 | `--cl-ink` / `--cl-ink-soft` / `--cl-ink-muted`                | #1D1715 / #3E4048 / #62656D                     | 글자 3단                                                                   |
 | `--cl-online`                                                  | #3FA36B                                         | 사용자 아바타의 접속 점(이 용도만)                                         |
-| `--cl-brand-blue` / `-soft`                                    | #0057EB / #E8F0FE                               | 로고 "결" 파랑. 로그인 바닥글 개인정보처리방침 버튼만(2026-11-14 SHY 요청) |
+| `--cl-brand-blue`                                              | #0057EB                                         | 로고 "결" 파랑. 로그인 바닥글 개인정보처리방침 글자만(2026-11-14 SHY 요청) |
 | `--cl-pastel-peach` / `-sky` / `-butter`                       | #F6D6CC / #CFE0F3 / #F7EFB8                     | 파스텔 번짐                                                                |
 | `--cl-blob-peach` / `-blush` / `-rose` / `-cream` / `-apricot` | #F6C9BC / #F3D9C9 / #F4D3CB / #F8F0BE / #F6DCCF | 로그인 배경 번짐 전용                                                      |
 | `--cl-font-sans` / `--cl-font-mono` (fonts.css)                | Pretendard Variable … / ui-monospace …          | 글꼴(3절)                                                                  |
