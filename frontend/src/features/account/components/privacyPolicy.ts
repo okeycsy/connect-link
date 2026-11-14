@@ -7,10 +7,10 @@
  */
 
 /** 처리방침 판(시행일). 서버 `PrivacyPolicy.VERSION` 과 같다. */
-export const PRIVACY_POLICY_VERSION = '2026-11-26';
+export const PRIVACY_POLICY_VERSION = '2026-10-01';
 
 /** 화면에 보이는 시행일 표기. */
-export const PRIVACY_POLICY_EFFECTIVE = '2026. 11. 26.';
+export const PRIVACY_POLICY_EFFECTIVE = '2026. 10. 1.';
 
 export type PrivacyBlock =
   | { kind: 'p'; text: string }
