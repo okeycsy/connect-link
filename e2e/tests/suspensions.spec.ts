@@ -92,19 +92,19 @@ async function registerAsGana(
   // 양식(request)과 공문(files)을 한 요청(multipart)으로 보낸다. 기관 일시중단은 공문이 꼭 있어야 한다.
   const form = {
     targetWorkIds: [work.id],
-      organizationId: null,
-      startAt: iso(date, "01:00"),
-      endAt: iso(date, "03:00"),
-      reason,
-      kftcAction: "작업 시간 동안 KB국민은행 조회 요청을 차단해 주세요.",
-      contacts: [
-        {
-          name: "김민준",
-          phone: "010-0000-2101",
-          email: "kim.minjun@kb.example.com",
-        },
-      ],
-      extraNote: null,
+    organizationId: null,
+    startAt: iso(date, "01:00"),
+    endAt: iso(date, "03:00"),
+    reason,
+    kftcAction: "작업 시간 동안 KB국민은행 조회 요청을 차단해 주세요.",
+    contacts: [
+      {
+        name: "김민준",
+        phone: "010-0000-2101",
+        email: "kim.minjun@kb.example.com",
+      },
+    ],
+    extraNote: null,
   };
   const created = await request.post("/api/v1/suspensions", {
     multipart: {
@@ -166,7 +166,8 @@ test.describe("라. 일시중단", () => {
     await expect(calendar.locator("thead th").first()).toHaveText("일");
     await expect(calendar.locator("thead th").last()).toHaveText("토");
     await shot(page, "suspension-editor-calendar");
-    await page.keyboard.press("Escape");
+    // 달력을 연 뒤 초점이 문서(body)에 남는 때가 있어(같은 서버에서 다시 돌 때 등) 달력에 대고 Esc 를 누른다.
+    await calendar.press("Escape");
     await expect(calendar).toBeHidden();
 
     const reason = `E2E 계정계 패치 작업 ${Date.now()}`;
@@ -460,7 +461,9 @@ test.describe("라. 일시중단", () => {
 
     // 주간 취합(이번 주 확정 건의 기관·중단 기간·조치사항)을 확인 뒤 바로 보낸다.
     await page.getByRole("button", { name: "주간 취합 보내기" }).click();
-    const confirmWeekly = page.getByRole("dialog", { name: "주간 취합 보내기" });
+    const confirmWeekly = page.getByRole("dialog", {
+      name: "주간 취합 보내기",
+    });
     await expect(confirmWeekly).toContainText("보통 수·금");
     await confirmWeekly.getByRole("button", { name: "보내기" }).click();
     const weekly = page.getByRole("dialog", { name: "주간 취합을 보냈습니다" });
