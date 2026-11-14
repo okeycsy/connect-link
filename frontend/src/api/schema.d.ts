@@ -509,7 +509,7 @@ export interface paths {
     put?: never;
     /**
      * 일시중단 등록
-     * @description 검토 대기로 등록하고 그 업무 결제원 담당자에게 메일·매터모스트 알림을 보낸다. 공문(SUSPENSION)은 저장한 뒤 첨부 API 로 올린다.
+     * @description multipart 로 양식(request, JSON)과 공문(files, 하나 이상)을 함께 받는다. 기관 일시중단은 공문이 없으면 400 SUSPENSION_DOCUMENT_REQUIRED(칸 files)다. 결제원 작업 안내는 공문 없이 올릴 수 있다. 검토 대기로 등록하고 그 업무 결제원 담당자에게 메일·매터모스트 알림을 보낸다. 공문을 더 올리거나 바꾸는 것은 첨부 API 로 한다.
      */
     post: operations['create_3'];
     delete?: never;
@@ -5121,9 +5121,13 @@ export interface operations {
       path?: never;
       cookie?: never;
     };
-    requestBody: {
+    requestBody?: {
       content: {
-        'application/json': components['schemas']['SuspensionSaveRequest'];
+        'multipart/form-data': {
+          request: components['schemas']['SuspensionSaveRequest'];
+          /** @description 공문 파일(여러 개 가능) */
+          files?: string[];
+        };
       };
     };
     responses: {

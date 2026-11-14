@@ -4,6 +4,7 @@ import com.connectlink.auth.CurrentUser;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
 
@@ -37,6 +38,12 @@ public class AttachmentAccessPolicy {
   public boolean canEdit(CurrentUser user, AttachmentOwnerType ownerType, Long ownerId) {
     AttachmentOwnerAccess access = accesses.get(ownerType);
     return access != null && access.canEdit(user, ownerId);
+  }
+
+  /** 첨부가 꼭 있어야 하는 대상이면 마지막 첨부를 지울 때 보일 문구. */
+  public Optional<String> requiredMessage(AttachmentOwnerType ownerType, Long ownerId) {
+    AttachmentOwnerAccess access = accesses.get(ownerType);
+    return access == null ? Optional.empty() : access.requiredMessage(ownerId);
   }
 
   public void ensureCanView(CurrentUser user, AttachmentOwnerType ownerType, Long ownerId) {
