@@ -89,22 +89,35 @@ async function registerAsGana(
   }[];
   const work = works.find((w) => w.name === "계좌통합관리")!;
   const date = seoulDate(4);
+  // 양식(request)과 공문(files)을 한 요청(multipart)으로 보낸다. 기관 일시중단은 공문이 꼭 있어야 한다.
+  const form = {
+    targetWorkIds: [work.id],
+    organizationId: null,
+    startAt: iso(date, "01:00"),
+    endAt: iso(date, "03:00"),
+    reason,
+    kftcAction: "작업 시간 동안 KB국민은행 조회 요청을 차단해 주세요.",
+    contacts: [
+      {
+        name: "김민준",
+        phone: "010-0000-2101",
+        email: "kim.minjun@kb.example.com",
+      },
+    ],
+    extraNote: null,
+  };
   const created = await request.post("/api/v1/suspensions", {
-    data: {
-      targetWorkIds: [work.id],
-      organizationId: null,
-      startAt: iso(date, "01:00"),
-      endAt: iso(date, "03:00"),
-      reason,
-      kftcAction: "작업 시간 동안 KB국민은행 조회 요청을 차단해 주세요.",
-      contacts: [
-        {
-          name: "김민준",
-          phone: "010-0000-2101",
-          email: "kim.minjun@kb.example.com",
-        },
-      ],
-      extraNote: null,
+    multipart: {
+      request: {
+        name: "request.json",
+        mimeType: "application/json",
+        buffer: Buffer.from(JSON.stringify(form)),
+      },
+      files: {
+        name: "작업공문.pdf",
+        mimeType: "application/pdf",
+        buffer: Buffer.from("%PDF-1.4 sample"),
+      },
     },
     headers: await csrf(request),
   });
@@ -279,6 +292,19 @@ test.describe("라. 일시중단", () => {
       .getByRole("textbox", { name: "중단 이유(작업 내용)" })
       .fill(reason);
     await page.getByRole("textbox", { name: "연락처" }).fill("010-0000-2101");
+    // 공문이 없으면 저장되지 않고 공문 칸 아래에 알려 준다.
+    await page.getByRole("button", { name: "저장" }).click();
+    await expect(page.getByTestId("pending-attachments-error")).toHaveText(
+      "공문을 첨부해 주세요. 일시중단은 공문이 있어야 등록할 수 있습니다.",
+    );
+    await expect(page).toHaveURL(/\/account-info\/suspensions\/new$/);
+    await shot(page, "suspension-editor-document-required");
+    await page.locator('input[type="file"]').setInputFiles({
+      name: "회선작업공문.pdf",
+      mimeType: "application/pdf",
+      buffer: Buffer.from("%PDF-1.4 sample"),
+    });
+    await expect(page.getByTestId("pending-attachments-error")).toHaveCount(0);
     await page.getByRole("button", { name: "저장" }).click();
 
     // 관련 업무가 없으니 지금 업무 영역에서 상세를 연다. 자기 기관 건이라 보이고, 자기가 올린 건이라 고칠 수 있다.
@@ -435,7 +461,9 @@ test.describe("라. 일시중단", () => {
 
     // 주간 취합(이번 주 확정 건의 기관·중단 기간·조치사항)을 확인 뒤 바로 보낸다.
     await page.getByRole("button", { name: "주간 취합 보내기" }).click();
-    const confirmWeekly = page.getByRole("dialog", { name: "주간 취합 보내기" });
+    const confirmWeekly = page.getByRole("dialog", {
+      name: "주간 취합 보내기",
+    });
     await expect(confirmWeekly).toContainText("보통 수·금");
     await confirmWeekly.getByRole("button", { name: "보내기" }).click();
     const weekly = page.getByRole("dialog", { name: "주간 취합을 보냈습니다" });
