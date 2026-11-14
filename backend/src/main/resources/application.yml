@@ -57,6 +57,10 @@ app:
     internal-cidrs: []
     header-override: false
     default-zone: EXTERNAL
+  organization:
+    # 참가기관 담당자에게 결제원 담당자 4자리 내선을 전체 번호로 보일 때 앞에 붙이는 대표 국번(예: 02-000-). 공개 저장소라 실제 국번은
+    # 배포 설정(환경 변수 APP_ORGANIZATION_KFTC_OFFICE_PHONE_PREFIX)으로 넣는다. 비우면 4자리 그대로 보인다.
+    kftc-office-phone-prefix: ""
   support:
     # 로그인 화면 "문의 메일 보내기" 주소. 공개 저장소라 실제 주소는 배포 설정(환경 변수 APP_SUPPORT_INQUIRY_EMAIL)으로 넣는다. 비우면 문의하기 칸이 빠진다.
     inquiry-email: ""

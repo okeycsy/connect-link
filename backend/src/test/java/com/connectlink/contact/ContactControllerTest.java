@@ -204,6 +204,41 @@ class ContactControllerTest {
   }
 
   @Test
+  void 기관_담당자에게는_결제원_내선을_대표_국번이_붙은_전체_번호로_보인다() throws Exception {
+    mockMvc
+        .perform(
+            get(BASE + "/" + contactId("hong.sungmin@kftc.example.com", Business.ACCOUNT_INFO))
+                .with(gana()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.extensionPhone").value("02-000-1101"));
+    // 기관 담당자 자기 번호는 원래 전체 번호라 그대로다.
+    mockMvc
+        .perform(get(BASE).param("business", "account-info").with(gana()))
+        .andExpect(status().isOk())
+        .andExpect(
+            jsonPath(
+                "$.content[?(@.organizationType == 'KFTC')].extensionPhone",
+                everyItem(org.hamcrest.Matchers.startsWith("02-000-"))))
+        .andExpect(
+            jsonPath(
+                "$.content[?(@.organizationType != 'KFTC')].extensionPhone",
+                everyItem(not(org.hamcrest.Matchers.startsWith("02-000-")))));
+  }
+
+  @Test
+  void 결제원_쪽에는_결제원_내선을_4자리_그대로_보인다() throws Exception {
+    Long id = contactId("hong.sungmin@kftc.example.com", Business.ACCOUNT_INFO);
+    mockMvc
+        .perform(get(BASE + "/" + id).with(hong()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.extensionPhone").value("1101"));
+    mockMvc
+        .perform(get(BASE + "/" + id).with(TestUsers.as(CONTROL_ROOM)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.extensionPhone").value("1101"));
+  }
+
+  @Test
   void 검색과_필터는_내부망에서만_한다() throws Exception {
     mockMvc
         .perform(external(get(BASE).param("business", "account-info").param("q", "김").with(hong())))
