@@ -4,13 +4,13 @@ import com.connectlink.auth.CurrentUser;
 import com.connectlink.common.BusinessException;
 import com.connectlink.organization.Business;
 import com.connectlink.organization.Organization;
+import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-import java.time.Clock;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -51,8 +51,8 @@ public class AccountService {
    * 회사 이메일과 비밀번호를 확인하고 로그인 사용자를 돌려준다. 계정이 없거나 비밀번호가 틀리면 같은 401 이고, 비밀번호가 맞을 때만 승인 대기·반려 같은 상태를 알려
    * 준다.
    *
-   * <p>연달아 {@code app.account.login.max-failures} 번 틀리면 {@code lock-duration} 동안 맞는 비밀번호로도 로그인할 수 없다(403
-   * {@code ACCOUNT_LOCKED}, 개인정보의 안전성 확보조치 기준 제5조). 비밀번호 찾기로 새 비밀번호를 정하면 풀린다. 틀린 횟수는 오류로 끝나도
+   * <p>연달아 {@code app.account.login.max-failures} 번 틀리면 {@code lock-duration} 동안 맞는 비밀번호로도 로그인할 수
+   * 없다(403 {@code ACCOUNT_LOCKED}, 개인정보의 안전성 확보조치 기준 제5조). 비밀번호 찾기로 새 비밀번호를 정하면 풀린다. 틀린 횟수는 오류로 끝나도
    * 남아야 하므로 이 메서드는 {@link BusinessException} 에 되돌리지 않는다.
    */
   @Transactional(noRollbackFor = BusinessException.class)

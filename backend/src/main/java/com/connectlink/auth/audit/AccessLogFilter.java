@@ -15,8 +15,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * 개인정보를 다루는 요청({@link AccessLogRule})이 끝나면 접속기록을 남긴다. Spring Security 필터 뒤에서 돌아 로그인 사용자를 안다. 로그인하지 않은
- * 요청은 남기지 않는다(로그인 실패는 계정 잠금이 센다). 기록을 남기지 못해도 요청은 그대로 끝낸다.
+ * 개인정보를 다루는 요청({@link AccessLogRule})이 끝나면 접속기록을 남긴다. Spring Security 필터 뒤에서 돌아 로그인 사용자를 안다. 로그인하지
+ * 않은 요청은 남기지 않는다(로그인 실패는 계정 잠금이 센다). 기록을 남기지 못해도 요청은 그대로 끝낸다.
  */
 @Component
 public class AccessLogFilter extends OncePerRequestFilter {
@@ -46,7 +46,8 @@ public class AccessLogFilter extends OncePerRequestFilter {
     }
   }
 
-  private void record(AccessLogRule rule, HttpServletRequest request, HttpServletResponse response) {
+  private void record(
+      AccessLogRule rule, HttpServletRequest request, HttpServletResponse response) {
     Authentication auth = SecurityContextHolder.getContext().getAuthentication();
     if (auth == null || !(auth.getPrincipal() instanceof CurrentUser user)) {
       return;

@@ -67,7 +67,7 @@ test.describe('회원가입', () => {
     await step4.getByLabel('부서').fill('디지털금융부');
     await step4.getByRole('textbox', { name: '팀', exact: true }).fill('플랫폼팀');
     await step4.getByLabel('내선번호').fill('02-0000-1234');
-    await step4.getByLabel('휴대폰번호').fill('010-0000-7777');
+    await step4.getByRole('textbox', { name: '휴대폰번호 (선택)' }).fill('010-0000-7777');
     // 개인정보 수집·이용 안내(필수 확인)와 휴대폰번호 선택 동의. 전문은 새 탭으로 연다.
     const privacy = step4.getByTestId('sign-up-privacy');
     await expect(privacy).toContainText('회원 탈퇴 시까지');

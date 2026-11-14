@@ -20,9 +20,7 @@ public class SupportInfoController {
   }
 
   @GetMapping
-  @Operation(
-      summary = "문의 안내 조회",
-      description = "문의 메일 주소와 개인정보 관리부서 이름·전화. 설정하지 않은 값은 null 이다.")
+  @Operation(summary = "문의 안내 조회", description = "문의 메일 주소와 개인정보 관리부서 이름·전화. 설정하지 않은 값은 null 이다.")
   public SupportInfoResponse supportInfo() {
     return new SupportInfoResponse(
         blankToNull(properties.getInquiryEmail()),

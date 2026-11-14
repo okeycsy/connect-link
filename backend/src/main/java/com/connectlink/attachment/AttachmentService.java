@@ -2,9 +2,9 @@ package com.connectlink.attachment;
 
 import com.connectlink.attachment.dto.AttachmentResponse;
 import com.connectlink.auth.CurrentUser;
+import com.connectlink.common.BusinessException;
 import com.connectlink.common.NetworkZoneResolver;
 import com.connectlink.organization.OrganizationType;
-import com.connectlink.common.BusinessException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -25,8 +25,8 @@ import org.springframework.web.multipart.MultipartFile;
  * 첨부파일. 기능 모듈은 자기 대상(ownerType, ownerId)으로 이 Service 를 쓰고, 누가 보고 올릴 수 있는지는 {@link
  * AttachmentOwnerAccess} 빈으로 알려 준다. 파일 내용은 {@link FileStorage} 로만 다룬다.
  *
- * <p>결제원 계정은 인터넷망에서 첨부파일을 올리거나 내려받지 못한다(403 {@code INTERNAL_ONLY}). 결제원 보안 규정이 인터넷PC 에서
- * 업무자료를 작성·저장·송수신하지 못하게 해서다. 목록(이름·크기)은 보인다. 참가기관 담당자는 망과 상관없다.
+ * <p>결제원 계정은 인터넷망에서 첨부파일을 올리거나 내려받지 못한다(403 {@code INTERNAL_ONLY}). 결제원 보안 규정이 인터넷PC 에서 업무자료를
+ * 작성·저장·송수신하지 못하게 해서다. 목록(이름·크기)은 보인다. 참가기관 담당자는 망과 상관없다.
  */
 @Service
 @Transactional(readOnly = true)

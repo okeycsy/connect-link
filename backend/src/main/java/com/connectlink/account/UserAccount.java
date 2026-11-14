@@ -96,8 +96,8 @@ public class UserAccount extends AuditedEntity {
   private String mobilePhone;
 
   /**
-   * 개인정보 수집·이용 안내(필수 항목, 계약 이행)를 확인한 일시와 그때 처리방침의 판({@link PrivacyPolicy#VERSION}). 이 기능 전에 만든
-   * 계정은 없다.
+   * 개인정보 수집·이용 안내(필수 항목, 계약 이행)를 확인한 일시와 그때 처리방침의 판({@link PrivacyPolicy#VERSION}). 이 기능 전에 만든 계정은
+   * 없다.
    */
   @Column(name = "privacy_confirmed_at")
   private LocalDateTime privacyConfirmedAt;
@@ -359,7 +359,8 @@ public class UserAccount extends AuditedEntity {
    *
    * @param mobilePhoneAgreed 휴대폰번호 수집·이용(선택)에 동의했는지. 휴대폰번호가 없으면 남기지 않는다
    */
-  public void recordPrivacyNotice(String policyVersion, boolean mobilePhoneAgreed, LocalDateTime now) {
+  public void recordPrivacyNotice(
+      String policyVersion, boolean mobilePhoneAgreed, LocalDateTime now) {
     this.privacyConfirmedAt = now;
     this.privacyPolicyVersion = policyVersion;
     this.mobilePhoneAgreedAt = mobilePhoneAgreed && mobilePhone != null ? now : null;

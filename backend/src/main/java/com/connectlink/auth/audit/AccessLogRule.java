@@ -6,8 +6,8 @@ import java.util.Optional;
 import org.springframework.util.AntPathMatcher;
 
 /**
- * 접속기록을 남기는 요청과 그 수행 업무 이름. 개인정보(담당자 이름·연락처·이메일)를 조회·등록·수정·삭제·내려받는 API 와 로그인이다. 개인정보를 다루는 API 를
- * 새로 만들면 여기에 한 줄을 더한다.
+ * 접속기록을 남기는 요청과 그 수행 업무 이름. 개인정보(담당자 이름·연락처·이메일)를 조회·등록·수정·삭제·내려받는 API 와 로그인이다. 개인정보를 다루는 API 를 새로
+ * 만들면 여기에 한 줄을 더한다.
  *
  * @param method HTTP 방법
  * @param pattern 경로(Ant 패턴, {@code {id}} 는 대상 번호)
