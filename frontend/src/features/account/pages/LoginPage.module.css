@@ -319,8 +319,26 @@
   }
 }
 
-.footerDivider {
-  width: 1px;
-  height: 12px;
-  background: var(--cl-line);
+/* 개인정보처리방침: 로고 "결" 파랑의 알약 버튼(시행령 제31조 ③, 다른 안내와 구분되게). */
+.privacyButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1.5px solid var(--cl-brand-blue);
+  border-radius: 999px;
+  background: var(--cl-card);
+  color: var(--cl-brand-blue);
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 700;
+  transition: background 160ms var(--cl-ease);
+
+  &:hover {
+    background: var(--cl-brand-blue-soft);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cl-brand-blue);
+    outline-offset: 2px;
+  }
 }

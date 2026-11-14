@@ -50,19 +50,20 @@
 
 ### 2.2 CSS 변수 (global.css)
 
-| 변수                                                           | 값                                              | 용도                               |
-| -------------------------------------------------------------- | ----------------------------------------------- | ---------------------------------- |
-| `--cl-page`                                                    | #F8F8F9                                         | 페이지 바탕                        |
-| `--cl-card`                                                    | #FFFFFF                                         | 본문, 카드                         |
-| `--cl-sunken`                                                  | #F3F4F6                                         | 레일, 검색 칸, 목록 한 줄          |
-| `--cl-line` / `--cl-line-soft`                                 | #E3E4E8 / #EDEEF1                               | 경계선 / 표 행 구분                |
-| `--cl-ink` / `--cl-ink-soft` / `--cl-ink-muted`                | #1D1715 / #3E4048 / #62656D                     | 글자 3단                           |
-| `--cl-online`                                                  | #3FA36B                                         | 사용자 아바타의 접속 점(이 용도만) |
-| `--cl-pastel-peach` / `-sky` / `-butter`                       | #F6D6CC / #CFE0F3 / #F7EFB8                     | 파스텔 번짐                        |
-| `--cl-blob-peach` / `-blush` / `-rose` / `-cream` / `-apricot` | #F6C9BC / #F3D9C9 / #F4D3CB / #F8F0BE / #F6DCCF | 로그인 배경 번짐 전용              |
-| `--cl-font-sans` / `--cl-font-mono` (fonts.css)                | Pretendard Variable … / ui-monospace …          | 글꼴(3절)                          |
-| `--cl-ease`                                                    | cubic-bezier(0.2, 0.8, 0.2, 1)                  | 모든 전환(160ms)                   |
-| `--cl-page-gutter`                                             | 24px                                            | 본문 안쪽 여백                     |
+| 변수                                                           | 값                                              | 용도                                                                       |
+| -------------------------------------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------- |
+| `--cl-page`                                                    | #F8F8F9                                         | 페이지 바탕                                                                |
+| `--cl-card`                                                    | #FFFFFF                                         | 본문, 카드                                                                 |
+| `--cl-sunken`                                                  | #F3F4F6                                         | 레일, 검색 칸, 목록 한 줄                                                  |
+| `--cl-line` / `--cl-line-soft`                                 | #E3E4E8 / #EDEEF1                               | 경계선 / 표 행 구분                                                        |
+| `--cl-ink` / `--cl-ink-soft` / `--cl-ink-muted`                | #1D1715 / #3E4048 / #62656D                     | 글자 3단                                                                   |
+| `--cl-online`                                                  | #3FA36B                                         | 사용자 아바타의 접속 점(이 용도만)                                         |
+| `--cl-brand-blue` / `-soft`                                    | #0057EB / #E8F0FE                               | 로고 "결" 파랑. 로그인 바닥글 개인정보처리방침 버튼만(2026-11-14 SHY 요청) |
+| `--cl-pastel-peach` / `-sky` / `-butter`                       | #F6D6CC / #CFE0F3 / #F7EFB8                     | 파스텔 번짐                                                                |
+| `--cl-blob-peach` / `-blush` / `-rose` / `-cream` / `-apricot` | #F6C9BC / #F3D9C9 / #F4D3CB / #F8F0BE / #F6DCCF | 로그인 배경 번짐 전용                                                      |
+| `--cl-font-sans` / `--cl-font-mono` (fonts.css)                | Pretendard Variable … / ui-monospace …          | 글꼴(3절)                                                                  |
+| `--cl-ease`                                                    | cubic-bezier(0.2, 0.8, 0.2, 1)                  | 모든 전환(160ms)                                                           |
+| `--cl-page-gutter`                                             | 24px                                            | 본문 안쪽 여백                                                             |
 
 ### 2.3 상태 색 (업무 상태 → 배지 색)
 
