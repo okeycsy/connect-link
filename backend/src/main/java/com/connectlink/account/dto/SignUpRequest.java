@@ -5,6 +5,7 @@ import com.connectlink.organization.JobRole;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import javax.validation.Valid;
+import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
@@ -15,6 +16,10 @@ import javax.validation.constraints.Size;
 /**
  * 가입 신청. 화면의 4단계(① 회사 이메일 인증 ② 기관과 업무 ③ 직무 ④ 담당자 정보와 비밀번호)를 한 번에 보낸다. 서버가 모든 칸을 다시 검증하고, 업무가 기관의 참여
  * 업무인지와 전산 세부 직무 같은 규칙은 Service 가 본다.
+ *
+ * <p>필수 항목은 계약 이행(개인정보 보호법 제15조 제1항 제4호)으로 처리하므로 동의 대신 수집·이용 안내를 확인해야 신청을 받는다. 휴대폰번호는
+ * 정보주체 동의(같은 항 제1호)로 받는 선택 항목이라, 적었으면 {@code mobilePhoneConsent} 도 있어야 한다(Service 가 본다). 선택 동의를
+ * 하지 않아도 가입할 수 있다(제22조 제5항).
  */
 public record SignUpRequest(
     @NotBlank(message = "이메일 인증을 먼저 해 주세요.") String verificationToken,
@@ -45,7 +50,12 @@ public record SignUpRequest(
         String mobilePhone,
     @NotBlank(message = "비밀번호를 입력해 주세요.")
         @Pattern(regexp = SignUpRequest.PASSWORD_RULE, message = SignUpRequest.PASSWORD_MESSAGE)
-        String password) {
+        String password,
+    @Schema(description = "개인정보 수집·이용 안내(필수 항목) 확인")
+        @AssertTrue(message = "개인정보 수집·이용 안내를 확인해 주세요.")
+        boolean privacyNoticeConfirmed,
+    @Schema(description = "휴대폰번호 수집·이용(선택) 동의. 휴대폰번호를 적었으면 동의해야 한다.")
+        boolean mobilePhoneConsent) {
 
   /** 영문, 숫자, 특수문자를 하나 이상씩 넣은 8~64자. 빈 값은 @NotBlank 가 따로 알린다. */
   public static final String PASSWORD_RULE =

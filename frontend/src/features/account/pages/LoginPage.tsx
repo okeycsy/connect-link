@@ -234,6 +234,19 @@ export function LoginPage() {
               </ScrollArea>
             </Paper>
           )}
+
+          {/* 개인정보 처리방침은 다른 안내와 구분되게 굵게 둔다(개인정보 보호법 시행령 제31조 제3항). */}
+          <Anchor
+            component={Link}
+            to="/privacy"
+            size="sm"
+            fw={700}
+            ta="center"
+            className={classes.privacyLink}
+            data-testid="login-privacy-link"
+          >
+            개인정보 처리방침
+          </Anchor>
         </Stack>
       </Box>
     </Box>

@@ -60,6 +60,9 @@ app:
   support:
     # 로그인 화면 "문의 메일 보내기" 주소. 공개 저장소라 실제 주소는 배포 설정(환경 변수 APP_SUPPORT_INQUIRY_EMAIL)으로 넣는다. 비우면 문의하기 칸이 빠진다.
     inquiry-email: ""
+    # 개인정보 처리방침의 개인정보 관리부서 이름과 전화. 실제 값은 배포 설정(APP_SUPPORT_PRIVACY_DEPARTMENT, APP_SUPPORT_PRIVACY_PHONE)으로만 넣는다.
+    privacy-department: ""
+    privacy-phone: ""
   account:
     verification:
       # 회사 이메일 인증. 명세에 없어 기본값을 두었다(docs/decisions.md).

@@ -298,3 +298,10 @@
   min-height: 0;
   max-height: 100%;
 }
+
+/* 로그인 열 맨 아래 개인정보 처리방침 링크. 번짐 위에 보이게 앞에 둔다. */
+.privacyLink {
+  position: relative;
+  z-index: 2;
+  flex: none;
+}

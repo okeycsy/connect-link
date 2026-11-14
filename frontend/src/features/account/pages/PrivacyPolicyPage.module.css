@@ -1,0 +1,72 @@
+/* 이용 가이드와 같은 틀: 가운데 1040px, 왼쪽 목차 + 본문. 휴대폰 폭에서는 목차를 숨긴다. */
+.body {
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding-bottom: 24px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.nav {
+  position: sticky;
+  top: 72px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: calc(100vh - 96px);
+  overflow-y: auto;
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    display: none;
+  }
+}
+
+.navLink {
+  border-radius: 8px;
+}
+
+.content {
+  min-width: 0;
+}
+
+/* 목차로 옮겨 올 때 머리 막대에 가리지 않게 */
+.article {
+  scroll-margin-top: 72px;
+}
+
+.list {
+  padding-right: 8px;
+}
+
+.tile {
+  height: 100%;
+}
+
+/* 보호책임자 연락처: sunken 면 radius 14 */
+.officer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: var(--mantine-radius-lg);
+  background: var(--cl-sunken);
+}
+
+.officerRow {
+  display: flex;
+  gap: 12px;
+}
+
+.officerLabel {
+  flex: 0 0 132px;
+}

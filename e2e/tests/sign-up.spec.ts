@@ -68,6 +68,15 @@ test.describe('회원가입', () => {
     await step4.getByRole('textbox', { name: '팀', exact: true }).fill('플랫폼팀');
     await step4.getByLabel('내선번호').fill('02-0000-1234');
     await step4.getByLabel('휴대폰번호').fill('010-0000-7777');
+    // 개인정보 수집·이용 안내(필수 확인)와 휴대폰번호 선택 동의. 전문은 새 탭으로 연다.
+    const privacy = step4.getByTestId('sign-up-privacy');
+    await expect(privacy).toContainText('회원 탈퇴 시까지');
+    await expect(privacy.getByRole('link', { name: /개인정보 처리방침 전문/ })).toHaveAttribute(
+      'target',
+      '_blank',
+    );
+    await step4.getByLabel('[필수] 개인정보 수집·이용 안내를 확인했습니다.').check();
+    await step4.getByLabel('[선택] 휴대폰번호 수집·이용에 동의합니다.').check();
     // 서버 규칙에 맞지 않는 비밀번호는 서버 메시지를 그 칸 아래에 보여 준다.
     await step4
       .getByLabel(/^비밀번호/)

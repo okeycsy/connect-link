@@ -11,8 +11,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-/** 문의 안내는 로그인 없이 보고, 설정한 주소를 그대로 준다. */
-@SpringBootTest(properties = "app.support.inquiry-email= help@connect-link.example.com ")
+/** 문의 안내는 로그인 없이 보고, 설정한 주소와 개인정보 관리부서 연락처를 그대로 준다. */
+@SpringBootTest(
+    properties = {
+      "app.support.inquiry-email= help@connect-link.example.com ",
+      "app.support.privacy-department=연결이 운영팀",
+      "app.support.privacy-phone=02-0000-0000"
+    })
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class SupportInfoControllerTest {
@@ -24,6 +29,8 @@ class SupportInfoControllerTest {
     mockMvc
         .perform(get("/api/v1/support-info"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.inquiryEmail").value("help@connect-link.example.com"));
+        .andExpect(jsonPath("$.inquiryEmail").value("help@connect-link.example.com"))
+        .andExpect(jsonPath("$.privacyDepartment").value("연결이 운영팀"))
+        .andExpect(jsonPath("$.privacyPhone").value("02-0000-0000"));
   }
 }
