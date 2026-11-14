@@ -227,8 +227,8 @@ public class SuspensionService {
   // ---- 등록·수정·삭제 ----
 
   /**
-   * 검토 대기로 등록하고 공문을 붙인 뒤 그 업무 결제원 담당자에게 메일·매터모스트로 알린다. 기관 일시중단은 공문이 하나 이상 있어야 한다. 결제원 작업
-   * 안내는 바로 확정이고 알림을 보내지 않으며(일시중단 목록·홈에만 보인다) 공문은 골라서 붙인다.
+   * 검토 대기로 등록하고 공문을 붙인 뒤 그 업무 결제원 담당자에게 메일·매터모스트로 알린다. 기관 일시중단은 공문이 하나 이상 있어야 한다. 결제원 작업 안내는 바로
+   * 확정이고 알림을 보내지 않으며(일시중단 목록·홈에만 보인다) 공문은 골라서 붙인다.
    */
   public SuspensionDetailResponse create(
       CurrentUser user, SuspensionSaveRequest body, List<MultipartFile> documents) {

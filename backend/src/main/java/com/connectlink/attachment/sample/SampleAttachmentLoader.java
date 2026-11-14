@@ -16,10 +16,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 샘플 시드의 첨부 내용을 저장소에 넣는다. 시드 SQL 은 첨부 행만 넣고 저장소 키 자리에 {@code seed:파일이름} 을 적는다(같은 파일을 여러
- * 행에 붙이면 {@code seed:파일이름#번호}). 서버가 뜰 때 {@code
- * db/seed/files/파일이름} 을 {@link FileStorage} 에 저장하고 행의 키와 크기를 실제 값으로 바꾼다. 메모리 DB 라 시드는 뜰 때마다 새로
- * 들어가고, 샘플 데이터를 다시 넣을 때({@link SampleDataRefreshedEvent})도 다시 한다.
+ * 샘플 시드의 첨부 내용을 저장소에 넣는다. 시드 SQL 은 첨부 행만 넣고 저장소 키 자리에 {@code seed:파일이름} 을 적는다(같은 파일을 여러 행에 붙이면
+ * {@code seed:파일이름#번호}). 서버가 뜰 때 {@code db/seed/files/파일이름} 을 {@link FileStorage} 에 저장하고 행의 키와 크기를
+ * 실제 값으로 바꾼다. 메모리 DB 라 시드는 뜰 때마다 새로 들어가고, 샘플 데이터를 다시 넣을 때({@link SampleDataRefreshedEvent})도 다시 한다.
  */
 @Component
 @Profile({"local", "demo", "test"})

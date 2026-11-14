@@ -129,9 +129,7 @@ class SuspensionControllerTest {
   /** 등록. 양식(request)과 공문 하나(files)를 multipart 로 보낸다. */
   private ResultActions create(Object body, RequestPostProcessor user) throws Exception {
     return create(
-        body,
-        user,
-        new MockMultipartFile("files", "공문.pdf", "application/pdf", "pdf".getBytes()));
+        body, user, new MockMultipartFile("files", "공문.pdf", "application/pdf", "pdf".getBytes()));
   }
 
   private ResultActions create(Object body, RequestPostProcessor user, MockMultipartFile... files)
@@ -181,9 +179,7 @@ class SuspensionControllerTest {
   }
 
   private Long createAsKim(String reason) throws Exception {
-    return json(create(form(reason), kim()).andExpect(status().isCreated()))
-        .get("id")
-        .asLong();
+    return json(create(form(reason), kim()).andExpect(status().isCreated())).get("id").asLong();
   }
 
   private List<String> notified(String bodyMark) {
@@ -664,8 +660,7 @@ class SuspensionControllerTest {
             contact("김민준", "010-0000-2101", "kim.minjun@kb.example.com"),
             contact("한예린", "010-0000-2102", "han.yerin@kb.example.com"),
             contact("홍성민", "010-0000-0001", "hong.sungmin@kftc.example.com")));
-    Long id =
-        json(create(body, kim()).andExpect(status().isCreated())).get("id").asLong();
+    Long id = json(create(body, kim()).andExpect(status().isCreated())).get("id").asLong();
     long before = outboxRepository.count();
 
     send(post(BASE + "/" + id + "/confirmation"), Map.of("handover", "차단합니다."), hong())

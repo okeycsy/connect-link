@@ -122,8 +122,7 @@ public class SuspensionController {
               + " 담당자에게 메일·매터모스트 알림을 보낸다. 공문을 더 올리거나 바꾸는 것은 첨부 API 로 한다.")
   public SuspensionDetailResponse create(
       @Valid @RequestPart("request") SuspensionSaveRequest request,
-      @Parameter(description = "공문 파일(여러 개 가능)")
-          @RequestPart(value = "files", required = false)
+      @Parameter(description = "공문 파일(여러 개 가능)") @RequestPart(value = "files", required = false)
           List<MultipartFile> files) {
     return suspensionService.create(
         currentUserProvider.require(), request, files == null ? List.of() : files);

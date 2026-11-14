@@ -18,8 +18,8 @@ public interface AttachmentOwnerAccess {
   boolean canEdit(CurrentUser user, Long ownerId);
 
   /**
-   * 첨부가 하나 이상 꼭 있어야 하는 대상이면 마지막 첨부를 지우려 할 때 보일 문구(예: 일시중단 공문). 비어 있으면 마지막 첨부도 지울 수 있다. 대상 자체를
-   * 지울 때({@link AttachmentService#deleteAllOf})는 따지지 않는다.
+   * 첨부가 하나 이상 꼭 있어야 하는 대상이면 마지막 첨부를 지우려 할 때 보일 문구(예: 일시중단 공문). 비어 있으면 마지막 첨부도 지울 수 있다. 대상 자체를 지울
+   * 때({@link AttachmentService#deleteAllOf})는 따지지 않는다.
    */
   default Optional<String> requiredMessage(Long ownerId) {
     return Optional.empty();
