@@ -23,7 +23,8 @@
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       'panel'
-      'sheet';
+      'sheet'
+      'footer';
   }
 }
 
@@ -300,8 +301,26 @@
 }
 
 /* 로그인 열 맨 아래 개인정보 처리방침 링크. 번짐 위에 보이게 앞에 둔다. */
-.privacyLink {
-  position: relative;
+/*
+ * 바닥글(개인정보처리방침 · 프로토타입 안내): 화면 맨 아래 왼쪽. 넓은 화면은 소개 칸 아래 여백 위에 띄워 두고,
+ * 휴대폰 폭은 로그인 카드 아래 한 줄로 쌓는다.
+ */
+.footer {
+  position: absolute;
+  left: 56px;
+  bottom: 20px;
   z-index: 2;
-  flex: none;
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    grid-area: footer;
+    position: static;
+    justify-content: center;
+    padding: 0 16px 24px;
+  }
+}
+
+.footerDivider {
+  width: 1px;
+  height: 12px;
+  background: var(--cl-line);
 }
