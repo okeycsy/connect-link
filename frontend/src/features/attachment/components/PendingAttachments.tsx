@@ -2,6 +2,8 @@ import { ActionIcon, Button, FileButton, Group, Stack, Text, ThemeIcon } from '@
 import { IconFile, IconTrash, IconUpload } from '@tabler/icons-react';
 
 import { formatBytes } from '../../../shared/format';
+import { useFileTransferBlocked } from '../hooks';
+import { FileTransferBlockedNote } from './FileTransferBlockedNote';
 
 /**
  * 저장 전에 고른 첨부파일. 대상(의견 요청, 일시중단)은 저장해야 번호가 생기므로 저장한 뒤 이 순서대로 올린다(올리기는 쓰는 화면이 한다).
@@ -19,6 +21,10 @@ export function PendingAttachments({
   /** 필수 첨부를 고르지 않았을 때 등 칸 아래에 보일 오류 문구. */
   error?: string;
 }) {
+  const blocked = useFileTransferBlocked();
+  if (blocked) {
+    return <FileTransferBlockedNote />;
+  }
   return (
     <Stack gap="sm" data-testid="pending-attachments">
       <Group justify="space-between" align="center">

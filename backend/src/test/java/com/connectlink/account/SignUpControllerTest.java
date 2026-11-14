@@ -62,6 +62,7 @@ class SignUpControllerTest {
   @Autowired private ObjectMapper objectMapper;
   @Autowired private MutableClock clock;
   @Autowired private OrganizationService organizationService;
+  @Autowired private UserAccountRepository accountRepository;
 
   private ResultActions postJson(String path, Object body) throws Exception {
     return mockMvc.perform(
@@ -163,6 +164,8 @@ class SignUpControllerTest {
     body.put("extensionPhone", "02-0000-1234");
     body.put("mobilePhone", "010-0000-9999");
     body.put("password", "Welcome1!");
+    body.put("privacyNoticeConfirmed", true);
+    body.put("mobilePhoneConsent", true);
     return body;
   }
 
@@ -370,6 +373,54 @@ class SignUpControllerTest {
     postJson("/api/v1/sign-ups", businessBody)
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.jobRoleLabel").value("현업"));
+  }
+
+  @Test
+  void 개인정보_수집_이용_안내를_확인하지_않으면_신청을_받지_않는다() throws Exception {
+    String email = "no-consent@kb.example.com";
+    Map<String, Object> body = signUpBody(verify(email), email);
+    body.put("privacyNoticeConfirmed", false);
+    postJson("/api/v1/sign-ups", body)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+        .andExpect(
+            jsonPath(
+                "$.fieldErrors[?(@.field == 'privacyNoticeConfirmed')].message",
+                hasItem("개인정보 수집·이용 안내를 확인해 주세요.")));
+    assertThat(accountRepository.findByEmail(email)).isEmpty();
+  }
+
+  @Test
+  void 휴대폰번호를_적었는데_선택_동의가_없으면_신청을_받지_않는다() throws Exception {
+    String email = "no-mobile-consent@kb.example.com";
+    Map<String, Object> body = signUpBody(verify(email), email);
+    body.put("mobilePhoneConsent", false);
+    postJson("/api/v1/sign-ups", body)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("MOBILE_PHONE_CONSENT_REQUIRED"))
+        .andExpect(jsonPath("$.fieldErrors[0].field").value("mobilePhoneConsent"));
+    assertThat(accountRepository.findByEmail(email)).isEmpty();
+  }
+
+  @Test
+  void 안내_확인_일시와_처리방침_판과_선택_동의를_계정에_남긴다() throws Exception {
+    String withMobile = "consent-mobile@kb.example.com";
+    postJson("/api/v1/sign-ups", signUpBody(verify(withMobile), withMobile))
+        .andExpect(status().isCreated());
+    UserAccount account = accountRepository.findByEmail(withMobile).orElseThrow();
+    assertThat(account.getPrivacyConfirmedAt()).isNotNull();
+    assertThat(account.getPrivacyPolicyVersion()).isEqualTo(PrivacyPolicy.VERSION);
+    assertThat(account.getMobilePhoneAgreedAt()).isEqualTo(account.getPrivacyConfirmedAt());
+
+    // 휴대폰번호를 적지 않으면 선택 동의는 남지 않는다.
+    String withoutMobile = "consent-no-mobile@kb.example.com";
+    Map<String, Object> body = signUpBody(verify(withoutMobile), withoutMobile);
+    body.put("mobilePhone", null);
+    body.put("mobilePhoneConsent", false);
+    postJson("/api/v1/sign-ups", body).andExpect(status().isCreated());
+    UserAccount noMobile = accountRepository.findByEmail(withoutMobile).orElseThrow();
+    assertThat(noMobile.getPrivacyConfirmedAt()).isNotNull();
+    assertThat(noMobile.getMobilePhoneAgreedAt()).isNull();
   }
 
   @Test

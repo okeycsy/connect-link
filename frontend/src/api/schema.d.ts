@@ -1642,7 +1642,7 @@ export interface paths {
     };
     /**
      * 문의 안내 조회
-     * @description 문의 메일 주소. 설정하지 않았으면 inquiryEmail 이 null 이다.
+     * @description 문의 메일 주소와 개인정보 관리부서 이름·전화. 설정하지 않은 값은 null 이다.
      */
     get: operations['supportInfo'];
     put?: never;
@@ -2227,6 +2227,26 @@ export interface paths {
     };
     /** 첨부파일 내려받기 (원래 이름으로) */
     get: operations['download'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/access-logs': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 접속기록 목록
+     * @description 개인정보를 다룬 요청의 기록(최근 것부터). 관리자만, 내부망에서만 본다(403 INTERNAL_ONLY). 날짜는 그날 하루 전체를 포함한다.
+     */
+    get: operations['list_15'];
     put?: never;
     post?: never;
     delete?: never;
@@ -3097,6 +3117,10 @@ export interface components {
       extensionPhone: string;
       mobilePhone?: string | null;
       password: string;
+      /** @description 개인정보 수집·이용 안내(필수 항목) 확인 */
+      privacyNoticeConfirmed: boolean;
+      /** @description 휴대폰번호 수집·이용(선택) 동의. 휴대폰번호를 적었으면 동의해야 한다. */
+      mobilePhoneConsent: boolean;
     };
     SignUpResponse: {
       email: string;
@@ -3606,6 +3630,8 @@ export interface components {
     };
     SupportInfoResponse: {
       inquiryEmail?: string | null;
+      privacyDepartment?: string | null;
+      privacyPhone?: string | null;
     };
     PageResponseSignUpApplicationResponse: {
       content: components['schemas']['SignUpApplicationResponse'][];
@@ -4061,6 +4087,35 @@ export interface components {
     };
     PageResponseChangeHistoryResponse: {
       content: components['schemas']['ChangeHistoryResponse'][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+      last: boolean;
+    };
+    AccessLogResponse: {
+      /** Format: int64 */
+      id: number;
+      /** Format: date-time */
+      accessedAt: string;
+      accountEmail: string;
+      accountName?: string | null;
+      organizationName?: string | null;
+      ipAddress: string;
+      action: string;
+      /** @description 처리한 정보주체를 가리키는 값(대상 번호 또는 조회 조건) */
+      target?: string | null;
+      httpMethod: string;
+      requestPath: string;
+      /** Format: int32 */
+      statusCode: number;
+    };
+    PageResponseAccessLogResponse: {
+      content: components['schemas']['AccessLogResponse'][];
       /** Format: int32 */
       page: number;
       /** Format: int32 */
@@ -7332,6 +7387,32 @@ export interface operations {
         };
         content: {
           'application/octet-stream': string;
+        };
+      };
+    };
+  };
+  list_15: {
+    parameters: {
+      query?: {
+        from?: string;
+        to?: string;
+        email?: string;
+        page?: number;
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['PageResponseAccessLogResponse'];
         };
       };
     };

@@ -93,6 +93,60 @@ class AttachmentControllerTest {
   }
 
   @Test
+  void 결제원_계정은_인터넷망에서_첨부를_올리거나_내려받지_못하고_참가기관은_된다() throws Exception {
+    MvcResult uploaded =
+        mockMvc
+            .perform(
+                multipart("/api/v1/attachments")
+                    .file(new MockMultipartFile("file", "공문.pdf", "application/pdf", CONTENT))
+                    .param("ownerType", "DEMO")
+                    .param("ownerId", "8")
+                    .with(TestUsers.admin())
+                    .with(csrf()))
+            .andExpect(status().isCreated())
+            .andReturn();
+    long id = objectMapper.readTree(uploaded.getResponse().getContentAsString()).get("id").asLong();
+
+    // 거부: 결제원 계정 + 인터넷망
+    mockMvc
+        .perform(
+            multipart("/api/v1/attachments")
+                .file(new MockMultipartFile("file", "공문2.pdf", "application/pdf", CONTENT))
+                .param("ownerType", "DEMO")
+                .param("ownerId", "8")
+                .header("X-Network-Zone", "EXTERNAL")
+                .with(TestUsers.admin())
+                .with(csrf()))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("INTERNAL_ONLY"));
+    mockMvc
+        .perform(
+            get("/api/v1/attachments/{id}/download", id)
+                .header("X-Network-Zone", "EXTERNAL")
+                .with(TestUsers.admin()))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("INTERNAL_ONLY"));
+    // 목록(이름·크기)은 보인다.
+    mockMvc
+        .perform(
+            get("/api/v1/attachments")
+                .param("ownerType", "DEMO")
+                .param("ownerId", "8")
+                .header("X-Network-Zone", "EXTERNAL")
+                .with(TestUsers.admin()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasSize(1)));
+
+    // 허용: 참가기관 담당자는 인터넷망에서도 내려받는다.
+    mockMvc
+        .perform(
+            get("/api/v1/attachments/{id}/download", id)
+                .header("X-Network-Zone", "EXTERNAL")
+                .with(TestUsers.ganaMember()))
+        .andExpect(status().isOk());
+  }
+
+  @Test
   void 빈_파일은_400이다() throws Exception {
     mockMvc
         .perform(

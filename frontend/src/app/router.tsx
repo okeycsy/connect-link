@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 
 import { LoginPage } from '../features/account/pages/LoginPage';
+import { PrivacyPolicyPage } from '../features/account/pages/PrivacyPolicyPage';
 import { UserGuidePage } from '../features/account/pages/UserGuidePage';
 import { MyInfoPage } from '../features/account/pages/MyInfoPage';
 import { SignUpApprovalPage } from '../features/account/pages/SignUpApprovalPage';
@@ -64,6 +65,7 @@ export const router = createBrowserRouter([
   { path: '/sign-up/pending', element: <SignUpPendingPage /> },
   { path: '/guide', element: <UserGuidePage /> },
   { path: '/guide/:topic', element: <UserGuidePage /> },
+  { path: '/privacy', element: <PrivacyPolicyPage /> },
   {
     path: '/',
     element: <AppShellLayout />,

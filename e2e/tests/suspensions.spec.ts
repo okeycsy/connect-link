@@ -166,7 +166,7 @@ test.describe("라. 일시중단", () => {
     await expect(calendar.locator("thead th").first()).toHaveText("일");
     await expect(calendar.locator("thead th").last()).toHaveText("토");
     await shot(page, "suspension-editor-calendar");
-    // 달력을 연 뒤 초점이 문서(body)에 남는 때가 있어(같은 서버에서 다시 돌 때 등) 달력에 대고 Esc 를 누른다.
+    // 전체 화면 캡처 뒤에는 초점이 body 로 갈 때가 있어 달력 안에서 Esc 를 누른다.
     await calendar.press("Escape");
     await expect(calendar).toBeHidden();
 

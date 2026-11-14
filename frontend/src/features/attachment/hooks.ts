@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api, unwrap } from '../../api/client';
 import type { components } from '../../api/schema';
+import { useMe } from '../account/hooks';
 
 export type Attachment = components['schemas']['AttachmentResponse'];
 export type AttachmentOwnerType = Attachment['ownerType'];
@@ -19,6 +20,15 @@ export const attachmentKeys = {
 /** 내려받기 주소. 링크(a href)로 열면 브라우저가 원래 이름으로 저장한다. */
 export function attachmentDownloadUrl(id: number): string {
   return `/api/v1/attachments/${id}/download`;
+}
+
+/**
+ * 결제원 계정이 인터넷망에 있으면 첨부파일을 올리거나 내려받지 못한다(결제원 보안 규정: 인터넷PC 업무자료 취급 금지). 서버가 403
+ * INTERNAL_ONLY 로 막고, 화면은 이 값으로 올리기 버튼과 내려받기 링크를 감춘다.
+ */
+export function useFileTransferBlocked(): boolean {
+  const { data: me } = useMe();
+  return me?.organizationType === 'KFTC' && me.networkZone === 'EXTERNAL';
 }
 
 export function useAttachments(owner: AttachmentOwner) {

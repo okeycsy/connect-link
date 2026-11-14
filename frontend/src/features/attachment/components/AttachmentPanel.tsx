@@ -27,10 +27,12 @@ import { ApiError } from '../../../api/client';
 import { formatBytes, formatDateTime } from '../../../shared/format';
 import { StateView } from '../../../shared/state/StateView';
 import { stateKindOf } from '../../../shared/state/stateKind';
+import { FileTransferBlockedNote } from './FileTransferBlockedNote';
 import {
   attachmentDownloadUrl,
   useAttachments,
   useDeleteAttachment,
+  useFileTransferBlocked,
   useUploadAttachment,
   type Attachment,
   type AttachmentOwner,
@@ -59,6 +61,7 @@ export function AttachmentPanel({
   const { data, isPending, error } = useAttachments(owner);
   const upload = useUploadAttachment(owner);
   const remove = useDeleteAttachment(owner);
+  const blocked = useFileTransferBlocked();
 
   const onPick = async (file: File | null) => {
     if (!file) return;
@@ -89,7 +92,8 @@ export function AttachmentPanel({
 
   return (
     <Stack gap="sm" data-testid="attachment-panel">
-      {editable && (
+      {blocked && <FileTransferBlockedNote />}
+      {editable && !blocked && (
         <Group justify="space-between" align="center">
           <Text size="sm" c="dimmed">
             {data ? `${data.length}개` : ''}
@@ -125,6 +129,7 @@ export function AttachmentPanel({
               key={attachment.id}
               attachment={attachment}
               editable={editable}
+              downloadable={!blocked}
               onDelete={() => onDelete(attachment)}
               deleting={remove.isPending && remove.variables === attachment.id}
             />
@@ -138,11 +143,14 @@ export function AttachmentPanel({
 function AttachmentRow({
   attachment,
   editable,
+  downloadable,
   onDelete,
   deleting,
 }: {
   attachment: Attachment;
   editable: boolean;
+  /** 결제원 담당자가 인터넷망이면 이름만 보이고 내려받지 못한다. */
+  downloadable: boolean;
   onDelete: () => void;
   deleting: boolean;
 }) {
@@ -164,15 +172,21 @@ function AttachmentRow({
         <Icon size={18} stroke={1.6} />
       </ThemeIcon>
       <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
-        <Anchor
-          href={attachmentDownloadUrl(attachment.id)}
-          download={attachment.name}
-          size="sm"
-          fw={600}
-          truncate="end"
-        >
-          {attachment.name}
-        </Anchor>
+        {downloadable ? (
+          <Anchor
+            href={attachmentDownloadUrl(attachment.id)}
+            download={attachment.name}
+            size="sm"
+            fw={600}
+            truncate="end"
+          >
+            {attachment.name}
+          </Anchor>
+        ) : (
+          <Text size="sm" fw={600} truncate="end">
+            {attachment.name}
+          </Text>
+        )}
         <Text size="xs" c="dimmed" truncate="end">
           {formatBytes(attachment.size)} · {attachment.uploadedBy} ·{' '}
           {formatDateTime(attachment.uploadedAt)}
