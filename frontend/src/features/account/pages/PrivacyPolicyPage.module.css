@@ -1,0 +1,97 @@
+/* 금융결제원 처리방침 화면 모양(SHY 제공): 가운데 1040px 흰 카드 한 장에 제목·머리말·요약 네 칸·조문 */
+.body {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding-bottom: 24px;
+}
+
+.sheet {
+  padding: 48px 40px;
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    padding: 28px 18px;
+  }
+}
+
+.title {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-align: center;
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    font-size: 28px;
+  }
+}
+
+/* 요약 한 칸: 1px 선 상자, 가운데 정렬 제목·아이콘, 체크 목록은 왼쪽 정렬 */
+.summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 20px;
+  border: 1px solid var(--cl-line);
+  border-radius: var(--mantine-radius-lg);
+}
+
+.summaryIcon {
+  border: 1.5px solid var(--mantine-color-clay-3);
+}
+
+.summaryItems {
+  align-self: center;
+  min-width: 0;
+}
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.checkIcon {
+  flex: none;
+  margin-top: 3px;
+  color: var(--mantine-color-clay-6);
+}
+
+/* 조문 제목: 메인색 강조(시안의 파란 제목을 디자인 시스템 clay 로) */
+.articleTitle {
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--mantine-color-clay-6);
+}
+
+.articleBody {
+  padding-left: 16px;
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    padding-left: 0;
+  }
+}
+
+.list {
+  padding-right: 8px;
+}
+
+/* 보호책임자 연락처: sunken 면 radius 14 */
+.officer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: var(--mantine-radius-lg);
+  background: var(--cl-sunken);
+}
+
+.officerRow {
+  display: flex;
+  gap: 12px;
+}
+
+.officerLabel {
+  flex: 0 0 132px;
+}

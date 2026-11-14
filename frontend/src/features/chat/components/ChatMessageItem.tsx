@@ -2,7 +2,7 @@ import { Anchor, Avatar, Badge, Button, Group, Stack, Text, Tooltip } from '@man
 import { IconCheck, IconPaperclip } from '@tabler/icons-react';
 
 import { formatBytes } from '../../../shared/format';
-import { attachmentDownloadUrl } from '../../attachment/hooks';
+import { attachmentDownloadUrl, useFileTransferBlocked } from '../../attachment/hooks';
 import { groupAcksByOrganization, type ChatMessage } from '../hooks';
 import classes from './Chat.module.css';
 import { formatClock, splitMentions } from './chatFormat';
@@ -17,6 +17,7 @@ interface Props {
 
 /** 말풍선 하나. 본문(멘션 강조), 첨부, 읽지 않은 사람 수, 기관별 "확인" 을 보인다. */
 export function ChatMessageItem({ message, continued, onToggleAck, ackPending }: Props) {
+  const blocked = useFileTransferBlocked();
   const ackGroups = groupAcksByOrganization(message.acks);
   const acked = message.acks.some((a) => a.mine);
   const parts = splitMentions(
@@ -77,9 +78,20 @@ export function ChatMessageItem({ message, continued, onToggleAck, ackPending }:
               message.attachments.map((file) => (
                 <Group key={file.id} gap={6} wrap="nowrap">
                   <IconPaperclip size={16} stroke={1.8} />
-                  <Anchor href={attachmentDownloadUrl(file.id)} size="sm" fw={600} truncate>
-                    {file.name}
-                  </Anchor>
+                  {blocked ? (
+                    <Text
+                      size="sm"
+                      fw={600}
+                      truncate
+                      title="결제원 담당자는 인터넷망에서 내려받을 수 없어요"
+                    >
+                      {file.name}
+                    </Text>
+                  ) : (
+                    <Anchor href={attachmentDownloadUrl(file.id)} size="sm" fw={600} truncate>
+                      {file.name}
+                    </Anchor>
+                  )}
                   <Text size="xs" c="dimmed" className={classes.meta}>
                     {formatBytes(file.size)}
                   </Text>

@@ -181,6 +181,19 @@ describe('SignUpPage', () => {
     fireEvent.click(screen.getByRole('button', { name: '가입 신청' }));
     expect(await screen.findByText('비밀번호가 서로 다릅니다.')).toBeInTheDocument();
     change('비밀번호 확인', 'Welcome1!');
+    // 개인정보 수집·이용 안내를 확인하지 않으면 신청하지 않는다.
+    fireEvent.click(screen.getByRole('button', { name: '가입 신청' }));
+    expect(await screen.findByText('개인정보 수집·이용 안내를 확인해 주세요.')).toBeInTheDocument();
+    expect(screen.getByTestId('sign-up-privacy')).toHaveTextContent('보유 기간');
+    // 휴대폰번호를 적으면 선택 동의도 있어야 한다.
+    fireEvent.click(screen.getByLabelText('[필수] 개인정보 수집·이용 안내를 확인했습니다.'));
+    change('휴대폰번호 (선택)', '010-0000-1111');
+    fireEvent.click(screen.getByRole('button', { name: '가입 신청' }));
+    expect(
+      await screen.findByText('휴대폰번호를 적으려면 휴대폰번호 수집·이용(선택)에 동의해 주세요.'),
+    ).toBeInTheDocument();
+    change('휴대폰번호 (선택)', '');
+    expect(POST).not.toHaveBeenCalledWith('/api/v1/sign-ups', expect.anything());
     fireEvent.click(screen.getByRole('button', { name: '가입 신청' }));
 
     await waitFor(() => expect(navigate).toHaveBeenCalled());
@@ -203,6 +216,8 @@ describe('SignUpPage', () => {
         extensionPhone: '1234',
         mobilePhone: null,
         password: 'Welcome1!',
+        privacyNoticeConfirmed: true,
+        mobilePhoneConsent: false,
       },
     });
     expect(navigate.mock.calls[0][0]).toBe('/sign-up/pending');

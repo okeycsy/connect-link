@@ -3,6 +3,8 @@ package com.connectlink.attachment;
 import com.connectlink.attachment.dto.AttachmentResponse;
 import com.connectlink.auth.CurrentUser;
 import com.connectlink.common.BusinessException;
+import com.connectlink.common.NetworkZoneResolver;
+import com.connectlink.organization.OrganizationType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -22,6 +24,9 @@ import org.springframework.web.multipart.MultipartFile;
 /**
  * 첨부파일. 기능 모듈은 자기 대상(ownerType, ownerId)으로 이 Service 를 쓰고, 누가 보고 올릴 수 있는지는 {@link
  * AttachmentOwnerAccess} 빈으로 알려 준다. 파일 내용은 {@link FileStorage} 로만 다룬다.
+ *
+ * <p>결제원 계정은 인터넷망에서 첨부파일을 올리거나 내려받지 못한다(403 {@code INTERNAL_ONLY}). 결제원 보안 규정이 인터넷PC 에서 업무자료를
+ * 작성·저장·송수신하지 못하게 해서다. 목록(이름·크기)은 보인다. 참가기관 담당자는 망과 상관없다.
  */
 @Service
 @Transactional(readOnly = true)
@@ -33,16 +38,26 @@ public class AttachmentService {
   private final AttachmentAccessPolicy accessPolicy;
   private final FileStorage fileStorage;
   private final AttachmentProperties properties;
+  private final NetworkZoneResolver networkZoneResolver;
 
   public AttachmentService(
       AttachmentRepository repository,
       AttachmentAccessPolicy accessPolicy,
       FileStorage fileStorage,
-      AttachmentProperties properties) {
+      AttachmentProperties properties,
+      NetworkZoneResolver networkZoneResolver) {
     this.repository = repository;
     this.accessPolicy = accessPolicy;
     this.fileStorage = fileStorage;
     this.properties = properties;
+    this.networkZoneResolver = networkZoneResolver;
+  }
+
+  /** 결제원 계정이 인터넷망에서 업무자료(첨부파일)를 주고받으려 하면 403 {@code INTERNAL_ONLY}. */
+  private void ensureFileTransferAllowed(CurrentUser user, String feature) {
+    if (user.organizationType() == OrganizationType.KFTC) {
+      networkZoneResolver.ensureInternal("결제원 담당자의 첨부파일 " + feature);
+    }
   }
 
   public List<AttachmentResponse> list(
@@ -75,6 +90,7 @@ public class AttachmentService {
   public AttachmentResponse upload(
       CurrentUser user, AttachmentOwnerType ownerType, Long ownerId, MultipartFile file) {
     accessPolicy.ensureCanEdit(user, ownerType, ownerId);
+    ensureFileTransferAllowed(user, "올리기");
     if (file == null || file.isEmpty()) {
       throw new BusinessException(HttpStatus.BAD_REQUEST, "FILE_EMPTY", "비어 있는 파일은 올릴 수 없습니다.");
     }
@@ -100,6 +116,7 @@ public class AttachmentService {
   public AttachmentDownload download(CurrentUser user, Long id) {
     Attachment attachment = load(id);
     accessPolicy.ensureCanView(user, attachment.getOwnerType(), attachment.getOwnerId());
+    ensureFileTransferAllowed(user, "내려받기");
     Resource content = fileStorage.open(attachment.getStorageKey());
     if (!content.exists()) {
       throw BusinessException.notFound("ATTACHMENT_FILE_MISSING", "파일 내용이 저장소에 없습니다.");

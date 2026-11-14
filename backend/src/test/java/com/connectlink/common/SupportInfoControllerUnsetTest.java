@@ -24,6 +24,8 @@ class SupportInfoControllerUnsetTest {
     mockMvc
         .perform(get("/api/v1/support-info"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.inquiryEmail").doesNotExist());
+        .andExpect(jsonPath("$.inquiryEmail").doesNotExist())
+        .andExpect(jsonPath("$.privacyDepartment").doesNotExist())
+        .andExpect(jsonPath("$.privacyPhone").doesNotExist());
   }
 }

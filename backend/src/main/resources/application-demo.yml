@@ -10,6 +10,9 @@ app:
   support:
     # 샘플 문의 주소(가상).
     inquiry-email: help@connect-link.example.com
+    # 개인정보 관리부서(가상).
+    privacy-department: 연결이 운영팀
+    privacy-phone: 02-0000-0000
   network:
     # 시연·개발·테스트는 내부망이 기본이고, 화면의 망 전환 토글(X-Network-Zone 헤더)을 믿는다.
     header-override: true

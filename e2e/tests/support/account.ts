@@ -56,6 +56,7 @@ export async function applyForGana(request: APIRequestContext, email: string, na
       extensionPhone: '02-0000-1234',
       mobilePhone: null,
       password: NEW_ACCOUNT_PASSWORD,
+      privacyNoticeConfirmed: true,
     },
     headers: await csrf(request),
   });

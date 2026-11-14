@@ -1,21 +1,33 @@
 import {
+  Anchor,
   Badge,
   Box,
+  Checkbox,
   Group,
   PasswordInput,
   SimpleGrid,
   Stack,
+  Table,
   Text,
   TextInput,
 } from '@mantine/core';
+import { IconExternalLink } from '@tabler/icons-react';
+import { Link } from 'react-router-dom';
 
+import tableClasses from '../../../../shared/list/ResponsiveTable.module.css';
 import { useBusinesses, useJobRoles, useOrganizations } from '../../../organization/hooks';
+import {
+  OPTIONAL_ITEMS,
+  REQUIRED_ITEMS,
+  SIGN_UP_PURPOSE,
+  SIGN_UP_RETENTION,
+} from '../privacyPolicy';
 import classes from './SignUpSteps.module.css';
 import type { SignUpForm } from './signUpForm';
 
 /**
  * 가입 ④: 담당자 정보와 비밀번호. 부서·팀·직급·내선번호는 필수, 휴대폰번호는 선택이다(명세). 위에 앞 단계에서 고른 내용을 요약해
- * 신청 전에 한 번 더 보게 한다.
+ * 신청 전에 한 번 더 보게 하고, 아래에 개인정보 수집·이용 안내와 확인·선택 동의를 둔다.
  */
 export function ProfileStep({ form, email }: { form: SignUpForm; email: string }) {
   const { data: organizations } = useOrganizations();
@@ -60,7 +72,68 @@ export function ProfileStep({ form, email }: { form: SignUpForm; email: string }
           {...form.getInputProps('passwordConfirm')}
         />
       </SimpleGrid>
+      <PrivacyNotice form={form} />
     </Stack>
+  );
+}
+
+/**
+ * 개인정보 수집·이용 안내(개인정보 보호법 제15조 제2항의 네 가지: 목적, 항목, 보유 기간, 거부 권리와 불이익). 필수 항목은 계약
+ * 이행(제15조 제1항 제4호)으로 처리하므로 "확인" 을 받고, 휴대폰번호는 선택 동의(제22조)로 따로 받는다. 선택 동의는 하지 않아도
+ * 가입할 수 있다. 처리방침 전문은 새 탭으로 연다(이 화면을 떠나면 적은 내용이 사라진다).
+ */
+function PrivacyNotice({ form }: { form: SignUpForm }) {
+  return (
+    <Box className={classes.privacy} data-testid="sign-up-privacy">
+      <Group justify="space-between" gap="xs" mb="xs">
+        <Text fw={700}>개인정보 수집·이용 안내</Text>
+        <Anchor component={Link} to="/privacy" target="_blank" rel="noopener" size="sm" fw={700}>
+          <Group gap={4} wrap="nowrap">
+            개인정보처리방침 전문
+            <IconExternalLink size={14} stroke={1.8} />
+          </Group>
+        </Anchor>
+      </Group>
+      <Table withTableBorder className={tableClasses.stack} fz="sm" bg="var(--cl-card)">
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th>구분</Table.Th>
+            <Table.Th>목적</Table.Th>
+            <Table.Th>항목</Table.Th>
+            <Table.Th>보유 기간</Table.Th>
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          <Table.Tr>
+            <Table.Td>필수 (계약 이행)</Table.Td>
+            <Table.Td data-label="목적">{SIGN_UP_PURPOSE}</Table.Td>
+            <Table.Td data-label="항목">{REQUIRED_ITEMS}</Table.Td>
+            <Table.Td data-label="보유 기간">{SIGN_UP_RETENTION}</Table.Td>
+          </Table.Tr>
+          <Table.Tr>
+            <Table.Td>선택 (동의)</Table.Td>
+            <Table.Td data-label="목적">긴급한 업무 연락</Table.Td>
+            <Table.Td data-label="항목">{OPTIONAL_ITEMS}</Table.Td>
+            <Table.Td data-label="보유 기간">{SIGN_UP_RETENTION} 또는 동의 철회 시까지</Table.Td>
+          </Table.Tr>
+        </Table.Tbody>
+      </Table>
+      <Text size="xs" c="dimmed" mt="xs">
+        필수 항목은 회원 계약 이행을 위해 처리합니다(개인정보 보호법 제15조 제1항 제4호). 휴대폰번호
+        수집·이용에는 동의하지 않을 권리가 있으며, 동의하지 않아도 가입과 서비스 이용에 제한이
+        없습니다. 다만 이 경우 휴대폰번호는 적을 수 없습니다.
+      </Text>
+      <Stack gap="xs" mt="sm">
+        <Checkbox
+          label="[필수] 개인정보 수집·이용 안내를 확인했습니다."
+          {...form.getInputProps('privacyNoticeConfirmed', { type: 'checkbox' })}
+        />
+        <Checkbox
+          label="[선택] 휴대폰번호 수집·이용에 동의합니다."
+          {...form.getInputProps('mobilePhoneConsent', { type: 'checkbox' })}
+        />
+      </Stack>
+    </Box>
   );
 }
 
