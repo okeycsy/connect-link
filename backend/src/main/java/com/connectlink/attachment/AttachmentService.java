@@ -111,6 +111,7 @@ public class AttachmentService {
   public void delete(CurrentUser user, Long id) {
     Attachment attachment = load(id);
     accessPolicy.ensureCanEdit(user, attachment.getOwnerType(), attachment.getOwnerId());
+    ensureNotLastRequired(attachment);
     repository.delete(attachment);
     try {
       fileStorage.delete(attachment.getStorageKey());
@@ -118,6 +119,23 @@ public class AttachmentService {
       // 메타데이터는 지웠으므로 내용은 남아도 접근할 길이 없다. 정리는 저장소 운영 몫이다.
       log.warn("첨부파일 내용을 지우지 못했습니다: {}", attachment.getStorageKey(), e);
     }
+  }
+
+  /** 첨부가 꼭 있어야 하는 대상(예: 일시중단 공문)의 마지막 하나는 지우지 못한다. 새 파일을 먼저 올리고 지우면 된다. */
+  private void ensureNotLastRequired(Attachment attachment) {
+    accessPolicy
+        .requiredMessage(attachment.getOwnerType(), attachment.getOwnerId())
+        .ifPresent(
+            message -> {
+              int count =
+                  repository
+                      .findByOwnerTypeAndOwnerIdOrderByCreatedAtAscIdAsc(
+                          attachment.getOwnerType(), attachment.getOwnerId())
+                      .size();
+              if (count <= 1) {
+                throw new BusinessException(HttpStatus.BAD_REQUEST, "ATTACHMENT_REQUIRED", message);
+              }
+            });
   }
 
   /**

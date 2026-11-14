@@ -10,11 +10,14 @@ export function PendingAttachments({
   files,
   onChange,
   pickLabel = '첨부자료 고르기',
+  error,
 }: {
   files: File[];
   onChange: (files: File[]) => void;
   /** 고르기 버튼 글자. */
   pickLabel?: string;
+  /** 필수 첨부를 고르지 않았을 때 등 칸 아래에 보일 오류 문구. */
+  error?: string;
 }) {
   return (
     <Stack gap="sm" data-testid="pending-attachments">
@@ -30,6 +33,11 @@ export function PendingAttachments({
           )}
         </FileButton>
       </Group>
+      {error && (
+        <Text size="sm" c="red" role="alert" data-testid="pending-attachments-error">
+          {error}
+        </Text>
+      )}
       {files.length > 0 && (
         <Stack gap={6} role="list" aria-label="올릴 파일">
           {files.map((file, index) => (

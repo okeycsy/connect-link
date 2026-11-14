@@ -173,11 +173,25 @@ function invalidate(queryClient: QueryClient) {
   void queryClient.invalidateQueries({ queryKey: homeKeys.all });
 }
 
+/**
+ * 등록. 양식과 공문을 한 요청(multipart)으로 보낸다. 기관 일시중단은 공문이 없으면 서버가 칸 files 의 오류로 돌려준다.
+ */
 export function useCreateSuspension() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (body: SuspensionSaveRequest) =>
-      unwrap(await api.POST('/api/v1/suspensions', { body })),
+    mutationFn: async ({ body, files }: { body: SuspensionSaveRequest; files: File[] }) =>
+      unwrap(
+        await api.POST('/api/v1/suspensions', {
+          // OpenAPI 는 파일을 string(binary) 으로 적는다. 실제 전송은 아래 serializer 가 FormData 로 만든다.
+          body: { request: body, files: files as unknown as string[] },
+          bodySerializer: () => {
+            const form = new FormData();
+            form.append('request', new Blob([JSON.stringify(body)], { type: 'application/json' }));
+            for (const file of files) form.append('files', file);
+            return form;
+          },
+        }),
+      ),
     onSuccess: () => invalidate(queryClient),
   });
 }

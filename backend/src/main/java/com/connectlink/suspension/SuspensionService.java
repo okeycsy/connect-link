@@ -48,6 +48,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 일시중단. 등록·수정·삭제, 결제원 담당자의 확인 시작과 확정(조치 및 인수인계 사항), 진행 중·예정·지난 목록과 기관별 이력을 맡는다. 누가 무엇을 하는지는 {@link
@@ -59,6 +60,11 @@ public class SuspensionService {
 
   /** 결제원 작업 안내의 기관(결제원) 코드. */
   static final String KFTC_CODE = "KFTC";
+
+  /** 기관 일시중단을 공문 없이 올렸다. */
+  static final String DOCUMENT_REQUIRED = "SUSPENSION_DOCUMENT_REQUIRED";
+
+  static final String DOCUMENT_REQUIRED_MESSAGE = "공문을 첨부해 주세요. 일시중단은 공문이 있어야 등록할 수 있습니다.";
 
   private final SuspensionRepository repository;
   private final SuspensionAccessPolicy accessPolicy;
@@ -221,14 +227,22 @@ public class SuspensionService {
   // ---- 등록·수정·삭제 ----
 
   /**
-   * 검토 대기로 등록하고 그 업무 결제원 담당자에게 메일·매터모스트로 알린다. 공문은 저장한 뒤 첨부 API 로 올린다. 결제원 작업 안내는 바로 확정이고 알림을 보내지
-   * 않는다(일시중단 목록·홈에만 보인다).
+   * 검토 대기로 등록하고 공문을 붙인 뒤 그 업무 결제원 담당자에게 메일·매터모스트로 알린다. 기관 일시중단은 공문이 하나 이상 있어야 한다. 결제원 작업
+   * 안내는 바로 확정이고 알림을 보내지 않으며(일시중단 목록·홈에만 보인다) 공문은 골라서 붙인다.
    */
-  public SuspensionDetailResponse create(CurrentUser user, SuspensionSaveRequest body) {
+  public SuspensionDetailResponse create(
+      CurrentUser user, SuspensionSaveRequest body, List<MultipartFile> documents) {
+    List<MultipartFile> files = documents.stream().filter(f -> f != null && !f.isEmpty()).toList();
     if (body.kind() == SuspensionKind.KFTC_WORK) {
-      return createKftcWork(user, body);
+      SuspensionDetailResponse created = createKftcWork(user, body);
+      attachDocuments(user, created.id(), files);
+      return created;
     }
     accessPolicy.ensureCanRegister(user);
+    if (files.isEmpty()) {
+      throw BusinessException.onField(
+          HttpStatus.BAD_REQUEST, DOCUMENT_REQUIRED, "files", DOCUMENT_REQUIRED_MESSAGE);
+    }
     boolean kftc = accessPolicy.registersAsKftc(user);
     List<TargetWork> works = targetWorkService.loadSelectable(body.targetWorkIds(), List.of());
     Organization organization =
@@ -249,9 +263,17 @@ public class SuspensionService {
             suspension.getPrimaryBusiness(),
             organization.getName() + " 일시중단 등록",
             Snapshot.of(suspension).diff(Snapshot.EMPTY, true)));
+    attachDocuments(user, suspension.getId(), files);
     notifier.registered(suspension, kftcRecipients(suspension.getBusinesses(), user));
     digestService.sendRegistered(suspension);
     return toDetail(user, suspension);
+  }
+
+  /** 등록과 같은 트랜잭션에서 공문을 붙인다. 하나라도 못 올리면(크기 초과 등) 등록도 되돌린다. */
+  private void attachDocuments(CurrentUser user, Long suspensionId, List<MultipartFile> files) {
+    for (MultipartFile file : files) {
+      attachmentService.upload(user, AttachmentOwnerType.SUSPENSION, suspensionId, file);
+    }
   }
 
   private SuspensionDetailResponse createKftcWork(CurrentUser user, SuspensionSaveRequest body) {

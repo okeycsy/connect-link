@@ -19,6 +19,7 @@ import java.util.List;
 import javax.validation.Valid;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,8 +28,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 /** 일시중단: 진행 중·예정·지난 목록과 기관별 이력, 등록·수정·삭제, 결제원 담당자의 확인 시작과 확정. */
 @RestController
@@ -109,14 +112,21 @@ public class SuspensionController {
     return suspensionService.registrableOrganizations(currentUserProvider.require());
   }
 
-  @PostMapping
+  @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
       summary = "일시중단 등록",
       description =
-          "검토 대기로 등록하고 그 업무 결제원 담당자에게 메일·매터모스트 알림을 보낸다. 공문(SUSPENSION)은 저장한 뒤 첨부 API 로 올린다.")
-  public SuspensionDetailResponse create(@Valid @RequestBody SuspensionSaveRequest request) {
-    return suspensionService.create(currentUserProvider.require(), request);
+          "multipart 로 양식(request, JSON)과 공문(files, 하나 이상)을 함께 받는다. 기관 일시중단은 공문이 없으면 400"
+              + " SUSPENSION_DOCUMENT_REQUIRED(칸 files)다. 결제원 작업 안내는 공문 없이 올릴 수 있다. 검토 대기로 등록하고 그 업무 결제원"
+              + " 담당자에게 메일·매터모스트 알림을 보낸다. 공문을 더 올리거나 바꾸는 것은 첨부 API 로 한다.")
+  public SuspensionDetailResponse create(
+      @Valid @RequestPart("request") SuspensionSaveRequest request,
+      @Parameter(description = "공문 파일(여러 개 가능)")
+          @RequestPart(value = "files", required = false)
+          List<MultipartFile> files) {
+    return suspensionService.create(
+        currentUserProvider.require(), request, files == null ? List.of() : files);
   }
 
   @GetMapping("/{id}")
