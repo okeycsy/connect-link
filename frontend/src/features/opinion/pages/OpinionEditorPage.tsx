@@ -270,9 +270,27 @@ function OpinionEditor({
     [existing],
   );
 
+  // 저장 버튼은 화면 위에 있고 질문·대상 칸은 아래에 있어, 검증에 걸리면 처음 걸린 칸으로 옮기고 알린다.
+  const formRef = useRef<HTMLFormElement>(null);
+  const showFirstError = () => {
+    notifications.show({
+      title: '저장하지 못했습니다',
+      message: '빨갛게 표시된 칸을 확인해 주세요.',
+      color: 'red',
+    });
+    requestAnimationFrame(() => {
+      const invalid = formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]');
+      invalid?.scrollIntoView({ block: 'center' });
+      invalid?.focus({ preventScroll: true });
+    });
+  };
+
   // 서버 검증 오류는 필드 메시지 그대로 칸 아래에 보인다.
   useEffect(() => {
-    if (mutation.isError) form.setErrors(fieldErrorsOf(mutation.error));
+    if (!mutation.isError) return;
+    const errors = fieldErrorsOf(mutation.error);
+    form.setErrors(errors);
+    if (Object.keys(errors).length > 0) showFirstError();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mutation.isError, mutation.error]);
   const fieldErrors = mutation.isError ? fieldErrorsOf(mutation.error) : {};
@@ -316,6 +334,7 @@ function OpinionEditor({
       const backward = backwardJumpErrors(values.sections, values.questions);
       if (Object.keys(backward).length > 0) {
         form.setErrors(backward);
+        showFirstError();
         return;
       }
     }
@@ -363,7 +382,7 @@ function OpinionEditor({
         ? '회신 받을 의견 요청'
         : '새 의견 요청';
   return (
-    <form onSubmit={form.onSubmit(submit)} noValidate>
+    <form ref={formRef} onSubmit={form.onSubmit(submit, showFirstError)} noValidate>
       <Stack gap="md">
         <PageHeader
           title={title}
