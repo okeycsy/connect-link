@@ -230,21 +230,19 @@ test.describe('나. 의견 요청', () => {
     await expect(page.getByRole('checkbox', { name: '저축은행중앙회 문하린' })).toBeChecked();
     await expect(page.getByTestId('target-summary')).toHaveText('대상 4곳 · 회신 담당자 8명');
     await shot(page, 'opinion-editor');
-    await page.getByRole('button', { name: '저장', exact: true }).click();
+    // 등록하면서 바로 회신 요청을 보낸다.
+    await page.getByRole('button', { name: '저장하고 회신 요청' }).click();
+    const sendDialog = page.getByRole('dialog', { name: '저장하고 회신 요청' });
+    await expect(sendDialog).toContainText('대상 기관 4곳');
+    await sendDialog.getByRole('button', { name: '보내기' }).click();
 
     await expect(page.getByRole('heading', { name: title })).toBeVisible();
-    await expect(page.getByText('작성중', { exact: true })).toBeVisible();
+    await expect(page.getByText('회신중', { exact: true })).toBeVisible();
     await expect(page.getByTestId('question-list')).toContainText(
       '1. 연동 시작 시기를 골라 주세요.',
     );
     await expect(page.getByTestId('question-list')).toContainText('1분기 / 2분기 / 하반기');
     await expect(page.getByTestId('attachment-panel').first()).toContainText('연동일정안.pdf');
-    await page.getByRole('button', { name: '회신 요청 시작' }).click();
-    await page
-      .getByRole('dialog', { name: '회신 요청 시작' })
-      .getByRole('button', { name: '시작하기' })
-      .click();
-    await expect(page.getByText('회신중', { exact: true })).toBeVisible();
     const opened = await mailbox(request, 'kim.minjun@kb.example.com');
     expect(opened.some((m) => m.subject.includes(`의견 요청: ${title}`))).toBeTruthy();
   });
@@ -364,7 +362,7 @@ test.describe('나. 의견 요청', () => {
     await page.getByRole('option', { name: '회신 끝내기' }).click();
     await page.getByRole('checkbox', { name: 'KB국민은행 김민준' }).check();
     await shot(page, 'opinion-editor-sections');
-    await page.getByRole('button', { name: '저장', exact: true }).click();
+    await page.getByRole('button', { name: '작성중으로 저장' }).click();
 
     await expect(page.getByRole('heading', { name: title })).toBeVisible();
     const list = page.getByTestId('question-list');

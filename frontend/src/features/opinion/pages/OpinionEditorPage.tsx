@@ -19,6 +19,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { ApiError, fieldErrorsOf } from '../../../api/client';
 import { ContactTargetPicker, type TargetValue } from '../../../shared/ContactTargetPicker';
+import { ConfirmModal } from '../../../shared/ConfirmModal';
 import { PageHeader } from '../../../shared/PageHeader';
 import { ErrorState, StateView } from '../../../shared/state/StateView';
 import { AttachmentPanel } from '../../attachment/components/AttachmentPanel';
@@ -33,6 +34,7 @@ import {
   useCreateOpinionRequest,
   useOpinionRequest,
   useRecipientCandidates,
+  useOpenSavedOpinionRequest,
   useUpdateOpinionRequest,
 } from '../hooks';
 import {
@@ -233,6 +235,11 @@ function OpinionEditor({
   const create = useCreateOpinionRequest();
   const linkNotice = useLinkNoticeOpinion();
   const update = useUpdateOpinionRequest(existing?.id ?? 0);
+  const openSaved = useOpenSavedOpinionRequest();
+  // 새 요청과 작성중 요청은 저장하면서 바로 회신 요청을 보낼 수 있다.
+  const canSend = !existing || existing.status === 'DRAFT';
+  const [confirmSend, setConfirmSend] = useState(false);
+  const sendAfterSave = useRef(false);
   const mutation = existing ? update : create;
   const queryClient = useQueryClient();
   const nextKey = useRef(0);
@@ -329,6 +336,22 @@ function OpinionEditor({
     }
   };
 
+  // "저장하고 회신 요청" 이면 저장(과 첨부 올리기) 뒤 바로 연다. 못 열면 작성중으로 남기고 까닭을 알린다.
+  const openIfRequested = async (requestId: number) => {
+    if (!sendAfterSave.current) return;
+    sendAfterSave.current = false;
+    try {
+      await openSaved.mutateAsync(requestId);
+      notifications.show({ message: '회신 요청을 보냈습니다.', color: 'clay' });
+    } catch (e) {
+      notifications.show({
+        title: '작성중으로 저장했습니다',
+        message: `회신 요청은 보내지 못했습니다. ${e instanceof ApiError ? e.message : ''} 상세에서 다시 시작해 주세요.`,
+        color: 'red',
+      });
+    }
+  };
+
   const submit = (values: Values) => {
     if (!questionsLocked) {
       const backward = backwardJumpErrors(values.sections, values.questions);
@@ -349,7 +372,15 @@ function OpinionEditor({
       })),
     };
     if (existing) {
-      update.mutate(body, { onSuccess: (d) => navigate(`/${slug}/opinions/${d.id}`) });
+      update.mutate(body, {
+        onSuccess: async (d) => {
+          await openIfRequested(d.id);
+          navigate(`/${slug}/opinions/${d.id}`);
+        },
+        onError: () => {
+          sendAfterSave.current = false;
+        },
+      });
     } else {
       create.mutate(
         { ...body, business: current?.code ?? 'ACCOUNT_INFO' },
@@ -367,7 +398,11 @@ function OpinionEditor({
                 });
               }
             }
+            await openIfRequested(d.id);
             navigate(`/${slug}/opinions/${d.id}`);
+          },
+          onError: () => {
+            sendAfterSave.current = false;
           },
         },
       );
@@ -392,8 +427,8 @@ function OpinionEditor({
               : copyFrom
                 ? `"${copyFrom.title}" 의 내용·질문·대상 기관을 채웠습니다. 회신 기한과 첨부자료는 새로 정하고, 저장하면 작성중인 새 요청이 됩니다.`
                 : fromNotice
-                  ? `공지 "${fromNotice.title}" 의 회신을 받을 요청입니다. ${isMeetingNotice(fromNotice) ? '회의 참석 여부·참석자 질문을 채워 두었으니 대상 기관과 회신 기한을 고르세요.' : '요청명과 질문, 대상 기관과 회신 기한을 채워 주세요.'} 저장하면 공지에 이어지고, 상세에서 회신 요청을 시작합니다.`
-                  : `${current?.label ?? '이 업무'} 참가기관에 보낼 의견 요청입니다. 저장하면 작성중으로 남고, 상세에서 회신 요청을 시작합니다.`
+                  ? `공지 "${fromNotice.title}" 의 회신을 받을 요청입니다. ${isMeetingNotice(fromNotice) ? '회의 참석 여부·참석자 질문을 채워 두었으니 대상 기관과 회신 기한을 고르세요.' : '요청명과 질문, 대상 기관과 회신 기한을 채워 주세요.'} 저장하면 공지에 이어지고, "저장하고 회신 요청" 을 누르면 바로 보냅니다.`
+                  : `${current?.label ?? '이 업무'} 참가기관에 보낼 의견 요청입니다. "저장하고 회신 요청" 을 누르면 바로 보내고, "작성중으로 저장" 은 초안으로 남깁니다.`
           }
           actions={
             <>
@@ -404,9 +439,31 @@ function OpinionEditor({
               >
                 취소
               </Button>
-              <Button type="submit" loading={mutation.isPending || uploading}>
-                저장
-              </Button>
+              {canSend ? (
+                <>
+                  <Button
+                    type="submit"
+                    variant="light"
+                    loading={(mutation.isPending || uploading) && !sendAfterSave.current}
+                    disabled={openSaved.isPending}
+                  >
+                    작성중으로 저장
+                  </Button>
+                  <Button
+                    onClick={() => setConfirmSend(true)}
+                    loading={
+                      (mutation.isPending || uploading || openSaved.isPending) &&
+                      sendAfterSave.current
+                    }
+                  >
+                    저장하고 회신 요청
+                  </Button>
+                </>
+              ) : (
+                <Button type="submit" loading={mutation.isPending || uploading}>
+                  저장
+                </Button>
+              )}
             </>
           }
         />
@@ -527,6 +584,19 @@ function OpinionEditor({
           </Stack>
         </Card>
       </Stack>
+      <ConfirmModal
+        opened={confirmSend}
+        onClose={() => setConfirmSend(false)}
+        title="저장하고 회신 요청"
+        message={`대상 기관 ${targets.length}곳의 회신 담당자에게 요청 메일이 갑니다.${pendingFiles.length > 0 ? ' 첨부자료는 같은 팀 팀장님이 승인한 뒤에 참가기관에 보입니다.' : ''} 보낸 뒤에도 내용과 대상은 고칠 수 있습니다.`}
+        confirmLabel="보내기"
+        pending={false}
+        onConfirm={() => {
+          setConfirmSend(false);
+          sendAfterSave.current = true;
+          void form.onSubmit(submit, showFirstError)();
+        }}
+      />
     </form>
   );
 }

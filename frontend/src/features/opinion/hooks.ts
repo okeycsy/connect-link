@@ -147,6 +147,19 @@ export function useOpenOpinionRequest(id: number) {
   });
 }
 
+/** 등록 화면의 "저장하고 회신 요청": 방금 저장한 요청을 바로 연다. */
+export function useOpenSavedOpinionRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) =>
+      unwrap(await api.POST('/api/v1/opinion-requests/{id}/opening', { params: { path: { id } } })),
+    onSuccess: (detail) => {
+      queryClient.setQueryData(opinionKeys.detail(detail.id), detail);
+      invalidateRequest(queryClient);
+    },
+  });
+}
+
 export function useCloseOpinionRequest(id: number) {
   const queryClient = useQueryClient();
   return useMutation({
