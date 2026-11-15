@@ -1,6 +1,7 @@
 package com.connectlink.notice;
 
 import com.connectlink.attachment.AttachmentOwnerAccess;
+import com.connectlink.attachment.AttachmentOwnerInfo;
 import com.connectlink.attachment.AttachmentOwnerType;
 import com.connectlink.auth.CurrentUser;
 import org.springframework.stereotype.Component;
@@ -35,5 +36,13 @@ class NoticeAttachmentAccess implements AttachmentOwnerAccess {
         .findById(ownerId)
         .map(n -> accessPolicy.canManage(user, n.getBusiness()))
         .orElse(false);
+  }
+
+  @Override
+  public AttachmentOwnerInfo describe(Long ownerId) {
+    return repository
+        .findById(ownerId)
+        .map(n -> new AttachmentOwnerInfo(n.getTitle(), n.getBusiness(), "notices?id=" + n.getId()))
+        .orElseGet(() -> AttachmentOwnerInfo.unknown(ownerType()));
   }
 }

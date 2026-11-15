@@ -32,7 +32,10 @@ function seoulDate(days: number) {
 async function createAsHong(
   request: APIRequestContext,
   title: string,
-  testDataRequest: { dueDate: string; instruction: string | null } | null = null,
+  testDataRequest: {
+    dueDate: string;
+    instruction: string | null;
+  } | null = null,
 ): Promise<number> {
   const login = await request.post('/api/v1/auth/login', {
     data: { email: 'hong.sungmin@kftc.example.com', password: DEMO_PASSWORD },
@@ -113,7 +116,9 @@ test.describe('다. 기관 테스트', () => {
     await expect(summary).toHaveText(/^대상 2곳 · 테스트 담당자 \d+명$/);
     // 맨 위 테스트데이터 사전 요청은 늘 펼쳐져 있다. 필요 없음을 체크하면 접히고, 풀면 다시 보인다.
     const dataRequest = page.getByTestId('test-data-request');
-    const skip = dataRequest.getByRole('checkbox', { name: /사전 요청이 필요 없습니다/ });
+    const skip = dataRequest.getByRole('checkbox', {
+      name: /사전 요청이 필요 없습니다/,
+    });
     await skip.check();
     await expect(dataRequest.getByTestId('test-data-skipped')).toBeVisible();
     await skip.uncheck();
@@ -281,6 +286,18 @@ test.describe('다. 기관 테스트', () => {
       headers: await csrf(request),
     });
     expect(form.ok(), await form.text()).toBeTruthy();
+    // 결제원 담당자가 올린 파일은 같은 팀 팀장(강지원)이 반출을 승인해야 기관에 보인다.
+    const relogin = await request.post('/api/v1/auth/login', {
+      data: { email: 'kang.jiwon@kftc.example.com', password: DEMO_PASSWORD },
+      headers: await csrf(request),
+    });
+    expect(relogin.ok()).toBeTruthy();
+    const uploaded = await form.json();
+    const approved = await request.post(
+      `/api/v1/attachment-approvals/${uploaded.ownerType}/${uploaded.ownerId}/approval`,
+      { headers: await csrf(request) },
+    );
+    expect(approved.ok(), await approved.text()).toBeTruthy();
 
     // 기관 담당자: 결제원 양식을 보고 생성 완료와 메모를 저장한 뒤 만든 파일을 올린다.
     await loginAs(page, '김민준 (참가기관 · 현업)로 로그인');

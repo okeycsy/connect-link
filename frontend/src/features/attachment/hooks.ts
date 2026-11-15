@@ -31,6 +31,15 @@ export function useFileTransferBlocked(): boolean {
   return me?.organizationType === 'KFTC' && me.networkZone === 'EXTERNAL';
 }
 
+/**
+ * 결제원 계정이 올리는 파일은 외부망 반출이라 같은 부서·팀 팀장의 결재를 받아야 참가기관에 보인다(서버가 정한다). 화면은 이 값으로 올리기
+ * 칸에 결재 안내를 보인다.
+ */
+export function useExportApprovalRequired(): boolean {
+  const { data: me } = useMe();
+  return me?.organizationType === 'KFTC';
+}
+
 export function useAttachments(owner: AttachmentOwner) {
   return useQuery({
     queryKey: attachmentKeys.list(owner),
@@ -73,4 +82,57 @@ export function useDeleteAttachment(owner: AttachmentOwner) {
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: attachmentKeys.list(owner) }),
   });
+}
+
+// ---- 파일 반출 결재 ----
+
+export type AttachmentApprovalBatch = components['schemas']['AttachmentApprovalBatchResponse'];
+export type AttachmentApproval = AttachmentApprovalBatch['files'][number];
+export type AttachmentApprovalStatus = Attachment['approvalStatus'];
+
+export const approvalKeys = {
+  all: ['attachment-approvals'] as const,
+  batch: (owner: AttachmentOwner) =>
+    ['attachment-approvals', owner.ownerType, owner.ownerId] as const,
+};
+
+const approvalPath = '/api/v1/attachment-approvals/{ownerType}/{ownerId}' as const;
+
+/** 결재 한 건(등록 한 건에 붙인 파일). 팀장이 알림 센터에서 결재 창을 열 때 읽는다. */
+export function useAttachmentApproval(owner: AttachmentOwner | null) {
+  return useQuery({
+    queryKey: owner ? approvalKeys.batch(owner) : approvalKeys.all,
+    queryFn: async () => unwrap(await api.GET(approvalPath, { params: { path: owner! } })),
+    enabled: owner !== null,
+    retry: false,
+  });
+}
+
+function useApprovalDecision<T>(
+  decide: (owner: AttachmentOwner, input: T) => Promise<AttachmentApprovalBatch>,
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ owner, input }: { owner: AttachmentOwner; input: T }) => decide(owner, input),
+    onSuccess: (data, { owner }) => {
+      queryClient.setQueryData(approvalKeys.batch(owner), data);
+      queryClient.invalidateQueries({ queryKey: attachmentKeys.all });
+    },
+  });
+}
+
+/** 결재 대기 파일을 모두 승인한다. */
+export function useApproveAttachments() {
+  return useApprovalDecision<void>(async (owner) =>
+    unwrap(await api.POST(`${approvalPath}/approval`, { params: { path: owner } })),
+  );
+}
+
+/** 결재 대기 파일을 모두 반려한다(사유 필수). */
+export function useRejectAttachments() {
+  return useApprovalDecision<string>(async (owner, reason) =>
+    unwrap(
+      await api.POST(`${approvalPath}/rejection`, { params: { path: owner }, body: { reason } }),
+    ),
+  );
 }

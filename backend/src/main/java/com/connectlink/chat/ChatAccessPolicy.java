@@ -44,14 +44,6 @@ public class ChatAccessPolicy {
     return member && !message.getSenderEmail().equals(user.email());
   }
 
-  /** 첨부를 올릴 수 있는지. 첨부를 올린다고 하고 보낸 본인이 구성원일 때, 보관 기간 전에만. */
-  public boolean canAttach(CurrentUser user, ChatMessage message, boolean member) {
-    return member
-        && message.getSenderEmail().equals(user.email())
-        && message.isWithAttachments()
-        && !message.isAttachmentsExpired();
-  }
-
   void ensureCanManage(CurrentUser user, Business business) {
     if (!canManage(user, business)) {
       throw new AccessDeniedException(MANAGE_DENIED);

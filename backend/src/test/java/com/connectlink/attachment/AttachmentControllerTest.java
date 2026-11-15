@@ -54,6 +54,7 @@ class AttachmentControllerTest {
             .andExpect(jsonPath("$.uploadedAt").isNotEmpty())
             .andReturn();
     long id = objectMapper.readTree(uploaded.getResponse().getContentAsString()).get("id").asLong();
+    AttachmentApprovals.approve(mockMvc, uploaded, TestUsers.KFTC_PORTAL_LEADER);
 
     mockMvc
         .perform(
@@ -106,6 +107,7 @@ class AttachmentControllerTest {
             .andExpect(status().isCreated())
             .andReturn();
     long id = objectMapper.readTree(uploaded.getResponse().getContentAsString()).get("id").asLong();
+    AttachmentApprovals.approve(mockMvc, uploaded, TestUsers.KFTC_PORTAL_LEADER);
 
     // 거부: 결제원 계정 + 인터넷망
     mockMvc

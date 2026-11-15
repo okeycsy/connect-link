@@ -47,6 +47,11 @@ export function DemoAccountList({ accounts, onPick, pendingEmail, currentEmail }
                   <Text size="xs" c="dimmed" truncate>
                     {account.roleLabel}
                   </Text>
+                  {account.teamLeader && (
+                    <Badge size="xs" color="clay" variant="outline">
+                      팀장
+                    </Badge>
+                  )}
                   {account.admin && (
                     <Badge size="xs" color="clay">
                       관리자

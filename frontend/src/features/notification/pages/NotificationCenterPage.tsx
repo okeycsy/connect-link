@@ -1,8 +1,11 @@
 import { Button, Card, Chip, Group, Pagination, Skeleton, Stack, Text } from '@mantine/core';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
+import { DEFAULT_BUSINESS_SLUG } from '../../../app/navigation';
 import { PageHeader } from '../../../shared/PageHeader';
+import { AttachmentApprovalModal } from '../../attachment/components/AttachmentApprovalModal';
+import type { AttachmentOwner, AttachmentOwnerType } from '../../attachment/hooks';
 import { NotificationItem } from '../components/NotificationItem';
 import {
   useMarkAllRead,
@@ -14,9 +17,23 @@ import {
 
 const PAGE_SIZE = 20;
 
-/** 알림 센터. 가입 승인, 의견 요청, 연락처 변경, 일시중단 알림을 한 목록으로 본다. 메일·매터모스트로 나간 내용과 같다. */
+/** 주소의 결재 대상(approvalOwnerType, approvalOwnerId). 첨부파일 반출 결재 요청 알림이 이 주소로 연다. */
+function approvalOwnerOf(params: URLSearchParams): AttachmentOwner | null {
+  const ownerType = params.get('approvalOwnerType');
+  const ownerId = Number(params.get('approvalOwnerId'));
+  if (!ownerType || !Number.isInteger(ownerId) || ownerId <= 0) return null;
+  return { ownerType: ownerType as AttachmentOwnerType, ownerId };
+}
+
+/**
+ * 알림 센터. 가입 승인, 의견 요청, 연락처 변경, 일시중단 알림을 한 목록으로 본다. 메일·매터모스트로 나간 내용과 같다. 팀장은 첨부파일 반출 결재
+ * 요청 알림을 눌러 여기서 바로 결재 창을 연다.
+ */
 export function NotificationCenterPage() {
   const navigate = useNavigate();
+  const { business } = useParams<{ business: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const approvalOwner = approvalOwnerOf(searchParams);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [page, setPage] = useState(0);
   const unreadOnly = filter === 'unread';
@@ -107,6 +124,12 @@ export function NotificationCenterPage() {
           </Group>
         )}
       </Card>
+
+      <AttachmentApprovalModal
+        owner={approvalOwner}
+        base={business ?? DEFAULT_BUSINESS_SLUG}
+        onClose={() => setSearchParams({}, { replace: true })}
+      />
     </Stack>
   );
 }

@@ -19,6 +19,8 @@ public enum NotificationType {
   TEST_DATA_REQUESTED("기관 테스트데이터 요청"),
   TEST_DATA_REPORTED("기관 테스트데이터 등록"),
   SUSPENSION_CHANGED("일시중단 변경"),
+  ATTACHMENT_APPROVAL_REQUESTED("파일 반출 결재 요청"),
+  ATTACHMENT_APPROVAL_DECIDED("파일 반출 결재 결과"),
   SYSTEM("안내");
 
   private final String label;

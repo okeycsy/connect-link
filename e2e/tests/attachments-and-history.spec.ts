@@ -25,11 +25,18 @@ test.describe('첨부파일과 변경 이력', () => {
       mimeType: 'text/plain',
       buffer: Buffer.from('가상 공문 내용', 'utf-8'),
     });
-    await expect(page.getByText(`${name} 을(를) 올렸습니다.`)).toBeVisible();
+    // 결제원 계정이 올린 파일은 같은 팀 팀장(임도윤)에게 반출 결재가 간다.
+    await expect(
+      page.getByText(`${name} 을(를) 올리고 임도윤 팀장님께 결재를 요청했습니다.`),
+    ).toBeVisible();
     const link = page.getByRole('link', { name });
     await expect(link).toBeVisible();
-    await expect(page.getByTestId('attachment-panel')).toContainText('admin@kftc.example.com');
-    await page.screenshot({ path: 'screenshots/demo-attachments.png', fullPage: true });
+    await expect(page.getByTestId('attachment-panel')).toContainText('데모 관리자');
+    await expect(page.getByTestId('attachment-panel')).toContainText('결재 대기');
+    await page.screenshot({
+      path: 'screenshots/demo-attachments.png',
+      fullPage: true,
+    });
 
     // 내려받기 주소는 원래 이름과 내용을 돌려준다.
     const href = await link.getAttribute('href');
@@ -46,10 +53,7 @@ test.describe('첨부파일과 변경 이력', () => {
 
   test('기관 상세의 변경 이력 탭에 저장한 변경이 변경 전·후로 쌓인다', async ({ page }) => {
     await page.goto('/cms/admin/organizations');
-    await page
-      .getByTestId('organization-table')
-      .getByRole('button', { name: '신협' })
-      .click();
+    await page.getByTestId('organization-table').getByRole('button', { name: '신협' }).click();
     const dialog = page.getByRole('dialog');
     await dialog.getByRole('tab', { name: '변경 이력' }).click();
     const history = dialog.getByTestId('change-history');
@@ -78,7 +82,9 @@ test.describe('첨부파일과 변경 이력', () => {
   test('변경 이력 API 는 없는 담당자를, 첨부 API 는 없는 일시중단을 거부한다', async ({
     request,
   }) => {
-    const history = await request.get('/api/v1/change-histories?targetType=CONTACT&targetId=999999');
+    const history = await request.get(
+      '/api/v1/change-histories?targetType=CONTACT&targetId=999999',
+    );
     expect(history.status()).toBe(403);
     const attachments = await request.get(
       '/api/v1/attachments?ownerType=SUSPENSION&ownerId=999999',

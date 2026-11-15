@@ -4,6 +4,7 @@ import com.connectlink.auth.CurrentUser;
 import com.connectlink.common.BusinessException;
 import com.connectlink.organization.Business;
 import com.connectlink.organization.Organization;
+import com.connectlink.organization.OrganizationType;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -11,6 +12,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,9 @@ public class AccountService {
   /** 없는 이메일에도 비밀번호 비교를 한 번 해서 응답 시간으로 계정 유무가 드러나지 않게 한다. 아무 비밀번호와도 맞지 않는 BCrypt 형식의 값이다. */
   private static final String NO_ACCOUNT_HASH =
       "$2a$10$K26FVsN1Lr5pMYurY.z9BeV.ZF4zVqcZ8cVq4kRkVL7wsZJjMaUXS";
+
+  /** 반출 결재자를 정하는 직급. 결제원 계정 중 직급이 이 값인 사람이 같은 부서·팀의 팀장이다. */
+  public static final String TEAM_LEADER_TITLE = "팀장";
 
   private static final DateTimeFormatter LOCK_TIME = DateTimeFormatter.ofPattern("HH:mm");
 
@@ -168,6 +173,44 @@ public class AccountService {
                         .map(UserAccountBusiness::getSubBusiness)
                         .orElse(null)))
         .toList();
+  }
+
+  /**
+   * 결제원 계정의 같은 부서·팀 팀장. 본인이 팀장이면 본인이고, 팀장이 여럿이면 먼저 가입한 사람이다. 결제원 계정이 아니거나 그 팀에 사용 중인 팀장 계정이 없으면 비어
+   * 있다.
+   */
+  public Optional<TeamLeader> findTeamLeaderOf(String email) {
+    UserAccount member = repository.findByEmail(normalizeEmail(email)).orElse(null);
+    if (member == null || member.getOrganization().getType() != OrganizationType.KFTC) {
+      return Optional.empty();
+    }
+    if (isTeamLeader(member)) {
+      return Optional.of(toTeamLeader(member));
+    }
+    return repository.findByStatus(AccountStatus.ACTIVE).stream()
+        .filter(a -> a.getOrganization().getType() == OrganizationType.KFTC)
+        .filter(AccountService::isTeamLeader)
+        .filter(a -> sameText(a.getDepartment(), member.getDepartment()))
+        .filter(a -> sameText(a.getTeam(), member.getTeam()))
+        .min(Comparator.comparing(UserAccount::getId))
+        .map(AccountService::toTeamLeader);
+  }
+
+  private static boolean isTeamLeader(UserAccount account) {
+    return account.getJobTitle() != null && TEAM_LEADER_TITLE.equals(account.getJobTitle().trim());
+  }
+
+  private static boolean sameText(String a, String b) {
+    return a != null && b != null && a.trim().equals(b.trim());
+  }
+
+  private static TeamLeader toTeamLeader(UserAccount account) {
+    return new TeamLeader(
+        account.getEmail(),
+        account.getName(),
+        account.getDepartment(),
+        account.getTeam(),
+        account.getBusinesses());
   }
 
   static CurrentUser toCurrentUser(UserAccount account) {
