@@ -244,6 +244,7 @@ connect-link/
 - 새 화면의 주요 흐름에는 Playwright 시나리오가 있다.
 - 빌드 결과에 외부 URL을 불러오는 코드가 없다(CI가 검사한다).
 - 샘플 데이터가 바뀌었으면 README의 데모 계정 표와 맞는다.
+- **개인정보 처리방침을 함께 맞춘다.** 개인정보 처리가 바뀌는 작업(수집 항목·목적, 보관·파기 기간, 제3자 제공·위탁(예: 실제 메일·매터모스트 발송), 자동 수집 기록, 보호 조치, 관리부서 설정)은 사용자가 말하지 않아도 같은 PR에서 `frontend/src/features/account/components/privacyPolicy.ts`(처리방침 본문과 가입 수집·이용 안내)를 고치고 PR 설명과 사용자 보고에 적는다. 항목·목적·보관 기간이 바뀌면 시행일도 올린다(`PrivacyPolicy.VERSION` 과 화면 `PRIVACY_POLICY_VERSION`·`PRIVACY_POLICY_EFFECTIVE` 를 함께). 연결이가 하지 않는 처리는 적지 않는다. SHY 요청(2026-11-15).
 - 화면을 바꿨다면 Playwright로 찍은 캡처를 사용자에게 보여준다. 클라우드 세션은 github.io에 접속할 수 없고, 이 앱은 서버가 필요해서 Pages로 미리 볼 수 없다.
 
 ## 11. Git과 작업 단위
