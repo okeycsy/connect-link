@@ -292,8 +292,9 @@ test.describe('다. 기관 테스트', () => {
       headers: await csrf(request),
     });
     expect(relogin.ok()).toBeTruthy();
+    const uploaded = await form.json();
     const approved = await request.post(
-      `/api/v1/attachment-approvals/${(await form.json()).id}/approval`,
+      `/api/v1/attachment-approvals/${uploaded.ownerType}/${uploaded.ownerId}/approval`,
       { headers: await csrf(request) },
     );
     expect(approved.ok(), await approved.text()).toBeTruthy();

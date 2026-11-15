@@ -13,6 +13,7 @@ import com.connectlink.auth.CurrentUser;
 import com.connectlink.auth.TestUsers;
 import com.connectlink.notice.NoticeRepository;
 import com.connectlink.notification.NotificationRepository;
+import com.connectlink.notification.NotificationType;
 import com.connectlink.organization.Business;
 import com.connectlink.organization.JobRole;
 import com.connectlink.organization.OrganizationType;
@@ -31,14 +32,14 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
-/** 파일 반출 결재: 결제원 담당자가 올린 파일은 같은 팀 팀장이 승인해야 참가기관에 보인다. */
+/** 파일 반출 결재: 결제원 담당자가 등록하며 붙인 파일은 같은 팀 팀장이 한 번에 승인해야 참가기관에 보인다. */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
 class AttachmentApprovalControllerTest {
 
-  private static final String APPROVALS = "/api/v1/attachment-approvals";
+  private static final String APPROVAL = "/api/v1/attachment-approvals/NOTICE/{ownerId}";
   private static final byte[] CONTENT = "가상 자료".getBytes(StandardCharsets.UTF_8);
 
   @Autowired private MockMvc mockMvc;
@@ -80,32 +81,49 @@ class AttachmentApprovalControllerTest {
             .with(TestUsers.ganaMember()));
   }
 
+  private long requestNotifications() {
+    return notificationRepository.findAll().stream()
+        .filter(
+            n ->
+                n.getRecipientEmail().equals("kang.jiwon@kftc.example.com")
+                    && n.getType() == NotificationType.ATTACHMENT_APPROVAL_REQUESTED)
+        .count();
+  }
+
   @Test
-  void 결제원_담당자의_파일은_같은_팀_팀장이_승인해야_참가기관에_보인다() throws Exception {
+  void 등록하며_붙인_파일은_팀장이_알림에서_한_번에_승인해야_참가기관에_보인다() throws Exception {
     long noticeId = noticeId();
     int before =
         objectMapper
             .readTree(listAsGana(noticeId).andReturn().getResponse().getContentAsString())
             .size();
-    long id =
+    long notificationsBefore = requestNotifications();
+    long first =
         id(
             upload(TestUsers.KFTC_ACCOUNT_INFO, noticeId, "안내문.pdf")
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.approvalStatus").value("PENDING"))
                 .andExpect(jsonPath("$.approverName").value("강지원"))
                 .andExpect(jsonPath("$.uploaderName").value("홍성민")));
+    long second = id(upload(TestUsers.KFTC_ACCOUNT_INFO, noticeId, "참석명단.pdf"));
+
+    // 알림은 등록 한 건에 한 번, 누르면 알림 센터에서 결재 창이 열린다.
+    assertThat(requestNotifications()).isEqualTo(notificationsBefore + 1);
     assertThat(
             notificationRepository.findAll().stream()
                 .anyMatch(
                     n ->
                         n.getRecipientEmail().equals("kang.jiwon@kftc.example.com")
-                            && n.getTitle().contains("홍성민")))
+                            && n.getTitle().contains("홍성민")
+                            && ("/account-info/notifications?approvalOwnerType=NOTICE&approvalOwnerId="
+                                    + noticeId)
+                                .equals(n.getLink())))
         .isTrue();
 
     // 결재 전: 참가기관 목록에 없고 내려받지 못한다. 결제원 계정에는 보인다.
     listAsGana(noticeId).andExpect(jsonPath("$", hasSize(before)));
     mockMvc
-        .perform(get("/api/v1/attachments/{id}/download", id).with(TestUsers.ganaMember()))
+        .perform(get("/api/v1/attachments/{id}/download", first).with(TestUsers.ganaMember()))
         .andExpect(status().isNotFound());
     mockMvc
         .perform(
@@ -113,56 +131,50 @@ class AttachmentApprovalControllerTest {
                 .param("ownerType", "NOTICE")
                 .param("ownerId", String.valueOf(noticeId))
                 .with(TestUsers.as(TestUsers.KFTC_ACCOUNT_INFO)))
-        .andExpect(jsonPath("$[?(@.id == " + id + ")].approvalStatus").value("PENDING"));
+        .andExpect(jsonPath("$[?(@.id == " + first + ")].approvalStatus").value("PENDING"));
 
-    // 결재함: 팀장에게 대기 1건 이상, 올린 사람의 요청함에 있다.
+    // 결재 창: 그 공지에 붙은 대기 파일 둘.
     mockMvc
-        .perform(
-            get(APPROVALS + "/pending-count")
-                .with(TestUsers.as(TestUsers.KFTC_ACCOUNT_INFO_LEADER)))
-        .andExpect(jsonPath("$.pending").value(org.hamcrest.Matchers.greaterThanOrEqualTo(1)));
-    mockMvc
-        .perform(
-            get(APPROVALS)
-                .param("box", "TO_APPROVE")
-                .param("status", "PENDING")
-                .with(TestUsers.as(TestUsers.KFTC_ACCOUNT_INFO_LEADER)))
-        .andExpect(jsonPath("$.content[0].id").value(id))
-        .andExpect(jsonPath("$.content[0].ownerPath").value("notices?id=" + noticeId))
-        .andExpect(jsonPath("$.content[0].ownerBusiness").value("account-info"))
-        .andExpect(jsonPath("$.content[0].uploaderTeam").value("계좌서비스부 계좌통합팀"));
-    mockMvc
-        .perform(
-            get(APPROVALS)
-                .param("box", "REQUESTED")
-                .with(TestUsers.as(TestUsers.KFTC_ACCOUNT_INFO)))
-        .andExpect(jsonPath("$.content[0].id").value(id));
+        .perform(get(APPROVAL, noticeId).with(TestUsers.as(TestUsers.KFTC_ACCOUNT_INFO_LEADER)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.ownerPath").value("notices?id=" + noticeId))
+        .andExpect(jsonPath("$.ownerBusiness").value("account-info"))
+        .andExpect(jsonPath("$.files[?(@.status == 'PENDING')]", hasSize(2)))
+        .andExpect(jsonPath("$.files[0].uploaderTeam").value("계좌서비스부 계좌통합팀"));
 
     // 팀장은 결재하려고 파일을 열어 본다.
     mockMvc
         .perform(
-            get("/api/v1/attachments/{id}/download", id)
+            get("/api/v1/attachments/{id}/download", second)
                 .with(TestUsers.as(TestUsers.KFTC_ACCOUNT_INFO_LEADER)))
         .andExpect(status().isOk());
 
     mockMvc
         .perform(
-            post(APPROVALS + "/{id}/approval", id)
+            post(APPROVAL + "/approval", noticeId)
                 .with(TestUsers.as(TestUsers.KFTC_ACCOUNT_INFO_LEADER))
                 .with(csrf()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.status").value("APPROVED"))
-        .andExpect(jsonPath("$.decidedAt").isNotEmpty());
+        .andExpect(jsonPath("$.files[?(@.status == 'PENDING')]").isEmpty())
+        .andExpect(jsonPath("$.files[0].decidedAt").isNotEmpty());
 
-    listAsGana(noticeId).andExpect(jsonPath("$", hasSize(before + 1)));
+    listAsGana(noticeId).andExpect(jsonPath("$", hasSize(before + 2)));
     mockMvc
-        .perform(get("/api/v1/attachments/{id}/download", id).with(TestUsers.ganaMember()))
+        .perform(get("/api/v1/attachments/{id}/download", first).with(TestUsers.ganaMember()))
         .andExpect(status().isOk());
+    assertThat(
+            notificationRepository.findAll().stream()
+                .filter(
+                    n ->
+                        n.getRecipientEmail().equals("hong.sungmin@kftc.example.com")
+                            && n.getType() == NotificationType.ATTACHMENT_APPROVAL_DECIDED)
+                .count())
+        .isEqualTo(1);
 
-    // 이미 결재한 파일은 다시 결재하지 못한다.
+    // 이미 결재한 건은 다시 결재하지 못한다.
     mockMvc
         .perform(
-            post(APPROVALS + "/{id}/approval", id)
+            post(APPROVAL + "/approval", noticeId)
                 .with(TestUsers.as(TestUsers.KFTC_ACCOUNT_INFO_LEADER))
                 .with(csrf()))
         .andExpect(status().isConflict())
@@ -176,7 +188,7 @@ class AttachmentApprovalControllerTest {
     // 사유 없이는 반려하지 못한다.
     mockMvc
         .perform(
-            post(APPROVALS + "/{id}/rejection", id)
+            post(APPROVAL + "/rejection", noticeId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(Map.of("reason", " ")))
                 .with(TestUsers.as(TestUsers.KFTC_ACCOUNT_INFO_LEADER))
@@ -184,14 +196,15 @@ class AttachmentApprovalControllerTest {
         .andExpect(status().isBadRequest());
     mockMvc
         .perform(
-            post(APPROVALS + "/{id}/rejection", id)
+            post(APPROVAL + "/rejection", noticeId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(Map.of("reason", "최종본으로 올려 주세요")))
                 .with(TestUsers.as(TestUsers.KFTC_ACCOUNT_INFO_LEADER))
                 .with(csrf()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.status").value("REJECTED"))
-        .andExpect(jsonPath("$.rejectionReason").value("최종본으로 올려 주세요"));
+        .andExpect(jsonPath("$.files[?(@.id == " + id + ")].status").value("REJECTED"))
+        .andExpect(
+            jsonPath("$.files[?(@.id == " + id + ")].rejectionReason").value("최종본으로 올려 주세요"));
     mockMvc
         .perform(get("/api/v1/attachments/{id}/download", id).with(TestUsers.ganaMember()))
         .andExpect(status().isNotFound());
@@ -206,23 +219,26 @@ class AttachmentApprovalControllerTest {
 
   @Test
   void 결재자가_아니면_결재하지_못하고_인터넷망에서도_결재하지_못한다() throws Exception {
-    long id = id(upload(TestUsers.KFTC_ACCOUNT_INFO, noticeId(), "안내문.pdf"));
-    // 거부: 결재자가 아닌 결제원 계정(올린 사람 본인 포함)
+    long noticeId = noticeId();
+    upload(TestUsers.KFTC_ACCOUNT_INFO, noticeId, "안내문.pdf");
+    // 거부: 결재자가 아닌 결제원 계정(올린 사람 본인 포함)은 결재할 파일이 없다.
     mockMvc
         .perform(
-            post(APPROVALS + "/{id}/approval", id)
+            post(APPROVAL + "/approval", noticeId)
                 .with(TestUsers.as(TestUsers.KFTC_ACCOUNT_INFO))
                 .with(csrf()))
-        .andExpect(status().isForbidden());
+        .andExpect(status().isNotFound());
     mockMvc
-        .perform(post(APPROVALS + "/{id}/approval", id).with(TestUsers.admin()).with(csrf()))
+        .perform(post(APPROVAL + "/approval", noticeId).with(TestUsers.admin()).with(csrf()))
+        .andExpect(status().isNotFound());
+    // 거부: 참가기관 계정은 결재하지 않는다.
+    mockMvc
+        .perform(get(APPROVAL, noticeId).with(TestUsers.ganaMember()))
         .andExpect(status().isForbidden());
-    // 거부: 참가기관 계정은 결재함을 쓰지 않는다.
-    mockMvc.perform(get(APPROVALS).with(TestUsers.ganaMember())).andExpect(status().isForbidden());
     // 거부: 결재자라도 인터넷망
     mockMvc
         .perform(
-            post(APPROVALS + "/{id}/approval", id)
+            post(APPROVAL + "/approval", noticeId)
                 .header("X-Network-Zone", "EXTERNAL")
                 .with(TestUsers.as(TestUsers.KFTC_ACCOUNT_INFO_LEADER))
                 .with(csrf()))
@@ -233,17 +249,13 @@ class AttachmentApprovalControllerTest {
   @Test
   void 팀장이_올린_파일은_바로_승인되고_참가기관이_올린_파일은_결재가_없다() throws Exception {
     long noticeId = noticeId();
+    long notificationsBefore = requestNotifications();
     upload(TestUsers.KFTC_ACCOUNT_INFO_LEADER, noticeId, "팀장자료.pdf")
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.approvalStatus").value("APPROVED"))
         .andExpect(jsonPath("$.approverName").value("강지원"));
-    // 팀장 본인 파일은 결재함(결재할 파일)에 들어가지 않는다.
-    mockMvc
-        .perform(
-            get(APPROVALS)
-                .param("box", "TO_APPROVE")
-                .with(TestUsers.as(TestUsers.KFTC_ACCOUNT_INFO_LEADER)))
-        .andExpect(jsonPath("$.content[?(@.name == '팀장자료.pdf')]").isEmpty());
+    // 팀장 본인 파일은 결재 요청이 가지 않는다.
+    assertThat(requestNotifications()).isEqualTo(notificationsBefore);
 
     mockMvc
         .perform(

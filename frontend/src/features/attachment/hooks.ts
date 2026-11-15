@@ -86,70 +86,53 @@ export function useDeleteAttachment(owner: AttachmentOwner) {
 
 // ---- 파일 반출 결재 ----
 
-export type AttachmentApproval = components['schemas']['AttachmentApprovalResponse'];
+export type AttachmentApprovalBatch = components['schemas']['AttachmentApprovalBatchResponse'];
+export type AttachmentApproval = AttachmentApprovalBatch['files'][number];
 export type AttachmentApprovalStatus = Attachment['approvalStatus'];
-export type AttachmentApprovalBox = 'TO_APPROVE' | 'REQUESTED';
 
 export const approvalKeys = {
   all: ['attachment-approvals'] as const,
-  list: (box: AttachmentApprovalBox, status: AttachmentApprovalStatus | undefined, page: number) =>
-    ['attachment-approvals', 'list', box, status ?? 'ALL', page] as const,
-  pendingCount: ['attachment-approvals', 'pending-count'] as const,
+  batch: (owner: AttachmentOwner) =>
+    ['attachment-approvals', owner.ownerType, owner.ownerId] as const,
 };
 
-/** 파일 결재함. TO_APPROVE 는 내가 결재할 파일, REQUESTED 는 내가 올린 파일. */
-export function useAttachmentApprovals(
-  box: AttachmentApprovalBox,
-  status: AttachmentApprovalStatus | undefined,
-  page: number,
+const approvalPath = '/api/v1/attachment-approvals/{ownerType}/{ownerId}' as const;
+
+/** 결재 한 건(등록 한 건에 붙인 파일). 팀장이 알림 센터에서 결재 창을 열 때 읽는다. */
+export function useAttachmentApproval(owner: AttachmentOwner | null) {
+  return useQuery({
+    queryKey: owner ? approvalKeys.batch(owner) : approvalKeys.all,
+    queryFn: async () => unwrap(await api.GET(approvalPath, { params: { path: owner! } })),
+    enabled: owner !== null,
+    retry: false,
+  });
+}
+
+function useApprovalDecision<T>(
+  decide: (owner: AttachmentOwner, input: T) => Promise<AttachmentApprovalBatch>,
 ) {
-  return useQuery({
-    queryKey: approvalKeys.list(box, status, page),
-    queryFn: async () =>
-      unwrap(
-        await api.GET('/api/v1/attachment-approvals', {
-          params: { query: { box, status, page, size: 20 } },
-        }),
-      ),
-  });
-}
-
-/** 내가 결재할 대기 파일 수(사이드바 배지). 결제원 계정만 묻는다. */
-export function usePendingApprovalCount(enabled: boolean) {
-  return useQuery({
-    queryKey: approvalKeys.pendingCount,
-    queryFn: async () => unwrap(await api.GET('/api/v1/attachment-approvals/pending-count')),
-    enabled,
-    refetchInterval: 60_000,
-  });
-}
-
-function useApprovalDecision<T>(decide: (id: number, input: T) => Promise<AttachmentApproval>) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, input }: { id: number; input: T }) => decide(id, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: approvalKeys.all });
+    mutationFn: ({ owner, input }: { owner: AttachmentOwner; input: T }) => decide(owner, input),
+    onSuccess: (data, { owner }) => {
+      queryClient.setQueryData(approvalKeys.batch(owner), data);
       queryClient.invalidateQueries({ queryKey: attachmentKeys.all });
     },
   });
 }
 
-export function useApproveAttachment() {
-  return useApprovalDecision<void>(async (id) =>
-    unwrap(
-      await api.POST('/api/v1/attachment-approvals/{id}/approval', { params: { path: { id } } }),
-    ),
+/** 결재 대기 파일을 모두 승인한다. */
+export function useApproveAttachments() {
+  return useApprovalDecision<void>(async (owner) =>
+    unwrap(await api.POST(`${approvalPath}/approval`, { params: { path: owner } })),
   );
 }
 
-export function useRejectAttachment() {
-  return useApprovalDecision<string>(async (id, reason) =>
+/** 결재 대기 파일을 모두 반려한다(사유 필수). */
+export function useRejectAttachments() {
+  return useApprovalDecision<string>(async (owner, reason) =>
     unwrap(
-      await api.POST('/api/v1/attachment-approvals/{id}/rejection', {
-        params: { path: { id } },
-        body: { reason },
-      }),
+      await api.POST(`${approvalPath}/rejection`, { params: { path: owner }, body: { reason } }),
     ),
   );
 }

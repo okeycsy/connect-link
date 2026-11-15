@@ -16,7 +16,6 @@ import {
 } from '../features/contact/pages/UpdateCampaignPage';
 import { HomePage } from '../features/home/pages/HomePage';
 import { NoticeListPage } from '../features/notice/pages/NoticeListPage';
-import { FileApprovalPage } from '../features/attachment/pages/FileApprovalPage';
 import { NotificationCenterPage } from '../features/notification/pages/NotificationCenterPage';
 import { NotificationOutboxPage } from '../features/notification/pages/NotificationOutboxPage';
 import { OpinionDetailPage } from '../features/opinion/pages/OpinionDetailPage';
@@ -81,8 +80,6 @@ export const router = createBrowserRouter([
           { path: 'home', element: <HomePage /> },
           // 전역 화면(알림 센터, 데모 도구)도 레일 문맥을 잃지 않도록 업무 영역 아래에 둔다.
           { path: 'notifications', element: <NotificationCenterPage /> },
-          // 결제원 파일 반출 결재(결제원 계정만, 서버가 막는다).
-          { path: 'file-approvals', element: <FileApprovalPage /> },
           { path: 'me', element: <MyInfoPage /> },
           { path: 'demo/outbox', element: <NotificationOutboxPage /> },
           { path: 'demo/states', element: <DemoStatesPage /> },

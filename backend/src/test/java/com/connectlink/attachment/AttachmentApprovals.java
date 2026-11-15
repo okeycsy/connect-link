@@ -17,13 +17,16 @@ public final class AttachmentApprovals {
 
   private AttachmentApprovals() {}
 
-  /** 업로드 응답의 파일을 팀장이 승인한다. */
+  /** 업로드 응답의 파일이 붙은 대상(등록 한 건)의 결재 대기 파일을 팀장이 승인한다. */
   public static void approve(MockMvc mockMvc, MvcResult uploaded, CurrentUser leader)
       throws Exception {
-    long id = JSON.readTree(uploaded.getResponse().getContentAsString()).get("id").asLong();
+    var file = JSON.readTree(uploaded.getResponse().getContentAsString());
     mockMvc
         .perform(
-            post("/api/v1/attachment-approvals/{id}/approval", id)
+            post(
+                    "/api/v1/attachment-approvals/{ownerType}/{ownerId}/approval",
+                    file.get("ownerType").asText(),
+                    file.get("ownerId").asLong())
                 .with(TestUsers.as(leader))
                 .with(csrf()))
         .andExpect(status().isOk());

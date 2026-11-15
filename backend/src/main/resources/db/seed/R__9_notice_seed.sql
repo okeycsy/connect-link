@@ -48,7 +48,7 @@ SET opinion_request_id = (SELECT r.id FROM opinion_request r WHERE r.title = '�
 WHERE title = '계좌통합관리업무 전문 변경 회의 개최 안내';
 
 -- 첨부. 결제원 담당자가 올린 파일은 같은 팀 팀장(강지원)의 반출 결재를 받아야 참가기관에 보인다.
--- 규약 신구 대비표는 승인, 회의 안내문은 결재 대기(참가기관에는 아직 안 보인다), 시행세칙 개정안은 반려됐다.
+-- 규약 신구 대비표는 승인, 회의 안내문은 결재 대기(참가기관에는 아직 안 보인다)다.
 INSERT INTO attachment (owner_type, owner_id, original_name, content_type, size_bytes, storage_key,
                         approval_status, uploader_name, uploader_team, approver_email, approver_name, decided_at, rejection_reason,
                         created_at, created_by, updated_at, updated_by)
@@ -59,8 +59,16 @@ SELECT 'NOTICE', n.id, f.original_name, 'application/pdf', 0, f.storage_key,
        n.created_at, 'hong.sungmin@kftc.example.com', n.created_at, 'hong.sungmin@kftc.example.com'
 FROM (VALUES
   ('계좌통합관리업무 규약(예시)', '계좌통합관리업무_규약_신구대비표.pdf', 'seed:notice-sample.pdf#1', 'APPROVED', CAST(NULL AS VARCHAR(500))),
-  ('계좌통합관리업무 전문 변경 회의 개최 안내', '전문_변경_회의_안내문.pdf', 'seed:notice-sample.pdf#2', 'PENDING', NULL),
-  ('계좌통합관리업무 시행세칙(예시)', '계좌통합관리업무_시행세칙_개정안.pdf', 'seed:notice-sample.pdf#3', 'REJECTED',
-   '개정안 초안이라 참가기관에 보내기 이르니, 부서 검토를 마친 최종본으로 다시 올려 주세요.')
+  ('계좌통합관리업무 전문 변경 회의 개최 안내', '전문_변경_회의_안내문.pdf', 'seed:notice-sample.pdf#2', 'PENDING', NULL)
 ) AS f (title, original_name, storage_key, approval_status, rejection_reason)
 JOIN notice n ON n.title = f.title;
+
+-- 결재 대기 건의 결재 요청 알림(강지원). 누르면 알림 센터에서 결재 창이 열린다. 알림 시드(R__3) 뒤에 돈다.
+DELETE FROM notification WHERE type = 'ATTACHMENT_APPROVAL_REQUESTED' AND created_by = 'seed';
+INSERT INTO notification (recipient_email, type, business, title, body, link, read_at, created_at, created_by, updated_at, updated_by)
+SELECT 'kang.jiwon@kftc.example.com', 'ATTACHMENT_APPROVAL_REQUESTED', 'ACCOUNT_INFO', '홍성민 님이 첨부파일 반출 결재를 요청했습니다',
+       '공지·자료실 "' || n.title || '" 의 첨부파일입니다. 승인하면 참가기관에 보입니다. 내부망 연결이 알림 센터에서 파일을 열어 보고 결재해 주세요.',
+       '/account-info/notifications?approvalOwnerType=NOTICE&approvalOwnerId=' || CAST(n.id AS VARCHAR(20)), CAST(NULL AS TIMESTAMP),
+       CURRENT_TIMESTAMP - INTERVAL '1' DAY, 'seed', CURRENT_TIMESTAMP - INTERVAL '1' DAY, 'seed'
+FROM notice n
+WHERE n.title = '계좌통합관리업무 전문 변경 회의 개최 안내';

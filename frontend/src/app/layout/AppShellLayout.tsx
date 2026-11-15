@@ -34,7 +34,6 @@ import {
 import { Link, Navigate, Outlet, useLocation, useParams } from 'react-router-dom';
 
 import { AccountSwitchModal } from '../../features/account/components/AccountSwitchModal';
-import { usePendingApprovalCount } from '../../features/attachment/hooks';
 import {
   canUseAdminMenu,
   canViewBusiness,
@@ -69,8 +68,6 @@ export function AppShellLayout() {
   const logout = useLogout();
   const [switchOpened, { open: openSwitch, close: closeSwitch }] = useDisclosure(false);
   const { data: unread } = useUnreadCount();
-  const kftc = me?.organizationType === 'KFTC';
-  const { data: pendingApprovals } = usePendingApprovalCount(kftc);
   const { data: serverInfo } = useServerInfo();
   const demo = isDemoProfile(serverInfo?.profile);
   const [searchOpened, { open: openSearch, close: closeSearch }] = useDisclosure(false);
@@ -309,18 +306,14 @@ export function AppShellLayout() {
                     />
                   ))}
                 {group === '바로가기' &&
-                  SHORTCUT_MENU.filter((item) => !item.kftcOnly || kftc).map((item) => (
+                  SHORTCUT_MENU.map((item) => (
                     <SidebarItem
                       key={item.key}
                       to={`${base}/${item.path}`}
                       label={item.label}
                       icon={item.icon}
                       active={currentFeature === item.path}
-                      badge={
-                        item.key === 'notifications'
-                          ? unreadCount
-                          : (pendingApprovals?.pending ?? 0)
-                      }
+                      badge={item.key === 'notifications' ? unreadCount : 0}
                     />
                   ))}
               </div>
