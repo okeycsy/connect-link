@@ -39,7 +39,6 @@ test('결제원 담당자가 붙인 파일은 팀장이 알림 센터에서 승�
   await loginAs(hong, '홍성민');
   await openNotice(hong, NOTICE);
   const panel = hong.getByTestId('attachment-panel');
-  await expect(panel.getByTestId('export-approval-note')).toBeVisible();
   for (const name of files) {
     await panel.locator('input[type="file"]').setInputFiles({
       name,
@@ -50,7 +49,7 @@ test('결제원 담당자가 붙인 파일은 팀장이 알림 센터에서 승�
     await expect(row.getByTestId('approval-status')).toHaveText('결재 대기');
   }
   await expect(panel.getByRole('listitem').filter({ hasText: files[0] })).toContainText(
-    '강지원 팀장 결재 뒤 참가기관에 보여요.',
+    '결재자 강지원 팀장',
   );
   await shot(hong, 'file-approval-uploaded');
 

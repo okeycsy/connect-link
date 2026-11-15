@@ -67,7 +67,7 @@ JOIN notice n ON n.title = f.title;
 DELETE FROM notification WHERE type = 'ATTACHMENT_APPROVAL_REQUESTED' AND created_by = 'seed';
 INSERT INTO notification (recipient_email, type, business, title, body, link, read_at, created_at, created_by, updated_at, updated_by)
 SELECT 'kang.jiwon@kftc.example.com', 'ATTACHMENT_APPROVAL_REQUESTED', 'ACCOUNT_INFO', '홍성민 님이 첨부파일 반출 결재를 요청했습니다',
-       '공지·자료실 "' || n.title || '" 의 첨부파일입니다. 승인하면 참가기관에 보입니다. 내부망 연결이 알림 센터에서 파일을 열어 보고 결재해 주세요.',
+       '공지·자료실 "' || n.title || '" 의 첨부파일입니다.',
        '/account-info/notifications?approvalOwnerType=NOTICE&approvalOwnerId=' || CAST(n.id AS VARCHAR(20)), CAST(NULL AS TIMESTAMP),
        CURRENT_TIMESTAMP - INTERVAL '1' DAY, 'seed', CURRENT_TIMESTAMP - INTERVAL '1' DAY, 'seed'
 FROM notice n

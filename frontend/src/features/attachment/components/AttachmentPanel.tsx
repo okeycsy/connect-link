@@ -28,7 +28,6 @@ import { formatBytes, formatDateTime } from '../../../shared/format';
 import { StateView } from '../../../shared/state/StateView';
 import { stateKindOf } from '../../../shared/state/stateKind';
 import { ApprovalStatusBadge } from './ApprovalStatusBadge';
-import { ExportApprovalNote } from './ExportApprovalNote';
 import { FileTransferBlockedNote } from './FileTransferBlockedNote';
 import {
   attachmentDownloadUrl,
@@ -105,7 +104,6 @@ export function AttachmentPanel({
   return (
     <Stack gap="sm" data-testid="attachment-panel">
       {blocked && <FileTransferBlockedNote />}
-      {editable && !blocked && approvalRequired && <ExportApprovalNote />}
       {editable && !blocked && (
         <Group justify="space-between" align="center">
           <Text size="sm" c="dimmed">
@@ -278,13 +276,13 @@ function approvalLine(attachment: Attachment): string | null {
   const approver = attachment.approverName ? `${attachment.approverName} 팀장` : '팀장';
   switch (attachment.approvalStatus) {
     case 'PENDING':
-      return `${approver} 결재 뒤 참가기관에 보여요.`;
+      return `결재자 ${approver}`;
     case 'APPROVED':
       return attachment.decidedAt
         ? `${approver} 승인 · ${formatDateTime(attachment.decidedAt)}`
         : `${approver} 승인`;
     case 'REJECTED':
-      return `반려: ${attachment.rejectionReason ?? ''} (지우고 다시 올려 주세요)`;
+      return `반려: ${attachment.rejectionReason ?? ''}`;
     default:
       return null;
   }

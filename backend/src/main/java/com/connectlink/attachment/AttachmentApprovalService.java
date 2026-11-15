@@ -111,10 +111,7 @@ public class AttachmentApprovalService {
             NotificationType.ATTACHMENT_APPROVAL_REQUESTED,
             owner.business(),
             attachment.getUploaderName() + " 님이 첨부파일 반출 결재를 요청했습니다",
-            attachment.getOwnerType().getLabel()
-                + " \""
-                + owner.title()
-                + "\" 의 첨부파일입니다. 승인하면 참가기관에 보입니다. 내부망 연결이 알림 센터에서 파일을 열어 보고 결재해 주세요.",
+            attachment.getOwnerType().getLabel() + " \"" + owner.title() + "\" 의 첨부파일입니다.",
             approverLink(
                 attachment.getOwnerType(),
                 attachment.getOwnerId(),
@@ -161,7 +158,7 @@ public class AttachmentApprovalService {
     List<Attachment> pending = loadPendingFor(user, ownerType, ownerId);
     LocalDateTime now = LocalDateTime.now(clock);
     pending.forEach(a -> a.approve(now));
-    notifyDecided(pending, "첨부파일 반출이 승인되었습니다", "이제 참가기관에서도 첨부파일을 볼 수 있습니다.");
+    notifyDecided(pending, "첨부파일 반출이 승인되었습니다", "");
     return get(user, ownerType, ownerId);
   }
 
@@ -173,7 +170,7 @@ public class AttachmentApprovalService {
     LocalDateTime now = LocalDateTime.now(clock);
     String trimmed = reason.trim();
     pending.forEach(a -> a.reject(trimmed, now));
-    notifyDecided(pending, "첨부파일 반출이 반려되었습니다", "반려 사유: " + trimmed + ". 파일을 고쳐 다시 올려 주세요.");
+    notifyDecided(pending, "첨부파일 반출이 반려되었습니다", "반려 사유: " + trimmed);
     return get(user, ownerType, ownerId);
   }
 
@@ -221,8 +218,8 @@ public class AttachmentApprovalService {
                         + owner.title()
                         + "\" 의 첨부파일 "
                         + files.size()
-                        + "개. "
-                        + detail,
+                        + "개"
+                        + (detail.isEmpty() ? "" : ". " + detail),
                     link)));
   }
 

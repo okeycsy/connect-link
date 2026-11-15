@@ -2,8 +2,7 @@ import { ActionIcon, Button, FileButton, Group, Stack, Text, ThemeIcon } from '@
 import { IconFile, IconTrash, IconUpload } from '@tabler/icons-react';
 
 import { formatBytes } from '../../../shared/format';
-import { useExportApprovalRequired, useFileTransferBlocked } from '../hooks';
-import { ExportApprovalNote } from './ExportApprovalNote';
+import { useFileTransferBlocked } from '../hooks';
 import { FileTransferBlockedNote } from './FileTransferBlockedNote';
 
 /**
@@ -23,13 +22,11 @@ export function PendingAttachments({
   error?: string;
 }) {
   const blocked = useFileTransferBlocked();
-  const approvalRequired = useExportApprovalRequired();
   if (blocked) {
     return <FileTransferBlockedNote />;
   }
   return (
     <Stack gap="sm" data-testid="pending-attachments">
-      {approvalRequired && <ExportApprovalNote />}
       <Group justify="space-between" align="center">
         <Text size="sm" c="dimmed">
           {files.length > 0 ? `${files.length}개, 저장하면 올립니다.` : '저장하면 함께 올립니다.'}

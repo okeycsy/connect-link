@@ -72,7 +72,7 @@ export function AttachmentApprovalModal({ owner, base, onClose }: Props) {
     try {
       await approve.mutateAsync({ owner, input: undefined });
       notifications.show({
-        message: `첨부파일 ${pending.length}개 반출을 승인했습니다. 이제 참가기관에 보입니다.`,
+        message: `첨부파일 ${pending.length}개를 승인했습니다.`,
         color: 'clay',
       });
       close();
@@ -143,10 +143,6 @@ export function AttachmentApprovalModal({ owner, base, onClose }: Props) {
                 </Text>
               )}
             </Stack>
-            <Text size="sm">
-              결제원에서 올린 첨부파일은 참가기관이 외부망에서 보게 되어 외부망 반출이에요. 팀장님이
-              승인하면 참가기관에 보입니다.
-            </Text>
 
             <Stack gap={8} role="list" aria-label="결재할 첨부파일">
               {data.files.map((f) => (
