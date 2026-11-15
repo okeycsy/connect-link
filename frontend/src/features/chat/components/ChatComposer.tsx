@@ -1,28 +1,9 @@
-import {
-  ActionIcon,
-  CloseButton,
-  FileButton,
-  Group,
-  Paper,
-  Popover,
-  Stack,
-  Text,
-  Textarea,
-  Tooltip,
-  UnstyledButton,
-} from '@mantine/core';
-import { IconPaperclip, IconSend } from '@tabler/icons-react';
+import { ActionIcon, Group, Popover, Stack, Text, Textarea, UnstyledButton } from '@mantine/core';
+import { IconSend } from '@tabler/icons-react';
 import { useRef, useState, type KeyboardEvent } from 'react';
 
-import { formatBytes } from '../../../shared/format';
-import {
-  CHAT_FILE_MAX_BYTES,
-  mentionQueryAt,
-  type ChatMention,
-  type ChatSendInput,
-} from '../hooks';
+import { mentionQueryAt, type ChatMention, type ChatSendInput } from '../hooks';
 import classes from './Chat.module.css';
-import { useFileTransferBlocked } from '../../attachment/hooks';
 
 interface Props {
   mentionables: ChatMention[];
@@ -34,14 +15,11 @@ interface Props {
 /**
  * 메시지 입력. "@" 를 치면 이 방에서 부를 수 있는 기관(결제원 포함)이 뜨고, 고르면 "@기관 " 이 들어간다.
  * 보낼 때 본문에 남아 있는 "@기관" 만 멘션으로 보낸다. Enter 는 보내기, Shift+Enter 는 줄바꿈.
+ * 파일 첨부는 없다(결제원 파일 반출은 팀장 결재가 필요해 대화방에서는 막았다).
  */
 export function ChatComposer({ mentionables, onSend, sending, error }: Props) {
   const [content, setContent] = useState('');
   const [caret, setCaret] = useState(0);
-  const [files, setFiles] = useState<File[]>([]);
-  // 결제원 담당자는 인터넷망에서 파일을 올리지 못한다(서버도 막는다). 첨부 버튼을 감춘다.
-  const fileBlocked = useFileTransferBlocked();
-  const [fileError, setFileError] = useState<string>();
   const [highlight, setHighlight] = useState(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -62,19 +40,7 @@ export function ChatComposer({ mentionables, onSend, sending, error }: Props) {
     });
   };
 
-  const addFiles = (picked: File[]) => {
-    const tooBig = picked.find((f) => f.size > CHAT_FILE_MAX_BYTES);
-    if (tooBig) {
-      setFileError(
-        `${tooBig.name}: 파일 하나는 ${formatBytes(CHAT_FILE_MAX_BYTES)}까지 올릴 수 있습니다.`,
-      );
-      return;
-    }
-    setFileError(undefined);
-    setFiles((prev) => [...prev, ...picked]);
-  };
-
-  const canSend = (content.trim() !== '' || files.length > 0) && !sending;
+  const canSend = content.trim() !== '' && !sending;
 
   const send = async () => {
     if (!canSend) return;
@@ -82,10 +48,9 @@ export function ChatComposer({ mentionables, onSend, sending, error }: Props) {
       .filter((m) => content.includes(`@${m.label}`))
       .map((m) => m.organizationCode);
     try {
-      await onSend({ content: content.trim(), mentionOrganizationCodes: codes, files });
+      await onSend({ content: content.trim(), mentionOrganizationCodes: codes });
       setContent('');
       setCaret(0);
-      setFiles([]);
     } catch {
       // 오류 문구는 부모가 error 로 보인다. 쓰던 글은 그대로 둔다.
     }
@@ -115,40 +80,7 @@ export function ChatComposer({ mentionables, onSend, sending, error }: Props) {
 
   return (
     <Stack gap={6} className={classes.composer}>
-      {files.length > 0 && (
-        <Group gap={6}>
-          {files.map((file, i) => (
-            <Paper key={`${file.name}-${i}`} withBorder radius="lg" px="sm" py={4}>
-              <Group gap={6} wrap="nowrap">
-                <IconPaperclip size={14} stroke={1.8} />
-                <Text size="sm" truncate maw={200}>
-                  {file.name}
-                </Text>
-                <Text size="xs" c="dimmed">
-                  {formatBytes(file.size)}
-                </Text>
-                <CloseButton
-                  size="sm"
-                  aria-label={`${file.name} 빼기`}
-                  onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))}
-                />
-              </Group>
-            </Paper>
-          ))}
-        </Group>
-      )}
       <Group gap="xs" align="flex-end" wrap="nowrap">
-        {!fileBlocked && (
-          <FileButton onChange={addFiles} multiple>
-            {(props) => (
-              <Tooltip label="파일 첨부 (20MB까지, 1년 보관)">
-                <ActionIcon {...props} variant="light" size={40} radius="xl" aria-label="파일 첨부">
-                  <IconPaperclip size={20} stroke={1.8} />
-                </ActionIcon>
-              </Tooltip>
-            )}
-          </FileButton>
-        )}
         <Popover opened={menuOpen} position="top-start" width={260} shadow="card" radius="lg">
           <Popover.Target>
             <Textarea
@@ -201,9 +133,9 @@ export function ChatComposer({ mentionables, onSend, sending, error }: Props) {
           <IconSend size={20} stroke={1.8} />
         </ActionIcon>
       </Group>
-      {(fileError ?? error) && (
+      {error && (
         <Text size="sm" c="red">
-          {fileError ?? error}
+          {error}
         </Text>
       )}
     </Stack>

@@ -26,6 +26,7 @@ const demoAccounts = {
       organizationName: '금융결제원',
       roleLabel: '결제원 · 전산(운영)',
       admin: true,
+      teamLeader: false,
       businessLabels: ['계좌통합관리', '자동이체통합관리', '대출이동', 'CMS'],
     },
     {
@@ -34,6 +35,7 @@ const demoAccounts = {
       organizationName: 'KB국민은행',
       roleLabel: '참가기관 · 현업',
       admin: false,
+      teamLeader: false,
       businessLabels: ['계좌통합관리'],
     },
   ],

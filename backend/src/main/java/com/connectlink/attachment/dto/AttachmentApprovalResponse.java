@@ -2,6 +2,7 @@ package com.connectlink.attachment.dto;
 
 import com.connectlink.attachment.AttachmentApprovalStatus;
 import com.connectlink.attachment.AttachmentOwnerType;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 
 /**
@@ -21,13 +22,13 @@ public record AttachmentApprovalResponse(
     String ownerTypeLabel,
     Long ownerId,
     String ownerTitle,
-    String ownerBusiness,
-    String ownerPath,
+    @Schema(nullable = true) String ownerBusiness,
+    @Schema(nullable = true) String ownerPath,
     String uploaderEmail,
-    String uploaderName,
-    String uploaderTeam,
+    @Schema(nullable = true) String uploaderName,
+    @Schema(nullable = true) String uploaderTeam,
     LocalDateTime uploadedAt,
     AttachmentApprovalStatus status,
-    String approverName,
-    LocalDateTime decidedAt,
-    String rejectionReason) {}
+    @Schema(nullable = true) String approverName,
+    @Schema(nullable = true) LocalDateTime decidedAt,
+    @Schema(nullable = true) String rejectionReason) {}

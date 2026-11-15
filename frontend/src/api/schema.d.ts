@@ -1389,6 +1389,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/attachment-approvals/{id}/rejection': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** 파일 반출 반려 (결재자, 내부망, 사유 필수) */
+    post: operations['reject_1'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/attachment-approvals/{id}/approval': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** 파일 반출 승인 (결재자, 내부망) */
+    post: operations['approve_1'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/accounts/{id}/withdrawal': {
     parameters: {
       query?: never;
@@ -2235,6 +2269,43 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/attachment-approvals': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 파일 결재함 목록
+     * @description box=TO_APPROVE 는 내가 결재할 파일, REQUESTED 는 내가 올린 파일. status 가 없으면 대기·승인·반려 모두(최신순).
+     */
+    get: operations['list_15'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/attachment-approvals/pending-count': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** 내가 결재할 대기 파일 수 */
+    get: operations['pendingCount'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/access-logs': {
     parameters: {
       query?: never;
@@ -2246,7 +2317,7 @@ export interface paths {
      * 접속기록 목록
      * @description 개인정보를 다룬 요청의 기록(최근 것부터). 관리자만, 내부망에서만 본다(403 INTERNAL_ONLY). 날짜는 그날 하루 전체를 포함한다.
      */
-    get: operations['list_15'];
+    get: operations['list_16'];
     put?: never;
     post?: never;
     delete?: never;
@@ -3021,8 +3092,15 @@ export interface components {
       /** Format: int64 */
       size: number;
       uploadedBy: string;
+      uploaderName?: string | null;
       /** Format: date-time */
       uploadedAt: string;
+      /** @enum {string} */
+      approvalStatus: 'NOT_REQUIRED' | 'PENDING' | 'APPROVED' | 'REJECTED';
+      approverName?: string | null;
+      /** Format: date-time */
+      decidedAt?: string | null;
+      rejectionReason?: string | null;
     };
     ChatAckResponse: {
       organizationCode: string;
@@ -3258,6 +3336,8 @@ export interface components {
         | 'TEST_DATA_REQUESTED'
         | 'TEST_DATA_REPORTED'
         | 'SUSPENSION_CHANGED'
+        | 'ATTACHMENT_APPROVAL_REQUESTED'
+        | 'ATTACHMENT_APPROVAL_DECIDED'
         | 'SYSTEM';
       typeLabel: string;
       /** @enum {string|null} */
@@ -3394,7 +3474,6 @@ export interface components {
     ChatMessageSendRequest: {
       content: string;
       mentionOrganizationCodes: string[];
-      withAttachments: boolean;
     };
     ChatInviteRequest: {
       emails: string[];
@@ -3422,6 +3501,45 @@ export interface components {
       /** @enum {string} */
       networkZone: 'INTERNAL' | 'EXTERNAL';
       networkZoneLabel: string;
+    };
+    AttachmentRejectionRequest: {
+      reason: string;
+    };
+    AttachmentApprovalResponse: {
+      /** Format: int64 */
+      id: number;
+      name: string;
+      contentType: string;
+      /** Format: int64 */
+      size: number;
+      /** @enum {string} */
+      ownerType:
+        | 'OPINION_REQUEST'
+        | 'OPINION_REPLY'
+        | 'SUSPENSION'
+        | 'TEST_PLAN'
+        | 'TEST_DATA_FORM'
+        | 'TEST_DATA'
+        | 'CHAT_MESSAGE'
+        | 'NOTICE'
+        | 'DEMO';
+      ownerTypeLabel: string;
+      /** Format: int64 */
+      ownerId: number;
+      ownerTitle: string;
+      ownerBusiness?: string | null;
+      ownerPath?: string | null;
+      uploaderEmail: string;
+      uploaderName?: string | null;
+      uploaderTeam?: string | null;
+      /** Format: date-time */
+      uploadedAt: string;
+      /** @enum {string} */
+      status: 'NOT_REQUIRED' | 'PENDING' | 'APPROVED' | 'REJECTED';
+      approverName?: string | null;
+      /** Format: date-time */
+      decidedAt?: string | null;
+      rejectionReason?: string | null;
     };
     AccountWithdrawalRequest: {
       reason: string;
@@ -3978,6 +4096,7 @@ export interface components {
       organizationType: 'KFTC' | 'FINANCE_ORGANIZATION' | 'USE_ORGANIZATION';
       roleLabel: string;
       admin: boolean;
+      teamLeader: boolean;
       businessLabels: string[];
     };
     DemoAccountsResponse: {
@@ -4096,6 +4215,22 @@ export interface components {
       /** Format: int32 */
       totalPages: number;
       last: boolean;
+    };
+    PageResponseAttachmentApprovalResponse: {
+      content: components['schemas']['AttachmentApprovalResponse'][];
+      /** Format: int32 */
+      page: number;
+      /** Format: int32 */
+      size: number;
+      /** Format: int64 */
+      totalElements: number;
+      /** Format: int32 */
+      totalPages: number;
+      last: boolean;
+    };
+    AttachmentApprovalCountResponse: {
+      /** Format: int64 */
+      pending: number;
     };
     AccessLogResponse: {
       /** Format: int64 */
@@ -6386,6 +6521,54 @@ export interface operations {
       };
     };
   };
+  reject_1: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AttachmentRejectionRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['AttachmentApprovalResponse'];
+        };
+      };
+    };
+  };
+  approve_1: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['AttachmentApprovalResponse'];
+        };
+      };
+    };
+  };
   check_1: {
     parameters: {
       query?: never;
@@ -7392,6 +7575,52 @@ export interface operations {
     };
   };
   list_15: {
+    parameters: {
+      query?: {
+        box?: 'TO_APPROVE' | 'REQUESTED';
+        status?: 'NOT_REQUIRED' | 'PENDING' | 'APPROVED' | 'REJECTED';
+        /** @description 0부터 시작 */
+        page?: number;
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['PageResponseAttachmentApprovalResponse'];
+        };
+      };
+    };
+  };
+  pendingCount: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          '*/*': components['schemas']['AttachmentApprovalCountResponse'];
+        };
+      };
+    };
+  };
+  list_16: {
     parameters: {
       query?: {
         from?: string;

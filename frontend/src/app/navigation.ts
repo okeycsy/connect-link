@@ -1,5 +1,6 @@
 import {
   IconBell,
+  IconFileCheck,
   IconBubbleText,
   IconClipboardCheck,
   IconHome,
@@ -98,16 +99,27 @@ export const FEATURE_MENU: FeatureMenuItem[] = [
   },
 ];
 
-/** 기능은 아니지만 사이드바 바로가기에 두는 전역 화면. 알림 센터는 읽지 않은 수를 배지로 보인다. */
+/**
+ * 기능은 아니지만 사이드바 바로가기에 두는 전역 화면. 알림 센터는 읽지 않은 수를, 파일 결재는 내가 결재할 대기 수를 배지로 보인다.
+ */
 export interface ShortcutMenuItem {
-  key: 'notifications';
+  key: 'notifications' | 'file-approvals';
   path: string;
   label: string;
   icon: Icon;
+  /** 결제원 계정에게만 보인다(결제원 파일 반출 결재). */
+  kftcOnly?: boolean;
 }
 
 export const SHORTCUT_MENU: ShortcutMenuItem[] = [
   { key: 'notifications', path: 'notifications', label: '알림 센터', icon: IconBell },
+  {
+    key: 'file-approvals',
+    path: 'file-approvals',
+    label: '파일 결재',
+    icon: IconFileCheck,
+    kftcOnly: true,
+  },
 ];
 
 /** 관리자의 기본 업무 영역. 그 밖의 사용자는 담당 업무 중 첫 번째로 들어간다(features/account/hooks 의 homeBusinessSlugOf). */

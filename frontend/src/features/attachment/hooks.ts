@@ -31,6 +31,15 @@ export function useFileTransferBlocked(): boolean {
   return me?.organizationType === 'KFTC' && me.networkZone === 'EXTERNAL';
 }
 
+/**
+ * 결제원 계정이 올리는 파일은 외부망 반출이라 같은 부서·팀 팀장의 결재를 받아야 참가기관에 보인다(서버가 정한다). 화면은 이 값으로 올리기
+ * 칸에 결재 안내를 보인다.
+ */
+export function useExportApprovalRequired(): boolean {
+  const { data: me } = useMe();
+  return me?.organizationType === 'KFTC';
+}
+
 export function useAttachments(owner: AttachmentOwner) {
   return useQuery({
     queryKey: attachmentKeys.list(owner),
@@ -73,4 +82,74 @@ export function useDeleteAttachment(owner: AttachmentOwner) {
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: attachmentKeys.list(owner) }),
   });
+}
+
+// ---- 파일 반출 결재 ----
+
+export type AttachmentApproval = components['schemas']['AttachmentApprovalResponse'];
+export type AttachmentApprovalStatus = Attachment['approvalStatus'];
+export type AttachmentApprovalBox = 'TO_APPROVE' | 'REQUESTED';
+
+export const approvalKeys = {
+  all: ['attachment-approvals'] as const,
+  list: (box: AttachmentApprovalBox, status: AttachmentApprovalStatus | undefined, page: number) =>
+    ['attachment-approvals', 'list', box, status ?? 'ALL', page] as const,
+  pendingCount: ['attachment-approvals', 'pending-count'] as const,
+};
+
+/** 파일 결재함. TO_APPROVE 는 내가 결재할 파일, REQUESTED 는 내가 올린 파일. */
+export function useAttachmentApprovals(
+  box: AttachmentApprovalBox,
+  status: AttachmentApprovalStatus | undefined,
+  page: number,
+) {
+  return useQuery({
+    queryKey: approvalKeys.list(box, status, page),
+    queryFn: async () =>
+      unwrap(
+        await api.GET('/api/v1/attachment-approvals', {
+          params: { query: { box, status, page, size: 20 } },
+        }),
+      ),
+  });
+}
+
+/** 내가 결재할 대기 파일 수(사이드바 배지). 결제원 계정만 묻는다. */
+export function usePendingApprovalCount(enabled: boolean) {
+  return useQuery({
+    queryKey: approvalKeys.pendingCount,
+    queryFn: async () => unwrap(await api.GET('/api/v1/attachment-approvals/pending-count')),
+    enabled,
+    refetchInterval: 60_000,
+  });
+}
+
+function useApprovalDecision<T>(decide: (id: number, input: T) => Promise<AttachmentApproval>) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: number; input: T }) => decide(id, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: approvalKeys.all });
+      queryClient.invalidateQueries({ queryKey: attachmentKeys.all });
+    },
+  });
+}
+
+export function useApproveAttachment() {
+  return useApprovalDecision<void>(async (id) =>
+    unwrap(
+      await api.POST('/api/v1/attachment-approvals/{id}/approval', { params: { path: { id } } }),
+    ),
+  );
+}
+
+export function useRejectAttachment() {
+  return useApprovalDecision<string>(async (id, reason) =>
+    unwrap(
+      await api.POST('/api/v1/attachment-approvals/{id}/rejection', {
+        params: { path: { id } },
+        body: { reason },
+      }),
+    ),
+  );
 }

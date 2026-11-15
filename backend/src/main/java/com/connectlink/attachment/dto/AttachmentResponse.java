@@ -3,6 +3,7 @@ package com.connectlink.attachment.dto;
 import com.connectlink.attachment.Attachment;
 import com.connectlink.attachment.AttachmentApprovalStatus;
 import com.connectlink.attachment.AttachmentOwnerType;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 
 /**
@@ -20,12 +21,12 @@ public record AttachmentResponse(
     String contentType,
     long size,
     String uploadedBy,
-    String uploaderName,
+    @Schema(nullable = true) String uploaderName,
     LocalDateTime uploadedAt,
     AttachmentApprovalStatus approvalStatus,
-    String approverName,
-    LocalDateTime decidedAt,
-    String rejectionReason) {
+    @Schema(nullable = true) String approverName,
+    @Schema(nullable = true) LocalDateTime decidedAt,
+    @Schema(nullable = true) String rejectionReason) {
 
   public static AttachmentResponse from(Attachment attachment) {
     return new AttachmentResponse(
