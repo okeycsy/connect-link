@@ -1,6 +1,7 @@
 package com.connectlink.suspension;
 
 import com.connectlink.attachment.AttachmentOwnerAccess;
+import com.connectlink.attachment.AttachmentOwnerInfo;
 import com.connectlink.attachment.AttachmentOwnerType;
 import com.connectlink.auth.CurrentUser;
 import java.util.Optional;
@@ -44,5 +45,18 @@ class SuspensionAttachmentAccess implements AttachmentOwnerAccess {
         .findById(ownerId)
         .filter(s -> !s.isKftcWork())
         .map(s -> "일시중단에는 공문이 하나 이상 있어야 합니다. 바꾸려면 새 공문을 먼저 올린 뒤 지워 주세요.");
+  }
+
+  @Override
+  public AttachmentOwnerInfo describe(Long ownerId) {
+    return repository
+        .findById(ownerId)
+        .map(
+            s ->
+                new AttachmentOwnerInfo(
+                    s.isKftcWork() ? "결제원 작업 안내" : s.getOrganization().getName() + " 일시중단",
+                    s.getBusinesses().stream().sorted().findFirst().orElse(null),
+                    "suspensions/" + s.getId()))
+        .orElseGet(() -> AttachmentOwnerInfo.unknown(ownerType()));
   }
 }

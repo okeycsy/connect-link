@@ -1,6 +1,7 @@
 package com.connectlink.opinion;
 
 import com.connectlink.attachment.AttachmentOwnerAccess;
+import com.connectlink.attachment.AttachmentOwnerInfo;
 import com.connectlink.attachment.AttachmentOwnerType;
 import com.connectlink.auth.CurrentUser;
 import org.springframework.stereotype.Component;
@@ -43,6 +44,14 @@ final class OpinionAttachmentAccess {
           .findById(ownerId)
           .map(r -> canEditRequest(accessPolicy, user, r))
           .orElse(false);
+    }
+
+    @Override
+    public AttachmentOwnerInfo describe(Long ownerId) {
+      return repository
+          .findById(ownerId)
+          .map(r -> new AttachmentOwnerInfo(r.getTitle(), r.getBusiness(), "opinions/" + r.getId()))
+          .orElseGet(() -> AttachmentOwnerInfo.unknown(ownerType()));
     }
   }
 

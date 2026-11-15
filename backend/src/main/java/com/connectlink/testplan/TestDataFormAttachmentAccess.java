@@ -1,6 +1,7 @@
 package com.connectlink.testplan;
 
 import com.connectlink.attachment.AttachmentOwnerAccess;
+import com.connectlink.attachment.AttachmentOwnerInfo;
 import com.connectlink.attachment.AttachmentOwnerType;
 import com.connectlink.auth.CurrentUser;
 import org.springframework.stereotype.Component;
@@ -35,5 +36,16 @@ class TestDataFormAttachmentAccess implements AttachmentOwnerAccess {
         .findById(ownerId)
         .map(p -> accessPolicy.canManage(user, p.getBusiness()))
         .orElse(false);
+  }
+
+  @Override
+  public AttachmentOwnerInfo describe(Long ownerId) {
+    return repository
+        .findById(ownerId)
+        .map(
+            p ->
+                new AttachmentOwnerInfo(
+                    p.getTitle() + " · 테스트데이터 회신 양식", p.getBusiness(), "tests/" + p.getId()))
+        .orElseGet(() -> AttachmentOwnerInfo.unknown(ownerType()));
   }
 }

@@ -24,4 +24,9 @@ public interface AttachmentOwnerAccess {
   default Optional<String> requiredMessage(Long ownerId) {
     return Optional.empty();
   }
+
+  /** 결재함에 보일 대상 이름과 화면 경로. 결제원 담당자가 올릴 수 있는 대상은 구현한다. */
+  default AttachmentOwnerInfo describe(Long ownerId) {
+    return AttachmentOwnerInfo.unknown(ownerType());
+  }
 }

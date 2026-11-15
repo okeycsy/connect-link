@@ -200,14 +200,14 @@ public class ChatService {
                 attachments.getOrDefault(m.getId(), List.of())));
   }
 
-  /** 메시지를 보낸다. 본문이 비었으면 첨부를 올린다고 해야 한다. 보낸 메시지까지 읽은 것으로 둔다. */
+  /** 메시지를 보낸다. 본문이 있어야 하고 파일은 보내지 않는다. 보낸 메시지까지 읽은 것으로 둔다. */
   public ChatMessageResponse send(CurrentUser user, Long roomId, ChatMessageSendRequest body) {
     ChatRoom room = loadRoom(roomId);
     Map<String, Participant> participants = membership.participants(room);
     accessPolicy.ensureMember(participants.containsKey(user.email()));
-    if (body.content().isEmpty() && !body.withAttachments()) {
+    if (body.content().isEmpty()) {
       throw BusinessException.onField(
-          HttpStatus.BAD_REQUEST, "CHAT_MESSAGE_EMPTY", "content", "메시지를 입력하거나 파일을 골라 주세요.");
+          HttpStatus.BAD_REQUEST, "CHAT_MESSAGE_EMPTY", "content", "메시지를 입력해 주세요.");
     }
     Set<String> mentionable =
         mentionables(participants.values()).stream()
@@ -224,12 +224,7 @@ public class ChatService {
     }
     ChatMessage message =
         messageRepository.saveAndFlush(
-            new ChatMessage(
-                room,
-                user,
-                body.content(),
-                body.mentionOrganizationCodes(),
-                body.withAttachments()));
+            new ChatMessage(room, user, body.content(), body.mentionOrganizationCodes(), false));
     advanceReadMark(roomId, user.email(), message.getId());
     return toResponse(
         user, message, participants.keySet(), readMarks(roomId), organizationLabels(), List.of());

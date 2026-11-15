@@ -46,6 +46,12 @@ public class AttachmentAccessPolicy {
     return access == null ? Optional.empty() : access.requiredMessage(ownerId);
   }
 
+  /** 결재함에 보일 대상 설명. 권한 빈이 없는 대상은 종류 이름만. */
+  public AttachmentOwnerInfo describe(AttachmentOwnerType ownerType, Long ownerId) {
+    AttachmentOwnerAccess access = accesses.get(ownerType);
+    return access == null ? AttachmentOwnerInfo.unknown(ownerType) : access.describe(ownerId);
+  }
+
   public void ensureCanView(CurrentUser user, AttachmentOwnerType ownerType, Long ownerId) {
     if (!canView(user, ownerType, ownerId)) {
       throw new AccessDeniedException("이 첨부파일을 볼 권한이 없습니다.");

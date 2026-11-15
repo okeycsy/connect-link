@@ -46,3 +46,21 @@ VALUES
 UPDATE notice
 SET opinion_request_id = (SELECT r.id FROM opinion_request r WHERE r.title = '계좌통합관리업무 전문 변경 회의 참석 회신')
 WHERE title = '계좌통합관리업무 전문 변경 회의 개최 안내';
+
+-- 첨부. 결제원 담당자가 올린 파일은 같은 팀 팀장(강지원)의 반출 결재를 받아야 참가기관에 보인다.
+-- 규약 신구 대비표는 승인, 회의 안내문은 결재 대기(참가기관에는 아직 안 보인다), 시행세칙 개정안은 반려됐다.
+INSERT INTO attachment (owner_type, owner_id, original_name, content_type, size_bytes, storage_key,
+                        approval_status, uploader_name, uploader_team, approver_email, approver_name, decided_at, rejection_reason,
+                        created_at, created_by, updated_at, updated_by)
+SELECT 'NOTICE', n.id, f.original_name, 'application/pdf', 0, f.storage_key,
+       f.approval_status, '홍성민', '계좌서비스부 계좌통합팀', 'kang.jiwon@kftc.example.com', '강지원',
+       CASE WHEN f.approval_status = 'PENDING' THEN CAST(NULL AS TIMESTAMP) ELSE n.created_at + INTERVAL '2' HOUR END,
+       f.rejection_reason,
+       n.created_at, 'hong.sungmin@kftc.example.com', n.created_at, 'hong.sungmin@kftc.example.com'
+FROM (VALUES
+  ('계좌통합관리업무 규약(예시)', '계좌통합관리업무_규약_신구대비표.pdf', 'seed:notice-sample.pdf#1', 'APPROVED', CAST(NULL AS VARCHAR(500))),
+  ('계좌통합관리업무 전문 변경 회의 개최 안내', '전문_변경_회의_안내문.pdf', 'seed:notice-sample.pdf#2', 'PENDING', NULL),
+  ('계좌통합관리업무 시행세칙(예시)', '계좌통합관리업무_시행세칙_개정안.pdf', 'seed:notice-sample.pdf#3', 'REJECTED',
+   '개정안 초안이라 참가기관에 보내기 이르니, 부서 검토를 마친 최종본으로 다시 올려 주세요.')
+) AS f (title, original_name, storage_key, approval_status, rejection_reason)
+JOIN notice n ON n.title = f.title;
