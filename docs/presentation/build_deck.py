@@ -152,13 +152,14 @@ VIDEOS = None
 
 
 def video(slide, chapter, label, seconds, x, y, w):
-    """영상 자리. --videos 로 영상 폴더를 주면 그 장 영상을 넣고, 없으면 화면 캡처 위에 재생 표시를 그린다."""
+    """영상 자리. --videos 로 영상 폴더를 주면 그 장 영상을 넣고(재생하면 전체 화면), 없으면 화면 캡처 위에 재생 표시를 그린다."""
     h = w * 9 / 16
     poster = os.path.join(ASSETS, f'poster-{chapter}.jpg')
     box(slide, x - 0.05, y - 0.05, w + 0.1, h + 0.1, fill=WHITE, line=LINE, radius=0.1)
     path = os.path.join(VIDEOS, f'demo-{chapter}.mp4') if VIDEOS else None
     if path and os.path.exists(path):
         slide.shapes.add_movie(path, Inches(x), Inches(y), Inches(w), Inches(h), poster_frame_image=poster, mime_type='video/mp4')
+        _play_full_screen(slide)
     else:
         slide.shapes.add_picture(poster, Inches(x), Inches(y), Inches(w), Inches(h))
         veil = box(slide, x, y, w, h, fill=INK, shape=MSO_SHAPE.RECTANGLE)
@@ -174,6 +175,12 @@ def video(slide, chapter, label, seconds, x, y, w):
     pill(slide, x + 0.18, y + 0.18, 0.125 * len(lab) + 0.45, 0.36, lab, ORANGE, WHITE, size=11)
     pill(slide, x + w - 1.1, y + 0.18, 0.92, 0.36, f'{seconds}초', WHITE, INK, size=11)
     return h
+
+
+def _play_full_screen(slide):
+    """영상을 재생하면 화면 가득 보이게 한다(PowerPoint 비디오 재생 옵션 "전체 화면 재생")."""
+    for node in slide._element.iter(qn('p:video')):
+        node.set('fullScrn', '1')
 
 
 def _alpha(shape, percent_opaque):
