@@ -39,23 +39,38 @@ export function atIds(): Ids {
   return cached;
 }
 
+/** 로그인 주체 알약을 왼쪽 아래(사이드바 빈 곳)로 옮긴다. 위쪽에 두면 상세 패널 제목과 알림 토스트를 가린다. */
+const WHO_BOTTOM_LEFT =
+  '#__demo-who{top:auto!important;right:auto!important;left:16px!important;bottom:16px!important}';
+
+async function who(d: Director, kind: 'kftc' | 'org', tag: string, text: string) {
+  await d.page.addInitScript((css) => {
+    document.addEventListener('DOMContentLoaded', () => {
+      const el = document.createElement('style');
+      el.textContent = css;
+      document.head.appendChild(el);
+    });
+  }, WHO_BOTTOM_LEFT);
+  await d.who(kind, tag, text);
+}
+
 /** 결제원 업무 담당자(문서준 과장) 시점. */
 export async function asMoon(d: Director) {
   await d.switchSession(MOON);
-  await d.who('kftc', '결제원', '문서준 과장 · 자동이체 업무 담당');
+  await who(d, 'kftc', '결제원', '문서준 과장 · 자동이체 업무 담당');
 }
 
 /** 결제원 운영 담당자(김태호 대리) 시점. */
 export async function asOps(d: Director) {
   await d.switchSession(OPS);
-  await d.who('kftc', '결제원', '김태호 대리 · 운영 담당');
+  await who(d, 'kftc', '결제원', '김태호 대리 · 운영 담당');
 }
 
 /** 참가기관 담당자(신한은행 이준호 과장) 시점. 6개월 확인 창은 띄우지 않는다. */
 export async function asLee(d: Director) {
   await d.skipReconfirm();
   await d.switchSession(LEE);
-  await d.who('org', '신한은행', '이준호 과장 · 참가기관 담당자');
+  await who(d, 'org', '신한은행', '이준호 과장 · 참가기관 담당자');
 }
 
 /**

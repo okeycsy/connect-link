@@ -60,21 +60,27 @@ export const atBiz: Chapter = {
         const count = page.getByTestId('replied-count');
         await count.waitFor();
         await d.pause(400);
-        await look(d, [count, page.getByTestId('reply-rate'), page.getByTestId('not-replied-names')], 2000);
+        await look(d, [count, page.getByTestId('reply-rate'), page.getByTestId('not-replied-names')], 1400);
         const remind = page.getByRole('dialog', { name: '리마인드 메일 보내기' });
         await d.clickUntil(page.getByRole('button', { name: '미회신 기관 리마인드' }), remind);
         const check = page.getByRole('dialog', { name: '리마인드 메일 확인' });
         await d.clickUntil(remind.getByRole('button', { name: '다음: 메일 확인' }), check.getByTestId('mail-preview'));
         await d.pause(200);
-        await look(d, check, 2200);
+        await look(d, check, 1600);
         await page.keyboard.press('Escape');
         await d.pause(300);
       },
     },
     {
+      id: 'at-biz-meeting-done',
+      kind: 'card',
+      duration: 2800,
+      card: { tone: 'light', title: '회의를 마쳤습니다.\n이제 기관별 의견을 묻습니다.', titleSize: 64 },
+    },
+    {
       id: 'at-biz-survey',
       kind: 'app',
-      summary: '결제원(문서준) → 의견조사 요청 내용 → 질문 5개와 섹션 이동(가능 → 섹션 2, 어려움 → 섹션 3)',
+      summary: '결제원(문서준) → 의견조사 요청 내용 → 질문 5개와 섹션 이동(가능 → 섹션 2, 어려움 → 섹션 3) → 대상 기관별 회신 담당자(세부업무)',
       run: async (d, page) => {
         await asMoon(d);
         await page.goto(`/${AT_SLUG}/opinions/${atIds().surveyId}`);
@@ -82,7 +88,11 @@ export const atBiz: Chapter = {
         const questions = page.getByTestId('question-list');
         await questions.waitFor();
         await d.pause(300);
-        await look(d, questions.getByText(/가능 → 섹션 2/), 3000);
+        await look(d, questions.getByText(/가능 → 섹션 2/), 1800);
+        // 대상은 연락처에서 세부업무로 골라 담은 회신 담당자다.
+        const targets = page.getByTestId('target-table');
+        await look(d, targets.locator('tr').filter({ hasText: '신한은행' }), 1000);
+        await look(d, targets.locator('tr').filter({ hasText: '우체국' }), 1200);
       },
     },
     {
@@ -126,17 +136,23 @@ export const atBiz: Chapter = {
         const table = page.getByTestId('collation-table');
         await table.waitFor();
         await d.pause(400);
-        await look(d, table, 2600);
+        await look(d, table, 1800);
         await d.click(page.getByRole('tab', { name: '회신 현황' }));
         const summary = page.getByTestId('question-summary');
         await summary.waitFor();
         await d.pause(200);
-        await look(d, summary, 2200);
+        await look(d, summary, 1500);
         await d.click(page.getByRole('tab', { name: '취합표' }));
         const excel = page.getByRole('button', { name: '엑셀 다운로드' });
         await excel.waitFor();
-        await look(d, excel, 2000);
+        await look(d, excel, 1400);
       },
+    },
+    {
+      id: 'at-biz-decided',
+      kind: 'card',
+      duration: 3400,
+      card: { tone: 'light', kicker: '요건 확정', title: '당일 2회(13·18시) 회신 · 불가 사유코드 3종 · 2분기 시행', titleSize: 56 },
     },
   ],
 };

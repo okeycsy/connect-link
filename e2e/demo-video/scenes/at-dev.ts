@@ -30,7 +30,7 @@ export const atDev: Chapter = {
     {
       id: 'at-dev-org',
       kind: 'app',
-      summary: '신한은행(이준호) → 같은 테스트 → 테스트데이터 "생성 완료"와 메모 저장 → 001·002 정상, 003 오류 + 특이사항 "18시 파일 레코드 수 불일치" → 결과 저장',
+      summary: '신한은행(이준호) → 같은 테스트 → 테스트데이터 "생성 완료"와 메모 저장 → 002 정상, 003 오류 + 특이사항 "18시 파일 레코드 수 불일치" → 결과 저장',
       run: async (d, page) => {
         await asLee(d);
         await page.goto(`/${AT_SLUG}/tests/${atIds().testPlanId}`);
@@ -42,12 +42,11 @@ export const atDev: Chapter = {
         await d.type(card.getByRole('textbox', { name: '메모' }), '사유코드별 해지 테스트 계좌 3개 생성', { delay: 15 });
         await d.clickUntil(card.getByRole('button', { name: '테스트데이터 저장' }), card.getByText('신한은행(이준호 과장) ·'));
         await d.pause(500);
-        const items = ['001', '002', '003'].map((n) => page.getByTestId(`item-${n}`));
+        const items = ['002', '003'].map((n) => page.getByTestId(`item-${n}`));
         await look(d, items);
         await d.click(items[0].getByText('정상', { exact: true }));
-        await d.click(items[1].getByText('정상', { exact: true }));
-        await d.click(items[2].getByText('오류', { exact: true }));
-        await d.type(items[2].getByRole('textbox', { name: '003 특이사항' }), '18시 파일 레코드 수 불일치', { delay: 25 });
+        await d.click(items[1].getByText('오류', { exact: true }));
+        await d.type(items[1].getByRole('textbox', { name: '003 특이사항' }), '18시 파일 레코드 수 불일치', { delay: 25 });
         await d.pause(200);
         await d.clickUntil(page.getByRole('button', { name: /결과 저장/ }), page.getByTestId('target-progress').getByText(/^[1-9]\d*%$/));
         await d.pause(300);
@@ -84,13 +83,16 @@ export const atDev: Chapter = {
     {
       id: 'at-dev-comment',
       kind: 'app',
-      summary: '신한은행(이준호) → 같은 화면 003 의 결제원 의견 확인 → 답글 "수정본으로 재테스트하겠습니다" 달기',
+      summary: '신한은행(이준호) → 같은 화면에서 우리 기관 수행률과 003 의 결제원 의견 확인 → 답글 "수정본으로 재테스트하겠습니다" 달기',
       run: async (d, page) => {
         await asLee(d);
         await page.goto(`/${AT_SLUG}/tests/${atIds().testPlanId}`);
         const item = page.getByTestId('item-003');
         await item.getByTestId('item-feedback').waitFor();
+        // 우리 기관 수행률과 결제원 의견을 같은 화면에서 본다.
+        await look(d, page.getByTestId('plan-progress'), 1200);
         await d.centerOn(item, 0.45);
+        await look(d, item.getByTestId('item-feedback'), 1200);
         await look(d, item);
         await d.click(item.getByRole('button', { name: '003 답글' }));
         await d.type(item.getByRole('textbox', { name: '003 답글 입력' }), '수정본으로 재테스트하겠습니다.', { delay: 30 });

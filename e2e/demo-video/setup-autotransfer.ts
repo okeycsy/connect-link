@@ -9,7 +9,7 @@
  * 2. 의견 요청 "…실무 회의 참석 회신"(회신중) + 공지 "…실무 회의 개최 안내"(그 요청을 이어 둔 글). KB·우체국 참석, 저축은행중앙회 불참 회신
  * 3. 의견 요청 "…의견조사"(섹션 4개, 답별 이동, 회신중). KB·우체국·저축은행중앙회 회신
  * 4. 기관 테스트 "자동이체 해지 결과 배치파일 개선"(요구사항 5개, 대상 6곳, 테스트데이터 사전 요청). KB·우체국은 테스트데이터 생성 완료와 결과 일부
- * 5. 장서윤 연락처 수정(변경 이력), 6. 자동이체통합관리 단체방 대화 두 줄
+ * 5. KB국민은행 부담당 교체(백승호 → 남도윤, 변경 이력), 6. 자동이체통합관리 단체방 대화 두 줄
  * 끝나면 만든 id 를 out/autotransfer.json 에 남긴다(장면 스크립트가 읽는다).
  */
 import { request, type APIRequestContext } from '@playwright/test';
@@ -176,7 +176,7 @@ async function main() {
       { title: '당일 2회 회신', description: null, jump: null },
       { title: '적용 계획', description: '회신할 수 있는 기관만 답합니다.', jump: { type: 'SECTION', sectionIndex: 3 } },
       { title: '어려운 이유', description: '회신하기 어려운 기관만 답합니다.', jump: null },
-      { title: '사유코드와 개발 기간', description: null, jump: null },
+      { title: '공통', description: null, jump: null },
     ],
     questions: [
       {
@@ -240,7 +240,7 @@ async function main() {
       { title: '오류 파일 재송신', description: null },
     ],
     organizationIds: TARGET_CODES.map((c) => orgIds[c]),
-    targetContacts: [],
+    targetContacts: TARGET_CODES.map((code) => ({ organizationId: orgIds[code], emails: byOrg[orgIds[code]] ?? [] })),
     testDataRequest: { dueDate: day(0), instruction: '불가 사유코드별로 해지 테스트 계좌를 하나씩(3개 이상) 만들어 계좌번호와 상태를 적어 주세요.' },
   });
   const items: { id: number }[] = plan.items;
@@ -273,26 +273,34 @@ async function main() {
     await ctx.dispose();
   }
 
-  // 5. 연락처 변경 이력: 장서윤이 팀·내선·휴대폰을 고친다(prep 장면의 변경 이력, 이전 휴대폰은 가려서 보인다).
+  // 5. 연락처 담당자 교체 이력: KB국민은행 장서윤이 부담당을 백승호에서 남도윤으로 바꾼다(prep 장면의 변경 이력, 이전 담당자 휴대폰은 가려서 보인다).
   {
     const ctx = await session('jang.seoyun@kb.example.com');
-    const mine = await call(ctx, 'get', `/api/v1/contacts?business=${AT.slug}&size=200`);
-    const c = (mine.content ?? mine).find((x: any) => x.email === 'jang.seoyun@kb.example.com');
-    if (!c) throw new Error('장서윤 연락처를 못 찾았습니다');
-    await call(ctx, 'put', `/api/v1/contacts/${c.id}`, {
+    const base = {
       business: AT.business,
-      organizationId: c.organizationId,
-      subBusiness: c.subBusiness,
-      name: c.name,
-      department: c.department,
+      organizationId: orgIds['004'],
+      subBusiness: '자동이체 해지',
+      department: '디지털금융부',
+      jobTitle: '대리',
+      jobRole: 'BUSINESS',
+      itRoles: [],
+      rank: 'SECONDARY',
+    };
+    const before = await call(ctx, 'post', '/api/v1/contacts', {
+      ...base,
+      name: '백승호',
+      team: '수신결제팀',
+      extensionPhone: '02-0000-2320',
+      mobilePhone: '010-0000-2320',
+      email: 'baek.seungho@kb.example.com',
+    });
+    await call(ctx, 'put', `/api/v1/contacts/${before.id}`, {
+      ...base,
+      name: '남도윤',
       team: '자동납부팀',
-      jobTitle: c.jobTitle,
-      jobRole: c.jobRole,
-      itRoles: c.itRoles ?? [],
-      rank: c.rank,
-      extensionPhone: '02-0000-2318',
-      mobilePhone: '010-0000-2318',
-      email: c.email,
+      extensionPhone: '02-0000-2324',
+      mobilePhone: '010-0000-2324',
+      email: 'nam.doyun@kb.example.com',
     });
     await ctx.dispose();
   }

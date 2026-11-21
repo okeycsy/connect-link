@@ -61,6 +61,12 @@ export const atSusp: Chapter = {
   title: '일시중단',
   scenes: [
     {
+      id: 'at-susp-later',
+      kind: 'card',
+      duration: 2200,
+      card: { tone: 'light', title: '며칠 뒤' },
+    },
+    {
       id: 'at-susp-register',
       kind: 'app',
       summary: '신한은행(이준호) → 일시중단 등록 → 중단 일시(내일 23:00~다음 날 02:00)·이유 → 대상 업무 자동이체통합관리·납부자자동이체 → 연락처 → 공문 PDF 첨부 → 저장 → 검토 대기',
@@ -94,7 +100,7 @@ export const atSusp: Chapter = {
     {
       id: 'at-susp-confirm',
       kind: 'app',
-      summary: '결제원 운영(김태호) → 발송함의 "매터모스트 · … 일시중단이 등록되었습니다" 줄 → 검토 대기 건 → 확인 시작 → 조치 쓰고 확정 → 확정하기 → 확정',
+      summary: '결제원 운영(김태호) → 발송함의 "매터모스트 · … 일시중단이 등록되었습니다" 줄 → 검토 대기 건 → 확인 시작 → 조치 쓰고 확정 → 확정하기 → 확정 → 주간 취합 보내기(운영·관제 매터모스트 채널, 방금 확정한 신한은행 건)',
       run: async (d, page) => {
         await asOps(d);
         await page.goto(`/${AT_SLUG}/demo/outbox`);
@@ -119,7 +125,15 @@ export const atSusp: Chapter = {
         await look(d, handover);
         await d.type(handover.getByRole('textbox', { name: '조치 및 인수인계 사항' }), '23:00 신한은행 해지 결과 파일 수신 보류, 재개 연락 오면 재처리.', { delay: 6 });
         await d.clickUntil(handover.getByRole('button', { name: '확정하기' }), status.getByText('확정', { exact: true }));
-        await look(d, status, 2000);
+        await look(d, status, 1200);
+        // 확정 건은 운영·관제 매터모스트 채널로 모아 보낸다(평소에는 정해진 때 자동, 시연은 지금 보낸다).
+        await page.goto(`/${AT_SLUG}/suspensions`);
+        const confirmSend = page.getByRole('dialog', { name: '주간 취합 보내기' });
+        await d.clickUntil(page.getByRole('button', { name: '주간 취합 보내기' }), confirmSend);
+        await look(d, confirmSend, 1200);
+        const digest = page.getByRole('dialog', { name: '주간 취합을 보냈습니다' });
+        await d.clickUntil(confirmSend.getByRole('button', { name: '보내기' }), digest.getByTestId('digest-body'));
+        await look(d, digest.getByTestId('digest-body'), 2600);
       },
     },
   ],
