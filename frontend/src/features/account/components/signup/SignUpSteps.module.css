@@ -24,3 +24,11 @@
 .summaryLabel {
   flex: 0 0 96px;
 }
+
+/* 개인정보 수집·이용 안내: 흰 카드 안 1px 선 상자(radius 14). 표는 휴대폰 폭에서 카드형이 된다. */
+.privacy {
+  padding: 14px 16px;
+  border: 1px solid var(--cl-line);
+  border-radius: 14px;
+  background: var(--cl-sunken);
+}

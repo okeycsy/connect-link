@@ -66,6 +66,14 @@ public class SignUpService {
         organization, request.extensionPhone(), "extensionPhone");
     Map<Business, String> businesses = businessesOf(organization, request.businesses());
     Set<ItRole> itRoles = itRolesOf(request.jobRole(), request.itRoles());
+    String mobilePhone = blankToNull(request.mobilePhone());
+    if (mobilePhone != null && !request.mobilePhoneConsent()) {
+      throw BusinessException.onField(
+          HttpStatus.BAD_REQUEST,
+          "MOBILE_PHONE_CONSENT_REQUIRED",
+          "mobilePhoneConsent",
+          "휴대폰번호를 적으려면 휴대폰번호 수집·이용(선택)에 동의해 주세요.");
+    }
 
     String passwordHash = passwordEncoder.encode(request.password());
     LocalDateTime now = LocalDateTime.now(clock).truncatedTo(ChronoUnit.MILLIS);
@@ -85,7 +93,7 @@ public class SignUpService {
                       request.team().trim(),
                       request.jobTitle().trim(),
                       request.extensionPhone().trim(),
-                      blankToNull(request.mobilePhone()),
+                      mobilePhone,
                       now);
                   return rejected;
                 })
@@ -104,8 +112,9 @@ public class SignUpService {
                             request.team().trim(),
                             request.jobTitle().trim(),
                             request.extensionPhone().trim(),
-                            blankToNull(request.mobilePhone()),
+                            mobilePhone,
                             now)));
+    account.recordPrivacyNotice(PrivacyPolicy.VERSION, request.mobilePhoneConsent(), now);
     reviewService.notifyReviewers(account);
     return toResponse(account);
   }

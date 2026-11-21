@@ -163,9 +163,13 @@ JOIN opinion_question q ON q.request_id = r.id AND q.sort_order = 0;
 
 -- 첨부자료. 회비 사전확인 요청에 기관별 실적·분담 회비 엑셀(가상 수치)을 붙인다. 회비 총액을 균등분담분과 실적분담분으로 나누는 방식이다.
 -- 저장소 키 자리의 seed:파일이름 은 서버가 뜰 때 SampleAttachmentLoader 가 db/seed/files/ 의 파일을 저장소에 넣고 실제 키·크기로 바꾼다.
-INSERT INTO attachment (owner_type, owner_id, original_name, content_type, size_bytes, storage_key, created_at, created_by, updated_at, updated_by)
+-- 결제원 담당자가 올린 파일이라 같은 팀 팀장(강지원)이 반출을 승인했다.
+INSERT INTO attachment (owner_type, owner_id, original_name, content_type, size_bytes, storage_key,
+                        approval_status, uploader_name, uploader_team, approver_email, approver_name, decided_at,
+                        created_at, created_by, updated_at, updated_by)
 SELECT 'OPINION_REQUEST', r.id, '4분기_계좌통합관리업무_회비_사전확인.xlsx',
        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 0, 'seed:account-info-fee-precheck.xlsx',
+       'APPROVED', '홍성민', '계좌서비스부 계좌통합팀', 'kang.jiwon@kftc.example.com', '강지원', r.created_at + INTERVAL '1' HOUR,
        r.created_at, r.created_by, r.created_at, r.created_by
 FROM opinion_request r
 WHERE r.title = '4분기 계좌통합관리업무 회비 사전확인';

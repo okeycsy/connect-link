@@ -16,6 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.connectlink.account.UserAccountRepository;
+import com.connectlink.attachment.AttachmentApprovals;
 import com.connectlink.auth.TestUsers;
 import com.connectlink.notification.NotificationChannel;
 import com.connectlink.notification.NotificationOutbox;
@@ -42,6 +43,7 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
@@ -566,15 +568,18 @@ class TestPlanControllerTest {
                 .with(csrf())
                 .with(kim()))
         .andExpect(status().isForbidden());
-    mockMvc
-        .perform(
-            multipart("/api/v1/attachments")
-                .file(file)
-                .param("ownerType", "TEST_PLAN")
-                .param("ownerId", String.valueOf(id))
-                .with(csrf())
-                .with(hong()))
-        .andExpect(status().isCreated());
+    MvcResult uploaded =
+        mockMvc
+            .perform(
+                multipart("/api/v1/attachments")
+                    .file(file)
+                    .param("ownerType", "TEST_PLAN")
+                    .param("ownerId", String.valueOf(id))
+                    .with(csrf())
+                    .with(hong()))
+            .andExpect(status().isCreated())
+            .andReturn();
+    AttachmentApprovals.approve(mockMvc, uploaded, TestUsers.KFTC_ACCOUNT_INFO_LEADER);
     send(
             get("/api/v1/attachments")
                 .param("ownerType", "TEST_PLAN")

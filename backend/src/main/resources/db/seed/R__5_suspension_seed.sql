@@ -4,6 +4,7 @@
 -- 한 줄이 한 건이다. business 는 대상 업무(기준정보, R__5_0) 이름이다. 둘째 대상 업무(business2)와 둘째 담당자(contact2_*)가 있는 건은
 -- 여러 대상 업무를 멈추거나 담당자가 여럿이다. 관련 레일 업무(suspension_business)는 고른 대상 업무의 관련 업무를 모은 것이다.
 -- 한 줄을 일시중단·업무·담당자 세 테이블로 나누려고 잠깐 쓰는 표(suspension_seed)에 먼저 넣는다.
+DELETE FROM attachment WHERE owner_type = 'SUSPENSION';
 DELETE FROM suspension_digest;
 DELETE FROM suspension_reviewer;
 DELETE FROM suspension_contact;
@@ -218,3 +219,13 @@ SET registrant_job_title = (SELECT a.job_title FROM user_account a WHERE a.email
 UPDATE suspension
 SET kind = 'KFTC_WORK'
 WHERE organization_id = (SELECT o.id FROM organization o WHERE o.code = 'KFTC');
+
+-- 공문. 기관 일시중단은 공문이 꼭 있어야 하므로 기관 건마다 가상 공문(시연용, 실제 기관 문서 아님) 하나를 붙인다. 결제원 작업 안내는 공문 없이 둔다.
+-- 저장소 키 자리의 seed:파일이름#번호 는 서버가 뜰 때 SampleAttachmentLoader 가 db/seed/files/ 의 파일을 저장소에 넣고 실제 키·크기로 바꾼다.
+INSERT INTO attachment (owner_type, owner_id, original_name, content_type, size_bytes, storage_key, created_at, created_by, updated_at, updated_by)
+SELECT 'SUSPENSION', su.id, o.name || '_업무_일시중단_안내_공문.pdf', 'application/pdf', 0,
+       'seed:suspension-official-letter.pdf#' || CAST(su.id AS VARCHAR(20)),
+       su.created_at, su.registrant_email, su.created_at, su.registrant_email
+FROM suspension su
+JOIN organization o ON o.id = su.organization_id
+WHERE su.kind = 'ORGANIZATION';

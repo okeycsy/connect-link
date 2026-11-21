@@ -25,6 +25,10 @@ export interface SignUpFormValues {
   password: string;
   /** 화면에서만 확인한다(서버로 보내지 않는다). */
   passwordConfirm: string;
+  /** [필수] 개인정보 수집·이용 안내 확인(필수 항목은 계약 이행으로 처리한다). */
+  privacyNoticeConfirmed: boolean;
+  /** [선택] 휴대폰번호 수집·이용 동의. 휴대폰번호를 적으려면 있어야 한다. */
+  mobilePhoneConsent: boolean;
 }
 
 export type SignUpForm = UseFormReturnType<SignUpFormValues>;
@@ -44,6 +48,8 @@ export const SIGN_UP_INITIAL_VALUES: SignUpFormValues = {
   mobilePhone: '',
   password: '',
   passwordConfirm: '',
+  privacyNoticeConfirmed: false,
+  mobilePhoneConsent: false,
 };
 
 /** 화면 단계. 명세의 가입 항목을 docs/design/common-screens.md 의 4단계로 나눴다. */
@@ -81,6 +87,12 @@ export function stepErrors(step: number, values: SignUpFormValues): Record<strin
   if (step === 3 && values.password !== values.passwordConfirm) {
     errors.passwordConfirm = '비밀번호가 서로 다릅니다.';
   }
+  if (step === 3 && !values.privacyNoticeConfirmed) {
+    errors.privacyNoticeConfirmed = '개인정보 수집·이용 안내를 확인해 주세요.';
+  }
+  if (step === 3 && values.mobilePhone.trim() && !values.mobilePhoneConsent) {
+    errors.mobilePhoneConsent = '휴대폰번호를 적으려면 휴대폰번호 수집·이용(선택)에 동의해 주세요.';
+  }
   return errors;
 }
 
@@ -107,5 +119,8 @@ export function toSignUpRequest(
     extensionPhone: values.extensionPhone,
     mobilePhone: values.mobilePhone.trim() || null,
     password: values.password,
+    privacyNoticeConfirmed: values.privacyNoticeConfirmed,
+    // 휴대폰번호를 비우면 선택 동의도 보내지 않는다(서버도 남기지 않는다).
+    mobilePhoneConsent: values.mobilePhoneConsent && values.mobilePhone.trim() !== '',
   };
 }

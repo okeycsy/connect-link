@@ -57,10 +57,26 @@ app:
     internal-cidrs: []
     header-override: false
     default-zone: EXTERNAL
+  organization:
+    # 참가기관 담당자에게 결제원 담당자 4자리 내선을 전체 번호로 보일 때 앞에 붙이는 대표 국번(예: 02-000-). 공개 저장소라 실제 국번은
+    # 배포 설정(환경 변수 APP_ORGANIZATION_KFTC_OFFICE_PHONE_PREFIX)으로 넣는다. 비우면 4자리 그대로 보인다.
+    kftc-office-phone-prefix: ""
   support:
     # 로그인 화면 "문의 메일 보내기" 주소. 공개 저장소라 실제 주소는 배포 설정(환경 변수 APP_SUPPORT_INQUIRY_EMAIL)으로 넣는다. 비우면 문의하기 칸이 빠진다.
     inquiry-email: ""
+    # 개인정보 처리방침의 개인정보 관리부서 이름과 전화. 실제 값은 배포 설정(APP_SUPPORT_PRIVACY_DEPARTMENT, APP_SUPPORT_PRIVACY_PHONE)으로만 넣는다.
+    privacy-department: ""
+    privacy-phone: ""
+  audit:
+    access-log:
+      # 개인정보 처리 접속기록 보관 기간(개인정보의 안전성 확보조치 기준 제8조: 1년 이상, 정보주체 5만 명 이상 등은 2년 이상). 매일 3시 30분에 지난 기록을 지운다.
+      retention: 730d
+      cleanup-cron: "0 30 3 * * *"
   account:
+    login:
+      # 로그인 실패 잠금(개인정보의 안전성 확보조치 기준 제5조). 연달아 틀린 횟수와 잠그는 시간. 비밀번호 찾기로 새 비밀번호를 정하면 풀린다.
+      max-failures: 5
+      lock-duration: 30m
     verification:
       # 회사 이메일 인증. 명세에 없어 기본값을 두었다(docs/decisions.md).
       code-ttl: 10m

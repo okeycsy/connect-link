@@ -96,6 +96,34 @@ public final class TestUsers {
           JobRole.BUSINESS,
           Set.of());
 
+  /** 결제원 계좌서비스부 계좌통합팀 팀장. 홍성민이 올린 파일의 반출 결재자다. */
+  public static final CurrentUser KFTC_ACCOUNT_INFO_LEADER =
+      new CurrentUser(
+          "kang.jiwon@kftc.example.com",
+          "강지원",
+          "KFTC",
+          "금융결제원",
+          OrganizationType.KFTC,
+          false,
+          Set.of(Business.ACCOUNT_INFO),
+          JobRole.BUSINESS,
+          Set.of(),
+          "팀장");
+
+  /** 결제원 업무지원부 포털운영팀 팀장. 데모 관리자가 올린 파일의 반출 결재자다. */
+  public static final CurrentUser KFTC_PORTAL_LEADER =
+      new CurrentUser(
+          "lim.doyoon@kftc.example.com",
+          "임도윤",
+          "KFTC",
+          "금융결제원",
+          OrganizationType.KFTC,
+          false,
+          EnumSet.allOf(Business.class),
+          JobRole.IT,
+          Set.of(ItRole.OPS),
+          "팀장");
+
   private TestUsers() {}
 
   public static RequestPostProcessor admin() {

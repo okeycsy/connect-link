@@ -1,8 +1,11 @@
 package com.connectlink.attachment;
 
+import com.connectlink.account.TeamLeader;
 import com.connectlink.attachment.dto.AttachmentResponse;
 import com.connectlink.auth.CurrentUser;
 import com.connectlink.common.BusinessException;
+import com.connectlink.common.NetworkZoneResolver;
+import com.connectlink.organization.OrganizationType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -22,6 +25,12 @@ import org.springframework.web.multipart.MultipartFile;
 /**
  * 첨부파일. 기능 모듈은 자기 대상(ownerType, ownerId)으로 이 Service 를 쓰고, 누가 보고 올릴 수 있는지는 {@link
  * AttachmentOwnerAccess} 빈으로 알려 준다. 파일 내용은 {@link FileStorage} 로만 다룬다.
+ *
+ * <p>결제원 계정은 인터넷망에서 첨부파일을 올리거나 내려받지 못한다(403 {@code INTERNAL_ONLY}). 결제원 보안 규정이 인터넷PC 에서 업무자료를
+ * 작성·저장·송수신하지 못하게 해서다. 목록(이름·크기)은 보인다. 참가기관 담당자는 망과 상관없다.
+ *
+ * <p>결제원 계정이 올린 파일은 외부망 반출이라 같은 팀 팀장의 결재를 받아야 결제원 밖 계정에 보인다({@link AttachmentApprovalService}). 결재
+ * 전·반려 파일은 목록에서 빠지고 내려받으면 404 다.
  */
 @Service
 @Transactional(readOnly = true)
@@ -33,29 +42,49 @@ public class AttachmentService {
   private final AttachmentAccessPolicy accessPolicy;
   private final FileStorage fileStorage;
   private final AttachmentProperties properties;
+  private final NetworkZoneResolver networkZoneResolver;
+  private final AttachmentApprovalService approvalService;
 
   public AttachmentService(
       AttachmentRepository repository,
       AttachmentAccessPolicy accessPolicy,
       FileStorage fileStorage,
-      AttachmentProperties properties) {
+      AttachmentProperties properties,
+      NetworkZoneResolver networkZoneResolver,
+      AttachmentApprovalService approvalService) {
     this.repository = repository;
     this.accessPolicy = accessPolicy;
     this.fileStorage = fileStorage;
     this.properties = properties;
+    this.networkZoneResolver = networkZoneResolver;
+    this.approvalService = approvalService;
+  }
+
+  /** 이 사람에게 보이는 첨부인가. 결재 대기·반려 파일(결제원 담당자가 올려 아직 반출 승인을 받지 못한 파일)은 결제원 계정에만 보인다. */
+  private static boolean visibleTo(CurrentUser user, Attachment attachment) {
+    return user.organizationType() == OrganizationType.KFTC
+        || attachment.getApprovalStatus().releasedOutside();
+  }
+
+  /** 결제원 계정이 인터넷망에서 업무자료(첨부파일)를 주고받으려 하면 403 {@code INTERNAL_ONLY}. */
+  private void ensureFileTransferAllowed(CurrentUser user, String feature) {
+    if (user.organizationType() == OrganizationType.KFTC) {
+      networkZoneResolver.ensureInternal("결제원 담당자의 첨부파일 " + feature);
+    }
   }
 
   public List<AttachmentResponse> list(
       CurrentUser user, AttachmentOwnerType ownerType, Long ownerId) {
     accessPolicy.ensureCanView(user, ownerType, ownerId);
     return repository.findByOwnerTypeAndOwnerIdOrderByCreatedAtAscIdAsc(ownerType, ownerId).stream()
+        .filter(a -> visibleTo(user, a))
         .map(AttachmentResponse::from)
         .toList();
   }
 
   /**
    * 여러 대상의 첨부를 한 번에 읽는다(대상 ID → 첨부, 첨부가 없는 대상은 빠진다). 메시지 목록처럼 대상이 많은 화면이 쓴다. 권한은 대상을 내려 주는 쪽이 이미
-   * 확인했으므로 여기서 다시 보지 않는다.
+   * 확인했으므로 여기서 다시 보지 않는다. 받는 사람을 모르므로 반출 승인을 받은(또는 결재가 필요 없는) 파일만 돌려준다.
    */
   public Map<Long, List<AttachmentResponse>> listOf(
       AttachmentOwnerType ownerType, Collection<Long> ownerIds) {
@@ -65,6 +94,7 @@ public class AttachmentService {
     return repository
         .findByOwnerTypeAndOwnerIdInOrderByCreatedAtAscIdAsc(ownerType, ownerIds)
         .stream()
+        .filter(a -> a.getApprovalStatus().releasedOutside())
         .collect(
             Collectors.groupingBy(
                 Attachment::getOwnerId,
@@ -75,6 +105,7 @@ public class AttachmentService {
   public AttachmentResponse upload(
       CurrentUser user, AttachmentOwnerType ownerType, Long ownerId, MultipartFile file) {
     accessPolicy.ensureCanEdit(user, ownerType, ownerId);
+    ensureFileTransferAllowed(user, "올리기");
     if (file == null || file.isEmpty()) {
       throw new BusinessException(HttpStatus.BAD_REQUEST, "FILE_EMPTY", "비어 있는 파일은 올릴 수 없습니다.");
     }
@@ -85,6 +116,9 @@ public class AttachmentService {
           "파일은 " + properties.getMaxSize().toMegabytes() + "MB 까지 올릴 수 있습니다.");
     }
     String name = fileName(file);
+    // 결제원 담당자의 파일은 반출 결재가 필요하다. 팀장이 없으면 파일을 저장하기 전에 멈춘다.
+    TeamLeader approver =
+        AttachmentApprovalService.requiresApproval(user) ? approvalService.approverFor(user) : null;
     String key;
     try (InputStream in = file.getInputStream()) {
       key = fileStorage.store(in, name);
@@ -93,13 +127,26 @@ public class AttachmentService {
     }
     Attachment attachment =
         new Attachment(ownerType, ownerId, name, contentType(file), file.getSize(), key);
+    if (approver != null) {
+      approvalService.assign(attachment, user, approver);
+    }
     // 올린 사람·일시가 응답에 실리도록 바로 flush 한다.
-    return AttachmentResponse.from(repository.saveAndFlush(attachment));
+    Attachment saved = repository.saveAndFlush(attachment);
+    approvalService.notifyRequested(saved);
+    return AttachmentResponse.from(saved);
   }
 
   public AttachmentDownload download(CurrentUser user, Long id) {
     Attachment attachment = load(id);
-    accessPolicy.ensureCanView(user, attachment.getOwnerType(), attachment.getOwnerId());
+    // 결재자(팀장)는 대상을 볼 권한이 없어도 결재할 파일을 열어 본다.
+    boolean approver = user.email().equals(attachment.getApproverEmail());
+    if (!approver) {
+      accessPolicy.ensureCanView(user, attachment.getOwnerType(), attachment.getOwnerId());
+      if (!visibleTo(user, attachment)) {
+        throw BusinessException.notFound("ATTACHMENT_NOT_FOUND", "첨부파일을 찾을 수 없습니다.");
+      }
+    }
+    ensureFileTransferAllowed(user, "내려받기");
     Resource content = fileStorage.open(attachment.getStorageKey());
     if (!content.exists()) {
       throw BusinessException.notFound("ATTACHMENT_FILE_MISSING", "파일 내용이 저장소에 없습니다.");
@@ -111,6 +158,7 @@ public class AttachmentService {
   public void delete(CurrentUser user, Long id) {
     Attachment attachment = load(id);
     accessPolicy.ensureCanEdit(user, attachment.getOwnerType(), attachment.getOwnerId());
+    ensureNotLastRequired(attachment);
     repository.delete(attachment);
     try {
       fileStorage.delete(attachment.getStorageKey());
@@ -118,6 +166,23 @@ public class AttachmentService {
       // 메타데이터는 지웠으므로 내용은 남아도 접근할 길이 없다. 정리는 저장소 운영 몫이다.
       log.warn("첨부파일 내용을 지우지 못했습니다: {}", attachment.getStorageKey(), e);
     }
+  }
+
+  /** 첨부가 꼭 있어야 하는 대상(예: 일시중단 공문)의 마지막 하나는 지우지 못한다. 새 파일을 먼저 올리고 지우면 된다. */
+  private void ensureNotLastRequired(Attachment attachment) {
+    accessPolicy
+        .requiredMessage(attachment.getOwnerType(), attachment.getOwnerId())
+        .ifPresent(
+            message -> {
+              int count =
+                  repository
+                      .findByOwnerTypeAndOwnerIdOrderByCreatedAtAscIdAsc(
+                          attachment.getOwnerType(), attachment.getOwnerId())
+                      .size();
+              if (count <= 1) {
+                throw new BusinessException(HttpStatus.BAD_REQUEST, "ATTACHMENT_REQUIRED", message);
+              }
+            });
   }
 
   /**

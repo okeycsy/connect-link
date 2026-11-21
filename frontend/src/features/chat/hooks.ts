@@ -3,7 +3,6 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { api, unwrap } from '../../api/client';
 import type { components } from '../../api/schema';
 import type { CurrentUserResponse } from '../account/hooks';
-import { uploadAttachmentFile } from '../attachment/hooks';
 
 export type ChatRoomSummary = components['schemas']['ChatRoomSummaryResponse'];
 export type ChatRoomDetail = components['schemas']['ChatRoomDetailResponse'];
@@ -20,8 +19,6 @@ export const MESSAGE_POLL_MS = 3_000;
 export const ROOM_POLL_MS = 10_000;
 /** 처음 불러오는 메시지 수. "이전 메시지 더 보기" 를 누르면 이만큼 늘린다. */
 export const MESSAGE_PAGE_SIZE = 50;
-/** 메시지 하나에 붙일 수 있는 파일 크기(서버 첨부 모듈 한도와 같다). */
-export const CHAT_FILE_MAX_BYTES = 20 * 1024 * 1024;
 
 export const chatKeys = {
   all: ['chat'] as const,
@@ -90,25 +87,22 @@ export function useInviteCandidates(id: number, enabled: boolean) {
 export interface ChatSendInput {
   content: string;
   mentionOrganizationCodes: string[];
-  files: File[];
 }
 
-/** 메시지를 보내고, 파일이 있으면 그 메시지에 올린다. */
+/**
+ * 메시지를 보낸다. 소통 채널에서는 파일을 보내지 않는다(결제원 파일 반출은 팀장 결재가 필요해 대화방 파일 전송을 없앴다). 파일은
+ * 공지·자료실이나 각 업무 화면의 첨부로 주고받는다.
+ */
 export function useSendChatMessage(roomId: number) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ content, mentionOrganizationCodes, files }: ChatSendInput) => {
-      const message = unwrap(
+    mutationFn: async ({ content, mentionOrganizationCodes }: ChatSendInput) =>
+      unwrap(
         await api.POST('/api/v1/chat-rooms/{id}/messages', {
           params: { path: { id: roomId } },
-          body: { content, mentionOrganizationCodes, withAttachments: files.length > 0 },
+          body: { content, mentionOrganizationCodes },
         }),
-      );
-      for (const file of files) {
-        await uploadAttachmentFile({ ownerType: 'CHAT_MESSAGE', ownerId: message.id }, file);
-      }
-      return message;
-    },
+      ),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: chatKeys.messagesOf(roomId) });
       queryClient.invalidateQueries({ queryKey: ['chat', 'rooms'] });

@@ -4,10 +4,15 @@ import com.connectlink.auth.CurrentUser;
 import com.connectlink.common.BusinessException;
 import com.connectlink.organization.Business;
 import com.connectlink.organization.Organization;
+import com.connectlink.organization.OrganizationType;
+import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,27 +31,58 @@ public class AccountService {
   private static final String NO_ACCOUNT_HASH =
       "$2a$10$K26FVsN1Lr5pMYurY.z9BeV.ZF4zVqcZ8cVq4kRkVL7wsZJjMaUXS";
 
+  /** 반출 결재자를 정하는 직급. 결제원 계정 중 직급이 이 값인 사람이 같은 부서·팀의 팀장이다. */
+  public static final String TEAM_LEADER_TITLE = "팀장";
+
+  private static final DateTimeFormatter LOCK_TIME = DateTimeFormatter.ofPattern("HH:mm");
+
   private final UserAccountRepository repository;
   private final PasswordEncoder passwordEncoder;
+  private final LoginLockProperties lockProperties;
+  private final Clock clock;
 
-  public AccountService(UserAccountRepository repository, PasswordEncoder passwordEncoder) {
+  public AccountService(
+      UserAccountRepository repository,
+      PasswordEncoder passwordEncoder,
+      LoginLockProperties lockProperties,
+      Clock clock) {
     this.repository = repository;
     this.passwordEncoder = passwordEncoder;
+    this.lockProperties = lockProperties;
+    this.clock = clock;
   }
 
   /**
    * 회사 이메일과 비밀번호를 확인하고 로그인 사용자를 돌려준다. 계정이 없거나 비밀번호가 틀리면 같은 401 이고, 비밀번호가 맞을 때만 승인 대기·반려 같은 상태를 알려
    * 준다.
+   *
+   * <p>연달아 {@code app.account.login.max-failures} 번 틀리면 {@code lock-duration} 동안 맞는 비밀번호로도 로그인할 수
+   * 없다(403 {@code ACCOUNT_LOCKED}, 개인정보의 안전성 확보조치 기준 제5조). 비밀번호 찾기로 새 비밀번호를 정하면 풀린다. 틀린 횟수는 오류로 끝나도
+   * 남아야 하므로 이 메서드는 {@link BusinessException} 에 되돌리지 않는다.
    */
+  @Transactional(noRollbackFor = BusinessException.class)
   public CurrentUser authenticate(String email, String password) {
     UserAccount account = repository.findByEmail(normalizeEmail(email)).orElse(null);
+    LocalDateTime now = LocalDateTime.now(clock).truncatedTo(ChronoUnit.MILLIS);
     boolean matches =
         passwordEncoder.matches(
             password, account == null ? NO_ACCOUNT_HASH : account.getPasswordHash());
+    if (account != null
+        && account.getStatus() != AccountStatus.WITHDRAWN
+        && account.isLoginLocked(now)) {
+      throw locked(account);
+    }
     if (account == null || !matches || account.getStatus() == AccountStatus.WITHDRAWN) {
+      if (account != null && account.getStatus() != AccountStatus.WITHDRAWN) {
+        if (account.recordLoginFailure(
+            lockProperties.getMaxFailures(), lockProperties.getLockDuration(), now)) {
+          throw locked(account);
+        }
+      }
       throw new BusinessException(
           HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", "이메일 또는 비밀번호가 맞지 않습니다.");
     }
+    account.recordLoginSuccess();
     switch (account.getStatus()) {
       case PENDING_APPROVAL ->
           throw new BusinessException(
@@ -63,6 +99,17 @@ public class AccountService {
       }
     }
     return toCurrentUser(account);
+  }
+
+  private BusinessException locked(UserAccount account) {
+    return new BusinessException(
+        HttpStatus.FORBIDDEN,
+        "ACCOUNT_LOCKED",
+        "비밀번호를 "
+            + lockProperties.getMaxFailures()
+            + "번 틀려 "
+            + account.getLockedUntil().format(LOCK_TIME)
+            + " 까지 로그인할 수 없습니다. 바로 쓰려면 비밀번호 찾기로 새 비밀번호를 정해 주세요.");
   }
 
   /** 이 이메일의 계정이 지금 사용 중인지. */
@@ -126,6 +173,44 @@ public class AccountService {
                         .map(UserAccountBusiness::getSubBusiness)
                         .orElse(null)))
         .toList();
+  }
+
+  /**
+   * 결제원 계정의 같은 부서·팀 팀장. 본인이 팀장이면 본인이고, 팀장이 여럿이면 먼저 가입한 사람이다. 결제원 계정이 아니거나 그 팀에 사용 중인 팀장 계정이 없으면 비어
+   * 있다.
+   */
+  public Optional<TeamLeader> findTeamLeaderOf(String email) {
+    UserAccount member = repository.findByEmail(normalizeEmail(email)).orElse(null);
+    if (member == null || member.getOrganization().getType() != OrganizationType.KFTC) {
+      return Optional.empty();
+    }
+    if (isTeamLeader(member)) {
+      return Optional.of(toTeamLeader(member));
+    }
+    return repository.findByStatus(AccountStatus.ACTIVE).stream()
+        .filter(a -> a.getOrganization().getType() == OrganizationType.KFTC)
+        .filter(AccountService::isTeamLeader)
+        .filter(a -> sameText(a.getDepartment(), member.getDepartment()))
+        .filter(a -> sameText(a.getTeam(), member.getTeam()))
+        .min(Comparator.comparing(UserAccount::getId))
+        .map(AccountService::toTeamLeader);
+  }
+
+  private static boolean isTeamLeader(UserAccount account) {
+    return account.getJobTitle() != null && TEAM_LEADER_TITLE.equals(account.getJobTitle().trim());
+  }
+
+  private static boolean sameText(String a, String b) {
+    return a != null && b != null && a.trim().equals(b.trim());
+  }
+
+  private static TeamLeader toTeamLeader(UserAccount account) {
+    return new TeamLeader(
+        account.getEmail(),
+        account.getName(),
+        account.getDepartment(),
+        account.getTeam(),
+        account.getBusinesses());
   }
 
   static CurrentUser toCurrentUser(UserAccount account) {

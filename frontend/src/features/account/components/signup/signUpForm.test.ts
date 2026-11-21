@@ -30,7 +30,35 @@ describe('가입 폼 규칙', () => {
     });
     expect(stepErrors(2, { ...SIGN_UP_INITIAL_VALUES, jobRole: 'BUSINESS' })).toEqual({});
     expect(
-      stepErrors(3, { ...SIGN_UP_INITIAL_VALUES, password: 'short', passwordConfirm: 'short' }),
+      stepErrors(3, {
+        ...SIGN_UP_INITIAL_VALUES,
+        password: 'short',
+        passwordConfirm: 'short',
+        privacyNoticeConfirmed: true,
+      }),
+    ).toEqual({});
+  });
+
+  it('개인정보 수집·이용 안내 확인은 필수이고, 휴대폰번호를 적으면 선택 동의도 있어야 한다', () => {
+    expect(stepErrors(3, SIGN_UP_INITIAL_VALUES)).toEqual({
+      privacyNoticeConfirmed: '개인정보 수집·이용 안내를 확인해 주세요.',
+    });
+    expect(
+      stepErrors(3, {
+        ...SIGN_UP_INITIAL_VALUES,
+        privacyNoticeConfirmed: true,
+        mobilePhone: '010-0000-0000',
+      }),
+    ).toEqual({
+      mobilePhoneConsent: '휴대폰번호를 적으려면 휴대폰번호 수집·이용(선택)에 동의해 주세요.',
+    });
+    expect(
+      stepErrors(3, {
+        ...SIGN_UP_INITIAL_VALUES,
+        privacyNoticeConfirmed: true,
+        mobilePhone: '010-0000-0000',
+        mobilePhoneConsent: true,
+      }),
     ).toEqual({});
   });
 });

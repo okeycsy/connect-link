@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.connectlink.attachment.AttachmentApprovals;
 import com.connectlink.auth.TestUsers;
 import com.connectlink.notification.NotificationChannel;
 import com.connectlink.notification.NotificationOutbox;
@@ -33,6 +34,7 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
@@ -300,7 +302,9 @@ class TestDataControllerTest {
   void 회신_양식은_결제원이_올리고_대상_기관이_내려받으며_테스트데이터_파일은_그_기관만_올린다() throws Exception {
     Long planId = create("테스트데이터 파일 권한");
     upload("TEST_DATA_FORM", planId, kim()).andExpect(status().isForbidden());
-    upload("TEST_DATA_FORM", planId, hong()).andExpect(status().isCreated());
+    MvcResult form =
+        upload("TEST_DATA_FORM", planId, hong()).andExpect(status().isCreated()).andReturn();
+    AttachmentApprovals.approve(mockMvc, form, TestUsers.KFTC_ACCOUNT_INFO_LEADER);
     send(
             get("/api/v1/attachments")
                 .param("ownerType", "TEST_DATA_FORM")

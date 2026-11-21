@@ -13,9 +13,15 @@ logging:
     org.springframework.security: INFO
 
 app:
+  organization:
+    # 결제원 대표 국번(가상). 참가기관 담당자에게 결제원 내선 1101 이 02-000-1101 로 보인다.
+    kftc-office-phone-prefix: "02-000-"
   support:
     # 샘플 문의 주소(가상).
     inquiry-email: help@connect-link.example.com
+    # 개인정보 관리부서(가상).
+    privacy-department: 연결이 운영팀
+    privacy-phone: 02-0000-0000
   network:
     # 시연·개발·테스트는 내부망이 기본이고, 화면의 망 전환 토글(X-Network-Zone 헤더)을 믿는다.
     header-override: true

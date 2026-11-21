@@ -16,20 +16,19 @@ import {
 } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import { useForm } from '@mantine/form';
-import { notifications } from '@mantine/notifications';
 import { IconPlus, IconTrash } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
-import { ApiError, fieldErrorsOf } from '../../../api/client';
+import { fieldErrorsOf } from '../../../api/client';
 import { PageHeader } from '../../../shared/PageHeader';
 import { ErrorState, StateView } from '../../../shared/state/StateView';
 import { canViewBusiness, useMe } from '../../account/hooks';
 import { AttachmentPanel } from '../../attachment/components/AttachmentPanel';
 import { PendingAttachments } from '../../attachment/components/PendingAttachments';
-import { attachmentKeys, uploadAttachmentFile } from '../../attachment/hooks';
+import { attachmentKeys } from '../../attachment/hooks';
 import { SuspensionBusinessPicker } from '../components/SuspensionBusinessPicker';
 import {
   type SuspensionDetail,
@@ -148,9 +147,9 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
   const create = useCreateSuspension();
   const update = useUpdateSuspension(existing?.id ?? 0);
   const mutation = existing ? update : create;
-  // 새 일시중단의 공문. 저장해 번호가 생긴 뒤 올린다.
+  // 새 일시중단의 공문. 양식과 한 요청으로 함께 보낸다. 기관 일시중단은 하나 이상 있어야 한다.
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
-  const [uploading, setUploading] = useState(false);
+  const [triedSubmit, setTriedSubmit] = useState(false);
 
   const form = useForm<Values>({
     initialValues: {
@@ -190,30 +189,8 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
   const generalError =
     mutation.isError && Object.keys(fieldErrors).length === 0 ? mutation.error.message : undefined;
 
-  const uploadPending = async (suspensionId: number) => {
-    if (pendingFiles.length === 0) return;
-    const owner = { ownerType: 'SUSPENSION' as const, ownerId: suspensionId };
-    setUploading(true);
-    const failed: string[] = [];
-    for (const file of pendingFiles) {
-      try {
-        await uploadAttachmentFile(owner, file);
-      } catch (e) {
-        failed.push(`${file.name}${e instanceof ApiError ? `(${e.message})` : ''}`);
-      }
-    }
-    setUploading(false);
-    await queryClient.invalidateQueries({ queryKey: attachmentKeys.list(owner) });
-    if (failed.length > 0) {
-      notifications.show({
-        title: '공문 일부를 올리지 못했습니다',
-        message: `${failed.join(', ')}. 상세 화면에서 다시 올려 주세요.`,
-        color: 'red',
-      });
-    }
-  };
-
   const submit = (values: Values) => {
+    setTriedSubmit(true);
     const body = {
       // 비어 있으면 서버가 "대상 업무를 하나 이상 골라 주세요." 를 필드 메시지로 알려 준다. 기준정보 순서로 보낸다.
       targetWorkIds: workOptions
@@ -245,17 +222,28 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
     if (existing) {
       update.mutate(body, { onSuccess: (d) => navigate(detailPath(d)) });
     } else {
-      create.mutate(body, {
-        onSuccess: async (d) => {
-          await uploadPending(d.id);
-          navigate(detailPath(d));
+      // 공문이 비어 있어도 서버에 보내 다른 칸의 오류를 함께 받는다(공문 오류는 아래 documentError 가 바로 보인다).
+      create.mutate(
+        { body, files: pendingFiles },
+        {
+          onSuccess: async (d) => {
+            await queryClient.invalidateQueries({
+              queryKey: attachmentKeys.list({ ownerType: 'SUSPENSION', ownerId: d.id }),
+            });
+            navigate(detailPath(d));
+          },
         },
-      });
+      );
     }
   };
 
   const ownOrganization = !kftcSide ? organizations.data?.[0] : undefined;
   const kftcWork = form.values.kind === 'KFTC_WORK';
+  // 기관 일시중단은 공문이 꼭 있어야 한다(서버가 같은 규칙으로 막는다). 저장을 한 번 누른 뒤부터 보인다.
+  const documentError =
+    !existing && !kftcWork && pendingFiles.length === 0 && triedSubmit
+      ? (fieldErrors.files ?? '공문을 첨부해 주세요. 일시중단은 공문이 있어야 등록할 수 있습니다.')
+      : undefined;
   const title = existing ? (kftcWork ? '결제원 작업 고치기' : '일시중단 고치기') : '일시중단 등록';
   return (
     <form onSubmit={form.onSubmit(submit)} noValidate>
@@ -280,7 +268,7 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
               >
                 취소
               </Button>
-              <Button type="submit" loading={mutation.isPending || uploading}>
+              <Button type="submit" loading={mutation.isPending}>
                 저장
               </Button>
             </>
@@ -469,9 +457,16 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
             <div>
               <Text fw={700} size="xl">
                 공문
+                {!kftcWork && (
+                  <Text span c="red" ml={4} aria-hidden>
+                    *
+                  </Text>
+                )}
               </Text>
               <Text size="sm" c="dimmed">
-                선택입니다. 일시중단을 알리는 공문 파일을 붙입니다.
+                {kftcWork
+                  ? '선택입니다. 작업을 알리는 문서가 있으면 붙입니다.'
+                  : '필수입니다. 일시중단을 알리는 공문 파일을 하나 이상 붙입니다.'}
               </Text>
             </div>
             {existing ? (
@@ -487,6 +482,7 @@ function SuspensionEditor({ slug, existing }: { slug: string; existing?: Suspens
                 files={pendingFiles}
                 onChange={setPendingFiles}
                 pickLabel="공문 고르기"
+                error={documentError}
               />
             )}
           </Stack>

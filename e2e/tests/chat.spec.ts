@@ -58,20 +58,16 @@ test.describe('마. 소통 채널', () => {
     await input.click();
     await input.pressSequentially('@KB');
     await page.getByRole('option', { name: '@KB국민은행' }).click();
-    await input.pressSequentially('E2E 점검 공지입니다. 첨부 확인 부탁드립니다.');
-    await page.locator('input[type=file]').setInputFiles({
-      name: 'e2e-점검-일정.txt',
-      mimeType: 'text/plain',
-      buffer: Buffer.from('점검 일정(샘플)'),
-    });
-    await expect(page.getByText('e2e-점검-일정.txt')).toBeVisible();
+    await input.pressSequentially('E2E 점검 공지입니다. 일정 확인 부탁드립니다.');
+    // 소통 채널에서는 파일을 보내지 않는다(결제원 파일 반출은 팀장 결재가 필요하다).
+    await expect(page.getByRole('button', { name: '파일 첨부' })).toHaveCount(0);
+    await expect(page.locator('input[type=file]')).toHaveCount(0);
     await shot(page, 'chat-compose');
     await page.getByRole('button', { name: '보내기' }).click();
 
     const mine = messages.getByTestId('chat-message').last();
     await expect(mine).toContainText('E2E 점검 공지입니다.');
     await expect(mine.getByText('@KB국민은행', { exact: true })).toBeVisible();
-    await expect(mine.getByRole('link', { name: 'e2e-점검-일정.txt' })).toBeVisible();
     await expect(input).toHaveValue('');
     await shot(page, 'chat-room-kftc');
   });
@@ -131,7 +127,6 @@ test.describe('마. 소통 채널', () => {
       .getByTestId('chat-message')
       .filter({ hasText: 'E2E 점검 공지입니다.' })
       .last();
-    await expect(message.getByRole('link', { name: 'e2e-점검-일정.txt' })).toBeVisible();
     await message.getByRole('button', { name: '확인', exact: true }).click();
     await expect(message.getByTestId('chat-ack')).toHaveText('KB국민은행 1');
     await expect(message.getByRole('button', { name: '확인 취소' })).toBeVisible();

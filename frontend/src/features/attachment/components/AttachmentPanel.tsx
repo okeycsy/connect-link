@@ -27,10 +27,14 @@ import { ApiError } from '../../../api/client';
 import { formatBytes, formatDateTime } from '../../../shared/format';
 import { StateView } from '../../../shared/state/StateView';
 import { stateKindOf } from '../../../shared/state/stateKind';
+import { ApprovalStatusBadge } from './ApprovalStatusBadge';
+import { FileTransferBlockedNote } from './FileTransferBlockedNote';
 import {
   attachmentDownloadUrl,
   useAttachments,
   useDeleteAttachment,
+  useExportApprovalRequired,
+  useFileTransferBlocked,
   useUploadAttachment,
   type Attachment,
   type AttachmentOwner,
@@ -47,6 +51,8 @@ interface Props extends AttachmentOwner {
 /**
  * 첨부파일 목록 + 올리기·지우기. 의견 요청(첨부자료), 기관 회신(근거자료), 일시중단(공문)이 대상(ownerType, ownerId)만 바꿔 쓴다.
  * 내려받기는 링크라 브라우저가 원래 파일 이름으로 저장한다.
+ *
+ * 결제원 계정에게는 파일마다 반출 결재 상태(결재 대기·반출 승인·반려)가 보인다. 결재 전·반려 파일은 서버가 참가기관에 내려 주지 않는다.
  */
 export function AttachmentPanel({
   ownerType,
@@ -59,12 +65,20 @@ export function AttachmentPanel({
   const { data, isPending, error } = useAttachments(owner);
   const upload = useUploadAttachment(owner);
   const remove = useDeleteAttachment(owner);
+  const blocked = useFileTransferBlocked();
+  const approvalRequired = useExportApprovalRequired();
 
   const onPick = async (file: File | null) => {
     if (!file) return;
     try {
-      await upload.mutateAsync(file);
-      notifications.show({ message: `${file.name} 을(를) 올렸습니다.`, color: 'clay' });
+      const saved = await upload.mutateAsync(file);
+      notifications.show({
+        message:
+          saved.approvalStatus === 'PENDING'
+            ? `${file.name} 을(를) 올리고 ${saved.approverName ?? '팀장'} 팀장님께 결재를 요청했습니다.`
+            : `${file.name} 을(를) 올렸습니다.`,
+        color: 'clay',
+      });
     } catch (e) {
       notifications.show({
         title: '올리지 못했습니다',
@@ -89,7 +103,8 @@ export function AttachmentPanel({
 
   return (
     <Stack gap="sm" data-testid="attachment-panel">
-      {editable && (
+      {blocked && <FileTransferBlockedNote />}
+      {editable && !blocked && (
         <Group justify="space-between" align="center">
           <Text size="sm" c="dimmed">
             {data ? `${data.length}개` : ''}
@@ -125,6 +140,8 @@ export function AttachmentPanel({
               key={attachment.id}
               attachment={attachment}
               editable={editable}
+              downloadable={!blocked}
+              showApproval={approvalRequired}
               onDelete={() => onDelete(attachment)}
               deleting={remove.isPending && remove.variables === attachment.id}
             />
@@ -138,11 +155,17 @@ export function AttachmentPanel({
 function AttachmentRow({
   attachment,
   editable,
+  downloadable,
+  showApproval,
   onDelete,
   deleting,
 }: {
   attachment: Attachment;
   editable: boolean;
+  /** 결제원 담당자가 인터넷망이면 이름만 보이고 내려받지 못한다. */
+  downloadable: boolean;
+  /** 결제원 계정에게만 반출 결재 상태를 보인다. */
+  showApproval: boolean;
   onDelete: () => void;
   deleting: boolean;
 }) {
@@ -164,20 +187,38 @@ function AttachmentRow({
         <Icon size={18} stroke={1.6} />
       </ThemeIcon>
       <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
-        <Anchor
-          href={attachmentDownloadUrl(attachment.id)}
-          download={attachment.name}
-          size="sm"
-          fw={600}
-          truncate="end"
-        >
-          {attachment.name}
-        </Anchor>
+        {downloadable ? (
+          <Anchor
+            href={attachmentDownloadUrl(attachment.id)}
+            download={attachment.name}
+            size="sm"
+            fw={600}
+            truncate="end"
+          >
+            {attachment.name}
+          </Anchor>
+        ) : (
+          <Text size="sm" fw={600} truncate="end">
+            {attachment.name}
+          </Text>
+        )}
         <Text size="xs" c="dimmed" truncate="end">
-          {formatBytes(attachment.size)} · {attachment.uploadedBy} ·{' '}
+          {formatBytes(attachment.size)} · {attachment.uploaderName ?? attachment.uploadedBy} ·{' '}
           {formatDateTime(attachment.uploadedAt)}
         </Text>
+        {showApproval && approvalLine(attachment) && (
+          <Text
+            size="xs"
+            c={attachment.approvalStatus === 'REJECTED' ? 'red' : 'dimmed'}
+            data-testid="approval-line"
+          >
+            {approvalLine(attachment)}
+          </Text>
+        )}
       </Stack>
+      {showApproval && attachment.approvalStatus !== 'NOT_REQUIRED' && (
+        <ApprovalStatusBadge status={attachment.approvalStatus} />
+      )}
       {editable && (
         <Popover
           opened={confirming}
@@ -228,6 +269,23 @@ function AttachmentRow({
       )}
     </Group>
   );
+}
+
+/** 결재 상태 한 줄. 결재가 필요 없는 파일은 없다. */
+function approvalLine(attachment: Attachment): string | null {
+  const approver = attachment.approverName ? `${attachment.approverName} 팀장` : '팀장';
+  switch (attachment.approvalStatus) {
+    case 'PENDING':
+      return `결재자 ${approver}`;
+    case 'APPROVED':
+      return attachment.decidedAt
+        ? `${approver} 승인 · ${formatDateTime(attachment.decidedAt)}`
+        : `${approver} 승인`;
+    case 'REJECTED':
+      return `반려: ${attachment.rejectionReason ?? ''}`;
+    default:
+      return null;
+  }
 }
 
 function iconFor(contentType: string, name: string) {

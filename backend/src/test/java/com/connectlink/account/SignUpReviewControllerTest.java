@@ -137,6 +137,8 @@ class SignUpReviewControllerTest {
     body.put("extensionPhone", "02-0000-1234");
     body.put("mobilePhone", null);
     body.put("password", "Welcome1!");
+    body.put("privacyNoticeConfirmed", true);
+    body.put("mobilePhoneConsent", true);
     postJson("/api/v1/sign-ups", body, null).andExpect(status().isCreated());
     return accountRepository.findByEmail(email).orElseThrow().getId();
   }

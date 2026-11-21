@@ -20,7 +20,6 @@ import com.connectlink.organization.OrganizationType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
-import java.time.Period;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -64,7 +63,6 @@ class ChatControllerTest {
   @Autowired private MockMvc mockMvc;
   @Autowired private ObjectMapper objectMapper;
   @Autowired private ChatService chatService;
-  @Autowired private ChatProperties properties;
   @Autowired private ChatRoomRepository roomRepository;
 
   private static RequestPostProcessor hong() {
@@ -353,13 +351,10 @@ class ChatControllerTest {
   // ---- 첨부 ----
 
   @Test
-  void 보낸_사람만_첨부를_올리고_구성원은_내려받으며_보관_기간이_지나면_지운다() throws Exception {
+  void 소통_채널에서는_보낸_사람도_파일을_올리지_못한다() throws Exception {
     Long id = newRoom("첨부 시험");
     Long messageId =
-        json(send(
-                    post(ROOMS + "/" + id + "/messages"),
-                    Map.of("content", "", "withAttachments", true),
-                    hong())
+        json(send(post(ROOMS + "/" + id + "/messages"), Map.of("content", "테스트케이스 드립니다"), hong())
                 .andExpect(status().isCreated()))
             .get("id")
             .asLong();
@@ -373,36 +368,10 @@ class ChatControllerTest {
                 .param("ownerType", "CHAT_MESSAGE")
                 .param("ownerId", String.valueOf(messageId))
                 .with(csrf())
-                .with(choi()))
-        .andExpect(status().isForbidden());
-    mockMvc
-        .perform(
-            multipart("/api/v1/attachments")
-                .file(file)
-                .param("ownerType", "CHAT_MESSAGE")
-                .param("ownerId", String.valueOf(messageId))
-                .with(csrf())
                 .with(hong()))
-        .andExpect(status().isCreated());
-    send(get(ROOMS + "/" + id + "/messages"), null, choi())
-        .andExpect(jsonPath("$.content[0].attachments[0].name").value("테스트케이스.pdf"));
-    send(
-            get("/api/v1/attachments")
-                .param("ownerType", "CHAT_MESSAGE")
-                .param("ownerId", String.valueOf(messageId)),
-            null,
-            kim())
         .andExpect(status().isForbidden());
-
-    Period retention = properties.getAttachmentRetention();
-    try {
-      properties.setAttachmentRetention(Period.ZERO);
-      assertThat(chatService.expireAttachments()).isGreaterThanOrEqualTo(1);
-    } finally {
-      properties.setAttachmentRetention(retention);
-    }
-    send(get(ROOMS + "/" + id + "/messages"), null, choi())
-        .andExpect(jsonPath("$.content[0].attachmentsExpired").value(true))
+    send(get(ROOMS + "/" + id + "/messages"), null, hong())
+        .andExpect(jsonPath("$.content[0].withAttachments").value(false))
         .andExpect(jsonPath("$.content[0].attachments.length()").value(0));
   }
 

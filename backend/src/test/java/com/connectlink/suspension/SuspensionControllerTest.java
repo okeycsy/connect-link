@@ -126,6 +126,28 @@ class SuspensionControllerTest {
     return mockMvc.perform(request);
   }
 
+  /** 등록. 양식(request)과 공문 하나(files)를 multipart 로 보낸다. */
+  private ResultActions create(Object body, RequestPostProcessor user) throws Exception {
+    return create(
+        body, user, new MockMultipartFile("files", "공문.pdf", "application/pdf", "pdf".getBytes()));
+  }
+
+  private ResultActions create(Object body, RequestPostProcessor user, MockMultipartFile... files)
+      throws Exception {
+    var request =
+        multipart(BASE)
+            .file(
+                new MockMultipartFile(
+                    "request",
+                    "",
+                    MediaType.APPLICATION_JSON_VALUE,
+                    objectMapper.writeValueAsBytes(body)));
+    for (MockMultipartFile file : files) {
+      request.file(file);
+    }
+    return mockMvc.perform(request.with(csrf()).with(user));
+  }
+
   private JsonNode json(ResultActions result) throws Exception {
     return objectMapper.readTree(
         result.andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8));
@@ -157,9 +179,7 @@ class SuspensionControllerTest {
   }
 
   private Long createAsKim(String reason) throws Exception {
-    return json(send(post(BASE), form(reason), kim()).andExpect(status().isCreated()))
-        .get("id")
-        .asLong();
+    return json(create(form(reason), kim()).andExpect(status().isCreated())).get("id").asLong();
   }
 
   private List<String> notified(String bodyMark) {
@@ -182,7 +202,7 @@ class SuspensionControllerTest {
   void 기관_담당자가_등록하면_자기_기관으로_검토_대기가_되고_결제원에_메일과_매터모스트가_간다() throws Exception {
     Map<String, Object> body = form("등록 알림 확인 작업");
     body.put("organizationId", orgId("240")); // 기관 담당자가 보낸 기관은 무시한다.
-    send(post(BASE), body, kim())
+    create(body, kim())
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.status").value("PENDING_REVIEW"))
         .andExpect(jsonPath("$.organizationName").value("KB국민은행"))
@@ -214,12 +234,12 @@ class SuspensionControllerTest {
 
   @Test
   void 결제원_담당자는_기관을_골라_등록한다() throws Exception {
-    send(post(BASE), form("기관 미선택"), hong())
+    create(form("기관 미선택"), hong())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("SUSPENSION_ORGANIZATION_REQUIRED"));
     Map<String, Object> body = form("결제원 대리 등록");
     body.put("organizationId", orgId("088"));
-    send(post(BASE), body, hong())
+    create(body, hong())
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.organizationName").value("신한은행"))
         .andExpect(jsonPath("$.registrantKftc").value(true));
@@ -229,7 +249,7 @@ class SuspensionControllerTest {
   void 참가기관이_아닌_기관은_고를_수_없다() throws Exception {
     Map<String, Object> body = form("참가기관 아님");
     body.put("organizationId", orgId("KFTC"));
-    send(post(BASE), body, hong())
+    create(body, hong())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("SUSPENSION_ORGANIZATION_INVALID"));
   }
@@ -239,7 +259,7 @@ class SuspensionControllerTest {
     Map<String, Object> body = form("기관 기준 CMS 등록");
     body.put("targetWorkIds", List.of(work("CMS"))); // 김민준은 계좌통합관리 담당이지만 KB국민은행은 CMS 에도 참여한다.
     Long id =
-        json(send(post(BASE), body, kim())
+        json(create(body, kim())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.businesses[0].code").value("CMS"))
                 .andExpect(jsonPath("$.organizationName").value("KB국민은행")))
@@ -258,7 +278,7 @@ class SuspensionControllerTest {
     Map<String, Object> body = form("참여 안 하는 업무");
     // 삼성증권은 대출이동에 참여하지 않고 최유진도 맡지 않지만 고를 수 있다.
     body.put("targetWorkIds", List.of(work("계좌통합관리"), work("대출이동")));
-    send(post(BASE), body, choi())
+    create(body, choi())
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.businesses.length()").value(2));
   }
@@ -268,7 +288,7 @@ class SuspensionControllerTest {
     Map<String, Object> body = form("레일 무관 회선 작업");
     body.put("targetWorkIds", List.of(work("타행환공동망"), work("대외계 회선")));
     Long id =
-        json(send(post(BASE), body, kim())
+        json(create(body, kim())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.businesses.length()").value(0))
                 .andExpect(jsonPath("$.targetWorks[0].name").value("타행환공동망")))
@@ -306,7 +326,7 @@ class SuspensionControllerTest {
             .asLong();
     Map<String, Object> body = form("사용 안 함 업무 고르기");
     body.put("targetWorkIds", List.of(inactive));
-    send(post(BASE), body, kim())
+    create(body, kim())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("SUSPENSION_TARGET_WORK_INVALID"));
     JsonNode active = json(send(get("/api/v1/target-works"), null, kim()));
@@ -371,7 +391,7 @@ class SuspensionControllerTest {
             contact("김민준", "010-0000-2101", "kim.minjun@kb.example.com"),
             contact("한예린", "010-0000-2102", null)));
     Long id =
-        json(send(post(BASE), body, kim())
+        json(create(body, kim())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.targetWorks.length()").value(2))
                 .andExpect(jsonPath("$.targetWorks[0].name").value("계좌통합관리"))
@@ -403,7 +423,7 @@ class SuspensionControllerTest {
     body.put(
         "contacts",
         List.of(contact("김민준", "010-0000-2101", null), contact("한예린", "010-0000-2102", null)));
-    Long id = json(send(post(BASE), body, kim())).get("id").asLong();
+    Long id = json(create(body, kim())).get("id").asLong();
     body.put("targetWorkIds", List.of(work("계좌통합관리")));
     body.put("contacts", List.of(contact("한예린", "010-0000-2102", null)));
     send(put(BASE + "/" + id), body, kim())
@@ -420,7 +440,7 @@ class SuspensionControllerTest {
     Map<String, Object> body = form("빈 업무");
     body.put("targetWorkIds", List.of());
     body.put("contacts", List.of());
-    send(post(BASE), body, kim())
+    create(body, kim())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.fieldErrors[*].field").value(hasItem("targetWorkIds")))
         .andExpect(jsonPath("$.fieldErrors[*].field").value(hasItem("contacts")));
@@ -431,7 +451,7 @@ class SuspensionControllerTest {
     Map<String, Object> body = form("다른 업무 결제원 대리 등록");
     body.put("organizationId", orgId("004"));
     Long id =
-        json(send(post(BASE), body, park())
+        json(create(body, park())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.registrantKftc").value(true)))
             .get("id")
@@ -458,7 +478,7 @@ class SuspensionControllerTest {
   void 종료가_시작보다_앞서면_등록하지_못한다() throws Exception {
     Map<String, Object> body = form("거꾸로 된 일시");
     body.put("endAt", LocalDate.now().plusDays(2).atTime(1, 0).toString());
-    send(post(BASE), body, kim())
+    create(body, kim())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("SUSPENSION_PERIOD_INVALID"))
         .andExpect(jsonPath("$.fieldErrors[0].field").value("endAt"));
@@ -469,7 +489,7 @@ class SuspensionControllerTest {
     Map<String, Object> body = form("");
     body.put(
         "contacts", List.of(contact("김민준", "010-0000-2101", null), contact("한예린", "전화", null)));
-    send(post(BASE), body, kim())
+    create(body, kim())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.fieldErrors[*].field").value(hasItem("reason")))
         .andExpect(jsonPath("$.fieldErrors[*].field").value(hasItem("contacts[1].phone")));
@@ -534,9 +554,10 @@ class SuspensionControllerTest {
     body.put("organizationId", orgId("004"));
     body.put("contacts", List.of(contact("홍성민", "010-0000-0001", "hong.sungmin@kftc.example.com")));
     long outboxBefore = outboxRepository.count();
+    // 결제원 작업 안내는 공문 없이 올린다.
     JsonNode created =
         json(
-            send(post(BASE), body, hong())
+            create(body, hong(), new MockMultipartFile[0])
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.kind").value("KFTC_WORK"))
                 .andExpect(jsonPath("$.kindLabel").value("결제원 작업"))
@@ -563,7 +584,7 @@ class SuspensionControllerTest {
   void 참가기관_담당자는_결제원_작업을_올리지_못한다() throws Exception {
     Map<String, Object> body = form("기관이 올린 결제원 작업");
     body.put("kind", "KFTC_WORK");
-    send(post(BASE), body, kim()).andExpect(status().isForbidden());
+    create(body, kim()).andExpect(status().isForbidden());
   }
 
   @Test
@@ -639,8 +660,7 @@ class SuspensionControllerTest {
             contact("김민준", "010-0000-2101", "kim.minjun@kb.example.com"),
             contact("한예린", "010-0000-2102", "han.yerin@kb.example.com"),
             contact("홍성민", "010-0000-0001", "hong.sungmin@kftc.example.com")));
-    Long id =
-        json(send(post(BASE), body, kim()).andExpect(status().isCreated())).get("id").asLong();
+    Long id = json(create(body, kim()).andExpect(status().isCreated())).get("id").asLong();
     long before = outboxRepository.count();
 
     send(post(BASE + "/" + id + "/confirmation"), Map.of("handover", "차단합니다."), hong())
@@ -791,7 +811,7 @@ class SuspensionControllerTest {
     Map<String, Object> body = form("이미 끝난 작업");
     body.put("startAt", LocalDate.now().minusDays(3).atTime(1, 0).toString());
     body.put("endAt", LocalDate.now().minusDays(3).atTime(3, 0).toString());
-    Long id = json(send(post(BASE), body, kim())).get("id").asLong();
+    Long id = json(create(body, kim())).get("id").asLong();
     send(post(BASE + "/" + id + "/confirmation"), Map.of("handover", "끝"), hong());
 
     assertThat(suspensionService.completeEnded()).isGreaterThanOrEqualTo(1);
@@ -808,19 +828,78 @@ class SuspensionControllerTest {
   // ---- 공문·이력 ----
 
   @Test
+  void 기관_일시중단은_공문_없이_등록하지_못한다() throws Exception {
+    long outboxBefore = outboxRepository.count();
+    create(form("공문 없는 작업"), kim(), new MockMultipartFile[0])
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("SUSPENSION_DOCUMENT_REQUIRED"))
+        .andExpect(jsonPath("$.fieldErrors[0].field").value("files"));
+    // 빈 파일만 보내도 공문이 없는 것이다.
+    create(
+            form("공문 없는 작업"),
+            kim(),
+            new MockMultipartFile("files", "빈.pdf", "application/pdf", new byte[0]))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("SUSPENSION_DOCUMENT_REQUIRED"));
+    // 결제원이 기관 대신 올려도 같다.
+    Map<String, Object> body = form("공문 없는 작업");
+    body.put("organizationId", orgId("004"));
+    create(body, hong(), new MockMultipartFile[0])
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("SUSPENSION_DOCUMENT_REQUIRED"));
+    assertThat(outbox("공문 없는 작업")).isEmpty();
+    assertThat(outboxRepository.count()).isEqualTo(outboxBefore);
+  }
+
+  @Test
+  void 마지막_공문은_지우지_못하고_새_공문을_올린_뒤에는_지운다() throws Exception {
+    Long id = createAsKim("공문 교체 작업");
+    long first = attachmentsOf(id, kim()).get(0).get("id").asLong();
+    send(delete("/api/v1/attachments/" + first), null, kim())
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("ATTACHMENT_REQUIRED"));
+
+    uploadDocument(id, "새 공문.pdf", kim()).andExpect(status().isCreated());
+    send(delete("/api/v1/attachments/" + first), null, kim()).andExpect(status().isNoContent());
+    assertThat(attachmentsOf(id, kim()).findValuesAsText("name")).containsExactly("새 공문.pdf");
+  }
+
+  @Test
+  void 결제원_작업_안내의_공문은_모두_지울_수_있다() throws Exception {
+    Map<String, Object> body = form("공문 붙인 결제원 작업");
+    body.put("kind", "KFTC_WORK");
+    body.put("contacts", List.of(contact("홍성민", "010-0000-0001", "hong.sungmin@kftc.example.com")));
+    Long id = json(create(body, hong()).andExpect(status().isCreated())).get("id").asLong();
+    long only = attachmentsOf(id, hong()).get(0).get("id").asLong();
+    send(delete("/api/v1/attachments/" + only), null, hong()).andExpect(status().isNoContent());
+  }
+
+  private JsonNode attachmentsOf(Long id, RequestPostProcessor user) throws Exception {
+    return json(
+        send(
+                get("/api/v1/attachments")
+                    .param("ownerType", "SUSPENSION")
+                    .param("ownerId", String.valueOf(id)),
+                null,
+                user)
+            .andExpect(status().isOk()));
+  }
+
+  private ResultActions uploadDocument(Long id, String name, RequestPostProcessor user)
+      throws Exception {
+    return mockMvc.perform(
+        multipart("/api/v1/attachments")
+            .file(new MockMultipartFile("file", name, "application/pdf", "pdf".getBytes()))
+            .param("ownerType", "SUSPENSION")
+            .param("ownerId", String.valueOf(id))
+            .with(csrf())
+            .with(user));
+  }
+
+  @Test
   void 공문은_고칠_수_있는_사람이_올리고_볼_수_있는_사람이_내려받는다() throws Exception {
     Long id = createAsKim("공문 첨부 작업");
-    MockMultipartFile file =
-        new MockMultipartFile("file", "공문.pdf", "application/pdf", "pdf".getBytes());
-    mockMvc
-        .perform(
-            multipart("/api/v1/attachments")
-                .file(file)
-                .param("ownerType", "SUSPENSION")
-                .param("ownerId", String.valueOf(id))
-                .with(csrf())
-                .with(kim()))
-        .andExpect(status().isCreated());
+    uploadDocument(id, "추가 공문.pdf", kim()).andExpect(status().isCreated());
     send(
             get("/api/v1/attachments")
                 .param("ownerType", "SUSPENSION")
@@ -828,7 +907,10 @@ class SuspensionControllerTest {
             null,
             hong())
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[0].name").value("공문.pdf"));
+        .andExpect(jsonPath("$[0].name").value("공문.pdf"))
+        .andExpect(jsonPath("$[1].name").value("추가 공문.pdf"));
+    // 볼 수 없는 사람은 올리지도 못한다.
+    uploadDocument(id, "남의 공문.pdf", choi()).andExpect(status().isForbidden());
     send(
             get("/api/v1/attachments")
                 .param("ownerType", "SUSPENSION")
