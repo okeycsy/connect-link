@@ -3090,6 +3090,9 @@ export interface components {
       /** Format: date-time */
       decidedAt?: string | null;
       rejectionReason?: string | null;
+      /** @enum {string} */
+      inspectionStatus: 'NOT_REQUIRED' | 'PENDING' | 'PASSED' | 'BLOCKED';
+      inspectionNote?: string | null;
     };
     ChatAckResponse: {
       organizationCode: string;

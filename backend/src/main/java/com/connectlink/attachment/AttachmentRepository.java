@@ -16,6 +16,9 @@ public interface AttachmentRepository extends JpaRepository<Attachment, Long> {
 
   List<Attachment> findByStorageKeyStartingWith(String prefix);
 
+  /** 반입 보안 검사 상태가 같은 파일(검사 중인 파일을 다시 확인할 때 쓴다). */
+  List<Attachment> findByInspectionStatusOrderByIdAsc(AttachmentInspectionStatus status);
+
   /** 한 대상에서 내가 결재자인 파일(다른 사람이 올린 것). 팀장 본인이 올려 바로 승인된 파일은 빠진다. */
   @Query(
       "select a from Attachment a where a.ownerType = :ownerType and a.ownerId = :ownerId"

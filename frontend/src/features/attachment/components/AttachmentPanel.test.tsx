@@ -15,6 +15,8 @@ const state = vi.hoisted(() => ({
       size: 2048,
       uploadedBy: 'admin@kftc.example.com',
       uploadedAt: '2026-10-15T10:00:00',
+      approvalStatus: 'NOT_REQUIRED',
+      inspectionStatus: 'NOT_REQUIRED',
     },
   ],
   post: vi.fn(),
@@ -79,5 +81,27 @@ describe('AttachmentPanel', () => {
     await screen.findByRole('list', { name: '첨부파일' });
     expect(screen.queryByRole('button', { name: '파일 올리기' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /지우기/ })).not.toBeInTheDocument();
+  });
+
+  it('보안 검사 중인 파일은 이름만 보이다가 검사가 끝나면 내려받기 링크가 된다', async () => {
+    const pending = {
+      ...state.files[0],
+      id: 21,
+      name: '일시중단 공문.pdf',
+      uploadedBy: 'member@gana.example.com',
+      inspectionStatus: 'PENDING',
+    };
+    state.files = [pending];
+    renderWithProviders(<AttachmentPanel ownerType="DEMO" ownerId={1} />);
+
+    expect(await screen.findByText('일시중단 공문.pdf')).toBeInTheDocument();
+    expect(screen.getByTestId('inspection-status')).toHaveTextContent('보안 검사 중');
+    expect(screen.queryByRole('link', { name: '일시중단 공문.pdf' })).not.toBeInTheDocument();
+
+    // 서버에서 검사가 끝나면 목록을 다시 읽어 스스로 바뀐다.
+    state.files = [{ ...pending, inspectionStatus: 'PASSED' }];
+    const link = await screen.findByRole('link', { name: '일시중단 공문.pdf' }, { timeout: 3000 });
+    expect(link).toHaveAttribute('href', '/api/v1/attachments/21/download');
+    expect(screen.getByTestId('inspection-status')).toHaveTextContent('검사 완료');
   });
 });

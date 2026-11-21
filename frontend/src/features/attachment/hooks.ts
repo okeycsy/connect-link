@@ -6,6 +6,15 @@ import { useMe } from '../account/hooks';
 
 export type Attachment = components['schemas']['AttachmentResponse'];
 export type AttachmentOwnerType = Attachment['ownerType'];
+export type AttachmentInspectionStatus = Attachment['inspectionStatus'];
+
+/** 반입 보안 검사를 통과했거나 검사가 필요 없는 파일만 내려받을 수 있다(서버가 409 로 막는다). */
+export function inspectionCleared(attachment: Pick<Attachment, 'inspectionStatus'>): boolean {
+  return attachment.inspectionStatus === 'NOT_REQUIRED' || attachment.inspectionStatus === 'PASSED';
+}
+
+/** 보안 검사 중인 파일이 있을 때 목록을 다시 읽는 간격(ms). */
+const INSPECTION_REFETCH_MS = 1000;
 
 export interface AttachmentOwner {
   ownerType: AttachmentOwnerType;
@@ -44,6 +53,11 @@ export function useAttachments(owner: AttachmentOwner) {
   return useQuery({
     queryKey: attachmentKeys.list(owner),
     queryFn: async () => unwrap(await api.GET('/api/v1/attachments', { params: { query: owner } })),
+    // 보안 검사 중인 파일이 있으면 끝날 때까지 짧게 다시 읽어, 새로고침 없이 내려받기 링크로 바뀐다.
+    refetchInterval: (query) =>
+      query.state.data?.some((a) => a.inspectionStatus === 'PENDING')
+        ? INSPECTION_REFETCH_MS
+        : false,
   });
 }
 

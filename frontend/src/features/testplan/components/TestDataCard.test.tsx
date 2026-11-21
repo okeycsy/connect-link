@@ -51,6 +51,8 @@ vi.mock('../../../api/client', async (importOriginal) => {
                     size: 2048,
                     createdBy: '홍성민',
                     createdAt: '2026-10-17T09:00:00',
+                    approvalStatus: 'NOT_REQUIRED',
+                    inspectionStatus: 'NOT_REQUIRED',
                   },
                 ]
               : [],

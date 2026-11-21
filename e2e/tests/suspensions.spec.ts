@@ -321,6 +321,22 @@ test.describe("라. 일시중단", () => {
     await expect(page.getByRole("link", { name: "고치기" })).toBeVisible();
     await shot(page, "suspension-detail-unlinked");
 
+    // 기관이 올린 공문은 반입 보안 검사를 거친다. 검사 중에는 이름만 보이고, 끝나면(시연은 3초 뒤) 새로고침 없이 내려받기 링크가 된다.
+    const documents = page.getByTestId("attachment-panel").first();
+    await expect(documents.getByTestId("inspection-status")).toHaveText(
+      /보안 검사 중|검사 완료/,
+    );
+    await page.screenshot({
+      path: "screenshots/suspension-document-inspecting.png",
+    });
+    await expect(
+      documents.getByRole("link", { name: "회선작업공문.pdf" }),
+    ).toBeVisible({ timeout: 15_000 });
+    await expect(documents.getByTestId("inspection-status")).toHaveText(
+      "검사 완료",
+    );
+    await shot(page, "suspension-document-inspected");
+
     // 업무 담당(홍성민)이 아니라 전 업무를 보는 결제원 운영·상황실이 받는다.
     for (const email of [
       "kim.ops@kftc.example.com",

@@ -29,8 +29,10 @@ import { StateView } from '../../../shared/state/StateView';
 import { stateKindOf } from '../../../shared/state/stateKind';
 import { ApprovalStatusBadge } from './ApprovalStatusBadge';
 import { FileTransferBlockedNote } from './FileTransferBlockedNote';
+import { InspectionStatusBadge } from './InspectionStatusBadge';
 import {
   attachmentDownloadUrl,
+  inspectionCleared,
   useAttachments,
   useDeleteAttachment,
   useExportApprovalRequired,
@@ -53,6 +55,9 @@ interface Props extends AttachmentOwner {
  * 내려받기는 링크라 브라우저가 원래 파일 이름으로 저장한다.
  *
  * 결제원 계정에게는 파일마다 반출 결재 상태(결재 대기·반출 승인·반려)가 보인다. 결재 전·반려 파일은 서버가 참가기관에 내려 주지 않는다.
+ *
+ * 참가기관이 올린 파일은 반입 보안 검사를 거친다. 검사 중에는 이름과 "보안 검사 중" 만 보이고, 검사가 끝나면 목록이 스스로 바뀌어
+ * 내려받기 링크가 된다.
  */
 export function AttachmentPanel({
   ownerType,
@@ -76,7 +81,9 @@ export function AttachmentPanel({
         message:
           saved.approvalStatus === 'PENDING'
             ? `${file.name} 을(를) 올리고 ${saved.approverName ?? '팀장'} 팀장님께 결재를 요청했습니다.`
-            : `${file.name} 을(를) 올렸습니다.`,
+            : saved.inspectionStatus === 'PENDING'
+              ? `${file.name} 을(를) 올렸습니다. 보안 검사가 끝나면 내려받을 수 있습니다.`
+              : `${file.name} 을(를) 올렸습니다.`,
         color: 'clay',
       });
     } catch (e) {
@@ -162,7 +169,7 @@ function AttachmentRow({
 }: {
   attachment: Attachment;
   editable: boolean;
-  /** 결제원 담당자가 인터넷망이면 이름만 보이고 내려받지 못한다. */
+  /** 결제원 담당자가 인터넷망이면 이름만 보이고 내려받지 못한다. 보안 검사 중·차단 파일도 이름만 보인다. */
   downloadable: boolean;
   /** 결제원 계정에게만 반출 결재 상태를 보인다. */
   showApproval: boolean;
@@ -187,7 +194,7 @@ function AttachmentRow({
         <Icon size={18} stroke={1.6} />
       </ThemeIcon>
       <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
-        {downloadable ? (
+        {downloadable && inspectionCleared(attachment) ? (
           <Anchor
             href={attachmentDownloadUrl(attachment.id)}
             download={attachment.name}
@@ -215,7 +222,17 @@ function AttachmentRow({
             {approvalLine(attachment)}
           </Text>
         )}
+        {attachment.inspectionStatus === 'BLOCKED' && (
+          <Text size="xs" c="red" data-testid="inspection-line">
+            {attachment.inspectionNote
+              ? `차단 사유: ${attachment.inspectionNote}`
+              : '보안 검사에서 차단되어 내려받을 수 없습니다.'}
+          </Text>
+        )}
       </Stack>
+      {attachment.inspectionStatus !== 'NOT_REQUIRED' && (
+        <InspectionStatusBadge status={attachment.inspectionStatus} />
+      )}
       {showApproval && attachment.approvalStatus !== 'NOT_REQUIRED' && (
         <ApprovalStatusBadge status={attachment.approvalStatus} />
       )}
