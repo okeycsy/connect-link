@@ -16,6 +16,9 @@ app:
     default-zone: INTERNAL
   attachment:
     dir: ${java.io.tmpdir}/connect-link-test-files
+    inspection:
+      # 테스트는 올리자마자 검사 통과로 본다. 검사 중 상태는 AttachmentInspectionTest 가 시계를 바꿔 확인한다.
+      simulated-delay: 0s
   demo:
     # 데모 계정 공통 비밀번호. db/seed/R__2_account_seed.sql 의 해시와 README 의 데모 계정 표와 같아야 한다.
     account-password: demo1234!

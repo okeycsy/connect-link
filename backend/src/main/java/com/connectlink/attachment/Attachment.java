@@ -67,6 +67,22 @@ public class Attachment extends AuditedEntity {
   @Column(name = "rejection_reason", length = 500)
   private String rejectionReason;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "inspection_status", nullable = false, length = 20)
+  private AttachmentInspectionStatus inspectionStatus = AttachmentInspectionStatus.NOT_REQUIRED;
+
+  /** 반입 보안 검사를 요청한 일시. 검사가 필요 없는 파일은 비어 있다. */
+  @Column(name = "inspection_requested_at")
+  private LocalDateTime inspectionRequestedAt;
+
+  /** 검사가 끝난(통과·차단) 일시. */
+  @Column(name = "inspected_at")
+  private LocalDateTime inspectedAt;
+
+  /** 차단 사유. */
+  @Column(name = "inspection_note", length = 500)
+  private String inspectionNote;
+
   protected Attachment() {}
 
   public Attachment(
@@ -176,6 +192,35 @@ public class Attachment extends AuditedEntity {
 
   public String getRejectionReason() {
     return rejectionReason;
+  }
+
+  /** 결제원 밖 계정이 올린 파일의 반입 보안 검사를 요청한다. 통과하기 전에는 내려받지 못한다. */
+  void requestInspection(LocalDateTime now) {
+    this.inspectionStatus = AttachmentInspectionStatus.PENDING;
+    this.inspectionRequestedAt = now;
+  }
+
+  /** 검사 결과(통과·차단)를 적는다. */
+  void completeInspection(AttachmentInspectionStatus result, String note, LocalDateTime now) {
+    this.inspectionStatus = result;
+    this.inspectionNote = note;
+    this.inspectedAt = now;
+  }
+
+  public AttachmentInspectionStatus getInspectionStatus() {
+    return inspectionStatus;
+  }
+
+  public LocalDateTime getInspectionRequestedAt() {
+    return inspectionRequestedAt;
+  }
+
+  public LocalDateTime getInspectedAt() {
+    return inspectedAt;
+  }
+
+  public String getInspectionNote() {
+    return inspectionNote;
   }
 
   /** 샘플 첨부의 내용을 저장소에 넣은 뒤 키와 크기를 맞춘다. 샘플 시드({@code SampleAttachmentLoader})만 쓴다. */

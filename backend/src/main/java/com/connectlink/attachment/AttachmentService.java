@@ -31,6 +31,9 @@ import org.springframework.web.multipart.MultipartFile;
  *
  * <p>결제원 계정이 올린 파일은 외부망 반출이라 같은 팀 팀장의 결재를 받아야 결제원 밖 계정에 보인다({@link AttachmentApprovalService}). 결재
  * 전·반려 파일은 목록에서 빠지고 내려받으면 404 다.
+ *
+ * <p>결제원 밖 계정이 올린 파일은 내부망 반입이라 보안 검사를 통과해야 내려받을 수 있다({@link AttachmentInspectionService}). 검사 중·차단
+ * 파일은 목록에 이름과 상태만 보이고 내려받으면 409 다.
  */
 @Service
 @Transactional(readOnly = true)
@@ -44,6 +47,7 @@ public class AttachmentService {
   private final AttachmentProperties properties;
   private final NetworkZoneResolver networkZoneResolver;
   private final AttachmentApprovalService approvalService;
+  private final AttachmentInspectionService inspectionService;
 
   public AttachmentService(
       AttachmentRepository repository,
@@ -51,13 +55,15 @@ public class AttachmentService {
       FileStorage fileStorage,
       AttachmentProperties properties,
       NetworkZoneResolver networkZoneResolver,
-      AttachmentApprovalService approvalService) {
+      AttachmentApprovalService approvalService,
+      AttachmentInspectionService inspectionService) {
     this.repository = repository;
     this.accessPolicy = accessPolicy;
     this.fileStorage = fileStorage;
     this.properties = properties;
     this.networkZoneResolver = networkZoneResolver;
     this.approvalService = approvalService;
+    this.inspectionService = inspectionService;
   }
 
   /** 이 사람에게 보이는 첨부인가. 결재 대기·반려 파일(결제원 담당자가 올려 아직 반출 승인을 받지 못한 파일)은 결제원 계정에만 보인다. */
@@ -130,6 +136,10 @@ public class AttachmentService {
     if (approver != null) {
       approvalService.assign(attachment, user, approver);
     }
+    // 결제원 밖 계정의 파일은 반입 보안 검사를 거친다.
+    if (AttachmentInspectionService.requiresInspection(user)) {
+      inspectionService.request(attachment);
+    }
     // 올린 사람·일시가 응답에 실리도록 바로 flush 한다.
     Attachment saved = repository.saveAndFlush(attachment);
     approvalService.notifyRequested(saved);
@@ -147,11 +157,27 @@ public class AttachmentService {
       }
     }
     ensureFileTransferAllowed(user, "내려받기");
+    ensureInspected(attachment);
     Resource content = fileStorage.open(attachment.getStorageKey());
     if (!content.exists()) {
       throw BusinessException.notFound("ATTACHMENT_FILE_MISSING", "파일 내용이 저장소에 없습니다.");
     }
     return new AttachmentDownload(attachment, content);
+  }
+
+  /** 반입 보안 검사를 통과하지 못한 파일은 누구도 내려받지 못한다. */
+  private static void ensureInspected(Attachment attachment) {
+    switch (attachment.getInspectionStatus()) {
+      case PENDING ->
+          throw new BusinessException(
+              HttpStatus.CONFLICT,
+              "ATTACHMENT_INSPECTION_PENDING",
+              "보안 검사 중인 파일입니다. 검사가 끝나면 내려받을 수 있습니다.");
+      case BLOCKED ->
+          throw new BusinessException(
+              HttpStatus.CONFLICT, "ATTACHMENT_INSPECTION_BLOCKED", "보안 검사에서 차단된 파일은 내려받을 수 없습니다.");
+      default -> {}
+    }
   }
 
   @Transactional
