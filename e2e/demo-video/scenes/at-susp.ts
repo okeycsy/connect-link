@@ -4,11 +4,12 @@ import type { Director } from '../helpers.ts';
 import type { Chapter } from './types.ts';
 import { AT_SLUG, asLee, asOps, look } from './at-common.ts';
 
-const WORKS = ['자동이체통합관리', '납부자자동이체'];
+/** 공문의 "자동이체 서비스 중단"이 실제로는 계좌이동 업무라는 이야기(발표자료 7장, SHY 2026-11-22). 관련 업무는 자동이체통합관리다. */
+const WORKS = ['계좌이동'];
 /** 등록 장면에서 만든 건의 주소(확정 장면이 연다). */
 let registeredPath = '';
 
-const REASON = '계정계 시스템 증설 작업으로 자동이체 해지 결과 파일 송수신이 중단됩니다.';
+const REASON = '계정계 시스템 증설 작업으로 자동이체 계좌이동 처리가 중단됩니다.';
 
 /** 서울 기준 오늘에서 days 만큼 뒤의 날짜. */
 function seoulDate(days: number) {
@@ -69,7 +70,7 @@ export const atSusp: Chapter = {
     {
       id: 'at-susp-register',
       kind: 'app',
-      summary: '신한은행(이준호) → 일시중단 등록 → 중단 일시(내일 23:00~다음 날 02:00)·이유 → 대상 업무 자동이체통합관리·납부자자동이체 → 연락처 → 공문 PDF 첨부 → 저장 → 검토 대기',
+      summary: '신한은행(이준호) → 일시중단 등록 → 중단 일시(내일 23:00~다음 날 02:00)·이유 → 대상 업무 계좌이동(관련 업무 자동이체통합관리) → 연락처 → 공문 PDF 첨부 → 저장 → 검토 대기',
       run: async (d, page) => {
         await asLee(d);
         await page.goto(`/${AT_SLUG}/suspensions/new`);
@@ -123,7 +124,7 @@ export const atSusp: Chapter = {
         const handover = page.getByRole('dialog', { name: '조치 쓰고 확정' });
         await d.clickUntil(page.getByRole('button', { name: '조치 쓰고 확정' }), handover);
         await look(d, handover);
-        await d.type(handover.getByRole('textbox', { name: '조치 및 인수인계 사항' }), '23:00 신한은행 해지 결과 파일 수신 보류, 재개 연락 오면 재처리.', { delay: 6 });
+        await d.type(handover.getByRole('textbox', { name: '조치 및 인수인계 사항' }), '23:00 신한은행 계좌이동 요청 전송 보류, 재개 연락 오면 재처리.', { delay: 6 });
         await d.clickUntil(handover.getByRole('button', { name: '확정하기' }), status.getByText('확정', { exact: true }));
         await look(d, status, 1200);
         // 확정 건은 운영·관제 매터모스트 채널로 모아 보낸다(평소에는 정해진 때 자동, 시연은 지금 보낸다).
