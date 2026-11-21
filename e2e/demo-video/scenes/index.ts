@@ -4,6 +4,11 @@ import { tests } from './03-tests.ts';
 import { suspensions } from './04-suspensions.ts';
 import { chat } from './05-chat.ts';
 import { outro } from './06-outro.ts';
+import { atBiz } from './at-biz.ts';
+import { atDev } from './at-dev.ts';
+import { atOps } from './at-ops.ts';
+import { atPrep } from './at-prep.ts';
+import { atSusp } from './at-susp.ts';
 import type { Chapter, Scene } from './types.ts';
 
 export type { Chapter, Scene } from './types.ts';
@@ -14,7 +19,13 @@ export type { Chapter, Scene } from './types.ts';
  *   e2e/demo-video/run.sh --only=flow-branch,chat     # 장면 id 도 된다
  * 장 안의 장면들은 서로 이어지지만(예: 기관 회신 뒤 집계), 장끼리는 독립이라 어느 장이든 따로 찍을 수 있다.
  */
-export const CHAPTERS: Chapter[] = [intro, flow, tests, suspensions, chat, outro];
+export const INTRO_CHAPTERS: Chapter[] = [intro, flow, tests, suspensions, chat, outro];
+
+/** 2차 심사 발표 장별 영상(scenario-autotransfer.md). 장마다 `compose.ts --chapter=<id>` 로 demo-<id>.mp4 를 뽑는다. */
+export const AUTOTRANSFER_CHAPTERS: Chapter[] = [atPrep, atBiz, atDev, atOps, atSusp];
+
+/** DEMO_SCENARIO=autotransfer 이면 2차 심사 장별 영상, 비우면 1차 시연영상. */
+export const CHAPTERS: Chapter[] = process.env.DEMO_SCENARIO === 'autotransfer' ? AUTOTRANSFER_CHAPTERS : INTRO_CHAPTERS;
 
 export const SCENES: Scene[] = CHAPTERS.flatMap((c) => c.scenes);
 

@@ -9,6 +9,7 @@
  * 2. 의견 요청 "…실무 회의 참석 회신"(회신중) + 공지 "…실무 회의 개최 안내"(그 요청을 이어 둔 글). KB·우체국 참석, 저축은행중앙회 불참 회신
  * 3. 의견 요청 "…의견조사"(섹션 4개, 답별 이동, 회신중). KB·우체국·저축은행중앙회 회신
  * 4. 기관 테스트 "자동이체 해지 결과 배치파일 개선"(요구사항 5개, 대상 6곳, 테스트데이터 사전 요청). KB·우체국은 테스트데이터 생성 완료와 결과 일부
+ * 5. 장서윤 연락처 수정(변경 이력), 6. 자동이체통합관리 단체방 대화 두 줄
  * 끝나면 만든 id 를 out/autotransfer.json 에 남긴다(장면 스크립트가 읽는다).
  */
 import { request, type APIRequestContext } from '@playwright/test';
@@ -270,6 +271,47 @@ async function main() {
       results: [{ itemId: items[0].id, result: 'PASSED', note: null }],
     });
     await ctx.dispose();
+  }
+
+  // 5. 연락처 변경 이력: 장서윤이 팀·내선·휴대폰을 고친다(prep 장면의 변경 이력, 이전 휴대폰은 가려서 보인다).
+  {
+    const ctx = await session('jang.seoyun@kb.example.com');
+    const mine = await call(ctx, 'get', `/api/v1/contacts?business=${AT.slug}&size=200`);
+    const c = (mine.content ?? mine).find((x: any) => x.email === 'jang.seoyun@kb.example.com');
+    if (!c) throw new Error('장서윤 연락처를 못 찾았습니다');
+    await call(ctx, 'put', `/api/v1/contacts/${c.id}`, {
+      business: AT.business,
+      organizationId: c.organizationId,
+      subBusiness: c.subBusiness,
+      name: c.name,
+      department: c.department,
+      team: '자동납부팀',
+      jobTitle: c.jobTitle,
+      jobRole: c.jobRole,
+      itRoles: c.itRoles ?? [],
+      rank: c.rank,
+      extensionPhone: '02-0000-2318',
+      mobilePhone: '010-0000-2318',
+      email: c.email,
+    });
+    await ctx.dispose();
+  }
+
+  // 6. 자동이체통합관리 단체방: 시행 당일 대화 두 줄(ops 장면이 이어서 쓴다).
+  {
+    const rooms = await call<any>(kftc, 'get', `/api/v1/chat-rooms?business=${AT.slug}`);
+    const room = (rooms.content ?? rooms).find((r: any) => r.business === AT.business && r.type === 'BUSINESS');
+    if (!room) throw new Error('자동이체통합관리 단체방을 못 찾았습니다');
+    await call(kftc, 'post', `/api/v1/chat-rooms/${room.id}/messages`, {
+      content: '오늘부터 해지 처리결과 파일을 당일 2회(13시·18시) 회신합니다. 기관별로 수신 여부를 확인해 주세요.',
+      mentionOrganizationCodes: [],
+    });
+    const kb = await session('jang.seoyun@kb.example.com');
+    await call(kb, 'post', `/api/v1/chat-rooms/${room.id}/messages`, {
+      content: 'KB국민은행 13시 파일 정상 수신했습니다.',
+      mentionOrganizationCodes: [],
+    });
+    await kb.dispose();
   }
 
   const out = { meetingRequestId: meeting.id, noticeId: notice.id, surveyId: survey.id, testPlanId: plan.id, orgIds };
