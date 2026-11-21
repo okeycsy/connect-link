@@ -18,9 +18,9 @@ export const AT_MEETING_NOTICE = '자동이체 해지 결과 배치파일 개선
 export const AT_MEETING_REQUEST = '자동이체 해지 결과 배치파일 개선 실무 회의 참석 회신';
 export const AT_SURVEY = '자동이체 해지 결과 배치파일 개선 의견조사';
 export const AT_TEST = '자동이체 해지 결과 배치파일 개선';
-/** 운영 장면에서 김태호가 보내는 확인 요청(@신한은행 뒤에 붙는다). */
-export const AT_OPS_MESSAGE = '13시 해지 결과 파일이 아직 들어오지 않았습니다. 확인 부탁드립니다.';
-export const AT_OPS_REPLY = '13시 20분에 재송신했습니다.';
+/** 운영 장면에서 김태호가 단체방에 올리는 지연 안내(발표자료 6장, SHY 2026-11-22). */
+export const AT_OPS_MESSAGE =
+  '[지연 안내] 타 기관 수신 지연으로 오늘 해지 요청 파일이 30분가량 늦게 나갑니다. 13시 처리결과 회신은 13시 30분 이후에 부탁드립니다.';
 
 type Ids = { meetingRequestId: number; noticeId: number; surveyId: number; testPlanId: number; orgIds: Record<string, number> };
 
