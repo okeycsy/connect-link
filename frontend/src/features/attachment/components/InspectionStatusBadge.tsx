@@ -1,4 +1,4 @@
-import { Badge, Loader } from '@mantine/core';
+import { Badge } from '@mantine/core';
 
 import type { AttachmentInspectionStatus } from '../hooks';
 
@@ -22,12 +22,7 @@ const COLOR: Record<AttachmentInspectionStatus, string> = {
  */
 export function InspectionStatusBadge({ status }: { status: AttachmentInspectionStatus }) {
   return (
-    <Badge
-      color={COLOR[status]}
-      variant="light"
-      leftSection={status === 'PENDING' ? <Loader size={10} color="amber" /> : undefined}
-      data-testid="inspection-status"
-    >
+    <Badge color={COLOR[status]} variant="light" data-testid="inspection-status">
       {LABEL[status]}
     </Badge>
   );
