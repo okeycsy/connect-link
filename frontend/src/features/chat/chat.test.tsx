@@ -46,6 +46,7 @@ const MESSAGE: ChatMessage = {
       uploadedBy: '홍성민',
       uploadedAt: '2026-10-21T09:10:00',
       approvalStatus: 'NOT_REQUIRED',
+      inspectionStatus: 'NOT_REQUIRED',
     },
   ],
   attachmentsExpired: false,
