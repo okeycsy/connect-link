@@ -351,34 +351,14 @@ def build(out):
     # ───────────────────────────── 8. 보안
     s = prs.slides.add_slide(BLANK)
     header(s, '안심하고 쓰도록', '업무자료는 내부망에, 참가기관은 자기 정보만')
-    box(s, 0.6, 1.6, 5.2, 4.9, fill=PANEL, radius=0.18)
-    for bx, t1, t2, c in ((0.95, '우리 원 직원', '내부망 PC', BROWN), (3.45, '참가기관', '외부망 웹', DBLUE)):
-        box(s, bx, 1.95, 2.0, 1.1, fill=WHITE, line=LINE, radius=0.12)
-        text(s, bx, 1.95, 2.0, 1.1, [[(t1, EB, c, 14)], [(t2, R, GRAY, 12)]], align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
-        text(s, bx + 0.7, 3.08, 0.6, 0.5, '↓', size=22, face=EB, color=LGRAY, align=PP_ALIGN.CENTER)
-    box(s, 0.95, 3.6, 4.5, 1.2, fill=INK, radius=0.14)
-    text(s, 0.95, 3.6, 4.5, 1.2, [[('연결이 서버 (우리 원 안)', EB, WHITE, 15)], [('접속 IP 대역으로 망을 판단해 서버가 차단', R, PALE, 12)]],
-         align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, spacing=1.3)
-    text(s, 0.95, 5.05, 4.5, 1.3, [[('우리 원 직원은 인터넷PC를 쓸 필요가 없어', R, GRAY, 12)], [('인터넷PC 업무자료 취급 금지 규정과 맞습니다', R, GRAY, 12)]],
-         align=PP_ALIGN.CENTER, spacing=1.35)
-    items = [
-        ('업무자료는 내부망에서만', '명부 엑셀 · 일괄 등록 · 수정 · 검색, 의견 취합 엑셀은 내부망에서만. 화면 숨김이 아니라 서버가 거부'),
-        ('파일 반출은 팀장 결재', '우리 원이 올린 파일은 같은 팀 팀장이 승인해야 참가기관에 보임'),
-        ('최소 범위 공개', '참가기관은 자기 기관과 우리 원 담당자만, 업무별로 조회 범위 분리, 휴대폰은 가려서'),
-        ('가입 · 로그인 통제', '회사 이메일 인증 → 업무 담당자 승인, 비밀번호 5회 오류 시 30분 잠금'),
-        ('개인정보 보호', '처리방침 공개, 가입 시 확인 · 동의 기록, 접속기록 2년 보관, 탈퇴 시 즉시 삭제'),
-    ]
-    y = 1.62
-    for t, d in items:
-        box(s, 6.15, y, 6.58, 0.88, fill=WHITE, line=LINE, radius=0.12)
-        box(s, 6.15, y, 0.09, 0.88, fill=BLUE, shape=MSO_SHAPE.RECTANGLE)
-        text(s, 6.45, y + 0.1, 6.1, 0.35, t, size=14, face=EB, color=INK)
-        text(s, 6.45, y + 0.44, 6.15, 0.4, d, size=11.5, color=GRAY)
-        y += 0.99
+    # 시스템 구성도(그림). 참가기관은 인터넷 → DMZ 웹 게이트웨이, 우리 원 직원은 내부망에서 바로 접속한다.
+    h = 5.65
+    w = h * 2348 / 1322
+    s.shapes.add_picture(os.path.join(ASSETS, 'system-architecture.png'), Inches((13.333 - w) / 2), Inches(1.5), Inches(w), Inches(h))
     page_no(s, 8)
     notes(s, """
 [4:25–4:37] 보안
-이 모든 과정에서 업무자료는 내부망을 벗어나지 않습니다. 엑셀 다운로드나 명부 수정은 내부망에서만 되고, 화면에서 숨긴 게 아니라 서버가 막습니다. 우리 원이 올린 파일은 팀장 결재를 거쳐야 참가기관에 보입니다.
+참가기관은 인터넷에서 DMZ를 거쳐, 우리 원 직원은 내부망에서 같은 서버에 접속합니다. 이 모든 과정에서 업무자료는 내부망을 벗어나지 않습니다. 엑셀 다운로드나 명부 수정은 내부망에서만 되고, 화면에서 숨긴 게 아니라 서버가 막습니다. 우리 원이 올린 파일은 팀장 결재를 거쳐야 참가기관에 보입니다.
 """)
 
     # ───────────────────────────── 9. 기대효과
