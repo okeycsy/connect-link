@@ -47,6 +47,8 @@ done
 curl -fs "http://localhost:$port/api/v1/health" > /dev/null || { echo "서버가 뜨지 않았습니다: $log"; exit 1; }
 
 export DEMO_BASE_URL="http://localhost:$port"
+# 2차 심사 발표 영상(scenario-autotransfer.md)은 녹화 전에 과제 데이터를 만든다. 1차 영상은 그대로 시드만 쓴다.
+if [ "${DEMO_SCENARIO:-}" = "autotransfer" ]; then node "$here/setup-autotransfer.ts"; fi
 node "$here/record.ts" "${record_args[@]+"${record_args[@]}"}"
 node "$here/compose.ts" "${compose_args[@]+"${compose_args[@]}"}"
 node "$here/docs.ts"
