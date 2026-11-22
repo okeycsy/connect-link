@@ -89,3 +89,6 @@ export async function look(d: Director, targets: Locator | Locator[], hold = 700
   await d.moveTo(first, { steps: 18 });
   await d.pause(hold);
 }
+
+/** 대본 v1.8(발표 5분)에 맞춘 짧은 영상용: 커서를 빨리 옮기고 덜 기다린다. */
+export const FAST = { settle: 60, steps: 6 } as const;

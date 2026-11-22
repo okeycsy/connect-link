@@ -27,7 +27,7 @@ DEMO_SCENARIO=autotransfer e2e/demo-video/run.sh   # app.jar 를 새로 띄운 �
 - 기한·일정은 실행 날 기준 상대값이다(회의 회신 D+3, 의견조사 D+10, 테스트 수행 D0~D+14, 회의 일시 D+7 14:00).
 - `DEMO_SCENARIO` 를 비우면 1차 영상처럼 시드만 쓴다. 장면 스크립트는 `out/autotransfer.json` 에서 id 를 읽는다.
 - 데이터 준비는 KB국민은행 부담당 교체(백승호 → 남도윤, prep 의 변경 이력), 기관별 테스트 담당자, 자동이체 단체방 시행 안내 한 줄(ops)도 만든다.
-- `run.sh` 는 녹화 뒤 `out/demo-{prep,biz,dev,ops,susp}.mp4` 를 장마다 뽑는다. 2026-11-22 녹화 길이: prep 18초, biz 56초, dev 40초, ops 18초, susp 32초.
+- `run.sh` 는 녹화 뒤 `out/demo-{prep,biz,dev,ops,susp}.mp4` 를 장마다 뽑는다. 2026-11-22 대본 v1.8(발표 5분)에 맞춰 줄인 길이: prep 18초, biz 25초, dev 21초, ops 12초, susp 19초. biz 는 질문 구성·엑셀·카드를, susp 는 카드·발송함 줄을 뺐고 입력은 빠르게 한다.
 
 ## 3. 장과 장면
 

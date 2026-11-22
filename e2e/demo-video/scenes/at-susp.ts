@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 
 import type { Director } from '../helpers.ts';
 import type { Chapter } from './types.ts';
-import { AT_SLUG, asLee, asOps, look } from './at-common.ts';
+import { AT_SLUG, FAST, asLee, asOps, look } from './at-common.ts';
 
 /** 공문의 "자동이체 서비스 중단"이 실제로는 계좌이동 업무라는 이야기(발표자료 7장, SHY 2026-11-22). 관련 업무는 자동이체통합관리다. */
 const WORKS = ['계좌이동'];
@@ -56,85 +56,65 @@ function samplePdf(): Buffer {
   return Buffer.from(out, 'latin1');
 }
 
-/** susp 일시중단: 며칠 뒤, 기관이 공문과 함께 직접 등록 → 매터모스트 알림 → 결제원 운영이 확인·확정. */
+/** susp 일시중단(대본 v1.8, 약 20초): 기관이 계좌이동을 골라 등록 → 결제원 운영이 확인·확정 → 운영·관제 매터모스트 채널. */
 export const atSusp: Chapter = {
   id: 'susp',
   title: '일시중단',
   scenes: [
     {
-      id: 'at-susp-later',
-      kind: 'card',
-      duration: 2200,
-      card: { tone: 'light', title: '며칠 뒤' },
-    },
-    {
       id: 'at-susp-register',
       kind: 'app',
-      summary: '신한은행(이준호) → 일시중단 등록 → 중단 일시(내일 23:00~다음 날 02:00)·이유 → 대상 업무 계좌이동(관련 업무 자동이체통합관리) → 연락처 → 공문 PDF 첨부 → 저장 → 검토 대기',
+      summary: '신한은행(이준호) → 일시중단 등록 → 대상 업무 계좌이동(관련 업무 자동이체통합관리) → 일시·이유·연락처·공문 PDF → 저장 → 검토 대기',
       run: async (d, page) => {
         await asLee(d);
         await page.goto(`/${AT_SLUG}/suspensions/new`);
         await page.getByRole('heading', { name: '일시중단 등록' }).waitFor();
-        await d.pause(300);
-        await pickDateTime(d, page, '중단 시작', seoulDate(1), '2300');
-        await pickDateTime(d, page, '중단 종료', seoulDate(2), '0200');
-        await d.type(page.getByRole('textbox', { name: '중단 이유(작업 내용)' }), REASON, { delay: 4 });
         const works = page.getByTestId('suspension-businesses');
-        await look(d, works);
-        for (const name of WORKS) await d.click(works.getByRole('checkbox', { name, exact: true }));
+        await d.pause(300);
+        for (const name of WORKS) await d.click(works.getByRole('checkbox', { name, exact: true }), FAST);
         await page.getByTestId('suspension-businesses-count').getByText(`고른 업무 ${WORKS.length}개`).waitFor();
         await d.pause(500);
-        await d.type(page.getByRole('textbox', { name: '연락처' }).first(), '010-0000-3101', { delay: 10 });
+        await pickDateTime(d, page, '중단 시작', seoulDate(1), '2300');
+        await pickDateTime(d, page, '중단 종료', seoulDate(2), '0200');
+        await d.type(page.getByRole('textbox', { name: '중단 이유(작업 내용)' }), REASON, { delay: 2 });
+        await page.getByRole('textbox', { name: '연락처' }).first().fill('010-0000-3101');
         await page.locator('input[type="file"]').setInputFiles({ name: '신한은행_일시중단_공문.pdf', mimeType: 'application/pdf', buffer: samplePdf() });
         const files = page.getByRole('list', { name: '올릴 파일' });
         await files.getByText('신한은행_일시중단_공문.pdf').waitFor();
-        await look(d, files, 1000);
-        await d.click(page.getByRole('button', { name: '저장', exact: true }));
+        await look(d, files, 300);
+        await d.click(page.getByRole('button', { name: '저장', exact: true }), FAST);
         await page.waitForURL(new RegExp(`/${AT_SLUG}/suspensions/\\d+$`));
         registeredPath = new URL(page.url()).pathname;
         const status = page.getByTestId('suspension-status');
         await status.getByText('검토 대기').waitFor();
-        await d.pause(300);
         await look(d, status, 1500);
       },
     },
     {
       id: 'at-susp-confirm',
       kind: 'app',
-      summary: '결제원 운영(김태호) → 발송함의 "매터모스트 · … 일시중단이 등록되었습니다" 줄 → 검토 대기 건 → 확인 시작 → 조치 쓰고 확정 → 확정하기 → 확정 → 주간 취합 보내기(운영·관제 매터모스트 채널, 방금 확정한 신한은행 건)',
+      summary: '결제원 운영(김태호) → 검토 대기 건 → 확인 시작 → 조치 쓰고 확정 → 확정하기 → 주간 취합 보내기(운영·관제 매터모스트 채널, 방금 확정한 신한은행 건)',
       run: async (d, page) => {
         await asOps(d);
-        await page.goto(`/${AT_SLUG}/demo/outbox`);
-        const row = page
-          .getByTestId('outbox-table')
-          .locator('tbody tr')
-          .filter({ hasText: '매터모스트' })
-          .filter({ hasText: '일시중단이 등록되었습니다' })
-          .first();
-        await row.waitFor();
-        await d.pause(300);
-        await look(d, row, 1500);
         if (!registeredPath) throw new Error('at-susp-register 를 먼저 찍어야 합니다(같은 녹화에서).');
         await page.goto(registeredPath);
         await page.getByRole('heading', { name: '신한은행 일시중단' }).waitFor();
         const status = page.getByTestId('suspension-status');
         const startDialog = page.getByRole('dialog', { name: '확인 시작' });
-        await d.clickUntil(page.getByRole('button', { name: '확인 시작' }), startDialog);
-        await d.clickUntil(startDialog.getByRole('button', { name: '확인 시작' }), status.getByText('검토 중'));
+        await d.clickUntil(page.getByRole('button', { name: '확인 시작' }), startDialog, FAST);
+        await d.clickUntil(startDialog.getByRole('button', { name: '확인 시작' }), status.getByText('검토 중'), FAST);
         const handover = page.getByRole('dialog', { name: '조치 쓰고 확정' });
-        await d.clickUntil(page.getByRole('button', { name: '조치 쓰고 확정' }), handover);
-        await look(d, handover);
-        await d.type(handover.getByRole('textbox', { name: '조치 및 인수인계 사항' }), '23:00 신한은행 계좌이동 요청 전송 보류, 재개 연락 오면 재처리.', { delay: 6 });
-        await d.clickUntil(handover.getByRole('button', { name: '확정하기' }), status.getByText('확정', { exact: true }));
-        await look(d, status, 1200);
+        await d.clickUntil(page.getByRole('button', { name: '조치 쓰고 확정' }), handover, FAST);
+        await d.type(handover.getByRole('textbox', { name: '조치 및 인수인계 사항' }), '23:00 신한은행 계좌이동 요청 전송 보류, 재개 연락 오면 재처리.', { delay: 2 });
+        await d.clickUntil(handover.getByRole('button', { name: '확정하기' }), status.getByText('확정', { exact: true }), FAST);
+        await d.pause(400);
         // 확정 건은 운영·관제 매터모스트 채널로 모아 보낸다(평소에는 정해진 때 자동, 시연은 지금 보낸다).
         await page.goto(`/${AT_SLUG}/suspensions`);
         const confirmSend = page.getByRole('dialog', { name: '주간 취합 보내기' });
-        await d.clickUntil(page.getByRole('button', { name: '주간 취합 보내기' }), confirmSend);
-        await look(d, confirmSend, 1200);
+        await d.clickUntil(page.getByRole('button', { name: '주간 취합 보내기' }), confirmSend, FAST);
         const digest = page.getByRole('dialog', { name: '주간 취합을 보냈습니다' });
-        await d.clickUntil(confirmSend.getByRole('button', { name: '보내기' }), digest.getByTestId('digest-body'));
-        await look(d, digest.getByTestId('digest-body'), 2600);
+        await d.clickUntil(confirmSend.getByRole('button', { name: '보내기' }), digest.getByTestId('digest-body'), FAST);
+        await look(d, digest.getByTestId('digest-body'), 3000);
       },
     },
   ],

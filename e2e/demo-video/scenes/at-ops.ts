@@ -1,7 +1,7 @@
 import { request } from '@playwright/test';
 
 import type { Chapter } from './types.ts';
-import { AT_OPS_MESSAGE, AT_SLUG, asLee, asOps, look } from './at-common.ts';
+import { AT_OPS_MESSAGE, AT_SLUG, FAST, asLee, asOps, look } from './at-common.ts';
 
 const ROOM = /자동이체통합관리 단체방/;
 
@@ -44,19 +44,18 @@ export const atOps: Chapter = {
       run: async (d, page) => {
         await asOps(d);
         await page.goto(`/${AT_SLUG}/chat`);
+        await d.pause(600);
         const rooms = page.getByRole('complementary', { name: '채팅방 목록' });
-        await d.click(rooms.getByRole('link', { name: ROOM }));
+        await d.click(rooms.getByRole('link', { name: ROOM }), FAST);
         const messages = page.getByTestId('chat-messages');
         await messages.waitFor();
-        await d.pause(500);
         const input = page.getByRole('textbox', { name: '메시지 입력' });
-        await d.click(input);
-        await page.keyboard.type(AT_OPS_MESSAGE, { delay: 14 });
-        await d.pause(300);
-        await d.click(page.getByRole('button', { name: '보내기' }));
+        await d.click(input, FAST);
+        await page.keyboard.type(AT_OPS_MESSAGE, { delay: 4 });
+        await d.click(page.getByRole('button', { name: '보내기' }), FAST);
         const sent = messages.getByTestId('chat-message').filter({ hasText: '[지연 안내]' }).last();
         await sent.waitFor();
-        await look(d, sent, 1800);
+        await look(d, sent, 1500);
       },
     },
     {
@@ -67,14 +66,13 @@ export const atOps: Chapter = {
         for (const email of EARLY_ACKS) await ackAs(email);
         await asLee(d);
         await page.goto(`/${AT_SLUG}/chat`);
+        await d.pause(600);
         const rooms = page.getByRole('complementary', { name: '채팅방 목록' });
         const room = rooms.getByRole('link', { name: ROOM });
-        await look(d, room, 900);
-        await d.click(room);
+        await d.click(room, FAST);
         const notice = page.getByTestId('chat-messages').getByTestId('chat-message').filter({ hasText: '[지연 안내]' }).last();
         await notice.waitFor();
-        await look(d, notice, 1600);
-        await d.clickUntil(notice.getByRole('button', { name: '확인', exact: true }), notice.getByTestId('chat-ack').filter({ hasText: '신한은행' }));
+        await d.clickUntil(notice.getByRole('button', { name: '확인', exact: true }), notice.getByTestId('chat-ack').filter({ hasText: '신한은행' }), FAST);
         await d.pause(1200);
       },
     },
@@ -85,13 +83,13 @@ export const atOps: Chapter = {
       run: async (d, page) => {
         await asOps(d);
         await page.goto(`/${AT_SLUG}/chat`);
+        await d.pause(600);
         const rooms = page.getByRole('complementary', { name: '채팅방 목록' });
-        await d.click(rooms.getByRole('link', { name: ROOM }));
+        await d.click(rooms.getByRole('link', { name: ROOM }), FAST);
         const notice = page.getByTestId('chat-messages').getByTestId('chat-message').filter({ hasText: '[지연 안내]' }).last();
         const acks = notice.getByTestId('chat-ack');
         await acks.filter({ hasText: '신한은행' }).waitFor();
-        await d.pause(400);
-        await look(d, acks.last(), 3200);
+        await look(d, acks.last(), 2400);
       },
     },
   ],
