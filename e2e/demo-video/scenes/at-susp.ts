@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 
 import type { Director } from '../helpers.ts';
 import type { Chapter } from './types.ts';
-import { AT_SLUG, FAST, asLee, asOps, look } from './at-common.ts';
+import { AT_SLUG, CALM, asLee, asOps, look } from './at-common.ts';
 
 /** 공문의 "자동이체 서비스 중단"이 실제로는 계좌이동 업무라는 이야기(발표자료 7장, SHY 2026-11-22). 관련 업무는 자동이체통합관리다. */
 const WORKS = ['계좌이동'];
@@ -70,10 +70,10 @@ export const atSusp: Chapter = {
         await page.goto(`/${AT_SLUG}/suspensions/new`);
         await page.getByRole('heading', { name: '일시중단 등록' }).waitFor();
         const works = page.getByTestId('suspension-businesses');
-        await d.pause(300);
-        for (const name of WORKS) await d.click(works.getByRole('checkbox', { name, exact: true }), FAST);
+        await d.pause(800);
+        for (const name of WORKS) await d.click(works.getByRole('checkbox', { name, exact: true }), CALM);
         await page.getByTestId('suspension-businesses-count').getByText(`고른 업무 ${WORKS.length}개`).waitFor();
-        await d.pause(500);
+        await d.pause(1300);
         await pickDateTime(d, page, '중단 시작', seoulDate(1), '2300');
         await pickDateTime(d, page, '중단 종료', seoulDate(2), '0200');
         await d.type(page.getByRole('textbox', { name: '중단 이유(작업 내용)' }), REASON, { delay: 2 });
@@ -81,13 +81,13 @@ export const atSusp: Chapter = {
         await page.locator('input[type="file"]').setInputFiles({ name: '신한은행_일시중단_공문.pdf', mimeType: 'application/pdf', buffer: samplePdf() });
         const files = page.getByRole('list', { name: '올릴 파일' });
         await files.getByText('신한은행_일시중단_공문.pdf').waitFor();
-        await look(d, files, 300);
-        await d.click(page.getByRole('button', { name: '저장', exact: true }), FAST);
+        await look(d, files, 900);
+        await d.click(page.getByRole('button', { name: '저장', exact: true }), CALM);
         await page.waitForURL(new RegExp(`/${AT_SLUG}/suspensions/\\d+$`));
         registeredPath = new URL(page.url()).pathname;
         const status = page.getByTestId('suspension-status');
         await status.getByText('검토 대기').waitFor();
-        await look(d, status, 1500);
+        await look(d, status, 2100);
       },
     },
     {
@@ -101,20 +101,20 @@ export const atSusp: Chapter = {
         await page.getByRole('heading', { name: '신한은행 일시중단' }).waitFor();
         const status = page.getByTestId('suspension-status');
         const startDialog = page.getByRole('dialog', { name: '확인 시작' });
-        await d.clickUntil(page.getByRole('button', { name: '확인 시작' }), startDialog, FAST);
-        await d.clickUntil(startDialog.getByRole('button', { name: '확인 시작' }), status.getByText('검토 중'), FAST);
+        await d.clickUntil(page.getByRole('button', { name: '확인 시작' }), startDialog, CALM);
+        await d.clickUntil(startDialog.getByRole('button', { name: '확인 시작' }), status.getByText('검토 중'), CALM);
         const handover = page.getByRole('dialog', { name: '조치 쓰고 확정' });
-        await d.clickUntil(page.getByRole('button', { name: '조치 쓰고 확정' }), handover, FAST);
+        await d.clickUntil(page.getByRole('button', { name: '조치 쓰고 확정' }), handover, CALM);
         await d.type(handover.getByRole('textbox', { name: '조치 및 인수인계 사항' }), '23:00 신한은행 계좌이동 요청 전송 보류, 재개 연락 오면 재처리.', { delay: 2 });
-        await d.clickUntil(handover.getByRole('button', { name: '확정하기' }), status.getByText('확정', { exact: true }), FAST);
-        await d.pause(400);
+        await d.clickUntil(handover.getByRole('button', { name: '확정하기' }), status.getByText('확정', { exact: true }), CALM);
+        await d.pause(1000);
         // 확정 건은 운영·관제 매터모스트 채널로 모아 보낸다(평소에는 정해진 때 자동, 시연은 지금 보낸다).
         await page.goto(`/${AT_SLUG}/suspensions`);
         const confirmSend = page.getByRole('dialog', { name: '주간 취합 보내기' });
-        await d.clickUntil(page.getByRole('button', { name: '주간 취합 보내기' }), confirmSend, FAST);
+        await d.clickUntil(page.getByRole('button', { name: '주간 취합 보내기' }), confirmSend, CALM);
         const digest = page.getByRole('dialog', { name: '주간 취합을 보냈습니다' });
-        await d.clickUntil(confirmSend.getByRole('button', { name: '보내기' }), digest.getByTestId('digest-body'), FAST);
-        await look(d, digest.getByTestId('digest-body'), 3000);
+        await d.clickUntil(confirmSend.getByRole('button', { name: '보내기' }), digest.getByTestId('digest-body'), CALM);
+        await look(d, digest.getByTestId('digest-body'), 3200);
       },
     },
   ],

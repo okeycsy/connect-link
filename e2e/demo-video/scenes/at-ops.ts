@@ -1,7 +1,7 @@
 import { request } from '@playwright/test';
 
 import type { Chapter } from './types.ts';
-import { AT_OPS_MESSAGE, AT_SLUG, FAST, asLee, asOps, look } from './at-common.ts';
+import { AT_OPS_MESSAGE, AT_SLUG, CALM, asLee, asOps, look } from './at-common.ts';
 
 const ROOM = /자동이체통합관리 단체방/;
 
@@ -46,13 +46,13 @@ export const atOps: Chapter = {
         await page.goto(`/${AT_SLUG}/chat`);
         await d.pause(600);
         const rooms = page.getByRole('complementary', { name: '채팅방 목록' });
-        await d.click(rooms.getByRole('link', { name: ROOM }), FAST);
+        await d.click(rooms.getByRole('link', { name: ROOM }), CALM);
         const messages = page.getByTestId('chat-messages');
         await messages.waitFor();
         const input = page.getByRole('textbox', { name: '메시지 입력' });
-        await d.click(input, FAST);
+        await d.click(input, CALM);
         await page.keyboard.type(AT_OPS_MESSAGE, { delay: 4 });
-        await d.click(page.getByRole('button', { name: '보내기' }), FAST);
+        await d.click(page.getByRole('button', { name: '보내기' }), CALM);
         const sent = messages.getByTestId('chat-message').filter({ hasText: '[지연 안내]' }).last();
         await sent.waitFor();
         await look(d, sent, 1500);
@@ -69,11 +69,11 @@ export const atOps: Chapter = {
         await d.pause(600);
         const rooms = page.getByRole('complementary', { name: '채팅방 목록' });
         const room = rooms.getByRole('link', { name: ROOM });
-        await d.click(room, FAST);
+        await d.click(room, CALM);
         const notice = page.getByTestId('chat-messages').getByTestId('chat-message').filter({ hasText: '[지연 안내]' }).last();
         await notice.waitFor();
-        await d.clickUntil(notice.getByRole('button', { name: '확인', exact: true }), notice.getByTestId('chat-ack').filter({ hasText: '신한은행' }), FAST);
-        await d.pause(1200);
+        await d.clickUntil(notice.getByRole('button', { name: '확인', exact: true }), notice.getByTestId('chat-ack').filter({ hasText: '신한은행' }), CALM);
+        await d.pause(900);
       },
     },
     {
@@ -85,11 +85,11 @@ export const atOps: Chapter = {
         await page.goto(`/${AT_SLUG}/chat`);
         await d.pause(600);
         const rooms = page.getByRole('complementary', { name: '채팅방 목록' });
-        await d.click(rooms.getByRole('link', { name: ROOM }), FAST);
+        await d.click(rooms.getByRole('link', { name: ROOM }), CALM);
         const notice = page.getByTestId('chat-messages').getByTestId('chat-message').filter({ hasText: '[지연 안내]' }).last();
         const acks = notice.getByTestId('chat-ack');
         await acks.filter({ hasText: '신한은행' }).waitFor();
-        await look(d, acks.last(), 2400);
+        await look(d, acks.last(), 1800);
       },
     },
   ],

@@ -99,3 +99,10 @@ export async function look(d: Director, targets: Locator | Locator[], hold = 700
 
 /** 대본 v1.8(발표 5분)에 맞춘 짧은 영상용: 커서를 빨리 옮기고 덜 기다린다. */
 export const FAST = { settle: 60, steps: 6 } as const;
+
+/**
+ * 처음 보는 심사위원도 따라오도록 조금 천천히(SHY 2026-11-22 "너무 빨라 정신없다"). 영상 위 대본이 영상보다 긴 장(biz·susp·ops)은
+ * 대본 길이까지 영상을 늘려도 발표 시간이 늘지 않는다. dev 는 대본과 영상 길이가 비슷해 MEDIUM 만 쓴다.
+ */
+export const CALM = { settle: 380, steps: 14 } as const;
+export const MEDIUM = { settle: 140, steps: 8 } as const;
