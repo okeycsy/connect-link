@@ -16,6 +16,7 @@
 pip install python-pptx pillow
 python3 docs/presentation/build_deck.py                                   # docs/presentation/out/연결이_2차심사_발표자료.pptx
 python3 docs/presentation/build_deck.py --videos=e2e/demo-video/out       # demo-<장 id>.mp4 를 영상 자리에 넣는다
+python3 docs/presentation/build_deck.py --team="홍길동 · 김철수"            # 표지에 팀원 이름을 넣는다(실명이 든 결과물은 커밋하지 않는다)
 soffice --headless --convert-to pdf --outdir docs/presentation/out docs/presentation/out/연결이_2차심사_발표자료.pptx
 ```
 

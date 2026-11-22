@@ -149,6 +149,7 @@ def timeline(slide, active, y=7.0):
 
 
 VIDEOS = None
+TEAM = None  # 표지에 넣을 팀원 이름. 공개 저장소라 코드에 적지 않고 만들 때 --team 으로 준다
 
 
 def video(slide, chapter, label, seconds, x, y, w):
@@ -225,12 +226,14 @@ def build(out):
     box(s, 7.9, -1.2, 7.0, 7.0, fill=LBLUE, shape=MSO_SHAPE.OVAL)
     box(s, 10.2, 4.3, 4.6, 4.6, fill=LORANGE, shape=MSO_SHAPE.OVAL)
     s.shapes.add_picture(os.path.join(BRAND, 'logo-mascot.png'), Inches(7.75), Inches(1.75), Inches(5.0))
-    text(s, 0.9, 1.55, 7, 0.45, '바이브코딩 챌린지 2차 심사', size=15, color=ORANGE, face=EB)
-    text(s, 0.9, 2.1, 7.2, 1.9, [[('메일·전화·엑셀로 오가던', EB, INK, 40)], [('참가기관 협업을 ', EB, INK, 40), ('한 곳에서', EB, BLUE, 40)]], spacing=1.1)
-    text(s, 0.9, 4.05, 7, 0.5, [[('연결이', EB, BROWN, 22), ('  우리 원과 참가기관을 잇는 업무별 협업 포털', R, GRAY, 17)]])
-    box(s, 0.9, 4.85, 6.3, 0.012, fill=LINE, shape=MSO_SHAPE.RECTANGLE)
-    text(s, 0.9, 5.05, 7, 1.2, [[('신규 과제 하나', B, INK, 15), ('를 처음부터 끝까지', R, GRAY, 15)],
-                                [('업무팀 · 개발팀 · 운영팀과 함께 따라가 봅니다.', R, GRAY, 15)]], spacing=1.35)
+    # 표지는 꼬리표 · 한 줄 제목 · 서비스 소개 · 팀원만 둔다. 과제를 따라간다는 안내는 말로 하고 2장에서 보여 준다.
+    text(s, 0.9, 2.0, 7, 0.45, '바이브코딩 챌린지 2차 심사', size=15, color=ORANGE, face=EB)
+    text(s, 0.9, 2.6, 7.2, 0.5, '메일 · 전화 · 엑셀로 오가던', size=22, color=GRAY, face=B)
+    text(s, 0.9, 3.1, 7.2, 0.9, [[('참가기관 협업을 ', EB, INK, 40), ('한 곳에서', EB, BLUE, 40)]])
+    text(s, 0.9, 4.15, 7, 0.5, [[('연결이', EB, BROWN, 22), ('  우리 원과 참가기관을 잇는 협업 포털', R, GRAY, 17)]])
+    if TEAM:
+        box(s, 0.9, 4.95, 6.3, 0.012, fill=LINE, shape=MSO_SHAPE.RECTANGLE)
+        text(s, 0.9, 5.15, 7, 0.4, TEAM, size=15, color=INK, face=B)
     notes(s, """
 [0:00–0:10] 표지
 안녕하십니까. 우리 원과 참가기관을 잇는 협업 포털, 연결이입니다.
@@ -506,6 +509,8 @@ if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('--out', default=os.path.join(HERE, 'out', '연결이_2차심사_발표자료.pptx'))
     ap.add_argument('--videos', default=None, help='demo-<장 id>.mp4 가 있는 폴더(녹화영상 PR 의 e2e/demo-video/out)')
+    ap.add_argument('--team', default=None, help='표지에 넣을 팀원 이름(예: "홍길동 · 김철수"). 실명이 든 결과물은 커밋하지 않는다')
     a = ap.parse_args()
     VIDEOS = a.videos
+    TEAM = a.team
     build(a.out)
