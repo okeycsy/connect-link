@@ -14,6 +14,7 @@ export const AT_SLUG = 'auto-transfer';
 export const MOON = 'moon.seojun@kftc.example.com';
 export const OPS = 'kim.ops@kftc.example.com';
 export const LEE = 'lee.junho@shinhan.example.com';
+export const LIM = 'lim.chaewon@samsung.example.com';
 export const AT_MEETING_NOTICE = '자동이체 해지 결과 배치파일 개선 실무 회의 개최 안내';
 export const AT_MEETING_REQUEST = '자동이체 해지 결과 배치파일 개선 실무 회의 참석 회신';
 export const AT_SURVEY = '자동이체 해지 결과 배치파일 개선 의견조사';
@@ -71,6 +72,12 @@ export async function asLee(d: Director) {
   await d.skipReconfirm();
   await d.switchSession(LEE);
   await who(d, 'org', '신한은행', '이준호 과장 · 참가기관 담당자');
+}
+
+/** 참가기관 담당자(삼성증권 임채원 과장) 시점. 최근 확인일이 6개월 지나 로그인하면 확인 창이 뜬다(prep 장면). */
+export async function asLim(d: Director) {
+  await d.switchSession(LIM);
+  await who(d, 'org', '삼성증권', '임채원 과장 · 참가기관 담당자');
 }
 
 /**

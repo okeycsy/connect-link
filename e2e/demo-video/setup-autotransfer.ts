@@ -38,6 +38,8 @@ const ORG_USERS = [
   { code: '004', email: 'jang.seoyun@kb.example.com', name: '장서윤', department: '디지털금융부', team: '수신결제팀', jobTitle: '차장', phone: '02-0000-2301', sub: '자동이체 통합조회' },
   { code: '071', email: 'ha.yunseul@epost.example.com', name: '하윤슬', department: '결제사업부', team: '자동납부팀', jobTitle: '대리', phone: '02-0000-8101', sub: '카드 자동납부' },
   { code: '050', email: 'tak.jiyu@fsb.example.com', name: '탁지유', department: '수신업무부', team: '전자금융팀', jobTitle: '주임', phone: '02-0000-6201', sub: null },
+  // 시드의 확인 필요(최근 확인일 210일 전) 담당자. 계정이 생겨도 연락처는 그대로라, 로그인하면 6개월 확인 창이 뜬다(prep 장면).
+  { code: '240', email: 'lim.chaewon@samsung.example.com', name: '임채원', department: '리테일영업부', team: '계좌관리팀', jobTitle: '과장', phone: '02-0000-4201', sub: '자동이체 해지' },
 ];
 const TARGET_CODES = ['004', '088', '240', '071', '050', '048'];
 
@@ -314,6 +316,21 @@ async function main() {
       content: '오늘부터 해지 처리결과 파일을 당일 2회(13시·18시) 회신합니다. 기관별로 수신 여부를 확인해 주세요.',
       mentionOrganizationCodes: [],
     });
+  }
+
+  // 7. 정기 변경 주간: 그제 시작한 진행 중 주간. 국민은행·우체국은 현행화를 마쳤고 삼성증권은 prep 장면에서 마친다.
+  {
+    await call(kftc, 'post', '/api/v1/update-campaigns', {
+      business: AT.business,
+      title: '하반기 담당자 정기 변경',
+      startDate: day(-2),
+      endDate: day(11),
+    });
+    for (const email of ['jang.seoyun@kb.example.com', 'ha.yunseul@epost.example.com']) {
+      const ctx = await session(email);
+      await call(ctx, 'post', '/api/v1/contacts/organization-confirmations', { business: AT.business });
+      await ctx.dispose();
+    }
   }
 
   const out = { meetingRequestId: meeting.id, noticeId: notice.id, surveyId: survey.id, testPlanId: plan.id, orgIds };
