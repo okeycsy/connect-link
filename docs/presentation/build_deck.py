@@ -361,19 +361,19 @@ def build(out):
 
     # ───────────────────────────── 9. 만든 방식 (AI 활용). 기대효과 장과 같은 틀: 왼쪽 큰 숫자, 오른쪽 표와 카드 3개
     s = prs.slides.add_slide(BLANK)
-    header(s, '만든 방식', '업무 · 개발 · 운영 세 사람이 AI와 만들었습니다')
+    header(s, '만든 방식', '업무 · 개발 · 운영, 세 관점을 Claude Code로 담았습니다')
     box(s, 0.6, 1.6, 4.0, 2.35, fill=LORANGE, radius=0.18)
-    text(s, 0.9, 1.82, 3.5, 0.4, 'AI에게 말로 요청해서', size=13, face=B, color=ORANGE)
+    text(s, 0.9, 1.82, 3.5, 0.4, 'Claude Code에 말로 요청해서', size=13, face=B, color=ORANGE)
     text(s, 0.9, 2.2, 3.5, 1.0, [[('6', EB, BROWN, 54), ('주', EB, BROWN, 22)]])
-    text(s, 0.9, 3.25, 3.5, 0.5, '업무팀 · 개발팀 · 운영팀 담당자 3명', size=11.5, color=GRAY)
+    text(s, 0.9, 3.25, 3.5, 0.5, '업무 · 개발 · 운영 관점을 나눠 맡은 3명', size=11.5, color=GRAY)
     box(s, 0.6, 4.1, 4.0, 2.35, fill=INK, radius=0.18)
     text(s, 0.9, 4.32, 3.5, 0.4, '그동안 쌓인 것', size=13, face=B, color=PEACH)
     text(s, 0.9, 4.7, 3.6, 1.0, [[('78', EB, WHITE, 40), ('건의 변경', EB, WHITE, 18)]])
     text(s, 0.9, 5.75, 3.6, 0.5, '코드 5만 7천 줄 · 자동 테스트 540여 개', size=12, color=PALE)
     rows = [('순서', '한 일', '내용'),
             ('① 규칙', '먼저 규칙 한 장', '서버 사양 · 외부 접속 금지 · 용어 통일'),
-            ('② 요청', '세 사람이 각자 말로', '업무 기능 · 화면과 구조 · 알림과 운영'),
-            ('③ 작성', 'AI가 코드 · 테스트 · 문서', '자동 테스트를 통과해야 반영'),
+            ('② 요청', '세 관점에서 각자 말로', '업무 기능 · 화면과 구조 · 알림과 운영'),
+            ('③ 작성', 'Claude Code가 작성', '코드 · 테스트 · 문서까지, 테스트 통과 후 반영'),
             ('④ 결정', '사람은 확인하고 결정', '결정 208건을 기록으로 남김')]
     y = 1.6
     colx, colw = [4.95, 6.15, 8.95], [1.15, 2.7, 3.7]
@@ -387,7 +387,7 @@ def build(out):
             box(s, 4.85, y + 0.42, 7.88, 0.01, fill=LINE, shape=MSO_SHAPE.RECTANGLE)
         y += 0.47
     text(s, 4.95, 4.15, 7, 0.4, '그래서 우리 원 환경에 맞습니다', size=15, face=EB, color=INK)
-    fit = [('망분리에 맞게', 'AI에는 가상 데이터만\n완성본은 파일 하나로 내부망에'),
+    fit = [('망분리에 맞게', '개발에는 가상 데이터만\n완성본은 파일 하나로 내부망에'),
            ('운영하기 쉽게', '설치 없이 파일 하나로 실행\n실행 중 외부 접속 없음'),
            ('고치기 쉽게', '규칙 · 결정 기록 · 테스트가 남아\n누가 맡아도, 사내 AI로도 이어서')]
     for i, (t, d) in enumerate(fit):
@@ -398,8 +398,8 @@ def build(out):
     page_no(s, 9)
     notes(s, """
 [4:05–4:30] 만든 방식
-그런데 이 연결이도 업무팀, 개발팀, 운영팀 담당자 세 명이 AI에게 말로 요청해 6주 만에 만들었습니다.
-먼저 내부망 서버 사양과 외부 접속 금지 같은 규칙을 한 장으로 정해 두어, 세 사람의 AI가 같은 규칙으로 일했습니다.
+이 연결이는 업무, 개발, 운영 세 관점을 모두 담아, Claude Code에 말로 요청해 6주 만에 만들었습니다.
+먼저 내부망 서버 사양과 외부 접속 금지 같은 규칙을 한 장으로 정해 두어, 누가 요청하든 같은 규칙으로 만들어졌습니다.
 그래서 파일 하나로 내부망에 올릴 수 있고, 규칙과 결정 기록, 자동 테스트가 남아 있어 담당자가 바뀌어도 이어서 고칠 수 있습니다.
 """)
 
@@ -447,49 +447,37 @@ def build(out):
 참가기관과 일하는 우리 원 94개 업무로 넓히면 1만 8,612시간, 직원 9명의 1년입니다.
 """)
 
-    # ───────────────────────────── 11. 확산: 참가기관도 쓰는 이유. 과제 장과 같은 틀: 왼쪽 패널(질문), 오른쪽 답
+    # ───────────────────────────── 11. 확산: 참가기관이 참여할 이유. 카드 3개와 확산 순서만 둔다(예상 질문은 장표에 적지 않고 질의응답에서 답한다)
     s = prs.slides.add_slide(BLANK)
-    header(s, '확산', '참가기관도 씁니다, 기관에도 이득이기 때문입니다', section_color=BLUE)
-    box(s, 0.6, 1.55, 4.55, 5.2, fill=WHITE, line=LINE, radius=0.16)
-    text(s, 0.9, 1.75, 4, 0.35, [[('Q  ', EB, GRAY, 14), ('자주 받는 질문', B, LGRAY, 12)]])
-    box(s, 0.9, 2.2, 3.95, 1.25, fill=LRED, radius=0.14)
-    text(s, 1.1, 2.2, 3.6, 1.25, '"참가기관이 안 쓰면\n그만 아닌가요?"', size=14.5, face=B, color=RED, anchor=MSO_ANCHOR.MIDDLE, spacing=1.3)
-    y = 3.7
-    for i, st in enumerate(['회신 · 테스트 결과 · 공문은 지금도 기관이 우리 원에 내는 것', '바뀌는 것은 내는 곳 하나',
-                            '우리 원이 접수 창구를 연결이로 안내']):
-        num(s, 0.9, y + 0.02, i + 1, LGRAY, d=0.27, size=9.5)
-        text(s, 1.3, y, 3.6, 0.62, st, size=12.5, color=INK, spacing=1.2)
-        y += 0.72
-    box(s, 0.9, 5.7, 3.95, 0.8, fill=LBLUE, radius=0.14)
-    text(s, 1.1, 5.7, 3.6, 0.8, '쓸수록 우리 원은 취합이,\n기관은 전화와 메일이 줄어듭니다', size=12.5, face=B, color=DBLUE, anchor=MSO_ANCHOR.MIDDLE, spacing=1.3)
-    why = [('기관에도 이득', BLUE, LBLUE, ['우리 원 담당자를 바로 찾음', '자기 테스트 현황과 우리 원 의견을 실시간으로', '공문 한 번 등록으로 관련 담당자에게 전파']),
-           ('들어오기 쉽게', ORANGE, LORANGE, ['설치 없이 PC · 휴대폰 웹', '회사 이메일 인증으로 가입', '알림은 지금처럼 메일로, 이용 가이드 내장']),
-           ('한 번에 안 바꿔도', GREEN, LGREEN, ['기존 명부는 엑셀로 한 번에 등록', '가입 전 기관은 우리 원이 대신 등록', '준비된 업무부터 차례로'])]
+    header(s, '확산', '참가기관도 참여할 이유가 충분합니다', section_color=BLUE)
+    why = [('기관이 얻는 것', BLUE, LBLUE, ['우리 원 담당자를 바로 조회', '테스트 현황과 우리 원 의견을 실시간으로', '공문 한 번 등록으로 관련 담당자에게 전파']),
+           ('낮은 문턱', ORANGE, LORANGE, ['설치 없이 PC · 휴대폰 웹으로', '회사 이메일 인증만으로 가입', '알림은 지금처럼 메일로, 이용 가이드 내장']),
+           ('단계적 전환', GREEN, LGREEN, ['기존 명부는 엑셀로 한 번에 등록', '가입 전 기관은 우리 원이 대신 등록', '준비된 업무부터 차례로 적용'])]
     for i, (t, c, bg, items) in enumerate(why):
-        x = 5.55 + i * 2.44
-        box(s, x, 1.6, 2.3, 3.75, fill=bg, radius=0.14)
-        text(s, x + 0.22, 1.8, 1.9, 0.4, t, size=15, face=EB, color=c)
-        y = 2.42
+        x = 0.6 + i * 4.115
+        box(s, x, 1.6, 3.9, 3.75, fill=bg, radius=0.16)
+        text(s, x + 0.35, 1.9, 3.3, 0.45, t, size=20, face=EB, color=c)
+        y = 2.8
         for it in items:
-            box(s, x + 0.22, y + 0.08, 0.08, 0.08, fill=c, shape=MSO_SHAPE.OVAL)
-            text(s, x + 0.42, y, 1.72, 0.9, it, size=12, color=INK, spacing=1.3)
-            y += 0.95
-    text(s, 5.55, 5.58, 3, 0.35, '확산 순서', size=13, face=EB, color=BLUE, anchor=MSO_ANCHOR.MIDDLE)
-    x = 5.55
+            box(s, x + 0.37, y + 0.09, 0.09, 0.09, fill=c, shape=MSO_SHAPE.OVAL)
+            text(s, x + 0.6, y, 3.1, 0.7, it, size=13.5, color=INK, spacing=1.3)
+            y += 0.88
+    text(s, 0.6, 5.95, 1.3, 0.4, '확산 순서', size=14, face=EB, color=BLUE, anchor=MSO_ANCHOR.MIDDLE)
+    x = 1.95
     order = ['4개 업무 시범 적용', '정기 변경 주간에 가입 안내', '참가기관과 일하는 전 업무']
     for i, t in enumerate(order):
-        w = 0.13 * len(t) + 0.35
-        pill(s, x, 6.02, w, 0.36, t, LBLUE, DBLUE, size=10.5)
+        w = 0.15 * len(t) + 0.45
+        pill(s, x, 5.95, w, 0.4, t, LBLUE, DBLUE, size=12)
         x += w
         if i < len(order) - 1:
-            text(s, x, 6.02, 0.26, 0.36, '›', size=16, face=EB, color=LGRAY, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
-            x += 0.26
+            text(s, x, 5.95, 0.3, 0.4, '›', size=18, face=EB, color=LGRAY, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+            x += 0.3
     page_no(s, 11)
     notes(s, """
-[4:45–5:05] 확산
-참가기관이 안 쓰면 그만 아니냐고 물으실 수 있습니다.
-회신과 테스트 결과, 공문은 지금도 기관이 우리 원에 내는 것이고, 바뀌는 것은 내는 곳 하나입니다.
-기관도 우리 원 담당자를 바로 찾고 자기 현황을 실시간으로 보니 이득입니다. 네 개 업무부터 차례로 넓히겠습니다.
+[4:45–5:03] 확산
+참가기관도 참여할 이유가 충분합니다.
+기관도 우리 원 담당자를 바로 찾고, 자기 테스트 현황을 실시간으로 봅니다.
+설치 없이 회사 이메일로 가입하고, 기존 명부는 우리 원이 한 번에 올려 둡니다. 네 개 업무부터 차례로 넓히겠습니다.
 """)
 
     # ───────────────────────────── 12. 마무리
@@ -505,7 +493,7 @@ def build(out):
          align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, spacing=1.3)
     text(s, 1.0, 6.75, 11.33, 0.4, '감사합니다', size=15, face=B, color=LGRAY, align=PP_ALIGN.CENTER)
     notes(s, """
-[5:05–5:10] 마무리
+[5:03–5:08] 마무리
 메일과 전화, 엑셀로 흩어져 있던 참가기관 협업을 하나로 잇는 것, 연결이였습니다. 감사합니다.
 """)
 
