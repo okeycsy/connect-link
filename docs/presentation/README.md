@@ -16,6 +16,7 @@
 pip install python-pptx pillow
 python3 docs/presentation/build_deck.py                                   # docs/presentation/out/연결이_2차심사_발표자료.pptx
 python3 docs/presentation/build_deck.py --videos=e2e/demo-video/out       # demo-<장 id>.mp4 를 영상 자리에 넣는다
+python3 docs/presentation/build_deck.py --team="홍길동 · 김철수"            # 표지에 팀원 이름을 넣는다(실명이 든 결과물은 커밋하지 않는다)
 soffice --headless --convert-to pdf --outdir docs/presentation/out docs/presentation/out/연결이_2차심사_발표자료.pptx
 ```
 
@@ -23,4 +24,5 @@ soffice --headless --convert-to pdf --outdir docs/presentation/out docs/presenta
 - PPT 로 낼 때는 PowerPoint 에서 파일 → 옵션 → 저장 → "파일의 글꼴 포함"을 켜고 저장한다.
 - 영상 장 id: `prep`(준비) `biz`(업무팀) `dev`(개발팀) `ops`(운영팀) `susp`(며칠 뒤 일시중단).
 - 넣은 영상은 PowerPoint 슬라이드 쇼에서 재생하면 화면 가득(전체 화면 재생) 보인다. 끝나면 장표로 돌아온다.
+- 결과물 폴더 `out/` 은 커밋하지 않는다. 예외로 팀이 바로 열어 볼 수 있게 `out/연결이_2차심사_발표자료_v1.2.pptx`(12장, 영상 없이 포스터 판)와 새로 넣은 9장·11장 미리보기 PNG 를 넣어 두었다. 미리보기는 대체 글꼴로 그린 것이라 PowerPoint 화면과 조금 다를 수 있다.
 - 실명·내부 정보는 넣지 않는다. 사람·기관 데이터와 과제 내용은 모두 가상이다.
